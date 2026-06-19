@@ -97,9 +97,85 @@ gate_m1() {
 }
 
 # ---------------------------------------------------------------------------
+# Milestone 2 — Scaffold
+# ---------------------------------------------------------------------------
+gate_m2() {
+  info "Milestone 2 — Scaffold"
+
+  # 2a. The section 7a tree is present.
+  local d missing=""
+  for d in .claude/agents .claude/commands .claude/hooks .claude/skills \
+           .claude-plugin schemas/mif scripts docs/tutorials docs/how-to \
+           docs/reference docs/explanation evals packs reports; do
+    [ -d "$d" ] || missing="${missing}${d} "
+  done
+  if [ -z "$missing" ]; then
+    ok "section 7a tree present"
+  else
+    bad "section 7a tree missing dirs: $missing"
+  fi
+
+  # 2b. settings.json, marketplace.json, and every plugin.json parse as JSON.
+  local jf bad_json=""
+  for jf in .claude/settings.json .claude-plugin/marketplace.json harness.config.json; do
+    jq -e . "$jf" >/dev/null 2>&1 || bad_json="${bad_json}${jf} "
+  done
+  while IFS= read -r jf; do
+    [ -z "$jf" ] && continue
+    jq -e . "$jf" >/dev/null 2>&1 || bad_json="${bad_json}${jf} "
+  done < <(find packs -name plugin.json 2>/dev/null)
+  if [ -z "$bad_json" ]; then
+    ok "settings.json, marketplace.json, and every plugin.json parse as valid JSON"
+  else
+    bad "invalid JSON in: $bad_json"
+  fi
+
+  # 2c. Flat skill discovery: every skill is .claude/skills/<name>/SKILL.md with
+  #     a description, and there are no grouping subdirectories.
+  local sk bad_skill="" nested=""
+  while IFS= read -r sk; do
+    [ -z "$sk" ] && continue
+    [ -f "$sk/SKILL.md" ] || { bad_skill="${bad_skill}${sk} "; continue; }
+    grep -q '^description:' "$sk/SKILL.md" 2>/dev/null || bad_skill="${bad_skill}${sk}(no description) "
+  done < <(find .claude/skills -mindepth 1 -maxdepth 1 -type d 2>/dev/null)
+  # A grouping subdir is a dir under skills/ that itself has no SKILL.md but
+  # contains skill dirs (i.e. skills nested two levels deep).
+  nested=$(find .claude/skills -mindepth 2 -name SKILL.md 2>/dev/null | grep -vE '^\.claude/skills/[^/]+/SKILL\.md$' || true)
+  if [ -z "$bad_skill" ] && [ -z "$nested" ]; then
+    ok "skills are flat (.claude/skills/<name>/SKILL.md) with descriptions"
+  else
+    bad "skill discovery problems: ${bad_skill}${nested:+ nested:$nested}"
+  fi
+
+  # 2d. Bundled hooks referenced by settings.json exist and are executable.
+  local missing_hook=""
+  for h in .claude/hooks/markdown/md_guard.py \
+           .claude/hooks/check-research-pipeline.sh \
+           .claude/hooks/check-citation-leak.sh; do
+    [ -f "$h" ] || { missing_hook="${missing_hook}${h}(missing) "; continue; }
+    [ -x "$h" ] || missing_hook="${missing_hook}${h}(not executable) "
+  done
+  if [ -z "$missing_hook" ]; then
+    ok "bundled enforcement hooks present and executable"
+  else
+    bad "hook problems: $missing_hook"
+  fi
+
+  # 2e. The markdown hooks import cleanly (syntax check).
+  if python3 -c 'import py_compile,sys; [py_compile.compile(f,doraise=True) for f in sys.argv[1:]]' \
+       .claude/hooks/markdown/md_guard.py \
+       .claude/hooks/markdown/md_lint_core.py \
+       .claude/hooks/markdown/md_remediate.py >/dev/null 2>&1; then
+    ok "markdown hook modules compile"
+  else
+    bad "markdown hook modules fail to compile"
+  fi
+}
+
+# ---------------------------------------------------------------------------
 # Gate registry — each milestone appends its function name here.
 # ---------------------------------------------------------------------------
-GATES=(gate_m1)
+GATES=(gate_m1 gate_m2)
 
 for g in "${GATES[@]}"; do "$g"; done
 

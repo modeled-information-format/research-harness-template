@@ -1,0 +1,13 @@
+// Fallback markdownlint ruleset used by md_guard.py ONLY when the project (or a
+// parent directory) defines no markdownlint config of its own. To set project
+// policy, add a real `.markdownlint.jsonc` at the repo root and this file is
+// ignored automatically.
+//
+// Conservative baseline: all default rules on, with line-length relaxed
+// (MD013 is style noise, not correctness) so the bar is "structurally clean
+// Markdown" rather than "fits in N columns".
+{
+  "default": true,
+  // MD013 line-length: off. Prose and tables routinely exceed any fixed width.
+  "MD013": false
+}
