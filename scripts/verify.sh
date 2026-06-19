@@ -432,11 +432,14 @@ gate_m7() {
   info "Milestone 7 — Distribution"
 
   # 7a. The Copier template config and its answers/identity templates are present.
-  if [ -f copier.yml ] && [ -f .copier-answers.yml.jinja ] && [ -f docs/harness-instance.md.jinja ] \
-     && python3 -c 'import sys,yaml; yaml.safe_load(open("copier.yml"))' 2>/dev/null; then
-    ok "Copier template present (copier.yml parses; answers + identity templates present)"
+  #     copier.yml's YAML validity is proven by 7c below (copier parses it), so
+  #     this check stays dependency-free (no PyYAML, which CI does not install).
+  if [ -f copier.yml ] && [ -s copier.yml ] \
+     && [ -f .copier-answers.yml.jinja ] && [ -f docs/harness-instance.md.jinja ] \
+     && grep -q '_templates_suffix' copier.yml; then
+    ok "Copier template present (copier.yml + answers + identity templates)"
   else
-    bad "Copier template incomplete or copier.yml does not parse"
+    bad "Copier template incomplete"
   fi
 
   # 7b. The eval suite passes (shipped + run here and in CI).
