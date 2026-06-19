@@ -37,7 +37,7 @@ case "$CHANNEL" in
     jq -r '
       "# Chapter: " + .title,
       "",
-      "> Genre: " + .genre + " · audience: " + .audience,
+      "> Genre: " + .genre + " · audience: " + (.audience // "general"),
       "",
       ( .sections[0].body ),
       "",

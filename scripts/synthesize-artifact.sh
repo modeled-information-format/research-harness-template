@@ -20,11 +20,12 @@ FILES=$(find "$DIR" -maxdepth 1 -name '*.json' | sort)
 
 # Build the artifact from surviving findings: one section per finding, sources
 # deduplicated across the set, finding_refs collected, newsworthiness rolled up.
+# Write to a temp first so a jq failure (e.g. all findings falsified) is fatal and
+# never leaves a stale/empty artifact behind.
 # shellcheck disable=SC2086
-jq -s --arg genre "$GENRE" '
+if ! jq -s --arg genre "$GENRE" '
   map(select((.extensions.harness.verification.verdict // "survived") != "falsified")) as $surv
-  | ($surv | length) as $n
-  | if $n == 0 then error("no surviving findings to synthesize") else . end
+  | if ($surv | length) == 0 then error("no surviving findings to synthesize") else . end
   | {
       "@type": "Artifact",
       title: ($surv[0].namespace // "Research" | "Findings: " + .),
@@ -40,6 +41,20 @@ jq -s --arg genre "$GENRE" '
       sources: ( [ $surv[] | (.citations // [])[] | { title: .title, url: .url } ]
                  | unique_by(.url) )
     }
-' $FILES > "$OUT"
+' $FILES > "$OUT.tmp" 2>"$OUT.err"; then
+  echo "synthesize: failed —" >&2; cat "$OUT.err" >&2
+  rm -f "$OUT.tmp" "$OUT.err"; exit 1
+fi
+rm -f "$OUT.err"
+
+# Self-validate the required shape before publishing the artifact: a publishable
+# artifact must have at least one section, one finding ref, and one source. This
+# fails loud on a falsified-only or citation-less finding set rather than emitting
+# a schema-invalid (or empty) artifact a renderer would silently accept.
+if ! jq -e '(.sections | length >= 1) and (.finding_refs | length >= 1) and (.sources | length >= 1)' "$OUT.tmp" >/dev/null 2>&1; then
+  echo "synthesize: artifact has no publishable content (no surviving findings, or no citations to cite)" >&2
+  rm -f "$OUT.tmp"; exit 1
+fi
+mv "$OUT.tmp" "$OUT"
 
 echo "synthesize: wrote $OUT (genre=$GENRE, $(jq '.sections|length' "$OUT") sections, $(jq '.sources|length' "$OUT") sources)"
