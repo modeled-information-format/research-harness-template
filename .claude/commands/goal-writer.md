@@ -78,7 +78,7 @@ actually runs:
 
 | Assertion shape | `verify` command (prints its own evidence) |
 | --- | --- |
-| A finding exists and validates | `ajv validate -s schemas/findings.schema.json -r schemas/mif/mif.schema.json -d <finding file>` exits 0 |
+| A finding exists and validates | `ajv validate --spec=draft2020 --strict=false -c ajv-formats -s schemas/findings.schema.json -r schemas/mif/mif.schema.json -r schemas/mif/definitions/entity-reference.schema.json -d <finding file>` exits 0 |
 | Coverage for a dimension | a `jq`/`ls` count over the per-finding files in `reports/<topic>/` whose `extensions.harness.dimension == "<dim>"` meets a threshold (count individual files — never an aggregate) |
 | A named sub-question is answered | ≥1 finding tagged for that sub-question carries `extensions.harness.verification.verdict` ∈ {survived, weakened} (never falsified) |
 | Citation integrity | `scripts/check-citation-integrity.sh` over the active findings exits 0 |
@@ -170,7 +170,7 @@ distributing the harness."
     "summary": "Each selected dimension carries at least one surviving, citation-backed finding establishing whether update propagation is achievable, with the adversarial gate having run exactly once over the finding set and citation integrity holding.",
     "checks": [
       { "id": "coverage_per_dimension", "assertion": "Each of technical, landscape, trajectory has >=1 active (non-falsified) finding.", "verify": "for d in technical landscape trajectory; do ls reports/template-distribution/*.json | xargs -I{} jq -r --arg d \"$d\" 'select(.extensions.harness.dimension==$d) | .[\"@id\"]' {}; done | sort -u prints >=1 id per dimension" },
-      { "id": "finding_valid", "assertion": "Active findings validate against the MIF-backed findings schema.", "verify": "ajv validate -s schemas/findings.schema.json -r schemas/mif/mif.schema.json -d 'reports/template-distribution/*.json' exits 0" },
+      { "id": "finding_valid", "assertion": "Active findings validate against the MIF-backed findings schema.", "verify": "ajv validate --spec=draft2020 --strict=false -c ajv-formats -s schemas/findings.schema.json -r schemas/mif/mif.schema.json -r schemas/mif/definitions/entity-reference.schema.json -d 'reports/template-distribution/<finding>.json' exits 0" },
       { "id": "gate_ran_once", "assertion": "The adversarial falsification gate ran exactly once over the finding set.", "verify": "the transcript shows one 'falsification-gate: run' line per finding this round" },
       { "id": "citation_integrity", "assertion": "Every active finding passes the citation-integrity gate.", "verify": "scripts/check-citation-integrity.sh exits 0" }
     ]

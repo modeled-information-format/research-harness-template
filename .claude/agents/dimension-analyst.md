@@ -94,9 +94,9 @@ jq -r '.packs[] | select(.enabled) | .name' harness.config.json
 ```
 
 - **Dimension provided by an enabled methodology pack:** load that pack's
-  methodology skill via the `Skill` tool, namespaced `pack:skill` (e.g. a
-  `market-research` pack contributes its dimensions and analyst skills). Apply its
-  required frameworks.
+  methodology skill via the `Skill` tool, namespaced `pack:skill` (a methodology
+  pack contributes its dimensions and analyst skills through the manifest). Apply
+  its required frameworks.
 - **Dimension not backed by a pack (the domain-general default):** use **general
   web research** — no SKILL.md is required. Plan systematic queries from the goal
   scope: definitions, current state, comparable approaches, momentum signals,
