@@ -14,7 +14,7 @@ milestones of `IMPLEMENTATION-PLAN.md` / GitHub milestones #1–#8.
 | 5 — Packs | done | #43 | PASS | 2026-06-19 |
 | 6 — Outputs | done | #44 | PASS | 2026-06-19 |
 | 7 — Distribution | done | #45 | PASS | 2026-06-19 |
-| 8 — Corpus/KG migration | in_progress | — | — | 2026-06-19 |
+| 8 — Corpus/KG migration | done | #46 | PASS | 2026-06-19 |
 
 ## Milestone 1 — Contracts
 
@@ -180,3 +180,15 @@ any imported corpus.
 Acceptance gate: a sample corpus + its knowledge graph imports into a fresh
 harness with provenance and edges intact; a script asserts node and edge counts
 and provenance preservation. Asserted by `gate_m8` in `scripts/verify.sh`.
+
+**Completed** 2026-06-19 via PR #46. Acceptance gate PASS: `verify.sh` 39 checks
+incl. the import into a temporary fresh harness (3 findings, 7 nodes, 10 edges,
+provenance preserved); the template repo `reports/` ships clean. Closed #37–#38.
+
+## Build complete
+
+All eight milestones are done, each delivered as its own merged pull request:
+M1 #39, M2 #40, M3 #41, M4 #42, M5 #43, M6 #44, M7 #45, M8 #46. The full build
+gate (`bash scripts/verify.sh`) passes 39 checks; `markdownlint-cli2 "**/*.md"`
+reports 0 errors; CI runs verify, the eval suite, the copier-update demo, and
+lint on every push.
