@@ -4,3 +4,6 @@ __pycache__/
 
 # Hook runtime state
 .claude/hooks/markdown/state/
+
+# Derived pack enablement (materialized from harness.config.json packs[])
+.claude/enabled-packs.json

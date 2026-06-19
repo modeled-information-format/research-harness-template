@@ -1,0 +1,33 @@
+{
+  "name": "reports",
+  "version": "1.0.0",
+  "kind": "genre",
+  "description": "Genre pack: exec-summary, academic, engineering, trend-analysis, briefing deliverable templates. Each genre is an output-formatting template (section structure, audience, altitude, citation style, required front/back matter) that report-synthesizer renders through any channel.",
+  "license": "MIT",
+  "author": {
+    "name": "zircote"
+  },
+  "keywords": [
+    "reports",
+    "genre",
+    "deliverable",
+    "template",
+    "report-synthesizer"
+  ],
+  "provides": {
+    "skills": [
+      "reports:exec-summary",
+      "reports:academic",
+      "reports:engineering",
+      "reports:trend-analysis",
+      "reports:briefing"
+    ],
+    "genres": [
+      "exec-summary",
+      "academic",
+      "engineering",
+      "trend-analysis",
+      "briefing"
+    ]
+  }
+}

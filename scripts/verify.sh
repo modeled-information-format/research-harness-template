@@ -292,9 +292,82 @@ gate_m4() {
 }
 
 # ---------------------------------------------------------------------------
+# Milestone 5 — Packs
+# ---------------------------------------------------------------------------
+gate_m5() {
+  info "Milestone 5 — Packs"
+
+  # 5a. Every bundled pack is a plugin: plugin.json validates against the pack
+  #     contract and the pack has a flat skills/ dir.
+  local p pbad=""
+  for p in market-research trend-modeling reports channels; do
+    local mf="packs/$p/.claude-plugin/plugin.json"
+    if [ -f "$mf" ] && ajv_plain schemas/pack.schema.json "$mf" \
+       && [ -d "packs/$p/skills" ] \
+       && [ -n "$(find "packs/$p/skills" -mindepth 2 -name SKILL.md 2>/dev/null)" ]; then :; else
+      pbad="${pbad}${p} "
+    fi
+  done
+  if [ -z "$pbad" ]; then
+    ok "four bundled packs are valid plugins (manifest + flat skills)"
+  else
+    bad "invalid/incomplete packs: $pbad"
+  fi
+
+  # 5b. Skills are flat within each pack (skills/<name>/SKILL.md, no grouping).
+  local nested
+  nested=$(find packs/*/skills -mindepth 2 -name SKILL.md 2>/dev/null | grep -vE '^packs/[^/]+/skills/[^/]+/SKILL\.md$' || true)
+  if [ -z "$nested" ]; then
+    ok "pack skills are flat (packs/<pack>/skills/<name>/SKILL.md)"
+  else
+    bad "non-flat pack skills: $nested"
+  fi
+
+  # 5c. Enabling a pack through the manifest adds its namespaced skills; disabling
+  #     removes them. Proven on a temp config copy (no mutation of the real one).
+  local T; T=$(mktemp -d)
+  jq '(.packs[] | select(.name=="market-research") | .enabled) |= true' harness.config.json > "$T/on.cfg.json"
+  jq '(.packs[] | select(.name=="market-research") | .enabled) |= false' harness.config.json > "$T/off.cfg.json"
+  scripts/sync-packs.sh "$T/on.cfg.json"  "$T/on.json"  >/dev/null 2>&1
+  scripts/sync-packs.sh "$T/off.cfg.json" "$T/off.json" >/dev/null 2>&1
+  local present absent
+  present=$(jq -r '[.packs[]|select(.name=="market-research")|.skills[]] | index("market-research:competitive-analysis") != null' "$T/on.json" 2>/dev/null)
+  absent=$(jq -r '.enabledPlugins | index("market-research") == null' "$T/off.json" 2>/dev/null)
+  if [ "$present" = "true" ] && [ "$absent" = "true" ]; then
+    ok "enabling a pack adds its namespaced skills; disabling removes them"
+  else
+    bad "pack toggle failed (present=$present absent=$absent)"
+  fi
+
+  # 5d. An external/private plugin is ingested as a pack via the manifest.
+  jq '.packs += [{"name":"external-demo","enabled":true,"source":{"type":"git","url":"https://example.com/some/plugin.git","ref":"v1.0.0"}}]' \
+     harness.config.json > "$T/ext.cfg.json"
+  # The manifest with the external pack still validates against the config schema.
+  if ajv_plain harness.config.schema.json "$T/ext.cfg.json" \
+     && scripts/sync-packs.sh "$T/ext.cfg.json" "$T/ext.json" >/dev/null 2>&1 \
+     && [ "$(jq -r '[.packs[]|select(.name=="external-demo")|.source] | index("external") != null' "$T/ext.json")" = "true" ]; then
+    ok "an external/private plugin is ingested as a pack via the manifest"
+  else
+    bad "external plugin ingestion failed"
+  fi
+  rm -rf "$T"
+
+  # 5e. Bundled packs are registered in the marketplace.
+  local m mmiss=""
+  for m in market-research trend-modeling reports channels; do
+    jq -e --arg n "$m" '.plugins | any(.name == $n)' .claude-plugin/marketplace.json >/dev/null 2>&1 || mmiss="${mmiss}${m} "
+  done
+  if [ -z "$mmiss" ]; then
+    ok "all bundled packs registered in marketplace.json"
+  else
+    bad "packs missing from marketplace.json: $mmiss"
+  fi
+}
+
+# ---------------------------------------------------------------------------
 # Gate registry — each milestone appends its function name here.
 # ---------------------------------------------------------------------------
-GATES=(gate_m1 gate_m2 gate_m3 gate_m4)
+GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5)
 
 for g in "${GATES[@]}"; do "$g"; done
 

@@ -10,8 +10,8 @@ milestones of `IMPLEMENTATION-PLAN.md` / GitHub milestones #1–#8.
 | 1 — Contracts | done | #39 | PASS | 2026-06-19 |
 | 2 — Scaffold | done | #40 | PASS | 2026-06-19 |
 | 3 — Engine | done | #41 | PASS | 2026-06-19 |
-| 4 — Harness services | in_progress | — | — | 2026-06-19 |
-| 5 — Packs | pending | — | — | — |
+| 4 — Harness services | done | #42 | PASS | 2026-06-19 |
+| 5 — Packs | in_progress | — | — | 2026-06-19 |
 | 6 — Outputs | pending | — | — | — |
 | 7 — Distribution | pending | — | — | — |
 | 8 — Corpus/KG migration | pending | — | — | — |
@@ -93,3 +93,25 @@ Acceptance gate: search, discover, lab, graph, and topics each operate over the
 MIF sample; the knowledge graph is built from MIF entities and relations, not
 tags, and `assert-graph-mif.sh` asserts nodes/edges derive from MIF ids.
 Asserted by `gate_m4` in `scripts/verify.sh`.
+
+**Completed** 2026-06-19 via PR #42 (squash-merged). Acceptance gate PASS:
+`verify.sh` 21 checks; CI green; code review (closed the graph referentially with
+external stub nodes, relaxed the entity assertion, made the gap check honest).
+Closed #20–#26.
+
+## Milestone 5 — Packs
+
+**Started** 2026-06-19. Branch `milestone-5-packs`.
+
+Delivers four bundled packs, each a Claude Code plugin validated against
+`pack.schema.json`: `market-research` (methodology, disabled by default;
+competitive/sizing/financial/regulatory/customer), `trend-modeling`
+(methodology; INC/DEC/CONST), `reports` (genre; exec-summary/academic/
+engineering/trend-analysis/briefing), and `channels` (channel; notebooklm/pdf/
+github-discuss/github-issues). The control plane is `harness.config.json`
+`packs[]`; `scripts/sync-packs.sh` materializes it into the enabled-skill set and
+`scripts/pack-toggle.sh` flips a pack.
+
+Acceptance gate: enabling a pack through the manifest adds its namespaced skills
+and disabling removes them; an external/private plugin is ingested as a pack.
+Asserted by `gate_m5` in `scripts/verify.sh`.
