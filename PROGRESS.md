@@ -11,8 +11,8 @@ milestones of `IMPLEMENTATION-PLAN.md` / GitHub milestones #1–#8.
 | 2 — Scaffold | done | #40 | PASS | 2026-06-19 |
 | 3 — Engine | done | #41 | PASS | 2026-06-19 |
 | 4 — Harness services | done | #42 | PASS | 2026-06-19 |
-| 5 — Packs | in_progress | — | — | 2026-06-19 |
-| 6 — Outputs | pending | — | — | — |
+| 5 — Packs | done | #43 | PASS | 2026-06-19 |
+| 6 — Outputs | in_progress | — | — | 2026-06-19 |
 | 7 — Distribution | pending | — | — | — |
 | 8 — Corpus/KG migration | pending | — | — | — |
 
@@ -115,3 +115,21 @@ github-discuss/github-issues). The control plane is `harness.config.json`
 Acceptance gate: enabling a pack through the manifest adds its namespaced skills
 and disabling removes them; an external/private plugin is ingested as a pack.
 Asserted by `gate_m5` in `scripts/verify.sh`.
+
+**Completed** 2026-06-19 via PR #43 (squash-merged). Acceptance gate PASS:
+`verify.sh` 26 checks; CI green; code review (made sync materialize into native
+`enabledPlugins`, hardened the sync pass). Closed #27–#33.
+
+## Milestone 6 — Outputs
+
+**Started** 2026-06-19. Branch `milestone-6-outputs`.
+
+Delivers blog and book as first-class outputs over the typed findings→artifact
+contract: `schemas/artifact.schema.json` (the genre/channel-neutral intermediate
+the report-synthesizer produces), `scripts/synthesize-artifact.sh` (surviving
+findings → artifact), `scripts/render-artifact.sh` (one artifact → blog post or
+book chapter), and the always-on `publish-blog` and `book-author` skills.
+
+Acceptance gate: a sample findings set renders to both a blog post and a book
+chapter through the same typed contract, both citation-leak clean. Asserted by
+`gate_m6` in `scripts/verify.sh`.

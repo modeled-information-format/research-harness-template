@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-harness.dev/schema/artifact.schema.json",
+  "title": "Findings-to-Artifact Contract",
+  "description": "The typed intermediate the report-synthesizer produces from surviving findings and that every output channel renders (SPEC §6d). It separates the two orthogonal axes — the deliverable genre (what the document is) and the delivery channel (how it is rendered). Blog and book are first-class channels; other channels arrive via the channels pack. Every section traces to the MIF finding @ids it draws on, and every source is a MIF-shaped citation, so the citation-integrity and citation-leak gates run uniformly across all outputs.",
+  "type": "object",
+  "required": ["@type", "title", "genre", "sections", "sources", "finding_refs"],
+  "additionalProperties": false,
+  "properties": {
+    "@type": { "const": "Artifact" },
+    "title": { "type": "string", "minLength": 1 },
+    "subtitle": { "type": "string" },
+    "genre": {
+      "type": "string",
+      "description": "The deliverable genre (exec-summary, academic, engineering, …). 'general' when no genre pack is enabled.",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "audience": { "type": "string" },
+    "newsworthiness": {
+      "type": "string",
+      "enum": ["high", "medium", "low"],
+      "description": "The delta/newsworthiness signal the engine computes — the hook a publication pipeline needs (SPEC §6d)."
+    },
+    "finding_refs": {
+      "type": "array",
+      "minItems": 1,
+      "description": "The MIF finding @ids this artifact synthesizes (urn:mif:).",
+      "items": { "type": "string", "pattern": "^urn:mif:" }
+    },
+    "sections": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Ordered body sections; the genre template defines which are required.",
+      "items": {
+        "type": "object",
+        "required": ["heading", "body"],
+        "additionalProperties": false,
+        "properties": {
+          "heading": { "type": "string", "minLength": 1 },
+          "body": { "type": "string", "minLength": 1 },
+          "supports": {
+            "type": "array",
+            "description": "MIF finding @ids this section draws on.",
+            "items": { "type": "string", "pattern": "^urn:mif:" }
+          }
+        }
+      }
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "description": "MIF-shaped citations (url required), deduplicated across the finding set.",
+      "items": {
+        "type": "object",
+        "required": ["title", "url"],
+        "properties": {
+          "title": { "type": "string", "minLength": 1 },
+          "url": { "type": "string", "format": "uri" }
+        }
+      }
+    }
+  }
+}

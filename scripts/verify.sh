@@ -373,9 +373,62 @@ gate_m5() {
 }
 
 # ---------------------------------------------------------------------------
+# Milestone 6 — Outputs
+# ---------------------------------------------------------------------------
+gate_m6() {
+  info "Milestone 6 — Outputs"
+  local SF="reports/_meta/sample-session/findings"
+  local T; T=$(mktemp -d)
+
+  # 6a. blog and book are first-class skills (flat, in the core, not a pack).
+  local s smiss=""
+  for s in publish-blog book-author; do
+    if [ -f ".claude/skills/$s/SKILL.md" ] && grep -q '^description:' ".claude/skills/$s/SKILL.md"; then :; else
+      smiss="${smiss}${s} "
+    fi
+  done
+  if [ -z "$smiss" ]; then
+    ok "blog and book are first-class flat skills"
+  else
+    bad "missing first-class output skills: $smiss"
+  fi
+
+  # 6b. A sample findings set renders to BOTH a blog post and a book chapter
+  #     through the SAME typed findings->artifact contract.
+  if scripts/synthesize-artifact.sh "$SF" general "$T/artifact.json" >/dev/null 2>&1 \
+     && ajv_plain schemas/artifact.schema.json "$T/artifact.json"; then
+    ok "findings synthesize into a typed artifact (validates against artifact.schema.json)"
+  else
+    bad "artifact synthesis/validation failed"
+  fi
+
+  local blog_ok=false book_ok=false
+  scripts/render-artifact.sh "$T/artifact.json" blog "$T/post.md" >/dev/null 2>&1 \
+    && [ -s "$T/post.md" ] && blog_ok=true
+  scripts/render-artifact.sh "$T/artifact.json" book "$T/chapter.md" >/dev/null 2>&1 \
+    && [ -s "$T/chapter.md" ] && book_ok=true
+  if [ "$blog_ok" = true ] && [ "$book_ok" = true ]; then
+    ok "the same artifact renders to both a blog post and a book chapter"
+  else
+    bad "render failed (blog=$blog_ok book=$book_ok)"
+  fi
+
+  # 6c. Both published outputs are citation-leak clean (no internal references).
+  local leak
+  leak=$(grep -nE 'f_[a-z]+_[0-9]+|urn:mif:|extensions\.harness|reports/[a-z0-9-]+/(findings|_meta)' \
+           "$T/post.md" "$T/chapter.md" 2>/dev/null || true)
+  if [ -z "$leak" ]; then
+    ok "both outputs are citation-leak clean (no internal-research references)"
+  else
+    bad "published output leaks internal references:"; printf '%s\n' "$leak" >&2
+  fi
+  rm -rf "$T"
+}
+
+# ---------------------------------------------------------------------------
 # Gate registry — each milestone appends its function name here.
 # ---------------------------------------------------------------------------
-GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5)
+GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6)
 
 for g in "${GATES[@]}"; do "$g"; done
 
