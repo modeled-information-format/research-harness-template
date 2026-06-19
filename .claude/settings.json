@@ -83,5 +83,8 @@
         ]
       }
     ]
+  },
+  "enabledPlugins": {
+    "reports@research-harness": true
   }
 }

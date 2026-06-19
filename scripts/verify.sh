@@ -323,30 +323,38 @@ gate_m5() {
     bad "non-flat pack skills: $nested"
   fi
 
-  # 5c. Enabling a pack through the manifest adds its namespaced skills; disabling
-  #     removes them. Proven on a temp config copy (no mutation of the real one).
+  # 5c. Enabling a pack through the manifest adds its namespaced skills to Claude
+  #     Code's native enabledPlugins (settings.json); disabling removes them.
+  #     Proven on temp config + temp settings copies (no mutation of the real ones).
   local T; T=$(mktemp -d)
+  cp .claude/settings.json "$T/settings-on.json"
+  cp .claude/settings.json "$T/settings-off.json"
   jq '(.packs[] | select(.name=="market-research") | .enabled) |= true' harness.config.json > "$T/on.cfg.json"
   jq '(.packs[] | select(.name=="market-research") | .enabled) |= false' harness.config.json > "$T/off.cfg.json"
-  scripts/sync-packs.sh "$T/on.cfg.json"  "$T/on.json"  >/dev/null 2>&1
-  scripts/sync-packs.sh "$T/off.cfg.json" "$T/off.json" >/dev/null 2>&1
-  local present absent
-  present=$(jq -r '[.packs[]|select(.name=="market-research")|.skills[]] | index("market-research:competitive-analysis") != null' "$T/on.json" 2>/dev/null)
-  absent=$(jq -r '.enabledPlugins | index("market-research") == null' "$T/off.json" 2>/dev/null)
-  if [ "$present" = "true" ] && [ "$absent" = "true" ]; then
-    ok "enabling a pack adds its namespaced skills; disabling removes them"
+  scripts/sync-packs.sh "$T/on.cfg.json"  "$T/on.json"  "$T/settings-on.json"  >/dev/null 2>&1
+  scripts/sync-packs.sh "$T/off.cfg.json" "$T/off.json" "$T/settings-off.json" >/dev/null 2>&1
+  local skills_added plugin_on plugin_off
+  # the namespaced skills appear in the resolved set...
+  skills_added=$(jq -r '[.packs[]|select(.name=="market-research")|.skills[]] | index("market-research:competitive-analysis") != null' "$T/on.json" 2>/dev/null)
+  # ...and the pack is in / out of Claude Code's NATIVE enabledPlugins.
+  plugin_on=$(jq -r '.enabledPlugins | has("market-research@research-harness")' "$T/settings-on.json" 2>/dev/null)
+  plugin_off=$(jq -r '.enabledPlugins | has("market-research@research-harness") | not' "$T/settings-off.json" 2>/dev/null)
+  if [ "$skills_added" = "true" ] && [ "$plugin_on" = "true" ] && [ "$plugin_off" = "true" ]; then
+    ok "enabling a pack adds its namespaced skills to native enabledPlugins; disabling removes them"
   else
-    bad "pack toggle failed (present=$present absent=$absent)"
+    bad "pack toggle failed (skills_added=$skills_added plugin_on=$plugin_on plugin_off=$plugin_off)"
   fi
 
-  # 5d. An external/private plugin is ingested as a pack via the manifest.
+  # 5d. An external/private plugin is ingested as a pack via the manifest and
+  #     lands in native enabledPlugins.
+  cp .claude/settings.json "$T/settings-ext.json"
   jq '.packs += [{"name":"external-demo","enabled":true,"source":{"type":"git","url":"https://example.com/some/plugin.git","ref":"v1.0.0"}}]' \
      harness.config.json > "$T/ext.cfg.json"
-  # The manifest with the external pack still validates against the config schema.
   if ajv_plain harness.config.schema.json "$T/ext.cfg.json" \
-     && scripts/sync-packs.sh "$T/ext.cfg.json" "$T/ext.json" >/dev/null 2>&1 \
-     && [ "$(jq -r '[.packs[]|select(.name=="external-demo")|.source] | index("external") != null' "$T/ext.json")" = "true" ]; then
-    ok "an external/private plugin is ingested as a pack via the manifest"
+     && scripts/sync-packs.sh "$T/ext.cfg.json" "$T/ext.json" "$T/settings-ext.json" >/dev/null 2>&1 \
+     && [ "$(jq -r '[.packs[]|select(.name=="external-demo")|.source] | index("external") != null' "$T/ext.json")" = "true" ] \
+     && [ "$(jq -r '.enabledPlugins | has("external-demo@research-harness")' "$T/settings-ext.json")" = "true" ]; then
+    ok "an external/private plugin is ingested as a pack and enabled via the manifest"
   else
     bad "external plugin ingestion failed"
   fi
