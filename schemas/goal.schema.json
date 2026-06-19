@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-harness.dev/schema/goal.schema.json",
+  "title": "Research Session Goal",
+  "description": "The session contract (SPEC §2, §6b): a measurable, transcript-verifiable completion condition the orchestrator runs toward. HARNESS-SIDE, not MIF (SPEC §8b): it references MIF finding @ids but is not itself a MIF concept. Authored by the goal-writer command from the user's raw ask.",
+  "type": "object",
+  "required": ["goal_statement", "completion_condition", "dimensions"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "topic": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "description": "The topic id this session researches (maps to a harness.config topic)."
+    },
+    "goal_statement": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The one decision this session exists to enable. Not 'learn about X' — 'enable decision Y'."
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "in_scope": { "type": "array", "items": { "type": "string" } },
+        "out_of_scope": { "type": "array", "items": { "type": "string" } },
+        "non_goals": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "dimensions": {
+      "type": "array",
+      "minItems": 1,
+      "description": "The config-declared dimensions this session fans out across.",
+      "items": { "type": "string", "pattern": "^[a-z][a-z0-9_-]*$" }
+    },
+    "completion_condition": {
+      "type": "object",
+      "description": "The checkable end state. Each check is a transcript-verifiable fact, not a step.",
+      "required": ["summary", "checks"],
+      "additionalProperties": false,
+      "properties": {
+        "summary": { "type": "string", "minLength": 1 },
+        "checks": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["id", "assertion"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_-]*$" },
+              "assertion": { "type": "string", "minLength": 1 },
+              "verify": {
+                "type": "string",
+                "description": "Optional command or printable fact that proves the assertion."
+              }
+            }
+          }
+        }
+      }
+    },
+    "bound": {
+      "type": "object",
+      "description": "The turn/coverage bound at which the session stops even if the goal is not fully met.",
+      "additionalProperties": false,
+      "properties": {
+        "max_rounds": { "type": "integer", "minimum": 1 },
+        "min_dimensions_complete": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "urn:mif:concept:harness:smoke-0001": {
+    "verdict": "survived",
+    "basis": "Three adversarial queries for a documented case where update propagation fails to re-apply changes returned no credible disconfirming source.",
+    "attempted_at": "2026-06-19T13:30:00Z",
+    "disconfirming": []
+  }
+}

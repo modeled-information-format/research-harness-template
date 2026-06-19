@@ -1,0 +1,33 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@type": "Concept",
+  "@id": "urn:mif:concept:harness:smoke-0001",
+  "conceptType": "semantic",
+  "namespace": "harness/example-topic",
+  "title": "A living template engine re-applies upstream changes to instantiated projects",
+  "content": "A template engine with update propagation can re-apply later template changes to an already-instantiated project via a three-way merge, unlike a one-time snapshot. This is the decisive capability for distributing a harness that keeps gaining skills, gates, and schema versions.",
+  "summary": "Update-propagating template engines re-apply upstream changes to instantiated projects; snapshots cannot.",
+  "created": "2026-06-19T13:00:00Z",
+  "tags": ["distribution", "template-engine", "update-propagation"],
+  "provenance": {
+    "@type": "Provenance",
+    "sourceType": "agent_inferred",
+    "confidence": 0.85,
+    "trustLevel": "high_confidence"
+  },
+  "citations": [
+    {
+      "@type": "Citation",
+      "citationType": "documentation",
+      "citationRole": "supports",
+      "title": "Copier — Updating a project",
+      "url": "https://copier.readthedocs.io/en/stable/updating/",
+      "accessed": "2026-06-19"
+    }
+  ],
+  "extensions": {
+    "harness": {
+      "dimension": "technical"
+    }
+  }
+}

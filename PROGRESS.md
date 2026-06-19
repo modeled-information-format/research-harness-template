@@ -8,8 +8,8 @@ milestones of `IMPLEMENTATION-PLAN.md` / GitHub milestones #1–#8.
 | Milestone | State | PR | Acceptance gate | Date |
 | --- | --- | --- | --- | --- |
 | 1 — Contracts | done | #39 | PASS | 2026-06-19 |
-| 2 — Scaffold | in_progress | — | — | 2026-06-19 |
-| 3 — Engine | pending | — | — | — |
+| 2 — Scaffold | done | #40 | PASS | 2026-06-19 |
+| 3 — Engine | in_progress | — | — | 2026-06-19 |
 | 4 — Harness services | pending | — | — | — |
 | 5 — Packs | pending | — | — | — |
 | 6 — Outputs | pending | — | — | — |
@@ -50,3 +50,25 @@ Acceptance gate: a clone is structurally valid — flat `SKILL.md` discovery pat
 resolve; `settings.json`, `marketplace.json`, and every `plugin.json` parse as
 valid JSON; the bundled hooks are present, executable, and compile. Asserted by
 `gate_m2` in `scripts/verify.sh`.
+
+**Completed** 2026-06-19 via PR #40 (squash-merged). Acceptance gate PASS:
+`verify.sh` 12 checks; CI green; code review (untracked `.pyc` + `.gitignore`,
+`MultiEdit` matcher, narrowed leak pattern). Closed issues #6–#9.
+
+## Milestone 3 — Engine
+
+**Started** 2026-06-19. Branch `milestone-3-engine`.
+
+Delivers the five flat engine agents (orchestrator, dimension-analyst,
+falsification-analyst, source-chunker, report-synthesizer) — domain-general
+ports/redesigns of the corpus agents, with the four codex review gates dropped
+and a single adversarial falsification gate retained; the goal-driven commands
+(goal-writer, start, status, resume, falsify, topics); the session-goal contract
+(`schemas/goal.schema.json` + sample goal); the deterministic falsification gate
+(`scripts/falsify.sh`); continuity (progress-file template + resume); and the
+engine smoke test (`evals/smoke-test.sh`).
+
+Acceptance gate: the smoke test runs the orchestrator pipeline toward the sample
+session goal on a fixture, runs exactly one falsification gate, and emits a
+finding that validates against the MIF-backed findings schema. Asserted by
+`gate_m3` in `scripts/verify.sh`.

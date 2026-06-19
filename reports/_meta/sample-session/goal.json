@@ -1,0 +1,35 @@
+{
+  "$schema": "../../../schemas/goal.schema.json",
+  "topic": "example-topic",
+  "goal_statement": "Enable the decision of whether to adopt a living template engine (with update propagation) for distributing the harness, versus a snapshot template.",
+  "scope": {
+    "in_scope": ["template engines that support re-applying upstream changes to instantiated projects"],
+    "out_of_scope": ["pricing models", "hosting/CI vendor selection"],
+    "non_goals": ["This session will NOT produce an implementation of the chosen engine."]
+  },
+  "dimensions": ["technical", "landscape", "trajectory"],
+  "completion_condition": {
+    "summary": "At least one surviving, citation-backed finding per in-scope dimension establishes whether update propagation is achievable, with the adversarial gate having run exactly once over the finding set.",
+    "checks": [
+      {
+        "id": "finding_emitted",
+        "assertion": "At least one MIF-backed finding is emitted and validates against schemas/findings.schema.json.",
+        "verify": "ajv validate against findings.schema.json exits 0"
+      },
+      {
+        "id": "falsified_once",
+        "assertion": "The adversarial falsification gate ran exactly once over the finding.",
+        "verify": "smoke-test reports falsification-gate run count == 1"
+      },
+      {
+        "id": "citation_integrity",
+        "assertion": "Every emitted finding passes the citation-integrity gate.",
+        "verify": "scripts/check-citation-integrity.sh exits 0"
+      }
+    ]
+  },
+  "bound": {
+    "max_rounds": 3,
+    "min_dimensions_complete": 1
+  }
+}

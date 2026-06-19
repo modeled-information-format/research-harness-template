@@ -173,9 +173,57 @@ gate_m2() {
 }
 
 # ---------------------------------------------------------------------------
+# Milestone 3 — Engine
+# ---------------------------------------------------------------------------
+gate_m3() {
+  info "Milestone 3 — Engine"
+
+  # 3a. The session goal contract validates its sample (goal-driven execution).
+  if ajv_plain schemas/goal.schema.json reports/_meta/sample-session/goal.json; then
+    ok "session goal validates against goal.schema.json"
+  else
+    bad "sample session goal does not validate"
+  fi
+
+  # 3b. The five engine agents are present as flat .claude/agents/<name>.md with
+  #     frontmatter (KEEP the swarm orchestrator + fan-out).
+  local a miss=""
+  for a in orchestrator dimension-analyst falsification-analyst source-chunker report-synthesizer; do
+    if [ -f ".claude/agents/$a.md" ] && head -1 ".claude/agents/$a.md" | grep -q '^---'; then :; else
+      miss="${miss}${a} "
+    fi
+  done
+  if [ -z "$miss" ]; then
+    ok "five engine agents present (flat, with frontmatter)"
+  else
+    bad "missing/malformed engine agents: $miss"
+  fi
+
+  # 3c. The goal-driven commands are present (incl. goal-writer and resume/continuity).
+  local c cmiss=""
+  for c in goal-writer start status resume falsify topics; do
+    [ -f ".claude/commands/$c.md" ] || cmiss="${cmiss}${c} "
+  done
+  if [ -z "$cmiss" ]; then
+    ok "engine commands present (goal-writer, start, status, resume, falsify, topics)"
+  else
+    bad "missing engine commands: $cmiss"
+  fi
+
+  # 3d. The smoke test: orchestrator pipeline toward the sample goal on a fixture;
+  #     exactly one falsification gate runs; emitted finding validates (MIF-backed).
+  if bash evals/smoke-test.sh >/dev/null 2>&1; then
+    ok "engine smoke test passes (one falsification gate; MIF-valid finding emitted)"
+  else
+    bad "engine smoke test failed"
+    bash evals/smoke-test.sh 2>&1 | sed 's/^/      /' >&2
+  fi
+}
+
+# ---------------------------------------------------------------------------
 # Gate registry — each milestone appends its function name here.
 # ---------------------------------------------------------------------------
-GATES=(gate_m1 gate_m2)
+GATES=(gate_m1 gate_m2 gate_m3)
 
 for g in "${GATES[@]}"; do "$g"; done
 
