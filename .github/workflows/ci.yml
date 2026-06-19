@@ -19,18 +19,32 @@ jobs:
         with:
           node-version: 'lts/*'
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
       - name: Install toolchain
-        run: npm install -g ajv-cli ajv-formats markdownlint-cli2
+        run: |
+          npm install -g ajv-cli ajv-formats markdownlint-cli2
+          pipx install copier
 
       - name: Tool versions
         run: |
           node --version
+          python3 --version
           jq --version
           ajv help >/dev/null 2>&1 && echo "ajv-cli present"
           markdownlint-cli2 --version
+          copier --version
 
       - name: verify.sh (build gate — schemas, citation gate, per-milestone gates, evals)
         run: bash scripts/verify.sh
+
+      - name: eval suite (shipped + run in CI)
+        run: bash evals/run-evals.sh
+
+      - name: copier update propagation
+        run: bash evals/copier-update.sh
 
       - name: markdownlint (G5 — 0 errors)
         run: markdownlint-cli2 "**/*.md"

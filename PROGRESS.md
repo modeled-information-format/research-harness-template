@@ -12,8 +12,8 @@ milestones of `IMPLEMENTATION-PLAN.md` / GitHub milestones #1–#8.
 | 3 — Engine | done | #41 | PASS | 2026-06-19 |
 | 4 — Harness services | done | #42 | PASS | 2026-06-19 |
 | 5 — Packs | done | #43 | PASS | 2026-06-19 |
-| 6 — Outputs | in_progress | — | — | 2026-06-19 |
-| 7 — Distribution | pending | — | — | — |
+| 6 — Outputs | done | #44 | PASS | 2026-06-19 |
+| 7 — Distribution | in_progress | — | — | 2026-06-19 |
 | 8 — Corpus/KG migration | pending | — | — | — |
 
 ## Milestone 1 — Contracts
@@ -133,3 +133,24 @@ book chapter), and the always-on `publish-blog` and `book-author` skills.
 Acceptance gate: a sample findings set renders to both a blog post and a book
 chapter through the same typed contract, both citation-leak clean. Asserted by
 `gate_m6` in `scripts/verify.sh`.
+
+**Completed** 2026-06-19 via PR #44 (squash-merged). Acceptance gate PASS:
+`verify.sh` 30 checks; CI green; code review (synthesizer fails loud on no
+publishable content; book-render audience guard). Closed #34.
+
+## Milestone 7 — Distribution
+
+**Started** 2026-06-19. Branch `milestone-7-distribution`.
+
+Delivers the Copier-class living template: `copier.yml` (instantiation Q&A,
+`_templates_suffix: ".jinja"` so the harness files copy verbatim and keep passing
+their own gates) + `.copier-answers.yml.jinja` + a templated identity file; the
+shipped eval suite (`evals/run-evals.sh`: engine smoke, citation integrity,
+MIF-graph derivation, blog+book outputs) run in CI; and the copier-update eval
+(`evals/copier-update.sh`) that instantiates the harness, changes the template,
+runs `copier update`, and asserts propagation. CI installs copier + Python and
+runs the evals and the copier-update demo.
+
+Acceptance gate: `copier update` re-applies a template change to an instantiated
+harness, and the eval suite passes in CI. Asserted by `gate_m7` in
+`scripts/verify.sh`.

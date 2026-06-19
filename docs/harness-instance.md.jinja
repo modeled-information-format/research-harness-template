@@ -1,0 +1,19 @@
+# {{ project_name }}
+
+This research harness was instantiated from the
+[research-harness template](https://github.com/zircote/research-harness-template)
+with Copier, so it can pull later template improvements with `copier update`.
+
+- **Owner:** {{ author_name }}
+- **First topic:** `{{ topic_id }}` — {{ topic_title }}
+
+## Updating
+
+When the upstream template gains skills, gates, or schema versions, re-apply them:
+
+```bash
+copier update
+```
+
+Copier re-applies the template changes over your instance via a three-way merge,
+reconciling your local edits — the capability a living template needs (SPEC §7).

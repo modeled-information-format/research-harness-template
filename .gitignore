@@ -7,3 +7,6 @@ __pycache__/
 
 # Derived pack enablement (materialized from harness.config.json packs[])
 .claude/enabled-packs.json
+
+# Copier answers file exists only in an instantiated harness, not the template repo
+.copier-answers.yml

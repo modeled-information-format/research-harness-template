@@ -426,9 +426,45 @@ gate_m6() {
 }
 
 # ---------------------------------------------------------------------------
+# Milestone 7 — Distribution
+# ---------------------------------------------------------------------------
+gate_m7() {
+  info "Milestone 7 — Distribution"
+
+  # 7a. The Copier template config and its answers/identity templates are present.
+  if [ -f copier.yml ] && [ -f .copier-answers.yml.jinja ] && [ -f docs/harness-instance.md.jinja ] \
+     && python3 -c 'import sys,yaml; yaml.safe_load(open("copier.yml"))' 2>/dev/null; then
+    ok "Copier template present (copier.yml parses; answers + identity templates present)"
+  else
+    bad "Copier template incomplete or copier.yml does not parse"
+  fi
+
+  # 7b. The eval suite passes (shipped + run here and in CI).
+  if bash evals/run-evals.sh >/dev/null 2>&1; then
+    ok "eval suite passes (evals/run-evals.sh)"
+  else
+    bad "eval suite failed"
+    bash evals/run-evals.sh 2>&1 | sed 's/^/      /' >&2
+  fi
+
+  # 7c. copier update re-applies a template change to an instantiated harness.
+  #     Requires copier; the milestone genuinely depends on it.
+  if command -v copier >/dev/null 2>&1; then
+    if bash evals/copier-update.sh >/dev/null 2>&1; then
+      ok "copier update re-applies a template change to an instantiated harness"
+    else
+      bad "copier-update eval failed"
+      bash evals/copier-update.sh 2>&1 | sed 's/^/      /' >&2
+    fi
+  else
+    bad "copier not installed — cannot demonstrate update propagation (pipx install copier)"
+  fi
+}
+
+# ---------------------------------------------------------------------------
 # Gate registry — each milestone appends its function name here.
 # ---------------------------------------------------------------------------
-GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6)
+GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7)
 
 for g in "${GATES[@]}"; do "$g"; done
 

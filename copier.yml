@@ -1,0 +1,46 @@
+# Copier template configuration (SPEC §7). The harness is distributed as a
+# living, update-propagating template: `copier copy` instantiates it and
+# `copier update` re-applies later template improvements to an already-
+# instantiated harness (the decisive differentiator over snapshot engines).
+#
+# Only *.jinja files are rendered (suffix stripped on generation); every other
+# file in the repo is copied verbatim, so the harness's own contracts, scripts,
+# agents, and gates travel unchanged and the template repo keeps passing its own
+# gates. The one file a clone then edits by hand is harness.config.json.
+
+_templates_suffix: ".jinja"
+_answers_file: ".copier-answers.yml"
+_subdirectory: "."
+
+# Files that must never be copied into an instantiated harness.
+_exclude:
+  - "copier.yml"
+  - ".git"
+  - ".github/workflows/*"  # the template's own CI; instances opt in separately
+  - "node_modules"
+  - "**/__pycache__"
+  - "*.pyc"
+  - "PROGRESS.md"            # the template's build log, not the instance's
+  - "COMPLETION-CRITERIA.md"
+  - "IMPLEMENTATION-PLAN.md"
+
+# Instantiation Q&A.
+project_name:
+  type: str
+  help: "Name of your research harness"
+  default: "research-harness"
+
+author_name:
+  type: str
+  help: "Your name or organization (the harness owner)"
+  default: "zircote"
+
+topic_id:
+  type: str
+  help: "The id of your first research topic (kebab-case)"
+  default: "example-topic"
+
+topic_title:
+  type: str
+  help: "A human-readable title for that topic"
+  default: "Example research topic"
