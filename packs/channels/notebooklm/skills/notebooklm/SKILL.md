@@ -15,15 +15,6 @@ so internal references never enter the output.
 
 This is an **optional** channel. It depends on the external [`nlm` CLI](https://github.com/) being installed and authenticated. If `nlm` is unavailable, degrade gracefully (see below).
 
-## Dependency Check (run first)
-
-```bash
-command -v nlm >/dev/null 2>&1 || { echo "nlm CLI not installed — this channel is unavailable. Install nlm and run 'nlm login', then retry."; exit 0; }
-nlm login --check || { echo "nlm not authenticated. Run '! nlm login' and retry."; exit 0; }
-```
-
-If either check fails, report the install/auth step and stop — do not error.
-
 ## Phase 0: Resolve the Artifact
 
 1. Resolve `<artifact-path>` to the synthesized deliverable Markdown file. If omitted, glob the topic's output directory for the rendered report artifact and ask which to render if more than one is found.
@@ -42,7 +33,16 @@ Infer the most impactful subset from the artifact's structure (headings, tables,
 | Video | Strong narrative arc | `nlm video create <nb> --focus "<focus>" --confirm` |
 | Mind map | Complex entity taxonomy | `nlm mindmap create <nb> --title "<title>" --confirm` |
 
-`--only <type>` restricts the plan to one asset type. On update runs, refresh only assets whose source sections changed (unless `--force`). Output a numbered plan, then execute without asking for approval.
+`--only <type>` restricts the plan to one asset type. On update runs, refresh only assets whose source sections changed (unless `--force`). Output a numbered plan, then proceed to the dependency check before executing.
+
+## Dependency Check (before executing any nlm operations)
+
+```bash
+command -v nlm >/dev/null 2>&1 || { echo "nlm CLI not installed — this channel is unavailable. Install nlm and run 'nlm login', then retry."; exit 0; }
+nlm login --check || { echo "nlm not authenticated. Run 'nlm login' and retry."; exit 0; }
+```
+
+If either check fails, report the install/auth step and stop — do not error. The plan produced in Phase 1 is still visible to the user so they know what will run once nlm is available.
 
 ## Phase 2: Notebook + Sources
 
