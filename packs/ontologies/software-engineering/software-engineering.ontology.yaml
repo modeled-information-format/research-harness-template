@@ -11,7 +11,7 @@
 
 ontology:
   id: software-engineering
-  version: "0.1.0"
+  version: "0.2.0"
   description: "Software engineering domain ontology"
   extends:
     - mif-base
@@ -309,6 +309,98 @@ entity_types:
             type: object
         downtime_required:
           type: boolean
+
+  - name: security-threat
+    description: "A security threat, attack class, or vulnerability affecting the software lifecycle"
+    base: semantic
+    traits:
+      - cited
+    schema:
+      required:
+        - threat_name
+        - attack_vector
+      properties:
+        threat_name:
+          type: string
+        attack_vector:
+          type: string
+          description: "How the threat is exploited"
+        impact:
+          type: string
+          description: "What an attacker gains or breaks"
+        mitigation_summary:
+          type: string
+          description: "Primary defenses against this threat"
+        references:
+          type: array
+          items:
+            type: string
+
+  - name: security-framework
+    description: "A security or assurance framework, taxonomy, or standard (e.g. OWASP Top 10, MITRE ATLAS, SLSA, NIST SSDF)"
+    base: semantic
+    traits:
+      - cited
+    schema:
+      required:
+        - framework_name
+        - scope
+      properties:
+        framework_name:
+          type: string
+        scope:
+          type: string
+          description: "What the framework governs (e.g. application risk, supply-chain integrity, adversary TTPs)"
+        maintainer:
+          type: string
+          description: "Organization that maintains the framework"
+        relationship:
+          type: string
+          description: "How it relates to or composes with other frameworks"
+
+  - name: compliance-regulation
+    description: "A law, regulation, or government mandate bearing on secure software development"
+    base: semantic
+    traits:
+      - cited
+    schema:
+      required:
+        - regulation_name
+        - jurisdiction
+      properties:
+        regulation_name:
+          type: string
+        jurisdiction:
+          type: string
+          description: "Governing jurisdiction (e.g. EU, US federal)"
+        key_obligations:
+          type: string
+          description: "Core obligations the regulation imposes"
+        effective_dates:
+          type: string
+          description: "Relevant entry-into-force or compliance deadlines"
+
+  - name: adoption-trend
+    description: "A momentum, maturation, or standardization signal in the direction of travel"
+    base: semantic
+    traits:
+      - cited
+    schema:
+      required:
+        - trend_name
+        - direction
+      properties:
+        trend_name:
+          type: string
+        direction:
+          type: string
+          description: "Where the trend is heading"
+        evidence:
+          type: string
+          description: "Signals supporting the trend"
+        maturity:
+          type: string
+          description: "How established the trend is (e.g. emerging, mainstream)"
 
 # Traits (Mixins)
 traits:

@@ -40,12 +40,6 @@
       "verbatim": true
     },
     {
-      "path": "packs/ontologies/software-engineering/software-engineering.ontology.yaml",
-      "upstream": "ontologies/examples/software-engineering.ontology.yaml",
-      "sha256": "615bbeb4ef1b36565b666de71e9007233cf133505143964c6b6ba72ff0c82df4",
-      "verbatim": true
-    },
-    {
       "path": "packs/ontologies/biology-research-lab/biology-research-lab.ontology.yaml",
       "upstream": "ontologies/examples/biology-research-lab.ontology.yaml",
       "sha256": "c10d8c14ba29d0f14a4bd5aab6f72938e0346bb5c248fe796b5d10233e5c7a50",
