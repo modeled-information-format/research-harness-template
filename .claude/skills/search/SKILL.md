@@ -1,4 +1,5 @@
 ---
+name: search
 description: "Search the MIF research index — find findings by free-text query or by structured filters over the index fields (dimension, tags, namespace, verdict). Use this skill when the user wants to find research findings, look up what is known about a subject, query findings, or asks 'what do I have on X', 'find findings about Y', 'search research for Z', 'what research', 'what findings'. Reads the projected index, not raw tag files."
 version: 1.0.0
 argument-hint: "<query> [--lex|--sem] [--tag <tag>] [--namespace <ns>] [--dimension <dim>] [--verdict <v>] [--limit <N>]"

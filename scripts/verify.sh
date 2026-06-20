@@ -147,6 +147,25 @@ gate_m2() {
     bad "skill discovery problems: ${bad_skill}${nested:+ nested:$nested}"
   fi
 
+  # 2c-fm. EVERY SKILL.md in the repo (core skills AND pack-plugin skills) must
+  #        carry complete frontmatter: a `name:` matching its skill directory, a
+  #        `description:`, and a `version:`. (A prior gap let skills ship without
+  #        `name:` because the discovery check above only looked for description.)
+  local f fm_bad=""
+  while IFS= read -r f; do
+    [ -z "$f" ] && continue
+    local sdir; sdir="$(basename "$(dirname "$f")")"
+    local nm; nm="$(sed -n 's/^name:[[:space:]]*//p' "$f" | head -1 | tr -d '"'"'"' ' )"
+    [ "$nm" = "$sdir" ] || fm_bad="${fm_bad}${f}(name='${nm:-MISSING}'!=${sdir}) "
+    grep -q '^description:' "$f" || fm_bad="${fm_bad}${f}(no-description) "
+    grep -q '^version:' "$f"     || fm_bad="${fm_bad}${f}(no-version) "
+  done < <(find .claude/skills packs -name SKILL.md 2>/dev/null | sort)
+  if [ -z "$fm_bad" ]; then
+    ok "every SKILL.md has complete frontmatter (name matches dir, description, version)"
+  else
+    bad "incomplete skill frontmatter: $fm_bad"
+  fi
+
   # 2d. Bundled hooks referenced by settings.json exist and are executable.
   local missing_hook=""
   for h in .claude/hooks/markdown/md_guard.py \
