@@ -86,13 +86,15 @@ the truncation. For each chunk:
 
 1. Read the chunk content.
 2. Apply the requested `DIMENSION` lens and the session goal to extract findings.
-3. Write each finding as a complete MIF memory unit under `REPORTS_DIR` (one JSON
-   file per finding), validated against `schemas/findings.schema.json`: a MIF
-   identity, `title`/`content`/`summary`/`tags`, `citations[]` pointing at
-   `SOURCE`, and **`extensions.harness.dimension` set to the spawn-prompt
-   `DIMENSION`** (you finalize the finding — there is no calling analyst to do it).
-   Leave `extensions.harness.verification` to the falsification gate (never invent
-   a verdict). Do NOT carry any fixed domain-specific fields.
+3. Write each finding as a MIF memory unit under `REPORTS_DIR` (one JSON file per
+   finding) — you finalize it yourself: a MIF identity, `title`/`content`/
+   `summary`/`tags`, provenance, `citations[]` pointing at `SOURCE`, and
+   **`extensions.harness.dimension` set to the spawn-prompt `DIMENSION`**. Exactly
+   like the dimension-analyst, emit only your half of the contract: do NOT write
+   `extensions.harness.verification` — the falsification gate stamps the verdict
+   afterward. Validate the structure you are responsible for (it becomes fully
+   `schemas/findings.schema.json`-valid once the gate adds the verdict). Do NOT
+   carry any fixed domain-specific fields.
 4. Note any references to content likely held in another chunk.
 
 ### Step 6: Collect results
