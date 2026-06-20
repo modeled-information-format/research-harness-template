@@ -147,6 +147,25 @@ gate_m2() {
     bad "skill discovery problems: ${bad_skill}${nested:+ nested:$nested}"
   fi
 
+  # 2c-fm. EVERY SKILL.md in the repo (core skills AND pack-plugin skills) must
+  #        carry complete frontmatter: a `name:` matching its skill directory, a
+  #        `description:`, and a `version:`. (A prior gap let skills ship without
+  #        `name:` because the discovery check above only looked for description.)
+  local f fm_bad=""
+  while IFS= read -r f; do
+    [ -z "$f" ] && continue
+    local sdir; sdir="$(basename "$(dirname "$f")")"
+    local nm; nm="$(sed -n 's/^name:[[:space:]]*//p' "$f" | head -1 | tr -d '"'"'"' ' )"
+    [ "$nm" = "$sdir" ] || fm_bad="${fm_bad}${f}(name='${nm:-MISSING}'!=${sdir}) "
+    grep -q '^description:' "$f" || fm_bad="${fm_bad}${f}(no-description) "
+    grep -q '^version:' "$f"     || fm_bad="${fm_bad}${f}(no-version) "
+  done < <(find .claude/skills packs -name SKILL.md 2>/dev/null | sort)
+  if [ -z "$fm_bad" ]; then
+    ok "every SKILL.md has complete frontmatter (name matches dir, description, version)"
+  else
+    bad "incomplete skill frontmatter: $fm_bad"
+  fi
+
   # 2d. Bundled hooks referenced by settings.json exist and are executable.
   local missing_hook=""
   for h in .claude/hooks/markdown/md_guard.py \
@@ -297,52 +316,51 @@ gate_m4() {
 gate_m5() {
   info "Milestone 5 — Packs"
 
-  # 5a. Every bundled pack is a plugin: plugin.json validates against the pack
-  #     contract and the pack has a flat skills/ dir.
-  local p pbad=""
-  for p in market-research trend-modeling reports channels; do
-    local mf="packs/$p/.claude-plugin/plugin.json"
-    if [ -f "$mf" ] && ajv_plain schemas/pack.schema.json "$mf" \
-       && [ -d "packs/$p/skills" ] \
-       && [ -n "$(find "packs/$p/skills" -mindepth 2 -name SKILL.md 2>/dev/null)" ]; then :; else
-      pbad="${pbad}${p} "
+  # 5a. Every bundled SKILL is its own plugin (packs/<pack>/<skill>/): each
+  #     plugin.json validates against the pack contract and has a flat skills/ dir.
+  local mf pbad="" pcount=0
+  while IFS= read -r mf; do
+    [ -z "$mf" ] && continue
+    pcount=$((pcount+1))
+    local dir; dir="$(dirname "$(dirname "$mf")")"   # packs/<pack>/<skill>
+    if ajv_plain schemas/pack.schema.json "$mf" \
+       && [ -n "$(find "$dir/skills" -mindepth 2 -maxdepth 2 -name SKILL.md 2>/dev/null)" ]; then :; else
+      pbad="${pbad}${dir} "
     fi
-  done
-  if [ -z "$pbad" ]; then
-    ok "four bundled packs are valid plugins (manifest + flat skills)"
+  done < <(find packs -path '*/.claude-plugin/plugin.json' | sort)
+  if [ -z "$pbad" ] && [ "$pcount" -ge 1 ]; then
+    ok "every bundled skill is its own plugin ($pcount), each a valid manifest + flat skills/"
   else
-    bad "invalid/incomplete packs: $pbad"
+    bad "invalid/incomplete per-skill plugins: ${pbad:-none found}"
   fi
 
-  # 5b. Skills are flat within each pack (skills/<name>/SKILL.md, no grouping).
+  # 5b. Skills are flat within each plugin (packs/<pack>/<skill>/skills/<skill>/SKILL.md).
   local nested
-  nested=$(find packs/*/skills -mindepth 2 -name SKILL.md 2>/dev/null | grep -vE '^packs/[^/]+/skills/[^/]+/SKILL\.md$' || true)
+  nested=$(find packs -mindepth 4 -name SKILL.md 2>/dev/null | grep -vE '^packs/[^/]+/[^/]+/skills/[^/]+/SKILL\.md$' || true)
   if [ -z "$nested" ]; then
-    ok "pack skills are flat (packs/<pack>/skills/<name>/SKILL.md)"
+    ok "every plugin's skill is flat (packs/<pack>/<skill>/skills/<skill>/SKILL.md)"
   else
-    bad "non-flat pack skills: $nested"
+    bad "non-flat plugin skills: $nested"
   fi
 
-  # 5c. Enabling a pack through the manifest adds its namespaced skills to Claude
-  #     Code's native enabledPlugins (settings.json); disabling removes them.
-  #     Proven on temp config + temp settings copies (no mutation of the real ones).
+  # 5c. Enabling a plugin through the manifest adds its skill to Claude Code's
+  #     native enabledPlugins (settings.json); disabling removes it. Proven on a
+  #     currently-disabled plugin (competitive-analysis), on temp copies.
   local T; T=$(mktemp -d)
   cp .claude/settings.json "$T/settings-on.json"
   cp .claude/settings.json "$T/settings-off.json"
-  jq '(.packs[] | select(.name=="market-research") | .enabled) |= true' harness.config.json > "$T/on.cfg.json"
-  jq '(.packs[] | select(.name=="market-research") | .enabled) |= false' harness.config.json > "$T/off.cfg.json"
+  jq '(.packs[] | select(.name=="competitive-analysis") | .enabled) |= true' harness.config.json > "$T/on.cfg.json"
+  jq '(.packs[] | select(.name=="competitive-analysis") | .enabled) |= false' harness.config.json > "$T/off.cfg.json"
   scripts/sync-packs.sh "$T/on.cfg.json"  "$T/on.json"  "$T/settings-on.json"  >/dev/null 2>&1
   scripts/sync-packs.sh "$T/off.cfg.json" "$T/off.json" "$T/settings-off.json" >/dev/null 2>&1
   local skills_added plugin_on plugin_off
-  # the namespaced skills appear in the resolved set...
-  skills_added=$(jq -r '[.packs[]|select(.name=="market-research")|.skills[]] | index("market-research:competitive-analysis") != null' "$T/on.json" 2>/dev/null)
-  # ...and the pack is in / out of Claude Code's NATIVE enabledPlugins.
-  plugin_on=$(jq -r '.enabledPlugins | has("market-research@research-harness")' "$T/settings-on.json" 2>/dev/null)
-  plugin_off=$(jq -r '.enabledPlugins | has("market-research@research-harness") | not' "$T/settings-off.json" 2>/dev/null)
+  skills_added=$(jq -r '[.packs[]|select(.name=="competitive-analysis")|.skills[]] | index("competitive-analysis") != null' "$T/on.json" 2>/dev/null)
+  plugin_on=$(jq -r '.enabledPlugins | has("competitive-analysis@research-harness")' "$T/settings-on.json" 2>/dev/null)
+  plugin_off=$(jq -r '.enabledPlugins | has("competitive-analysis@research-harness") | not' "$T/settings-off.json" 2>/dev/null)
   if [ "$skills_added" = "true" ] && [ "$plugin_on" = "true" ] && [ "$plugin_off" = "true" ]; then
-    ok "enabling a pack adds its namespaced skills to native enabledPlugins; disabling removes them"
+    ok "enabling a plugin adds its skill to native enabledPlugins; disabling removes it"
   else
-    bad "pack toggle failed (skills_added=$skills_added plugin_on=$plugin_on plugin_off=$plugin_off)"
+    bad "plugin toggle failed (skills_added=$skills_added plugin_on=$plugin_on plugin_off=$plugin_off)"
   fi
 
   # 5d. An external/private plugin is ingested as a pack via the manifest and
@@ -360,15 +378,26 @@ gate_m5() {
   fi
   rm -rf "$T"
 
-  # 5e. Bundled packs are registered in the marketplace.
-  local m mmiss=""
-  for m in market-research trend-modeling reports channels; do
-    jq -e --arg n "$m" '.plugins | any(.name == $n)' .claude-plugin/marketplace.json >/dev/null 2>&1 || mmiss="${mmiss}${m} "
-  done
-  if [ -z "$mmiss" ]; then
-    ok "all bundled packs registered in marketplace.json"
+  # 5e. Every bundled per-skill plugin is registered in the marketplace, and its
+  #     source path resolves to a real plugin.json.
+  local reg_ok
+  reg_ok=$(python3 - <<'PY'
+import json, os
+mk = json.load(open(".claude-plugin/marketplace.json"))
+disk = set()
+for root,_,files in os.walk("packs"):
+    if "plugin.json" in files and root.endswith(".claude-plugin"):
+        disk.add(os.path.dirname(root))            # packs/<pack>/<skill>
+listed = {p["source"].lstrip("./") for p in mk.get("plugins", [])}
+missing_from_market = disk - listed
+broken_source = {s for s in listed if not os.path.isfile(os.path.join(s, ".claude-plugin", "plugin.json"))}
+print("ok" if not missing_from_market and not broken_source and disk else f"bad missing={missing_from_market} broken={broken_source}")
+PY
+)
+  if [ "$reg_ok" = "ok" ]; then
+    ok "every per-skill plugin is registered in marketplace.json with a resolving source"
   else
-    bad "packs missing from marketplace.json: $mmiss"
+    bad "marketplace registration mismatch: $reg_ok"
   fi
 }
 

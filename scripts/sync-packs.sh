@@ -35,13 +35,23 @@ cfg_path, out_path, settings_path, market = sys.argv[1:5]
 cfg = json.load(open(cfg_path))
 enabled = [p for p in cfg.get("packs", []) if p.get("enabled")]
 
+# Each bundled plugin is one skill nested under its pack (packs/<pack>/<skill>/);
+# resolve its directory from the marketplace's source path by plugin name rather
+# than assuming packs/<name>/.
+try:
+    market_doc = json.load(open(".claude-plugin/marketplace.json"))
+    src_by_name = {p["name"]: p.get("source", "") for p in market_doc.get("plugins", [])}
+except (OSError, ValueError):
+    src_by_name = {}
+
 packs, enabled_plugins = [], {}
 for p in enabled:
     name = p["name"]
     src = p.get("source")
     enabled_plugins[f"{name}@{market}"] = True
     if src == "bundled":
-        mf = f"packs/{name}/.claude-plugin/plugin.json"
+        base = src_by_name.get(name, f"packs/{name}").lstrip("./")
+        mf = f"{base}/.claude-plugin/plugin.json"
         entry = {"name": name, "source": "bundled"}
         try:
             m = json.load(open(mf))

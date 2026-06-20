@@ -4,29 +4,84 @@
     "name": "zircote"
   },
   "metadata": {
-    "description": "Bundled packs for the research harness. Each pack is a Claude Code plugin under packs/<name>/; the harness.config.json packs[] control plane enables or disables each one.",
+    "description": "Bundled plugins for the research harness. Each SKILL is its own plugin under packs/<pack>/<skill>/ (one plugin per skill), so a clone enables exactly the skills it wants without adopting a whole pack. The harness.config.json packs[] control plane toggles each.",
     "version": "1.0.0"
   },
   "plugins": [
     {
-      "name": "market-research",
-      "source": "./packs/market-research",
-      "description": "Methodology pack: sizing, Porter's, personas, financial, regulatory. Disabled by default."
+      "name": "github-discuss",
+      "source": "./packs/channels/github-discuss",
+      "description": "[channels/channel] Publish a synthesized deliverable to GitHub Discussions \u2014 an announcement of completed research, a Q&A thread about methodology, or a non-canonical observation"
+    },
+    {
+      "name": "github-issues",
+      "source": "./packs/channels/github-issues",
+      "description": "[channels/channel] Convert a synthesized deliverable into actionable GitHub issues \u2014 atomize its recommendations into sprint-sized, well-structured issues with acceptance criteria and evidence-justified priority"
+    },
+    {
+      "name": "notebooklm",
+      "source": "./packs/channels/notebooklm",
+      "description": "[channels/channel] Render a synthesized deliverable to NotebookLM assets \u2014 audio deep-dive, slide deck, infographics, video, mind map"
+    },
+    {
+      "name": "pdf",
+      "source": "./packs/channels/pdf",
+      "description": "[channels/channel] Render a synthesized deliverable to a styled PDF \u2014 GitHub-flavored Markdown, a generated title page, a table of contents, and rasterized Mermaid diagrams"
+    },
+    {
+      "name": "competitive-analysis",
+      "source": "./packs/market-research/competitive-analysis",
+      "description": "[market-research/methodology] Use when the user asks to \"analyze competitors\", \"map competitive landscape\", \"Porter's 5 Forces analysis\", \"competitor comparison\", \"competitive positioning\", \"identify competitors\", \"competitive intelligence\", or needs competitor research"
+    },
+    {
+      "name": "customer-research",
+      "source": "./packs/market-research/customer-research",
+      "description": "[market-research/methodology] Use when the user asks to \"understand customers\", \"customer research\", \"user personas\", \"customer needs analysis\", \"buyer journey mapping\", \"voice of customer\", \"customer segmentation\", \"user research\", or needs guidance on customer-discove"
+    },
+    {
+      "name": "financial-analysis",
+      "source": "./packs/market-research/financial-analysis",
+      "description": "[market-research/methodology] Use when the user asks to \"analyze financials\", \"revenue model\", \"unit economics\", \"pricing analysis\", \"cost structure\", \"profitability analysis\", \"financial projections\", \"business model economics\", or needs financial-metric, revenue-analy"
+    },
+    {
+      "name": "market-sizing",
+      "source": "./packs/market-research/market-sizing",
+      "description": "[market-research/methodology] Use when the user asks to \"calculate market size\", \"TAM SAM SOM analysis\", \"estimate market opportunity\", \"market sizing\", \"total addressable market\", \"serviceable market\", \"market potential\", or needs market-size estimation methodologies,"
+    },
+    {
+      "name": "regulatory-review",
+      "source": "./packs/market-research/regulatory-review",
+      "description": "[market-research/methodology] Use when the user asks to \"analyze regulations\", \"regulatory landscape\", \"compliance requirements\", \"legal considerations\", \"regulatory risk\", \"industry regulations\", \"compliance analysis\", \"regulatory trends\", or needs guidance on regulato"
+    },
+    {
+      "name": "academic",
+      "source": "./packs/reports/academic",
+      "description": "[reports/genre] Genre template for a formal research report (abstract, background, method, findings, discussion, references) with formal citations"
+    },
+    {
+      "name": "briefing",
+      "source": "./packs/reports/briefing",
+      "description": "[reports/genre] Genre template for a one-page briefing or standup update (what's new, why it matters, what's next)"
+    },
+    {
+      "name": "engineering",
+      "source": "./packs/reports/engineering",
+      "description": "[reports/genre] Genre template for a design / evaluation report (problem, options, decision, trade-offs, implementation notes)"
+    },
+    {
+      "name": "exec-summary",
+      "source": "./packs/reports/exec-summary",
+      "description": "[reports/genre] Genre template for a 1-2 page decision-oriented executive summary (BLUF, key findings, recommendation, risks)"
+    },
+    {
+      "name": "trend-analysis",
+      "source": "./packs/reports/trend-analysis",
+      "description": "[reports/genre] Genre template for a trajectory report (trajectory, signals, scenarios over time)"
     },
     {
       "name": "trend-modeling",
-      "source": "./packs/trend-modeling",
-      "description": "Methodology pack: three-valued INC/DEC/CONST trend logic under data scarcity."
-    },
-    {
-      "name": "reports",
-      "source": "./packs/reports",
-      "description": "Genre pack: exec-summary, academic, engineering, trend-analysis, briefing deliverable templates."
-    },
-    {
-      "name": "channels",
-      "source": "./packs/channels",
-      "description": "Channel pack: notebooklm, pdf, github-discuss, github-issues render adapters."
+      "source": "./packs/trend-modeling/trend-modeling",
+      "description": "[trend-modeling/methodology] Use when the user asks to \"model trends with limited data\", \"three-valued logic analysis\", \"scenario generation\", \"transitional graphs\", \"qualitative trend analysis\", \"uncertain data analysis\", \"minimal-information modeling\", or needs trend"
     }
   ]
 }

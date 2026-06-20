@@ -1,0 +1,18 @@
+{
+  "name": "competitive-analysis",
+  "version": "1.0.0",
+  "kind": "methodology",
+  "description": "Use when the user asks to \"analyze competitors\", \"map competitive landscape\", \"Porter's 5 Forces analysis\", \"competitor comparison\", \"competitive positioning\", \"identify competitors\", \"competitive intelligence\", or needs competitor research",
+  "license": "MIT",
+  "author": {
+    "name": "zircote"
+  },
+  "provides": {
+    "skills": [
+      "competitive-analysis"
+    ],
+    "dimensions": [
+      "competitive"
+    ]
+  }
+}

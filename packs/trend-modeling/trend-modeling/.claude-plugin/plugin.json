@@ -1,0 +1,18 @@
+{
+  "name": "trend-modeling",
+  "version": "1.0.0",
+  "kind": "methodology",
+  "description": "Use when the user asks to \"model trends with limited data\", \"three-valued logic analysis\", \"scenario generation\", \"transitional graphs\", \"qualitative trend analysis\", \"uncertain data analysis\", \"minimal-information modeling\", or needs trend",
+  "license": "MIT",
+  "author": {
+    "name": "zircote"
+  },
+  "provides": {
+    "skills": [
+      "trend-modeling"
+    ],
+    "dimensions": [
+      "trend"
+    ]
+  }
+}

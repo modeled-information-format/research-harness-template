@@ -32,9 +32,15 @@ plugin object (`{type, url, ref}`). See `harness.config.json` for a sample.
 ## Pack — `schemas/pack.schema.json`
 
 A pack is a Claude Code plugin. Required: `name`, `version`, `kind` (one of
-`methodology`, `genre`, `channel`, `ontology`). `provides` namespaces each
-contributed skill as `pack:skill`. The bundled packs are listed in
+`methodology`, `genre`, `channel`, `ontology`). `provides.skills` lists the
+plugin's skills. The bundled plugins are listed in
 `.claude-plugin/marketplace.json`.
+
+**One plugin per skill** (see [pack-structure](../explanation/pack-structure.md)):
+each skill is its own plugin under `packs/<pack>/<skill>/`, so a clone enables
+exactly the skills it wants without adopting a whole pack. The pack directory
+(`packs/reports/`, `packs/market-research/`, …) is a *family container*, not a
+plugin; the plugins are its `<skill>/` subdirectories.
 
 ## Structured Data Protocol
 

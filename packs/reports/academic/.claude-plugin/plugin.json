@@ -1,0 +1,18 @@
+{
+  "name": "academic",
+  "version": "1.0.0",
+  "kind": "genre",
+  "description": "Genre template for a formal research report (abstract, background, method, findings, discussion, references) with formal citations",
+  "license": "MIT",
+  "author": {
+    "name": "zircote"
+  },
+  "provides": {
+    "skills": [
+      "academic"
+    ],
+    "genres": [
+      "academic"
+    ]
+  }
+}

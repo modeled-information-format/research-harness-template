@@ -19,7 +19,9 @@ The repository has four layers, all present on clone (design spec §5):
 3. **Harness services** — multi-topic registry, knowledge graph, search,
    discovery, reindex — operating directly on the MIF substrate.
 4. **Outputs** — blog and book are first-class; other channels and all
-   deliverable genres arrive as optional **packs** (`packs/`).
+   deliverable genres arrive as optional **plugins** — one per skill under
+   `packs/<family>/<skill>/`, enabled selectively (see
+   [docs/explanation/pack-structure.md](docs/explanation/pack-structure.md)).
 
 Cross-cutting: bundled enforcement hooks (`.claude/hooks/`), bundled docs
 (`docs/`, Diataxis), and `evals/`.

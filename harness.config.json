@@ -11,18 +11,104 @@
     }
   ],
   "dimensions": [
-    { "id": "technical", "description": "Technical feasibility, architecture, and implementation evidence." },
-    { "id": "landscape", "description": "Comparable prior art, alternatives, and competing approaches." },
-    { "id": "trajectory", "description": "Direction of travel: adoption, standards, and momentum signals." }
+    {
+      "id": "technical",
+      "description": "Technical feasibility, architecture, and implementation evidence."
+    },
+    {
+      "id": "landscape",
+      "description": "Comparable prior art, alternatives, and competing approaches."
+    },
+    {
+      "id": "trajectory",
+      "description": "Direction of travel: adoption, standards, and momentum signals."
+    }
   ],
   "outputs": [
-    { "channel": "blog", "enabled": true },
-    { "channel": "book", "enabled": true }
+    {
+      "channel": "blog",
+      "enabled": true
+    },
+    {
+      "channel": "book",
+      "enabled": true
+    }
   ],
   "packs": [
-    { "name": "market-research", "enabled": false, "source": "bundled" },
-    { "name": "trend-modeling", "enabled": false, "source": "bundled" },
-    { "name": "reports", "enabled": true, "source": "bundled" },
-    { "name": "channels", "enabled": false, "source": "bundled" }
+    {
+      "name": "github-discuss",
+      "enabled": false,
+      "source": "bundled"
+    },
+    {
+      "name": "github-issues",
+      "enabled": false,
+      "source": "bundled"
+    },
+    {
+      "name": "notebooklm",
+      "enabled": false,
+      "source": "bundled"
+    },
+    {
+      "name": "pdf",
+      "enabled": false,
+      "source": "bundled"
+    },
+    {
+      "name": "competitive-analysis",
+      "enabled": false,
+      "source": "bundled"
+    },
+    {
+      "name": "customer-research",
+      "enabled": false,
+      "source": "bundled"
+    },
+    {
+      "name": "financial-analysis",
+      "enabled": false,
+      "source": "bundled"
+    },
+    {
+      "name": "market-sizing",
+      "enabled": false,
+      "source": "bundled"
+    },
+    {
+      "name": "regulatory-review",
+      "enabled": false,
+      "source": "bundled"
+    },
+    {
+      "name": "academic",
+      "enabled": true,
+      "source": "bundled"
+    },
+    {
+      "name": "briefing",
+      "enabled": true,
+      "source": "bundled"
+    },
+    {
+      "name": "engineering",
+      "enabled": true,
+      "source": "bundled"
+    },
+    {
+      "name": "exec-summary",
+      "enabled": true,
+      "source": "bundled"
+    },
+    {
+      "name": "trend-analysis",
+      "enabled": true,
+      "source": "bundled"
+    },
+    {
+      "name": "trend-modeling",
+      "enabled": false,
+      "source": "bundled"
+    }
   ]
 }

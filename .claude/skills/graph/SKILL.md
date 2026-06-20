@@ -1,4 +1,5 @@
 ---
+name: graph
 description: "Build, refresh, and query the MIF-native knowledge graph — the typed substrate of concepts and entities (all urn:mif: ids) linked by MIF relationships and mentions. Use this skill when the user asks about relationships between findings, what connects two concepts or entities, entity overlap, or wants a visual map. Triggers on 'what connects', 'how are these related', 'show graph', 'knowledge graph', 'visualize research', 'rebuild the graph', 'entity overlap', 'shared between'. The graph is derived from MIF entities and relations, never from tags."
 version: 1.0.0
 argument-hint: "[--build] [--viz] [--stats] [--node <urn:mif:id>] [--between <id1> <id2>] [--kind concept|entity]"

@@ -1,0 +1,18 @@
+{
+  "name": "notebooklm",
+  "version": "1.0.0",
+  "kind": "channel",
+  "description": "Render a synthesized deliverable to NotebookLM assets \u2014 audio deep-dive, slide deck, infographics, video, mind map",
+  "license": "MIT",
+  "author": {
+    "name": "zircote"
+  },
+  "provides": {
+    "skills": [
+      "notebooklm"
+    ],
+    "channels": [
+      "notebooklm"
+    ]
+  }
+}

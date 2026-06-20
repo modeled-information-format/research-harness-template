@@ -1,0 +1,18 @@
+{
+  "name": "customer-research",
+  "version": "1.0.0",
+  "kind": "methodology",
+  "description": "Use when the user asks to \"understand customers\", \"customer research\", \"user personas\", \"customer needs analysis\", \"buyer journey mapping\", \"voice of customer\", \"customer segmentation\", \"user research\", or needs guidance on customer-discove",
+  "license": "MIT",
+  "author": {
+    "name": "zircote"
+  },
+  "provides": {
+    "skills": [
+      "customer-research"
+    ],
+    "dimensions": [
+      "customer"
+    ]
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "name": "engineering",
+  "version": "1.0.0",
+  "kind": "genre",
+  "description": "Genre template for a design / evaluation report (problem, options, decision, trade-offs, implementation notes)",
+  "license": "MIT",
+  "author": {
+    "name": "zircote"
+  },
+  "provides": {
+    "skills": [
+      "engineering"
+    ],
+    "genres": [
+      "engineering"
+    ]
+  }
+}

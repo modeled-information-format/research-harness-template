@@ -1,13 +1,13 @@
 {
-  "name": "reports",
+  "name": "exec-summary",
   "version": "1.0.0",
-  "description": "Deliverable-genre pack: section-structure templates (exec-summary, academic, engineering, trend-analysis, briefing) that render through any channel.",
+  "description": "Genre template for a 1-2 page decision-oriented executive summary (BLUF, key findings, recommendation, risks).",
   "kind": "genre",
   "license": "MIT",
   "author": { "name": "zircote" },
-  "keywords": ["genre", "reports", "deliverables"],
+  "keywords": ["genre", "exec-summary", "deliverable"],
   "provides": {
-    "skills": ["reports:exec-summary", "reports:academic", "reports:engineering", "reports:trend-analysis", "reports:briefing"],
-    "genres": ["exec-summary", "academic", "engineering", "trend-analysis", "briefing"]
+    "skills": ["exec-summary"],
+    "genres": ["exec-summary"]
   }
 }

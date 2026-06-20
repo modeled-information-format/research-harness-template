@@ -85,6 +85,10 @@
     ]
   },
   "enabledPlugins": {
-    "reports@research-harness": true
+    "academic@research-harness": true,
+    "briefing@research-harness": true,
+    "engineering@research-harness": true,
+    "exec-summary@research-harness": true,
+    "trend-analysis@research-harness": true
   }
 }
