@@ -1,0 +1,11 @@
+{
+  "name": "csi-5w1h",
+  "version": "1.0.0",
+  "kind": "ontology",
+  "description": "CSI 5W1H ontology for classifying HMH Customer Technical Support tickets across 11 analytical dimensions using the Who/What/When/Where/Why/H",
+  "provides": {
+    "ontologies": [
+      "csi-5w1h"
+    ]
+  }
+}

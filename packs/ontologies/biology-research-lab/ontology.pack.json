@@ -1,0 +1,11 @@
+{
+  "name": "biology-research-lab",
+  "version": "0.1.0",
+  "kind": "ontology",
+  "description": "Biology research lab ontology with full lifecycle",
+  "provides": {
+    "ontologies": [
+      "biology-research-lab"
+    ]
+  }
+}

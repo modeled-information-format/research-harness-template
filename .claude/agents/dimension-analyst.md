@@ -213,6 +213,32 @@ never visible to reconcile):
 mv "$S" "$REPORTS_DIR/findings/finding-<slug>.json"
 ```
 
+### Step 5b — Classify against the topic's ontologies (SPEC §8c)
+
+**Classify every finding** — this applies to every topic, always. The label space is
+the generic core (`mif-generic`: `concept`, `person`, `organization`, `technology`,
+`file` — enabled for every topic) **plus** any domain ontology the topic binds. Even a
+core-only topic (no binding) classifies findings into the generic types. Inspect the
+available types and, if the finding clearly *is* one of them, set the MIF `entity`
+block (`{name, entity_type, …domain fields}`); if the type name exists in both the
+generic core and a bound domain ontology, also set `ontology.{id,version}` to
+disambiguate. Then re-validate and atomically rewrite the finding:
+
+```bash
+# Generic core types are ALWAYS available; bound domain types are added when present.
+for o in $(jq -r '.ontologies[]|select(.core)|.source' .claude/enabled-packs.json) \
+         $(jq -r --arg t "$TOPIC_SLUG" '.topics[]|select(.id==$t)|.ontologies[]?' harness.config.json \
+            | while read -r b; do jq -r --arg o "${b%@*}" '.ontologies[]|select(.id==$o)|.source' .claude/enabled-packs.json; done); do
+  bash .claude/skills/ontology-manager/scripts/inspect_ontology.sh "$o" --section entities
+done
+```
+
+Stamp only a type you are confident in (entity fields must satisfy that type's declared
+schema — required fields and any enum/pattern). If no type fits, **leave the finding
+untyped** — that is valid; do not invent a mapping. The deterministic
+`scripts/resolve-ontology.sh` (run by the orchestrator) validates and records every
+mapping; a finding you stamp with a type that does not resolve will fail that gate.
+
 ## Step 6 — Self-reflection (max 2 refinement iterations)
 
 Before signaling completion, verify research quality:

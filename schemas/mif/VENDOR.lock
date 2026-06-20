@@ -1,0 +1,109 @@
+{
+  "source": "github.com/zircote/MIF",
+  "commit": "031ad2a",
+  "note": "Vendored MIF ontology contract + ontologies (yaml source of truth, verbatim, checksum-gated) and the ontology-manager skill (adapted: PyPI-stripped, harness-grounded). Registry JSON is projected from yaml on the fly (yq->json->ajv), never committed.",
+  "files": [
+    {
+      "path": "schemas/mif/ontology.schema.json",
+      "upstream": "schema/ontology/ontology.schema.json",
+      "sha256": "e16ea5aaaa3188ab41bdf8a05da25b4cb351d7f6d48e3493e6dce38349200587",
+      "verbatim": true
+    },
+    {
+      "path": "schemas/mif/ontology.context.jsonld",
+      "upstream": "schema/ontology/ontology.context.jsonld",
+      "sha256": "50c12542044aa540ddfb236c405e46642c2e469543b2d5def9865b01468e6445",
+      "verbatim": true
+    },
+    {
+      "path": "schemas/ontologies/mif-base/0.1.0.yaml",
+      "upstream": "ontologies/mif-base.ontology.yaml",
+      "sha256": "76a91d7815b95012277c4c8f734b7a9ec1403d09fe74e4cae9b6ad5d8a57beb1",
+      "verbatim": true
+    },
+    {
+      "path": "schemas/ontologies/shared-traits/0.1.0.yaml",
+      "upstream": "ontologies/shared-traits.ontology.yaml",
+      "sha256": "438ddd94e23eaa8c897a7daa363658e2e4c51cc20b2f2d6007757cacc330683f",
+      "verbatim": true
+    },
+    {
+      "path": "packs/ontologies/regenerative-agriculture/regenerative-agriculture.ontology.yaml",
+      "upstream": "ontologies/examples/regenerative-agriculture.ontology.yaml",
+      "sha256": "0cea6c48ea778c48dfb3c4eff0fb1cf262345705ddea4ba6e4c9fbed4bd58e4c",
+      "verbatim": true
+    },
+    {
+      "path": "packs/ontologies/k12-educational-publishing/k12-educational-publishing.ontology.yaml",
+      "upstream": "ontologies/examples/k12-educational-publishing.ontology.yaml",
+      "sha256": "dba76dd7817757f48df255a9e5219bf73c114777003e1fcda468435ae62f3459",
+      "verbatim": true
+    },
+    {
+      "path": "packs/ontologies/software-engineering/software-engineering.ontology.yaml",
+      "upstream": "ontologies/examples/software-engineering.ontology.yaml",
+      "sha256": "615bbeb4ef1b36565b666de71e9007233cf133505143964c6b6ba72ff0c82df4",
+      "verbatim": true
+    },
+    {
+      "path": "packs/ontologies/biology-research-lab/biology-research-lab.ontology.yaml",
+      "upstream": "ontologies/examples/biology-research-lab.ontology.yaml",
+      "sha256": "c10d8c14ba29d0f14a4bd5aab6f72938e0346bb5c248fe796b5d10233e5c7a50",
+      "verbatim": true
+    },
+    {
+      "path": "packs/ontologies/backstage/backstage.ontology.yaml",
+      "upstream": "ontologies/examples/backstage.ontology.yaml",
+      "sha256": "2681c6f0a7e54303358cc496ca59160a8ccb6060879f4190142038cff45606b1",
+      "verbatim": true
+    },
+    {
+      "path": "packs/ontologies/csi-5w1h/csi-5w1h.ontology.yaml",
+      "upstream": "ontologies/examples/csi-5w1h.ontology.yaml",
+      "sha256": "12f3c512728e5f6af225c89513ce28e0bd641d72cad4f183d8ce6ef94575067c",
+      "verbatim": true
+    },
+    {
+      "path": ".claude/skills/ontology-manager/SKILL.md",
+      "upstream": ".claude/skills/ontology-manager/SKILL.md",
+      "sha256": "bf3c0adb8acdb7d2c582caa67c0646713fa97dd710e2c48c5e83d3e199e7109f",
+      "verbatim": false
+    },
+    {
+      "path": ".claude/skills/ontology-manager/scripts/validate_ontology.sh",
+      "upstream": ".claude/skills/ontology-manager/scripts/validate_ontology.sh",
+      "sha256": "b01abe649e28232fb588faa251f51e86c43124dea4c3e8e932869d1fdca7d1ab",
+      "verbatim": false
+    },
+    {
+      "path": ".claude/skills/ontology-manager/scripts/inspect_ontology.sh",
+      "upstream": ".claude/skills/ontology-manager/scripts/inspect_ontology.sh",
+      "sha256": "5f785163fb7b86d28457b296668880200f7d29fc318ea059473a780af3b9d479",
+      "verbatim": false
+    },
+    {
+      "path": ".claude/skills/ontology-manager/scripts/scaffold_ontology.sh",
+      "upstream": ".claude/skills/ontology-manager/scripts/scaffold_ontology.sh",
+      "sha256": "d3413325eb38c27e4b92d5fd4b62abb1a7080198f975bd593c602581438350e5",
+      "verbatim": false
+    },
+    {
+      "path": ".claude/skills/ontology-manager/scripts/convert_format.sh",
+      "upstream": ".claude/skills/ontology-manager/scripts/convert_format.sh",
+      "sha256": "e45751c09938ae39393a9bef8c78ed14dc08c821eaf4757d2f40ebffb7b290e3",
+      "verbatim": false
+    },
+    {
+      "path": ".claude/skills/ontology-manager/references/schema-reference.md",
+      "upstream": ".claude/skills/ontology-manager/references/schema-reference.md",
+      "sha256": "42ed55f8f433ec6f7bc1732291f79f2ef316da45250659697409b0a008aecae0",
+      "verbatim": false
+    },
+    {
+      "path": "schemas/ontologies/mif-generic/1.0.0.yaml",
+      "upstream": "AUTHORED from mif.schema entity-reference enum (Concept/Person/Organization/Technology/File)",
+      "sha256": "3ee2efa82d97dd6715fdee93e6162365ab9f82beb061828d4175d1b839d7301b",
+      "verbatim": false
+    }
+  ]
+}

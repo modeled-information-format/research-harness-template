@@ -1,0 +1,11 @@
+{
+  "name": "k12-educational-publishing",
+  "version": "0.1.0",
+  "kind": "ontology",
+  "description": "K-12 educational publishing ontology",
+  "provides": {
+    "ontologies": [
+      "k12-educational-publishing"
+    ]
+  }
+}

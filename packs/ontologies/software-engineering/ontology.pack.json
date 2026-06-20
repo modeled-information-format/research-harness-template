@@ -1,0 +1,11 @@
+{
+  "name": "software-engineering",
+  "version": "0.1.0",
+  "kind": "ontology",
+  "description": "Software engineering domain ontology",
+  "provides": {
+    "ontologies": [
+      "software-engineering"
+    ]
+  }
+}

@@ -107,3 +107,31 @@ checkpoint, so a broken toolchain never produces a "re-run everything" plan; cal
 treat a non-zero reconcile as "stop", never "everything remaining". `verify.sh`
 `gate_m11` asserts all of this — including against the real shipped sample session
 and under a broken ajv.
+
+## Ontology — `schemas/mif/ontology.schema.json`
+
+The ontology definition contract, vendored verbatim from MIF (`schemas/mif/VENDOR.lock`
+pins the commit + SHA-256). An ontology declares `entity_types` (each `{name, base,
+schema:{required, properties}}`) and `relationships`. The **registry** is the set of
+vendored ontology YAMLs — core under `schemas/ontologies/` (`mif-generic` built-in
+generic types + `mif-base` scaffolding, always enabled for every topic) and the six
+example **data packs** under `packs/ontologies/<id>/` (disabled by default). JSON is
+projected from the yaml on the fly (`yq -o=json | ajv`); none is committed, so there
+is no drift. `scripts/sync-packs.sh` writes the **catalog** (`.claude/enabled-packs.json`
+`ontologies[]`) = core (always) + the ontologies enabled in `harness.config.json`
+`ontologies[]`. A topic binds ontologies via `topics[].ontologies[]`; only an enabled
+(cataloged) ontology may be bound, and an extended ontology applies **only** to topics
+that bind it.
+
+`scripts/resolve-ontology.sh <finding> [--topic <id>]` is the topical resolver:
+untyped findings pass (recorded `untyped`); a typed finding's `entity_type` must
+resolve to exactly one of the topic's bound ontologies (0 → fail; >1 → needs an
+explicit `ontology.id`), and its `entity` must satisfy that type's schema (additive —
+required fields and declared field constraints enforced, extra fields allowed). The
+mapping is recorded to `reports/<topic>/ontology-map.json`. It fails closed (a missing
+catalog aborts) and is bash-3.2 portable. Classification — stamping a finding's
+`entity_type` — is an upstream agent step (`dimension-analyst`, topic onboarding in
+`/start`); the resolver and `gate_m12` are the deterministic floor. `gate_m12` asserts:
+the contract validates its sample; every registry ontology validates; id@version is
+unique; VENDOR.lock checksums match; the resolver pass/fail matrix; fail-safe; binding
+→ catalog → registry integrity; and the pack-enable path end to end.

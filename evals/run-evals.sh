@@ -86,6 +86,21 @@ run "exempt-channels-declared" bash -c '
   jq -e "[.outputs[]|select(.channel==\"blog\" or .channel==\"book\")|select(.mifExempt==true)]|length==2" harness.config.json >/dev/null &&
   jq -e ".mif.exempt==true" packs/channels/pdf/.claude-plugin/plugin.json >/dev/null'
 
+# 5d. Ontology resolution (SPEC §8c): a finding's entity_type resolves to exactly one
+#     of its topic's bound ontologies and its entity validates (additive); undeclared,
+#     missing-required, and unbound-for-topic fail; untyped and generic-core pass.
+OC="--catalog evals/fixtures/ontology/catalog.json --config evals/fixtures/ontology/config.json"
+run     "ontology-resolve-good"     bash -c "scripts/resolve-ontology.sh evals/fixtures/ontology/good.json    --topic edu  $OC --map \"$TMP/o1.json\""
+run     "ontology-extra-field-ok"   bash -c "scripts/resolve-ontology.sh evals/fixtures/ontology/extra.json   --topic edu  $OC --map \"$TMP/o2.json\""
+run     "ontology-generic-core"     bash -c "scripts/resolve-ontology.sh evals/fixtures/ontology/generic.json --topic bare $OC --map \"$TMP/o3.json\""
+run     "ontology-untyped-ok"       bash -c "scripts/resolve-ontology.sh evals/fixtures/ontology/untyped.json --topic edu  $OC --map \"$TMP/o4.json\""
+run_neg "ontology-undeclared-type"  bash -c "scripts/resolve-ontology.sh evals/fixtures/ontology/undecl.json  --topic edu  $OC --map \"$TMP/o5.json\""
+run_neg "ontology-missing-required" bash -c "scripts/resolve-ontology.sh evals/fixtures/ontology/missing.json --topic edu  $OC --map \"$TMP/o6.json\""
+run_neg "ontology-unbound-for-topic" bash -c "scripts/resolve-ontology.sh evals/fixtures/ontology/good.json   --topic bare $OC --map \"$TMP/o7.json\""
+run_neg "ontology-ambiguous"        bash -c "scripts/resolve-ontology.sh evals/fixtures/ontology/ambiguous.json --topic eng $OC --map \"$TMP/o8.json\""
+run     "ontology-disambiguated"    bash -c "scripts/resolve-ontology.sh evals/fixtures/ontology/disambig.json  --topic eng $OC --map \"$TMP/o9.json\""
+run     "ontology-review-coverage"  bash -c "mkdir -p \"$TMP/rep/edu/findings\" && cp evals/fixtures/ontology/good.json \"$TMP/rep/edu/findings/\" && scripts/ontology-review.sh --topic edu --strict --reports-dir \"$TMP/rep\" $OC"
+
 echo
 if [ "$FAIL" -gt 0 ]; then
   printf '%srun-evals: %d passed, %d FAILED%s\n' "$RED" "$PASS" "$FAIL" "$RST"

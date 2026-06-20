@@ -48,7 +48,25 @@
             "pattern": "^[a-zA-Z0-9_-]+(/[a-zA-Z0-9_-]+)*$",
             "description": "MIF namespace path that owns this topic's memory units."
           },
-          "status": { "type": "string", "enum": ["active", "paused", "archived"] }
+          "status": { "type": "string", "enum": ["active", "paused", "archived"] },
+          "ontologies": {
+            "type": "array",
+            "description": "Per-topic ontology binding (SPEC §8c). Each entry is an ontology id or id@version that MUST be enabled in the top-level `ontologies[]` control plane (the catalog). The vendored core (mif-base) is global to every topic; only ENABLED extended ontologies listed here apply to this topic's findings. Findings under this topic may only be ontology-typed against a bound ontology.",
+            "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]*(@\\d+\\.\\d+\\.\\d+)?$" }
+          }
+        }
+      }
+    },
+    "ontologies": {
+      "type": "array",
+      "description": "Ontology control plane (SPEC §8c): the enable toggle for the vendored ontology data packs under packs/ontologies/. Disabled (default) ontologies are vendored and conformance-validated but are NOT cataloged, so no topic may bind them. sync-packs.sh writes the enabled subset into the catalog (.claude/enabled-packs.json `ontologies[]`); topics[].ontologies may bind only cataloged ids.",
+      "items": {
+        "type": "object",
+        "required": ["id", "enabled"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+          "enabled": { "type": "boolean" }
         }
       }
     },

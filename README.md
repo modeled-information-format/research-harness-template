@@ -25,6 +25,9 @@ The repository has four layers, all present on clone (design spec §5):
    (see [docs/explanation/pack-structure.md](docs/explanation/pack-structure.md)).
    All information in and out of the harness is MIF (see
    [docs/explanation/mif-io-conformance.md](docs/explanation/mif-io-conformance.md)).
+   Findings are typed against per-topic ontologies (an always-on generic core plus
+   optional domain ontology packs), enforced deterministically — see
+   [docs/explanation/ontology-conformance.md](docs/explanation/ontology-conformance.md).
 
 Cross-cutting: bundled enforcement hooks (`.claude/hooks/`), bundled docs
 (`docs/`, Diataxis), and `evals/`.

@@ -1,0 +1,11 @@
+{
+  "name": "backstage",
+  "version": "0.1.0",
+  "kind": "ontology",
+  "description": "Backstage.io software catalog ontology",
+  "provides": {
+    "ontologies": [
+      "backstage"
+    ]
+  }
+}

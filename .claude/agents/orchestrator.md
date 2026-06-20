@@ -208,6 +208,23 @@ recoverable without re-running completed work:
 scripts/reconcile-session.sh "$REPORTS_DIR"   # writes $REPORTS_DIR/state.json + plan
 ```
 
+**Ontology resolution (SPEC §8c).** If the topic binds an ontology
+(`harness.config.json` `topics[].ontologies`), resolve every finding's mapping and
+record it. Findings the analyst left untyped stay untyped (core); a finding whose
+stamped `entity_type` does not resolve against the topic's bound ontologies is a
+real error to fix, not to ignore:
+
+```bash
+for f in "$REPORTS_DIR"/findings/*.json; do
+  [ -e "$f" ] || continue
+  scripts/resolve-ontology.sh "$f" --topic "$TOPIC_SLUG"   # writes $REPORTS_DIR/ontology-map.json
+done
+```
+
+A non-zero exit means an unresolvable/invalid ontology mapping (undeclared type,
+unbound ontology, or an entity missing a required field) — surface it; do not
+proceed as if the finding were typed.
+
 Append to the progress file:
 
 ```markdown

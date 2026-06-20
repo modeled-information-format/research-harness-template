@@ -1,0 +1,22 @@
+{
+  "topics": [
+    {
+      "id": "edu",
+      "namespace": "x/edu",
+      "ontologies": [
+        "k12-educational-publishing"
+      ]
+    },
+    {
+      "id": "bare",
+      "namespace": "x/bare"
+    },
+    {
+      "id": "eng",
+      "namespace": "x/eng",
+      "ontologies": [
+        "software-engineering"
+      ]
+    }
+  ]
+}

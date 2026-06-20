@@ -92,6 +92,44 @@ ajv validate --spec=draft2020 --strict=false \
   -s harness.config.schema.json -d harness.config.json
 ```
 
+### Phase 2b: Identify and incorporate an ontology (SPEC §8c)
+
+Direct the topic to an appropriate ontology so its findings can be classified and
+typed. The vendored core — `mif-generic` (built-in generic types: concept, person,
+organization, technology, file) and `mif-base` (scaffolding) — is **always enabled
+for every topic**, so findings can always be typed generically. Binding a domain
+ontology adds more specific types. The six example data packs under
+`packs/ontologies/` are the bindable domain ontologies — inspect their entity types
+to match the topic's domain:
+
+```bash
+for o in packs/ontologies/*/; do
+  id=$(basename "$o")
+  echo "$id: $(yq -r '[.entity_types[].name] | join(", ")' "$o$id.ontology.yaml" | cut -c1-100)"
+done
+```
+
+Match the topic to the best-fitting ontology (e.g. an education topic →
+`k12-educational-publishing`; a pasture/farm topic → `regenerative-agriculture`;
+software → `software-engineering`). **If the match is ambiguous or none fits, ask
+the user** (AskUserQuestion) — offer the top candidates plus "core only" — rather
+than guessing. Then **incorporate** the chosen ontology: enable its data pack and
+bind it to the topic (jq write, re-validate, then `sync-packs.sh` to catalog it):
+
+```bash
+ONTO=<chosen-id>   # omit this whole step to leave the topic core-only
+jq --arg o "$ONTO" --arg t "$TOPIC" '
+  (.ontologies[] | select(.id == $o) | .enabled) = true
+  | (.topics[] | select(.id == $t) | .ontologies) = [$o]' \
+  harness.config.json > tmp.$$ && mv tmp.$$ harness.config.json
+ajv validate --spec=draft2020 --strict=false -s harness.config.schema.json -d harness.config.json
+scripts/sync-packs.sh   # materializes the enabled ontology into the catalog
+```
+
+A bound ontology must be `enabled` in `ontologies[]` (only enabled ontologies are
+cataloged, and `gate_m12` enforces binding → catalog → registry). Leaving the topic
+core-only is valid — its findings simply stay untyped.
+
 ## Phase 3: Delegate to the orchestrator
 
 Spawn the `orchestrator` agent in `full` mode with the inputs its

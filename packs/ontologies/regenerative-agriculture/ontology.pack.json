@@ -1,0 +1,11 @@
+{
+  "name": "regenerative-agriculture",
+  "version": "0.1.0",
+  "kind": "ontology",
+  "description": "Regenerative agriculture ontology with ecosystem coverage",
+  "provides": {
+    "ontologies": [
+      "regenerative-agriculture"
+    ]
+  }
+}
