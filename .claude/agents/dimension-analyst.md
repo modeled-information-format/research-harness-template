@@ -172,16 +172,21 @@ Model your output on `schemas/samples/finding.sample.json`.
 
 ## Step 5 — Write and validate each finding
 
-Write one file per finding under `$REPORTS_DIR` (a stable per-finding name keyed
-to the `@id` slug — e.g. `$REPORTS_DIR/finding-<slug>.json`):
+Write one file per finding into the canonical `$REPORTS_DIR/findings/` directory
+(a stable per-finding name keyed to the `@id` slug — e.g.
+`$REPORTS_DIR/findings/finding-<slug>.json`). This is the directory the
+orchestrator's reconcile, `synthesize-artifact.sh`, and the graph/index builders
+all read; **write atomically** (stage to a hidden file, validate, then rename) so a
+crash never leaves a torn finding for `/resume` to mis-handle:
 
 ```bash
-# Compose with jq, then validate the structure you are responsible for.
-jq -n '{ "@context": "...", "@type": "Concept", "@id": "...", ... }' \
-  > "$REPORTS_DIR/finding-<slug>.json"
+mkdir -p "$REPORTS_DIR/findings"
+S="$REPORTS_DIR/findings/.finding-<slug>.json.staging"
+# Compose with jq to the staging file, then validate the structure you own.
+jq -n '{ "@context": "...", "@type": "Concept", "@id": "...", ... }' > "$S"
 
 # Citation-integrity gate (must pass at write time):
-scripts/check-citation-integrity.sh "$REPORTS_DIR/finding-<slug>.json"
+scripts/check-citation-integrity.sh "$S"
 ```
 
 Then validate against the MIF-backed schema closure:
@@ -191,7 +196,7 @@ ajv validate --spec=draft2020 --strict=false -c ajv-formats \
   -s schemas/findings.schema.json \
   -r schemas/mif/mif.schema.json \
   -r schemas/mif/definitions/entity-reference.schema.json \
-  -d "$REPORTS_DIR/finding-<slug>.json"
+  -d "$S"
 ```
 
 The schema requires `extensions.harness.verification`, which **you do not write** —
@@ -200,6 +205,13 @@ the verdict. Until then, confirm the parts you own validate (MIF base shape +
 `citations[]` + `extensions.harness.dimension`) and that the citation-integrity
 gate passes. If validation of your own fields fails, diagnose with `jq`, correct,
 and re-validate (max 2 retries) per the Structured Data Protocol.
+
+Once your own fields validate, **atomically publish** the finding (a torn write is
+never visible to reconcile):
+
+```bash
+mv "$S" "$REPORTS_DIR/findings/finding-<slug>.json"
+```
 
 ## Step 6 — Self-reflection (max 2 refinement iterations)
 

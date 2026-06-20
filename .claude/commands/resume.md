@@ -58,8 +58,24 @@ Set `TOPIC=<topic>`, `REPORTS_DIR="reports/$TOPIC"`, `GOAL_FILE="$REPORTS_DIR/go
    done (suggest `/status`, `/augment`, `/falsify`) and ask whether to resume
    anyway.
 
-3. Summarize for the user before re-spawning: topic, goal statement, last phase,
-   active vs quarantined finding counts, and which checks remain unmet.
+3. **Reconcile remaining work from disk (authoritative).** Derive the structured
+   checkpoint and the exact remaining-work plan — this never re-counts a completed
+   finding, so resume never re-runs research/falsification it already paid for:
+
+   ```bash
+   scripts/reconcile-session.sh "$REPORTS_DIR"   # writes $REPORTS_DIR/state.json, prints the plan
+   ```
+
+   `reports/<topic>/state.json` records, per finding, `{id, dimension, valid,
+   attempted_at, verdict}`; per dimension `{total, done}`; per check
+   `{check, passed}`. A finding is **done** iff it is schema-valid (validity
+   requires a falsification verdict). The printed plan lists only dimensions with
+   `done < total` and failing checks. If the plan is `nothing to do`, the session
+   is already complete — tell the user and do NOT re-spawn.
+
+4. Summarize for the user before re-spawning: topic, goal statement, last phase,
+   the reconcile plan (which dimensions still need work), active vs quarantined
+   finding counts, and which checks remain unmet.
 
 ## Phase 2: Re-spawn the orchestrator
 
@@ -87,12 +103,15 @@ Agent(
     QUERY_BUDGET: 6
     CLAIM_BUDGET: 50
 
-    Existing findings and an append-only research-progress.md are already in
-    REPORTS_DIR. Continue, do not restart:
-    - In Phase 3, evaluate completion_condition.checks against the findings
-      already on disk before fanning out.
-    - Re-fan-out (Phase 1) ONLY dimensions with no surviving finding or named by
-      an unmet check.
+    Existing findings, a state.json checkpoint, and an append-only
+    research-progress.md are already in REPORTS_DIR. Continue, do not restart:
+    - FIRST run `scripts/reconcile-session.sh "$REPORTS_DIR"` and read state.json:
+      it is the authoritative remaining-work plan derived from disk.
+    - Re-fan-out (Phase 1) ONLY dimensions whose state.json `dimensions[d]` has
+      `done < total` (or that an unmet check names). A dimension with done==total
+      is COMPLETE — never re-run it (re-running burns research/falsification budget).
+    - In Phase 3, evaluate completion_condition.checks against the findings already
+      on disk before fanning out.
     - The one-round rule applies: never re-falsify a finding that already carries
       extensions.harness.verification.attempted_at.
     - Append to research-progress.md; never overwrite the phase log.

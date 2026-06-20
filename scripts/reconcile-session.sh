@@ -1,12 +1,18 @@
 #!/usr/bin/env bash
 # reconcile-session.sh — derive a durable session checkpoint
 # (reports/<topic>/state.json) purely from disk and print the remaining-work plan.
-# Crash-safe resume (SPEC §6b): a finding is DONE only when it is schema-valid AND
-# gated (extensions.harness.verification.attempted_at present). Invalid findings,
-# and *.tmp / hidden partial writes, are EXCLUDED from done-counts, so /resume never
-# reworks completed findings. Idempotent and byte-deterministic: the checkpoint
-# carries no wall-clock field, records are sorted, and jq sorts keys — two runs over
-# the same disk produce byte-identical state.json AND plan.
+# Crash-safe resume (SPEC §6b): a finding is DONE iff it validates against
+# schemas/findings.schema.json — which REQUIRES extensions.harness.verification
+# (verdict + verdict_basis), so a valid finding has already been through the
+# falsification gate. Raw/partial/invalid findings and *.tmp / hidden partial
+# writes are EXCLUDED from done-counts, so /resume never reworks a completed
+# finding (re-running burns expensive web research + falsification budget).
+#
+# A finding is found WHEREVER it lives: the canonical reports/<topic>/findings/
+# subdir AND, defensively, a flat reports/<topic>/finding-*.json — a real finding
+# must never be missed, or its dimension would be re-run from scratch.
+#
+# Idempotent and byte-deterministic: no wall-clock field, sorted records, jq -S.
 #
 # Usage: reconcile-session.sh <reports-dir>
 #   writes <reports-dir>/state.json; prints the remaining plan to stdout; exit 0.
@@ -28,52 +34,56 @@ ajv_ok() { # validate one finding file against the MIF-backed findings schema
     -d "$1" >/dev/null 2>&1
 }
 
-# Per-finding records. A real finding is a non-hidden, non-tmp *.json file; hidden
-# (.*) and *.tmp files are in-flight partial writes and are skipped entirely.
-records="[]"
-partial_count=0
-if [ -d "$FDIR" ]; then
-  partial_count=$(find "$FDIR" -maxdepth 1 -type f -name '*.tmp' 2>/dev/null | wc -l | tr -d ' ')
-  while IFS= read -r f; do
-    [ -z "$f" ] && continue
-    id=$(jq -r '."@id" // .id // empty' "$f" 2>/dev/null); [ -z "$id" ] && id="$(basename "$f")"
-    dim=$(jq -r '.extensions.harness.dimension // "unknown"' "$f" 2>/dev/null)
-    att=$(jq -r '.extensions.harness.verification.attempted_at // empty' "$f" 2>/dev/null)
-    vrd=$(jq -r '.extensions.harness.verification.verdict // empty' "$f" 2>/dev/null)
-    if ajv_ok "$f"; then valid=true; else valid=false; fi
-    records=$(jq -c --arg id "$id" --arg dim "$dim" --argjson valid "$valid" \
-                    --arg att "$att" --arg vrd "$vrd" \
-      '. + [{id:$id, dimension:$dim, valid:$valid,
-             attempted_at:(if $att=="" then null else $att end),
-             verdict:(if $vrd=="" then null else $vrd end)}]' <<<"$records")
-  done < <(find "$FDIR" -maxdepth 1 -type f -name '*.json' ! -name '.*' ! -name '*.tmp' 2>/dev/null | sort)
-fi
+# All real finding files: findings/<*>.json (canonical) + flat finding-*.json
+# (defensive). Hidden (.*) and *.tmp are in-flight partial writes; skip them.
+list_findings() {
+  {
+    [ -d "$FDIR" ] && find "$FDIR" -maxdepth 1 -type f -name '*.json' ! -name '.*' ! -name '*.tmp'
+    find "$RD" -maxdepth 1 -type f -name 'finding-*.json' ! -name '.*' ! -name '*.tmp'
+  } 2>/dev/null | sort -u
+}
 
-# DONE = valid AND gated (attempted_at != null). Per-dimension total/done; checks
-# computed from disk. jq -S => sorted keys; findings sorted by id => deterministic.
+partial_count=$( { [ -d "$FDIR" ] && find "$FDIR" -maxdepth 1 -type f -name '*.tmp'
+                   find "$RD" -maxdepth 1 -type f -name '*.tmp'; } 2>/dev/null | wc -l | tr -d ' ')
+
+records="[]"
+while IFS= read -r f; do
+  [ -z "$f" ] && continue
+  id=$(jq -r '."@id" // .id // empty' "$f" 2>/dev/null); [ -z "$id" ] && id="$(basename "$f")"
+  dim=$(jq -r '.extensions.harness.dimension // "unknown"' "$f" 2>/dev/null)
+  att=$(jq -r '.extensions.harness.verification.attempted_at // empty' "$f" 2>/dev/null)
+  vrd=$(jq -r '.extensions.harness.verification.verdict // empty' "$f" 2>/dev/null)
+  if ajv_ok "$f"; then valid=true; else valid=false; fi
+  records=$(jq -c --arg id "$id" --arg dim "$dim" --argjson valid "$valid" \
+                  --arg att "$att" --arg vrd "$vrd" \
+    '. + [{id:$id, dimension:$dim, valid:$valid,
+           attempted_at:(if $att=="" then null else $att end),
+           verdict:(if $vrd=="" then null else $vrd end)}]' <<<"$records")
+done < <(list_findings)
+
+# DONE = valid AND not falsified. Validity REQUIRES a verdict, so a valid finding
+# has been gated; a falsified finding is valid but is NOT done — its dimension needs
+# a replacement (falsify.sh normally quarantines it out of findings/; this is the
+# belt-and-suspenders guard). Invalid findings count toward total, never toward done.
 state=$(jq -S -n --arg topic "$TOPIC" --argjson f "$records" '
+  def isdone: .valid and (.verdict != "falsified");
   ($f | sort_by(.id)) as $findings
   | ($findings | group_by(.dimension) | map({
        key: .[0].dimension,
-       value: { total: length,
-                done: ([.[] | select(.valid and .attempted_at != null)] | length) }
+       value: { total: length, done: ([.[] | select(isdone)] | length) }
     }) | from_entries) as $dims
   | { topic: $topic, findings: $findings, dimensions: $dims,
       checks: [
-        {check:"findings_present",    passed: (($findings | map(select(.valid and .attempted_at != null)) | length) > 0)},
-        {check:"all_valid_gated",     passed: (($findings | map(select(.valid and .attempted_at == null)) | length) == 0)},
+        {check:"findings_present",    passed: (($findings | map(select(isdone)) | length) > 0)},
         {check:"no_invalid_findings", passed: (($findings | map(select(.valid | not)) | length) == 0)}
       ] }')
 
-# no_partial_writes is a filesystem fact (count of *.tmp), folded in and re-sorted.
 if [ "$partial_count" -eq 0 ]; then nptw=true; else nptw=false; fi
 state=$(jq -S --argjson nptw "$nptw" \
   '.checks += [{check:"no_partial_writes", passed:$nptw}] | .checks |= sort_by(.check)' <<<"$state")
 
-# Write the checkpoint atomically (tmp + rename).
 printf '%s\n' "$state" > "$RD/.state.json.staging" && mv "$RD/.state.json.staging" "$RD/state.json"
 
-# Remaining-work plan: dimensions with undone findings + failing checks, sorted.
 plan=$(jq -r '
   ( [ .dimensions | to_entries[] | select(.value.done < .value.total)
       | "dimension \(.key): \(.value.total - .value.done) finding(s) need work" ] )

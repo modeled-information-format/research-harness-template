@@ -21,7 +21,6 @@
     "landscape": { "total": 1, "done": 0 }
   },
   "checks": [
-    { "check": "all_valid_gated", "passed": true },
     { "check": "findings_present", "passed": true },
     { "check": "no_invalid_findings", "passed": false },
     { "check": "no_partial_writes", "passed": true }

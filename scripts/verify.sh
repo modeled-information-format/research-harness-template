@@ -803,11 +803,12 @@ gate_m11() {
     bad "reconcile did not write a valid state.json checkpoint"
   fi
 
-  # 11c (condition 3). Gated+valid findings (A,B) recorded DONE; per-finding records
-  # carry {id,dimension,valid,attempted_at,verdict}.
+  # 11c (condition 3). Valid findings (A,B) recorded DONE; per-finding records carry
+  # {id,dimension,valid,attempted_at,verdict}. A finding is done iff schema-valid —
+  # validity requires verification.verdict, so a valid finding has been gated.
   local doneA doneB shape
-  doneA=$(jq -r '[.findings[] | select(.id|endswith(":a")) | select(.valid and .attempted_at!=null)] | length' "$RD/state.json")
-  doneB=$(jq -r '[.findings[] | select(.id|endswith(":b")) | select(.valid and .attempted_at!=null)] | length' "$RD/state.json")
+  doneA=$(jq -r '[.findings[] | select(.id|endswith(":a")) | select(.valid)] | length' "$RD/state.json")
+  doneB=$(jq -r '[.findings[] | select(.id|endswith(":b")) | select(.valid)] | length' "$RD/state.json")
   shape=$(jq -r '[.findings[] | has("id") and has("dimension") and has("valid") and has("attempted_at") and has("verdict")] | all' "$RD/state.json")
   if [ "$doneA" = 1 ] && [ "$doneB" = 1 ] && [ "$shape" = true ]; then
     ok "gated + valid findings recorded done (per-finding id/dimension/valid/attempted_at/verdict)"
@@ -855,6 +856,34 @@ gate_m11() {
     ok "a fully-gated session reconciles to an empty plan (nothing to do)"
   else
     bad "fully-gated session did not reconcile to an empty plan (got: $plan)"
+  fi
+
+  # 11h (reality guard). Reconcile the REAL shipped sample session (copied so the
+  # repo is not mutated): its completed findings must reconcile to 'nothing to do',
+  # NOT be reported as rework. This pins the cost-critical property against actual
+  # session data — a completed finding is never re-run on resume.
+  local SS sp
+  SS="$T/sample-copy"; mkdir -p "$SS/findings"
+  cp reports/_meta/sample-session/findings/*.json "$SS/findings/" 2>/dev/null
+  sp=$(scripts/reconcile-session.sh "$SS" 2>/dev/null)
+  if [ "$sp" = "nothing to do" ]; then
+    ok "the shipped sample session reconciles to 'nothing to do' (completed findings never re-run)"
+  else
+    bad "sample session reported rework — resume would re-run completed findings: ${sp//$'\n'/ | }"
+  fi
+
+  # 11i (safety). A falsified finding (valid, verdict=falsified) is NOT done — its
+  # dimension still needs a replacement.
+  local RD3 ftot fdone
+  RD3="$T/falsified-topic"; mkdir -p "$RD3/findings"
+  jq '."@id"="urn:mif:concept:harness/falsified-topic:f" | .extensions.harness.dimension="technical" | .extensions.harness.verification.verdict="falsified"' \
+    schemas/samples/finding.sample.json > "$RD3/findings/finding-f.json"
+  scripts/reconcile-session.sh "$RD3" >/dev/null 2>&1
+  ftot=$(jq -r '.dimensions.technical.total' "$RD3/state.json"); fdone=$(jq -r '.dimensions.technical.done' "$RD3/state.json")
+  if [ "$ftot" = 1 ] && [ "$fdone" = 0 ]; then
+    ok "a falsified finding is excluded from done-counts (its dimension still needs a replacement)"
+  else
+    bad "falsified finding mis-counted (technical total=$ftot done=$fdone; expected 1/0)"
   fi
 
   rm -rf "$T"
