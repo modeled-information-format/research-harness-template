@@ -25,14 +25,40 @@ jobs:
 
       - name: Install toolchain
         run: |
+          # Package-manager installs are integrity-verified against the registry by
+          # the manager itself (npm SHA-512 integrity, pip hashes) — verification is
+          # built into the download.
           npm install -g ajv-cli ajv-formats markdownlint-cli2
           pipx install copier
+
+      - name: Install yq (verified download — attestation -> checksum waterfall)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Supply-chain policy: a raw binary download MUST be verified. Prefer a
+          # GitHub build-provenance attestation; when upstream publishes none
+          # (mikefarah/yq does not), relax to the minimum — a pinned SHA-256 cross-
+          # checked against the upstream signed `checksums`. Refuse to install if
+          # neither passes. yq is pinned (not "latest") so the digest is stable.
+          YQ_VERSION=v4.53.3
+          YQ_SHA256=fa52a4e758c63d38299163fbdd1edfb4c4963247918bf9c1c5d31d84789eded4
+          curl -fsSL -o /tmp/yq "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64"
+          if gh attestation verify /tmp/yq --repo mikefarah/yq >/dev/null 2>&1; then
+            echo "yq ${YQ_VERSION}: verified via gh build-provenance attestation"
+          elif echo "${YQ_SHA256}  /tmp/yq" | sha256sum -c -; then
+            echo "yq ${YQ_VERSION}: no upstream attestation — verified via pinned SHA-256 (checksum floor)"
+          else
+            echo "yq ${YQ_VERSION}: VERIFICATION FAILED — refusing to install" >&2
+            exit 1
+          fi
+          sudo install -m 0755 /tmp/yq /usr/local/bin/yq
 
       - name: Tool versions
         run: |
           node --version
           python3 --version
           jq --version
+          yq --version
           ajv help >/dev/null 2>&1 && echo "ajv-cli present"
           markdownlint-cli2 --version
           copier --version

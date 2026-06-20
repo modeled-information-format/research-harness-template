@@ -62,6 +62,8 @@ case "$CHANNEL" in
     if [ -n "$VERIF" ] && [ -f "$VERIF" ]; then
       CONCEPT=$(printf '%s' "$CONCEPT" | jq --slurpfile v "$VERIF" '.extensions.harness.verification = $v[0]')
     fi
+    # Emit YAML frontmatter from the concept JSON via yq (the YAML analog of jq;
+    # the same tool mif-project.sh reads it back with — consistent jq/yq tooling).
     { echo "---"; printf '%s' "$CONCEPT" | yq -p=json -o=yaml '.'; echo "---"; echo; printf '%s\n' "$BODY"; } > "$OUT"
     # Write-then-validate: the report is not emitted until it projects to a valid
     # MIF L3 finding (requires a real, non-falsified verification verdict).

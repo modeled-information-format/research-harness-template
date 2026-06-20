@@ -7,8 +7,9 @@
 #
 #   bash scripts/verify.sh
 #
-# Requires: jq, ajv (ajv-cli) + ajv-formats. markdownlint-cli2 is run separately
-# by CI / the G5 lint gate.
+# Requires: jq and yq (the YAML analog of jq), plus ajv (ajv-cli) + ajv-formats.
+# The MIF report projector scripts/mif-project.sh reads YAML frontmatter with yq
+# (MIF is markdown-native). markdownlint-cli2 is run separately by CI / G5.
 
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 2
