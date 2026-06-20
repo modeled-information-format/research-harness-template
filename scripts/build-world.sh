@@ -14,12 +14,15 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 RD="${1:-$ROOT/reports}"; case "$RD" in /*) : ;; *) RD="$(pwd)/$RD" ;; esac
 OUT="${2:-$RD/world.json}"
-CONFIG="${CONFIG:-$ROOT/harness.config.json}"
-[ -f "$CONFIG" ] || { echo "build-world: config not found: $CONFIG" >&2; exit 2; }
+[ -d "$RD" ] || { echo "build-world: reports dir not found: $RD" >&2; exit 2; }
 
+# Topics are the subdirectories of the reports dir that hold a findings/ — build
+# whatever corpus is actually present (independent of harness.config.json, so the
+# graph reflects the given reports tree, never a stale or vacuous topic list).
 concepts='[]'; entities='[]'; edges='[]'
-for topic in $(jq -r '.topics[].id' "$CONFIG" 2>/dev/null); do
-  fdir="$RD/$topic/findings"; [ -d "$fdir" ] || continue
+for fdir in "$RD"/*/findings; do
+  [ -d "$fdir" ] || continue
+  topic="$(basename "$(dirname "$fdir")")"
   files=$(find "$fdir" -maxdepth 1 -type f -name '*.json' ! -name '.*' ! -name '*.tmp' 2>/dev/null | sort)
   [ -z "$files" ] && continue
   mapdoc='[]'; [ -f "$RD/$topic/ontology-map.json" ] && mapdoc=$(cat "$RD/$topic/ontology-map.json")
