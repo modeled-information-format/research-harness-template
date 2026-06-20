@@ -173,14 +173,16 @@ dimensions; in `augment` mode, the single new dimension), running at most
 
        Read harness.config.json dimensions[] for this dimension's description.
        Conduct web research scoped to your dimension and the goal. Emit each
-       finding as an individual MIF memory unit validated against
-       schemas/findings.schema.json (set extensions.harness.dimension =
-       '{dimension}'; leave extensions.harness.verification to the gate). Every
-       finding MUST carry >=1 citation (citation-integrity is a core gate).
+       finding as an individual MIF memory unit (set extensions.harness.dimension
+       = '{dimension}'; leave extensions.harness.verification to the gate) and
+       validate the structure you are responsible for — the falsification gate
+       completes it. Every finding MUST carry >=1 citation with a live http(s) URL
+       (citation-integrity is a core gate).
 
-       If a single source document is too large to read in one pass, process it in
-       overlapping segments yourself; do NOT delegate. If you cannot, name the
-       oversized source in your return so the orchestrator can route a chunker.
+       For an oversized source, follow your size-threshold guidance (Step 3): read
+       in one pass, self-process in overlapping segments, or — above the threshold
+       — name it in your oversized_sources return so the orchestrator routes a
+       source-chunker. Do not fabricate around it.
 
        Your FINAL MESSAGE is your return value to the orchestrator: list the
        finding file paths you wrote and any oversized sources you could not fully
@@ -206,7 +208,8 @@ dimensions; in `augment` mode, the single new dimension), running at most
        GOAL_FILE: {GOAL_FILE}             — for scoping relevance
        REPORTS_DIR: {REPORTS_DIR}         — write finding files here, verbatim
        Follow your agent definition; stamp extensions.harness.dimension on every
-       finding. Your final message is your return value (finding_files, notes).
+       finding. Your final message is your return value (finding_files,
+       source_metadata, processing_notes — per your Step 8).
      """
    )
    ```
@@ -262,7 +265,7 @@ Wait for the subagent to return its roll-up (`falsified`, `weakened`, `survived`
 `TaskUpdate(taskId, status: "completed")`. **If the return is empty or missing**
 (the subagent died after writing verdicts but before returning), recover the
 counts from disk rather than blocking or logging a zero gate — read the
-`{date}-falsification-report.md` and/or tally
+`{YYYY-MM-DD}-falsification-report.md` (UTC date) and/or tally
 `extensions.harness.verification.verdict` across the finding files, exactly as
 `/falsify` does. The analyst has already applied remediation per its
 definition: `falsified` → quarantined (moved to `$REPORTS_DIR/quarantine/`),

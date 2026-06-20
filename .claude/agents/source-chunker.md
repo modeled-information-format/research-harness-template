@@ -88,8 +88,11 @@ the truncation. For each chunk:
 2. Apply the requested `DIMENSION` lens and the session goal to extract findings.
 3. Write each finding as a MIF memory unit under `REPORTS_DIR` (one JSON file per
    finding) — you finalize it yourself: a MIF identity, `title`/`content`/
-   `summary`/`tags`, provenance, `citations[]` pointing at `SOURCE`, and
-   **`extensions.harness.dimension` set to the spawn-prompt `DIMENSION`**. Exactly
+   `summary`/`tags`, provenance, `citations[]` citing the source by a live
+   `http(s)` URL (citation-integrity requires a well-formed `http(s)` URL — never a
+   raw file path; if `SOURCE` is a local path, cite the canonical web URL it came
+   from), and **`extensions.harness.dimension` set to the spawn-prompt
+   `DIMENSION`**. Exactly
    like the dimension-analyst, emit only your half of the contract: do NOT write
    `extensions.harness.verification` — the falsification gate stamps the verdict
    afterward. Validate the structure you are responsible for (it becomes fully
