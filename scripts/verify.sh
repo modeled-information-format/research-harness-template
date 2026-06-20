@@ -1075,7 +1075,7 @@ gate_m12() {
   local base found RT
   base=$(onto_registry_yaml | grep -c . || true)
   RT="$(mktemp -d)"; mkdir -p "$RT/packs/ontologies/demo-new"
-  if .claude/skills/ontology-manager/scripts/scaffold_ontology.sh demo-new 0.1.0 --extends mif-base \
+  if bash .claude/skills/ontology-manager/scripts/scaffold_ontology.sh demo-new 0.1.0 --extends mif-base \
        > "$RT/packs/ontologies/demo-new/demo-new.ontology.yaml" 2>/dev/null \
      && ajv_onto "$RT/packs/ontologies/demo-new/demo-new.ontology.yaml"; then
     found=$( cd "$RT" && onto_registry_yaml | grep -c . || true )
