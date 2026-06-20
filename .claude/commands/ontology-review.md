@@ -1,6 +1,6 @@
 ---
 name: ontology-review
-description: Review, validate, and enrich the ontology mapping of existing topics and their findings — audit coverage, surface invalid/unresolved classifications, bind ontologies to unbound topics, and retro-classify untyped findings.
+description: Review, validate, enrich, and author the ontology mapping of existing topics and their findings — audit coverage, surface invalid/unresolved classifications, bind ontologies to unbound topics, retro-classify untyped findings, and use the ontology-manager skill to create/expand/enrich ontologies for new requirements.
 argument-hint: "[--topic <id>] [--enrich] [--strict]"
 allowed-tools:
   - Bash
@@ -15,11 +15,14 @@ allowed-tools:
 # ontology-review — review · validate · enrich ontology coverage
 
 Map ontologies onto **existing** topics and findings — the counterpart to the
-onboarding step in `/start` (which only covers new topics). Three uses in one tool:
+onboarding step in `/start` (which only covers new topics). Four uses in one tool:
 **review** (audit coverage), **validate** (surface classifications that do not
-resolve), and **enrich** (bind an ontology to an unbound topic and retro-classify its
-untyped findings). The deterministic engine is `scripts/ontology-review.sh`; this
-command adds the agent layer (binding selection + retro-classification).
+resolve), **enrich** (bind an ontology to an unbound topic and retro-classify its
+untyped findings), and **author** (Phase 3 — use the `ontology-manager` skill to
+create a new ontology, expand entity types, or enrich an existing ontology for new
+requirements). The deterministic engine is `scripts/ontology-review.sh`; this command
+adds the agent layer (binding selection, retro-classification, and authoring via the
+`ontology-manager` skill).
 
 Parse `$ARGUMENTS`: `--topic <id>` scopes to one topic (default: all topics);
 `--enrich` turns on the binding/retro-classification pass (default: review only);
@@ -81,6 +84,55 @@ For each topic that is **core-only** or has many **untyped** findings:
 
 3. **Re-review.** Re-run Phase 1 for the topic and confirm the new mappings resolve
    (typed count up, invalid count 0).
+
+## Phase 3: Author, expand, and enrich ontologies (the `ontology-manager` skill)
+
+When review surfaces findings that no existing type fits — a new domain, a missing
+entity type, or a type whose schema is too thin — author the ontology rather than
+mis-classify. **Invoke the `ontology-manager` skill** (`Skill: ontology-manager`) for
+the work; ontology definition files are unlocked for editing (only the vendored
+*contract* `schemas/mif/ontology.schema.json` is checksum-locked). Every result must
+re-validate, and `gate_m12` re-checks every ontology against the contract on build.
+
+- **Create a brand-new ontology** (a new scheme for a new requirement):
+
+  ```bash
+  mkdir -p packs/ontologies/<id>
+  bash .claude/skills/ontology-manager/scripts/scaffold_ontology.sh \
+    <id> 0.1.0 --extends mif-base > packs/ontologies/<id>/<id>.ontology.yaml
+  # add domain entity types with yq, then validate:
+  bash .claude/skills/ontology-manager/scripts/validate_ontology.sh \
+    packs/ontologies/<id>/<id>.ontology.yaml      # ajv vs the contract; must say VALID
+  ```
+
+  Register it as an optional data pack (`ontology.pack.json` `kind: ontology`) and
+  enable/bind it via `/start` Phase 2b or this command's Phase 2.
+
+- **Add / expand entity types in an existing ontology:**
+
+  ```bash
+  yq -i '.entity_types += [{
+    "name":"<type>", "base":"semantic",
+    "schema":{"required":["name"], "properties":{"name":{"type":"string"}}}
+  }]' <ontology>.ontology.yaml
+  bash .claude/skills/ontology-manager/scripts/validate_ontology.sh <ontology>.ontology.yaml
+  ```
+
+- **Enrich an existing ontology** (improve fields, add relationships):
+
+  ```bash
+  # add/strengthen a field on a type, or add a relationship between types:
+  yq -i '(.entity_types[] | select(.name=="<type>") | .schema.properties.<field>) =
+           {"type":"string","description":"<desc>"}' <ontology>.ontology.yaml
+  yq -i '.relationships.<rel> = {"description":"<desc>","from":["<a>"],"to":["<b>"]}' \
+         <ontology>.ontology.yaml
+  bash .claude/skills/ontology-manager/scripts/validate_ontology.sh <ontology>.ontology.yaml
+  ```
+
+Use `inspect_ontology.sh <file> --section entities` to see what a target ontology
+already declares before expanding it. Any edited ontology must still pass
+`validate_ontology.sh` (and `scripts/verify.sh` `gate_m12`); a change that breaks the
+contract is rejected, not shipped.
 
 ## Idempotence + safety
 

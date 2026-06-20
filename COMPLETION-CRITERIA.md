@@ -206,17 +206,22 @@ into `scripts/verify.sh` wherever a command can assert it.
 - Gate: `verify.sh` `gate_m12` shows that the vendored `ontology.schema.json`
   validates its sample; that every registry ontology (core + the six example data
   packs) validates against the contract; that `id@version` is unique; that
-  `VENDOR.lock` checksums match the verbatim vendored files; that
+  `VENDOR.lock` checksum-locks the **contract only** (`ontology.schema.json` +
+  context) while ontology **definitions are unlocked/editable** and re-locking one
+  fails the gate; that the `ontology-manager` skill scaffolds a contract-valid NEW
+  ontology and the registry is extensible (count rises); that
   `scripts/resolve-ontology.sh` resolves a typed finding to exactly one bound
   ontology and validates its entity (additive) while undeclared, missing-required,
   and unbound-for-topic findings fail; that it fails safe on a missing catalog; that
   binding → catalog → registry integrity holds; and that the pack-enable path works
-  end to end. Purely additive — no existing gate is weakened.
+  end to end. The supply-chain assertion is intentionally **contract-scoped** (so
+  ontologies can be authored); every other gate is additive and unweakened.
 - Deliver: ontology vendored from MIF (contract + base + examples + `ontology-manager`
   skill), an always-on generic ontology (`mif-generic`), example ontologies as
-  optional per-topic data packs, topic-onboarding ontology selection, and a
-  deterministic topical resolver that records each finding's mapping to
-  `reports/<topic>/ontology-map.json`.
+  optional per-topic data packs, topic-onboarding ontology selection, a deterministic
+  topical resolver that records each finding's mapping to
+  `reports/<topic>/ontology-map.json`, and `/ontology-review` authoring (create /
+  expand / enrich ontologies via the `ontology-manager` skill).
 
 ## Constraints
 

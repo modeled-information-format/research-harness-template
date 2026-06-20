@@ -960,16 +960,23 @@ gate_m12() {
     bad "duplicate ontology id@version: $(echo $dupes)"
   fi
 
-  # 12d. VENDOR.lock checksums match the verbatim vendored files (supply-chain floor).
+  # 12d. The supply-chain floor is CONTRACT-only and EXACT: the verbatim set must be
+  #      precisely the vendored ontology schema + context (both, and nothing else), and
+  #      every verbatim checksum must match. Asserting the exact set catches unlocking a
+  #      contract file (weakening the floor) AND re-locking any other file (e.g. an
+  #      ontology definition, which would block editing).
   local lbad="" ln=0
   while IFS=$'\t' read -r lp lsum; do
     [ -z "$lp" ] && continue; ln=$((ln+1))
     [ "$(shasum -a 256 "$lp" 2>/dev/null | cut -d' ' -f1)" = "$lsum" ] || lbad="${lbad}${lp} "
   done < <(jq -r '.files[] | select(.verbatim) | "\(.path)\t\(.sha256)"' schemas/mif/VENDOR.lock 2>/dev/null)
-  if [ -z "$lbad" ] && [ "$ln" -ge 1 ]; then
-    ok "VENDOR.lock checksums match all $ln verbatim vendored files"
+  local verbatim_set expected_set
+  verbatim_set=$(jq -r '[.files[] | select(.verbatim) | .path] | sort | join(",")' schemas/mif/VENDOR.lock 2>/dev/null)
+  expected_set="schemas/mif/ontology.context.jsonld,schemas/mif/ontology.schema.json"   # sorted
+  if [ -z "$lbad" ] && [ "$verbatim_set" = "$expected_set" ]; then
+    ok "VENDOR.lock: exactly the 2 contract files are checksum-locked; ontology definitions unlocked (editable)"
   else
-    bad "VENDOR.lock checksum mismatch: ${lbad:-lockfile unreadable}"
+    bad "VENDOR.lock floor wrong: verbatim-set=[$verbatim_set] expected=[$expected_set] checksum-mismatch=[${lbad:-none}]"
   fi
 
   # Build a real catalog (core + k12 enabled) to drive the resolver fixtures.
@@ -1059,6 +1066,28 @@ gate_m12() {
   else
     bad "ontology-review wrong (summary='$rv' strict-exit=$rvs)"
   fi
+
+  # 12k. Authoring: the ontology-manager skill scaffolds a NEW ontology that validates
+  #      against the contract and is DISCOVERED by the registry enumeration — proving
+  #      ontologies can be created/expanded. Discovery REUSES onto_registry_yaml (run in
+  #      a fresh tree holding only the scaffolded file), so it self-maintains if the
+  #      registry glob changes; a scaffold to a wrong path/extension yields 0 found.
+  local base found RT
+  base=$(onto_registry_yaml | grep -c . || true)
+  RT="$(mktemp -d)"; mkdir -p "$RT/packs/ontologies/demo-new"
+  if .claude/skills/ontology-manager/scripts/scaffold_ontology.sh demo-new 0.1.0 --extends mif-base \
+       > "$RT/packs/ontologies/demo-new/demo-new.ontology.yaml" 2>/dev/null \
+     && ajv_onto "$RT/packs/ontologies/demo-new/demo-new.ontology.yaml"; then
+    found=$( cd "$RT" && onto_registry_yaml | grep -c . || true )
+    if [ "$found" -eq 1 ]; then
+      ok "ontology-manager scaffolds a NEW valid ontology that onto_registry_yaml discovers (base registry has $base)"
+    else
+      bad "scaffolded ontology not discovered by onto_registry_yaml in a fresh tree (found=$found)"
+    fi
+  else
+    bad "scaffold_ontology.sh did not produce a contract-valid ontology"
+  fi
+  rm -rf "$RT"
 
   rm -rf "$T"
 }

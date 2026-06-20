@@ -16,10 +16,15 @@ binding/catalog link, or checksum mismatch.
 
 ## Vendored from MIF, not invented
 
-The contract (`schemas/mif/ontology.schema.json`), the base ontologies (`mif-base`,
-`shared-traits`), and the six example ontologies are vendored verbatim from
-`github.com/zircote/MIF`, pinned by commit + SHA-256 in `schemas/mif/VENDOR.lock`
-(`gate_m12` re-verifies the checksums). The `ontology-manager` skill is copied in and
+The **contract** (`schemas/mif/ontology.schema.json` + context) is vendored verbatim
+from `github.com/zircote/MIF`, pinned by commit + SHA-256 in `schemas/mif/VENDOR.lock`
+and checksum-locked by `gate_m12` — it is the trust root and does not change. The
+base ontologies (`mif-base`, `shared-traits`) and the example ontologies were
+vendored as a **seed but are unlocked** (`VENDOR.lock` records them `verbatim:false`):
+they can be created, expanded, and enriched via the `ontology-manager` skill (see
+`/ontology-review` Phase 3). `gate_m12` re-validates every ontology — original or
+edited — against the contract on each build, so authoring stays fail-closed without a
+checksum freezing the definitions. The `ontology-manager` skill is copied in and
 tweaked for the harness: PyPI-stripped (its optional `jsonschema`→`ajv`, `pyyaml`
 dropped for `yq`), repointed at the vendored schema. The only authored ontology is
 `mif-generic` — MIF's built-in entity types (concept/person/organization/technology/

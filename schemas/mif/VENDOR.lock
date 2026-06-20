@@ -1,7 +1,7 @@
 {
   "source": "github.com/zircote/MIF",
   "commit": "031ad2a",
-  "note": "Vendored MIF ontology contract + ontologies (yaml source of truth, verbatim, checksum-gated) and the ontology-manager skill (adapted: PyPI-stripped, harness-grounded). Registry JSON is projected from yaml on the fly (yq->json->ajv), never committed.",
+  "note": "Vendored MIF ontology CONTRACT (ontology.schema.json + context) is verbatim/checksum-gated (the trust root). Ontology DEFINITION files are vendored-as-seed but UNLOCKED (verbatim:false) so they can be created, expanded, and enriched via the ontology-manager skill; gate_m12 re-validates every edited ontology against the contract.",
   "files": [
     {
       "path": "schemas/mif/ontology.schema.json",
@@ -19,43 +19,43 @@
       "path": "schemas/ontologies/mif-base/0.1.0.yaml",
       "upstream": "ontologies/mif-base.ontology.yaml",
       "sha256": "76a91d7815b95012277c4c8f734b7a9ec1403d09fe74e4cae9b6ad5d8a57beb1",
-      "verbatim": true
+      "verbatim": false
     },
     {
       "path": "schemas/ontologies/shared-traits/0.1.0.yaml",
       "upstream": "ontologies/shared-traits.ontology.yaml",
       "sha256": "438ddd94e23eaa8c897a7daa363658e2e4c51cc20b2f2d6007757cacc330683f",
-      "verbatim": true
+      "verbatim": false
     },
     {
       "path": "packs/ontologies/regenerative-agriculture/regenerative-agriculture.ontology.yaml",
       "upstream": "ontologies/examples/regenerative-agriculture.ontology.yaml",
       "sha256": "0cea6c48ea778c48dfb3c4eff0fb1cf262345705ddea4ba6e4c9fbed4bd58e4c",
-      "verbatim": true
+      "verbatim": false
     },
     {
       "path": "packs/ontologies/k12-educational-publishing/k12-educational-publishing.ontology.yaml",
       "upstream": "ontologies/examples/k12-educational-publishing.ontology.yaml",
       "sha256": "dba76dd7817757f48df255a9e5219bf73c114777003e1fcda468435ae62f3459",
-      "verbatim": true
+      "verbatim": false
     },
     {
       "path": "packs/ontologies/biology-research-lab/biology-research-lab.ontology.yaml",
       "upstream": "ontologies/examples/biology-research-lab.ontology.yaml",
       "sha256": "c10d8c14ba29d0f14a4bd5aab6f72938e0346bb5c248fe796b5d10233e5c7a50",
-      "verbatim": true
+      "verbatim": false
     },
     {
       "path": "packs/ontologies/backstage/backstage.ontology.yaml",
       "upstream": "ontologies/examples/backstage.ontology.yaml",
       "sha256": "2681c6f0a7e54303358cc496ca59160a8ccb6060879f4190142038cff45606b1",
-      "verbatim": true
+      "verbatim": false
     },
     {
       "path": "packs/ontologies/csi-5w1h/csi-5w1h.ontology.yaml",
       "upstream": "ontologies/examples/csi-5w1h.ontology.yaml",
       "sha256": "12f3c512728e5f6af225c89513ce28e0bd641d72cad4f183d8ce6ef94575067c",
-      "verbatim": true
+      "verbatim": false
     },
     {
       "path": ".claude/skills/ontology-manager/SKILL.md",
