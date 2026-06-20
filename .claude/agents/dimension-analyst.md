@@ -141,9 +141,14 @@ If a fetched source exceeds ~15K tokens, process it in **overlapping segments
 yourself** (page through it with successive WebFetch/Read calls, carrying ~10%
 overlap, and accumulate the evidence) rather than truncating. You run as a
 nameless subagent with no `SendMessage` and no shared task list, so you cannot
-hand a source off mid-run. If a source is genuinely too large for you to process,
-do not fabricate around it: **name it in your return** (see Step 7) so the
-orchestrator can route a source-chunker over it.
+hand a source off mid-run. Use an explicit threshold:
+
+- **≤ ~15K tokens (~60K chars):** read it in one pass.
+- **~15K–~50K tokens:** process it yourself in overlapping ~10K-token segments
+  (~10% overlap), accumulating the evidence.
+- **> ~50K tokens** (too large for reliable segmented self-processing): do NOT
+  fabricate around it — **name it in your `oversized_sources` return** (see
+  Step 7) so the orchestrator routes a source-chunker over it.
 
 ## Step 4 — Compose each finding as a MIF memory unit
 
