@@ -1,0 +1,67 @@
+{
+  "source": "github.com/zircote/MIF",
+  "commit": "031ad2a",
+  "note": "Vendored MIF ontology contract + base ontologies (verbatim, checksum-gated) and the ontology-manager skill (adapted: PyPI-stripped, harness-grounded).",
+  "files": [
+    {
+      "path": "schemas/mif/ontology.schema.json",
+      "upstream": "schema/ontology/ontology.schema.json",
+      "sha256": "e16ea5aaaa3188ab41bdf8a05da25b4cb351d7f6d48e3493e6dce38349200587",
+      "verbatim": true
+    },
+    {
+      "path": "schemas/mif/ontology.context.jsonld",
+      "upstream": "schema/ontology/ontology.context.jsonld",
+      "sha256": "50c12542044aa540ddfb236c405e46642c2e469543b2d5def9865b01468e6445",
+      "verbatim": true
+    },
+    {
+      "path": "schemas/ontologies/mif-base/0.1.0.yaml",
+      "upstream": "ontologies/mif-base.ontology.yaml",
+      "sha256": "76a91d7815b95012277c4c8f734b7a9ec1403d09fe74e4cae9b6ad5d8a57beb1",
+      "verbatim": true
+    },
+    {
+      "path": "schemas/ontologies/shared-traits/0.1.0.yaml",
+      "upstream": "ontologies/shared-traits.ontology.yaml",
+      "sha256": "438ddd94e23eaa8c897a7daa363658e2e4c51cc20b2f2d6007757cacc330683f",
+      "verbatim": true
+    },
+    {
+      "path": ".claude/skills/ontology-manager/SKILL.md",
+      "upstream": ".claude/skills/ontology-manager/SKILL.md",
+      "sha256": "3e67c52654c8d8cdb2370f3c7b0f529a2b1a0352152f76a35f5802bfff926622",
+      "verbatim": false
+    },
+    {
+      "path": ".claude/skills/ontology-manager/scripts/validate_ontology.sh",
+      "upstream": ".claude/skills/ontology-manager/scripts/validate_ontology.sh",
+      "sha256": "8cf62cc71f981a323521c466dad6f95a4549f28edf6ffc9af08d546e88b3df37",
+      "verbatim": false
+    },
+    {
+      "path": ".claude/skills/ontology-manager/scripts/inspect_ontology.sh",
+      "upstream": ".claude/skills/ontology-manager/scripts/inspect_ontology.sh",
+      "sha256": "5f785163fb7b86d28457b296668880200f7d29fc318ea059473a780af3b9d479",
+      "verbatim": false
+    },
+    {
+      "path": ".claude/skills/ontology-manager/scripts/scaffold_ontology.sh",
+      "upstream": ".claude/skills/ontology-manager/scripts/scaffold_ontology.sh",
+      "sha256": "d3413325eb38c27e4b92d5fd4b62abb1a7080198f975bd593c602581438350e5",
+      "verbatim": false
+    },
+    {
+      "path": ".claude/skills/ontology-manager/scripts/convert_format.sh",
+      "upstream": ".claude/skills/ontology-manager/scripts/convert_format.sh",
+      "sha256": "cf5cea27d02f2d557f5ea3eb8d40bd57663eaf5f63a549fa8ec8c8c7b2aad869",
+      "verbatim": false
+    },
+    {
+      "path": ".claude/skills/ontology-manager/references/schema-reference.md",
+      "upstream": ".claude/skills/ontology-manager/references/schema-reference.md",
+      "sha256": "73154c5143db49d7181f195742fc65b6a791d81ad95ac2320fbd6a992ca6264e",
+      "verbatim": false
+    }
+  ]
+}
