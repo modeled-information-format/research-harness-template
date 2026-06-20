@@ -151,7 +151,10 @@ dimensions; in `augment` mode, the single new dimension), running at most
 
 1. Create a task for your own tracking: `TaskCreate("Research: {dimension}")` —
    capture the returned id as `{taskId}` (no `owner`: the analyst is a nameless
-   subagent, not an assignable teammate).
+   subagent, not an assignable teammate). The task list is best-effort telemetry
+   for the main loop; `research-progress.md` (written each phase) is the
+   authoritative record, so progress is never lost even if a teamless subagent's
+   task list is inert.
 
 2. Spawn the analyst as a **nameless background subagent**. Spawn a full batch (up
    to `MAX_CONCURRENCY`) by issuing the `Agent` calls in **one** message so they
@@ -171,14 +174,16 @@ dimensions; in `augment` mode, the single new dimension), running at most
 
        Read harness.config.json dimensions[] for this dimension's description.
        Conduct web research scoped to your dimension and the goal. Emit each
-       finding as an individual MIF memory unit validated against
-       schemas/findings.schema.json (set extensions.harness.dimension =
-       '{dimension}'; leave extensions.harness.verification to the gate). Every
-       finding MUST carry >=1 citation (citation-integrity is a core gate).
+       finding as an individual MIF memory unit (set extensions.harness.dimension
+       = '{dimension}'; leave extensions.harness.verification to the gate) and
+       validate the structure you are responsible for — the falsification gate
+       completes it. Every finding MUST carry >=1 citation with a live http(s) URL
+       (citation-integrity is a core gate).
 
-       If a single source document is too large to read in one pass, process it in
-       overlapping segments yourself; do NOT delegate. If you cannot, name the
-       oversized source in your return so the orchestrator can route a chunker.
+       For an oversized source, follow your size-threshold guidance (Step 3): read
+       in one pass, self-process in overlapping segments, or — above the threshold
+       — name it in your oversized_sources return so the orchestrator routes a
+       source-chunker. Do not fabricate around it.
 
        Your FINAL MESSAGE is your return value to the orchestrator: list the
        finding file paths you wrote and any oversized sources you could not fully
@@ -190,12 +195,29 @@ dimensions; in `augment` mode, the single new dimension), running at most
    As each analyst returns, mark its task complete (`TaskUpdate(taskId, status:
    "completed")`) and record the finding paths from its return.
 
-3. **Source-chunker (only if needed).** If an analyst's return names an oversized
-   source it could not process, spawn one `source-chunker` as a **nameless
-   subagent** over that document (pass `REPORTS_DIR`, the dimension lens, and the
-   URL/path). Its return is the synthesized chunk findings; fold them into the
-   dimension's finding set yourself (the analyst is already done — do not try to
-   message it).
+3. **Source-chunker (only if needed).** For **each** entry in an analyst's
+   returned `oversized_sources` list, spawn a `source-chunker` as a **nameless
+   subagent** over that one document:
+
+   ```text
+   Agent(
+     subagent_type: "source-chunker",
+     run_in_background: true,
+     prompt: """
+       SOURCE: {oversized-url-or-path}    — one entry from oversized_sources
+       DIMENSION: {dimension}             — the analyst's dimension lens
+       GOAL_FILE: {GOAL_FILE}             — for scoping relevance
+       REPORTS_DIR: {REPORTS_DIR}         — write finding files here, verbatim
+       Follow your agent definition; stamp extensions.harness.dimension on every
+       finding. Your final message is your return value (finding_files,
+       source_metadata, processing_notes — per your Step 8).
+     """
+   )
+   ```
+
+   Its return lists the finding files it wrote; they already carry
+   `extensions.harness.dimension`, so they join that dimension's finding set
+   automatically (the analyst is already done — do not try to message it).
 
 Wait for every analyst subagent to return (or time out a straggler and exclude
 it, noting the omission). Collect the finding file paths from the returns and from
@@ -265,7 +287,12 @@ Agent(
 
 Wait for the subagent to return its roll-up (`falsified`, `weakened`, `survived`,
 `inconclusive` counts); then mark the task complete:
-`TaskUpdate(taskId, status: "completed")`. The analyst has already applied remediation per its
+`TaskUpdate(taskId, status: "completed")`. **If the return is empty or missing**
+(the subagent died after writing verdicts but before returning), recover the
+counts from disk rather than blocking or logging a zero gate — read the
+`{YYYY-MM-DD}-falsification-report.md` (UTC date) and/or tally
+`extensions.harness.verification.verdict` across the finding files, exactly as
+`/falsify` does. The analyst has already applied remediation per its
 definition: `falsified` → quarantined (moved to `$REPORTS_DIR/quarantine/`),
 `weakened` → confidence downgraded one level in place, `survived` /
 `inconclusive` → annotated only. After the gate, the active finding set is the
