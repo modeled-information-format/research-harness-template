@@ -1189,6 +1189,17 @@ JSON
     bad "build-world is not deterministic"
   fi
 
+  # 13h. Real-sample guard: the SHIPPED corpus (reports/_meta) — which uses MIF built-in
+  #      entity types (Concept/Technology) and MIF-native relationships (supports/
+  #      contradicts/derived-from) — builds and CONFORMS. A curated fixture could pass
+  #      while real data fails; this pins it to the actual corpus.
+  scripts/build-world.sh reports/_meta "$T/real.json" >/dev/null 2>&1
+  if [ -s "$T/real.json" ] && [ "$(jq '.nodes|length' "$T/real.json" 2>/dev/null)" -gt 0 ] && vw "$T/real.json"; then
+    ok "the shipped sample corpus builds and conforms (MIF core entity/relationship vocabulary recognized)"
+  else
+    bad "the shipped sample corpus does not build/conform"
+  fi
+
   rm -rf "$T"
 }
 
