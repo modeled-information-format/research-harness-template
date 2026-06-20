@@ -1,0 +1,199 @@
+{
+  "skill_name": "lab",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Run /lab --hypothesis \"A living template beats a one-time snapshot\" against the sample corpus at $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/ (findings dir, knowledge-graph.json, research-index.json). Run the full Orient→Surface→Form→Corroborate→Disconfirm→Weigh→Gaps pipeline, including a mandatory Disconfirm step that checks contradicts edges. Then write your complete analysis — hypothesis ledger, supporting and disconfirming findings with their @ids, the explicit verdict (exactly one of: supported|contested|unsupported|untestable-with-corpus), and cited source URLs — to lab.md.",
+      "expected_output": "A lab.md file containing the full hypothesis pipeline output: a Disconfirm section that surfaces kg-cookiecutter-0002 as the contradicting finding, supporting findings kg-copier-0001 and kg-distribution-0003 cited by @id and source URL, and an explicit verdict of 'supported' with reasoning.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "lab.md",
+          "description": "Output file was created"
+        },
+        {
+          "type": "regex_match",
+          "file": "lab.md",
+          "pattern": "supported|contested|unsupported|untestable-with-corpus",
+          "description": "Verdict is exactly one of the four allowed enum values"
+        },
+        {
+          "type": "file_contains",
+          "file": "lab.md",
+          "literal": "kg-copier-0001",
+          "description": "Supporting finding kg-copier-0001 is cited by @id"
+        },
+        {
+          "type": "file_contains",
+          "file": "lab.md",
+          "literal": "kg-distribution-0003",
+          "description": "Supporting finding kg-distribution-0003 is cited by @id"
+        },
+        {
+          "type": "file_contains",
+          "file": "lab.md",
+          "literal": "kg-cookiecutter-0002",
+          "description": "Disconfirm step surfaces the contradicting finding by @id"
+        },
+        {
+          "type": "file_contains",
+          "file": "lab.md",
+          "literal": "copier.readthedocs.io",
+          "description": "At least one primary source URL is cited in the output"
+        }
+      ],
+      "expectations": [
+        "The verdict is 'supported' — both kg-copier-0001 and kg-distribution-0003 substantiate the claim that a living template (Copier) outperforms a one-time snapshot (Cookiecutter) for harness distribution.",
+        "The Disconfirm step explicitly surfaces kg-cookiecutter-0002 as a contradicting finding and explains why it does not overturn the verdict — the contradiction documents Cookiecutter's limitation, which actually reinforces the hypothesis.",
+        "Supporting findings are cited with their @id values and at least one primary source URL (copier.readthedocs.io) appears in the output alongside the finding it supports.",
+        "No findings are invented beyond the three in the sample corpus; the analysis explicitly stays inside the corpus and does not add external claims."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Run /lab --seed urn:mif:concept:harness:kg-copier-0001 against the sample corpus at $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/. Walk the finding's direct neighborhood: traverse all outgoing and incoming typed edges (supports, contradicts, derived-from, mentions). For each neighbor concept, resolve it to its finding title and content. Write your complete traversal report — seed details, outgoing edges with targets, incoming edges with sources, and neighbor finding content — to lab.md.",
+      "expected_output": "A lab.md file containing a graph traversal report for kg-copier-0001, naming: (1) the outgoing 'supports' edge to kg-distribution-0003, (2) the incoming 'contradicts' edge from kg-cookiecutter-0002, (3) the incoming 'derived-from' edge from kg-distribution-0003, and the content/title of each neighbor finding.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "lab.md",
+          "description": "Output file was created"
+        },
+        {
+          "type": "file_contains",
+          "file": "lab.md",
+          "literal": "kg-distribution-0003",
+          "description": "Outgoing supports edge target kg-distribution-0003 is named"
+        },
+        {
+          "type": "file_contains",
+          "file": "lab.md",
+          "literal": "kg-cookiecutter-0002",
+          "description": "Incoming contradicts edge source kg-cookiecutter-0002 is named"
+        },
+        {
+          "type": "file_contains",
+          "file": "lab.md",
+          "literal": "supports",
+          "description": "The 'supports' edge type is present in the traversal report"
+        },
+        {
+          "type": "file_contains",
+          "file": "lab.md",
+          "literal": "contradicts",
+          "description": "The 'contradicts' edge type is present in the traversal report"
+        }
+      ],
+      "expectations": [
+        "The outgoing 'supports' edge from kg-copier-0001 to kg-distribution-0003 is explicitly named with its edge type, and kg-distribution-0003's title or content is included — not just its ID.",
+        "The incoming 'contradicts' edge from kg-cookiecutter-0002 to kg-copier-0001 is explicitly named, identifying Cookiecutter's one-time-snapshot limitation as the source of the tension.",
+        "The traversal report discusses the actual content of neighbor findings (what each concept says), not just a list of raw IDs and edge types."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Run /lab --interrogate against the sample corpus at $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/. Produce a complete interrogation ledger: list any findings with non-survived verdicts (weakened/falsified/quarantined), surface all contradicts edges, check provenance confidence levels, and identify citation or coverage gaps. Write your full interrogation report — including a two-column ledger of supporting vs disconfirming evidence — to lab.md.",
+      "expected_output": "A lab.md file containing an interrogation ledger that: (a) confirms all three corpus findings carry a 'survived' verdict with none falsified or weakened, (b) surfaces the contradicts edge from kg-cookiecutter-0002 to kg-copier-0001 as the primary tension, and (c) produces a supporting vs disconfirming ledger without inventing weaknesses that do not exist.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "lab.md",
+          "description": "Output file was created"
+        },
+        {
+          "type": "file_contains",
+          "file": "lab.md",
+          "literal": "survived",
+          "description": "All three findings' survived verdict status is acknowledged"
+        },
+        {
+          "type": "file_contains",
+          "file": "lab.md",
+          "literal": "contradicts",
+          "description": "The contradicts edge is surfaced as the corpus tension"
+        },
+        {
+          "type": "regex_not_match",
+          "file": "lab.md",
+          "pattern": "TODO",
+          "description": "No placeholder TODO text remains in the output"
+        }
+      ],
+      "expectations": [
+        "The interrogation explicitly states that all three corpus findings (kg-copier-0001, kg-cookiecutter-0002, kg-distribution-0003) carry a 'survived' verdict — it does NOT invent weaknesses, falsifications, or quarantined findings that do not exist in the sample corpus.",
+        "The contradicts edge from kg-cookiecutter-0002 to kg-copier-0001 is surfaced as the primary tension and correctly placed in the disconfirming column of the ledger, not treated as a verdict failure.",
+        "The ledger distinguishes supporting evidence (kg-copier-0001 and kg-distribution-0003 establishing the living-template requirement) from the contradicting evidence (kg-cookiecutter-0002 contradicting kg-copier-0001).",
+        "When noting coverage gaps or risks, the skill grounds them in actual corpus properties (e.g., small corpus size, single-source citations) rather than fabricating non-existent weaknesses."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Run /lab --hypothesis \"Cookiecutter supports update propagation\" against the sample corpus at $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/. Run the full Orient→Surface→Form→Corroborate→Disconfirm→Weigh→Gaps pipeline, including a mandatory Disconfirm step that checks contradicts edges and non-survived findings. Then write your complete analysis — supporting and disconfirming findings with @ids, the explicit verdict (exactly one of: supported|contested|unsupported|untestable-with-corpus), and a reasoning section explaining the verdict — to lab.md.",
+      "expected_output": "A lab.md file where the verdict is 'unsupported' or 'contested' (NOT 'supported'), because kg-cookiecutter-0002 explicitly states Cookiecutter is a one-time snapshot with no update propagation, and the contradicts edge to kg-copier-0001 directly refutes the hypothesis.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "lab.md",
+          "description": "Output file was created"
+        },
+        {
+          "type": "regex_match",
+          "file": "lab.md",
+          "pattern": "unsupported|contested",
+          "description": "The verdict is 'unsupported' or 'contested' — not the incorrect 'supported'"
+        },
+        {
+          "type": "file_contains",
+          "file": "lab.md",
+          "literal": "kg-cookiecutter-0002",
+          "description": "The directly relevant finding (Cookiecutter is snapshot-only) is cited"
+        },
+        {
+          "type": "file_contains",
+          "file": "lab.md",
+          "literal": "contradicts",
+          "description": "The contradicts edge type is present, confirming Disconfirm was performed"
+        }
+      ],
+      "expectations": [
+        "The verdict is 'unsupported' or 'contested' — NOT 'supported' — because kg-cookiecutter-0002 explicitly documents that Cookiecutter has no update propagation mechanism, and this finding directly refutes the hypothesis under test.",
+        "The Disconfirm step identifies kg-cookiecutter-0002 itself as primary disconfirming evidence — the finding about Cookiecutter IS the refutation of the hypothesis, not support for it.",
+        "The skill does not confuse the existence of the Cookiecutter finding with evidence that Cookiecutter supports update propagation — it correctly reads the finding content as refutation."
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Run /lab --namespace harness/example-topic against the sample corpus at $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/. Explore the full contents of this namespace: enumerate all findings with their titles and verdicts, surface the key relationships between them, and identify the central conceptual threads. Write your exploration overview — finding list, key relationships, and thematic summary — to lab.md.",
+      "expected_output": "A lab.md file that enumerates all three findings in the harness/example-topic namespace (kg-copier-0001, kg-cookiecutter-0002, kg-distribution-0003), identifies the update-propagation entity as the shared conceptual thread, and describes the supports/contradicts/derived-from relationship structure.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "lab.md",
+          "description": "Output file was created"
+        },
+        {
+          "type": "file_contains",
+          "file": "lab.md",
+          "literal": "kg-copier-0001",
+          "description": "At least one finding from the harness/example-topic namespace is enumerated"
+        },
+        {
+          "type": "file_contains",
+          "file": "lab.md",
+          "literal": "harness",
+          "description": "The namespace scope is reflected in the output"
+        }
+      ],
+      "expectations": [
+        "All three findings in the harness/example-topic namespace are enumerated: kg-copier-0001 (Copier update propagation), kg-cookiecutter-0002 (Cookiecutter snapshot), and kg-distribution-0003 (living template mandate), each with their title or a paraphrase of their content.",
+        "The exploration identifies the central conceptual thread: update-propagation as the differentiating capability, with Copier as the enabling technology and the living-template requirement as the design conclusion.",
+        "The relationship structure is described — the supports, contradicts, and derived-from edges are explained in context, not just listed as raw technical IDs."
+      ]
+    }
+  ]
+}

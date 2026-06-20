@@ -1,0 +1,216 @@
+{
+  "skill_name": "md-fix",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Create a file named doc.md in the current working directory with exactly this content:\n\n# My Project\n\nIntroduction paragraph.\n\n**Overview**\n\nThe overview section content.\n\n**Requirements**\n\nThe requirements section.\n\nThen run md-fix --no-spell on doc.md to fix any markdown issues.",
+      "expected_output": "The file doc.md is remediated: the bold-as-heading lines **Overview** and **Requirements** are converted to real Markdown headings (## Overview and ## Requirements). No markdownlint-disable or prettier-ignore tokens are introduced.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "doc.md",
+          "description": "doc.md was created"
+        },
+        {
+          "type": "file_contains",
+          "file": "doc.md",
+          "literal": "## Overview",
+          "description": "Bold-as-heading **Overview** promoted to ## Overview (MD036 fix)"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "doc.md",
+          "literal": "**Overview**",
+          "description": "Original bold-as-heading **Overview** no longer present after fix"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "doc.md",
+          "literal": "markdownlint-disable",
+          "description": "No markdownlint-disable suppression token introduced by the skill"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "doc.md",
+          "literal": "prettier-ignore",
+          "description": "No prettier-ignore suppression token introduced by the skill"
+        }
+      ],
+      "expectations": [
+        "The skill reports MD036 was fixed in its summary.",
+        "The remediated doc.md also promotes **Requirements** to ## Requirements (both bold-as-heading lines converted)."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Create a file named doc.md in the current working directory with exactly this content:\n\n---\ntitle: My Document\ndate: 2024-01-01\n---\n\n# My Document\n\nSome content.\n\nThen run md-fix --no-spell on doc.md to resolve the duplicate-title violation.",
+      "expected_output": "The frontmatter title: field is removed because it duplicates the body H1 (MD025). The body # My Document heading is preserved. The date: field remains in frontmatter untouched. No suppression tokens are introduced.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "doc.md",
+          "description": "doc.md was created"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "doc.md",
+          "literal": "title: My Document",
+          "description": "Frontmatter title: field removed — it duplicated the body H1 (MD025 fix)"
+        },
+        {
+          "type": "file_contains",
+          "file": "doc.md",
+          "literal": "# My Document",
+          "description": "Body H1 heading preserved after frontmatter title removal"
+        },
+        {
+          "type": "file_contains",
+          "file": "doc.md",
+          "literal": "date: 2024-01-01",
+          "description": "Other frontmatter fields (date:) left untouched"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "doc.md",
+          "literal": "markdownlint-disable",
+          "description": "No markdownlint-disable suppression token introduced by the skill"
+        }
+      ],
+      "expectations": [
+        "The skill reports MD025 was fixed in its summary.",
+        "The frontmatter block still opens and closes with --- delimiters (the block itself was not removed, only the title: line)."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Create a file named doc.md in the current working directory with exactly this content:\n\n# Project Guide\n\nSee the [setup guide](./guides/setup-xyz-doesnotexist.md) for instructions.\n\nThe [API reference](./api/reference-xyz-doesnotexist.md) is also available.\n\nThen run md-fix --no-spell on doc.md to attempt to repair the broken intra-repo links.",
+      "expected_output": "Both links reference .md files that do not exist anywhere in the repo. The engine cannot resolve them and escalates both as unresolved links rather than inventing target paths. The file is left unchanged. The skill does not add any suppression tokens.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "doc.md",
+          "description": "doc.md was created"
+        },
+        {
+          "type": "file_contains",
+          "file": "doc.md",
+          "literal": "(./guides/setup-xyz-doesnotexist.md)",
+          "description": "Unresolvable link left unchanged — engine did not invent a target path"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "doc.md",
+          "literal": "markdownlint-disable",
+          "description": "No markdownlint-disable suppression token introduced"
+        }
+      ],
+      "expectations": [
+        "The skill reports both links as escalations (class: link) in the escalate section, not as repaired.",
+        "The escalation agent (if spawned) confirms no matching target file was found and does not invent or create a path.",
+        "The skill summary plainly states that the links could not be resolved — it does not claim 'clean' while escalations remain."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Create a file named doc.md in the current working directory with exactly this content:\n\n# API Reference\n\nReplace <your-api-key> with your actual key before making requests.\n\nSet the <base-url> to your deployment URL.\n\nThen run md-fix --no-spell on doc.md to fix the bare HTML placeholder tokens without suppressing anything.",
+      "expected_output": "The bare <your-api-key> and <base-url> tokens are wrapped in backticks per MD033. The issue is fixed without adding markdownlint-disable or prettier-ignore anywhere in the file.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "doc.md",
+          "description": "doc.md was created"
+        },
+        {
+          "type": "file_contains",
+          "file": "doc.md",
+          "literal": "`<your-api-key>`",
+          "description": "Bare <your-api-key> placeholder wrapped in backticks (MD033 fix)"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "doc.md",
+          "literal": "markdownlint-disable",
+          "description": "No markdownlint-disable suppression token introduced — issue fixed, not suppressed"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "doc.md",
+          "literal": "prettier-ignore",
+          "description": "No prettier-ignore suppression token introduced"
+        }
+      ],
+      "expectations": [
+        "The skill reports MD033 was fixed in its summary.",
+        "The <base-url> placeholder is also wrapped in backticks — both placeholder tokens are remediated, not just the first."
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Create a file named doc.md in the current working directory with exactly this content:\n\n# Compliant Document\n\nThis file is already fully compliant with all markdownlint rules.\n\n## Section One\n\nContent here.\n\n## Section Two\n\nMore content.\n\nThen run md-fix --check --no-spell on doc.md to verify it is already clean.",
+      "expected_output": "Running md-fix in --check mode on an already-compliant file reports changed: false with no escalations. The file content is byte-identical to what was written — no modifications made.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "doc.md",
+          "description": "doc.md was created"
+        },
+        {
+          "type": "file_contains",
+          "file": "doc.md",
+          "literal": "already fully compliant with all markdownlint rules",
+          "description": "File content unchanged — original marker line preserved verbatim (idempotence confirmed)"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "doc.md",
+          "literal": "markdownlint-disable",
+          "description": "No markdownlint-disable suppression token was introduced"
+        }
+      ],
+      "expectations": [
+        "The skill reports the file is compliant: changed is false and escalate is empty.",
+        "The skill does not report 'clean' while any residual lint issues remain — the summary is honest about the file state."
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Create a file named doc.md in the current working directory with exactly this content:\n\n# Table Test\n\n|Name|Value|Status|\n|---|---|---|\n|Alice|100|active|\n|Bob|200|inactive|\n\nThen run md-fix --no-spell on doc.md to normalize the table formatting.",
+      "expected_output": "The table is normalized per MD060: all rows are reformatted with spaces inside the pipes. No suppression tokens are introduced.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "doc.md",
+          "description": "doc.md was created"
+        },
+        {
+          "type": "file_contains",
+          "file": "doc.md",
+          "literal": "| Name | Value | Status |",
+          "description": "Table header row padded with spaces around each cell (MD060 fix)"
+        },
+        {
+          "type": "file_contains",
+          "file": "doc.md",
+          "literal": "| Alice | 100 | active |",
+          "description": "Table data row padded with spaces around each cell"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "doc.md",
+          "literal": "markdownlint-disable",
+          "description": "No markdownlint-disable suppression token introduced"
+        }
+      ],
+      "expectations": [
+        "The skill reports MD060 was fixed in its summary.",
+        "The separator row is also normalized to | --- | --- | --- | (verified from engine output)."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,363 @@
+{
+  "skill_name": "graph",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Show me the statistics for the knowledge graph at `$CLAUDE_PROJECT_DIR/reports/_meta/sample-session/knowledge-graph.json`. Use the `/graph --stats` mode. Write the complete stats JSON object (with nodes count, edges count, by_kind, and by_edge_type fields) to `stats.json`.",
+      "expected_output": "A stats.json file containing an object with integer counts for nodes (7) and edges (10), a by_kind array with entries for concept (3) and entity (4), and a by_edge_type array covering all 4 relationship types.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "stats.json",
+          "description": "Stats JSON file was written to the outputs directory"
+        },
+        {
+          "type": "json_valid",
+          "file": "stats.json",
+          "description": "Output is valid JSON"
+        },
+        {
+          "type": "json_field_equals",
+          "file": "stats.json",
+          "path": ".nodes",
+          "expected": 7,
+          "description": "Node count is exactly 7"
+        },
+        {
+          "type": "json_field_equals",
+          "file": "stats.json",
+          "path": ".edges",
+          "expected": 10,
+          "description": "Edge count is exactly 10"
+        },
+        {
+          "type": "json_array_contains",
+          "file": "stats.json",
+          "path": ".by_kind",
+          "match": {
+            "kind": "concept"
+          },
+          "description": "by_kind array includes an entry for concept nodes"
+        },
+        {
+          "type": "json_array_contains",
+          "file": "stats.json",
+          "path": ".by_kind",
+          "match": {
+            "kind": "entity"
+          },
+          "description": "by_kind array includes an entry for entity nodes"
+        },
+        {
+          "type": "shell_command",
+          "description": "Concept count in by_kind is exactly 3",
+          "command": "jq -e '.by_kind | map(select(.kind==\"concept\"))[0].count == 3' stats.json"
+        },
+        {
+          "type": "shell_command",
+          "description": "Entity count in by_kind is exactly 4",
+          "command": "jq -e '.by_kind | map(select(.kind==\"entity\"))[0].count == 4' stats.json"
+        }
+      ],
+      "expectations": [
+        "The by_edge_type array contains exactly 4 entries covering all relationship types in the graph: contradicts (1 edge), derived-from (2 edges), mentions (6 edges), and supports (1 edge).",
+        "The skill also reports the most-connected nodes by degree, identifying urn:mif:entity:concept:update-propagation as the most-referenced entity node with 3 incoming mention edges."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Rebuild the knowledge graph from the sample session findings. Run `bash $CLAUDE_PROJECT_DIR/scripts/build-graph.sh $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings knowledge-graph.json` to build the graph and write the output to `knowledge-graph.json` in the current working directory.",
+      "expected_output": "A knowledge-graph.json file written to the outputs directory containing 7 nodes and 10 edges, all with urn:mif: identifiers, and via fields restricted to 'relationship' or 'entity'.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "knowledge-graph.json",
+          "description": "Knowledge graph JSON file was written to the outputs directory"
+        },
+        {
+          "type": "json_valid",
+          "file": "knowledge-graph.json",
+          "description": "Output is valid JSON"
+        },
+        {
+          "type": "json_field_count",
+          "file": "knowledge-graph.json",
+          "path": ".nodes",
+          "op": "eq",
+          "expected": 7,
+          "description": "Graph contains exactly 7 nodes"
+        },
+        {
+          "type": "json_field_count",
+          "file": "knowledge-graph.json",
+          "path": ".edges",
+          "op": "eq",
+          "expected": 10,
+          "description": "Graph contains exactly 10 edges"
+        },
+        {
+          "type": "json_array_contains",
+          "file": "knowledge-graph.json",
+          "path": ".nodes",
+          "match": {
+            "kind": "entity"
+          },
+          "description": "Nodes array includes at least one entity-kind node"
+        },
+        {
+          "type": "json_array_contains",
+          "file": "knowledge-graph.json",
+          "path": ".nodes",
+          "match": {
+            "id": "urn:mif:concept:harness:kg-copier-0001"
+          },
+          "description": "Copier concept node is present with its MIF urn"
+        },
+        {
+          "type": "shell_command",
+          "description": "Every node id starts with urn:mif: \u2014 MIF-native invariant",
+          "command": "jq -e '.nodes | all(.id | startswith(\"urn:mif:\"))' knowledge-graph.json"
+        },
+        {
+          "type": "shell_command",
+          "description": "Every edge via field is 'relationship' or 'entity' \u2014 no bare tag strings",
+          "command": "jq -e '.edges | all(.via == \"relationship\" or .via == \"entity\")' knowledge-graph.json"
+        }
+      ],
+      "expectations": [
+        "The @type field is 'KnowledgeGraph' and the generator field references 'build-graph.sh (MIF-native; SPEC \u00a76c)', proving the output is from the correct MIF pipeline.",
+        "No edge type is a raw tag string \u2014 all edge types are MIF relationship keywords (supports, contradicts, derived-from) or 'mentions'."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Look up the neighborhood of node `urn:mif:entity:concept:update-propagation` in the knowledge graph at `$CLAUDE_PROJECT_DIR/reports/_meta/sample-session/knowledge-graph.json`. Use `/graph --node urn:mif:entity:concept:update-propagation`. Write the neighborhood JSON (with node, out, and in fields) to `node.json`.",
+      "expected_output": "A node.json file for the update-propagation entity showing 3 incoming 'mentions' edges from all 3 concept nodes and an empty outgoing edges array.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "node.json",
+          "description": "Node neighborhood JSON was written to the outputs directory"
+        },
+        {
+          "type": "json_valid",
+          "file": "node.json",
+          "description": "Output is valid JSON"
+        },
+        {
+          "type": "json_field_exists",
+          "file": "node.json",
+          "path": ".in",
+          "description": "Output contains an 'in' field for incoming edges"
+        },
+        {
+          "type": "json_array_contains",
+          "file": "node.json",
+          "path": ".in",
+          "match": {
+            "source": "urn:mif:concept:harness:kg-cookiecutter-0002"
+          },
+          "description": "Incoming edges include the cookiecutter concept's mention"
+        },
+        {
+          "type": "json_array_contains",
+          "file": "node.json",
+          "path": ".in",
+          "match": {
+            "source": "urn:mif:concept:harness:kg-copier-0001"
+          },
+          "description": "Incoming edges include the copier concept's mention"
+        },
+        {
+          "type": "json_array_contains",
+          "file": "node.json",
+          "path": ".in",
+          "match": {
+            "source": "urn:mif:concept:harness:kg-distribution-0003"
+          },
+          "description": "Incoming edges include the distribution concept's mention"
+        }
+      ],
+      "expectations": [
+        "The .in array contains exactly 3 edges, all of type 'mentions' and via 'entity', one from each of the three concept nodes in the corpus \u2014 this entity is the most-mentioned node in the graph.",
+        "The .out array is empty because entity nodes are never edge sources in this MIF graph \u2014 outgoing edges are only emitted from concept (finding) nodes."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "What connects `urn:mif:concept:harness:kg-copier-0001` and `urn:mif:concept:harness:kg-distribution-0003` in the knowledge graph at `$CLAUDE_PROJECT_DIR/reports/_meta/sample-session/knowledge-graph.json`? Use `/graph --between urn:mif:concept:harness:kg-copier-0001 urn:mif:concept:harness:kg-distribution-0003`. Write the result JSON (with direct and shared fields) to `between.json`.",
+      "expected_output": "A between.json file showing 2 direct typed edges between the two concept nodes (one supports, one derived-from), and a shared array identifying the entity both concepts mention in common.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "between.json",
+          "description": "Between-nodes JSON was written to the outputs directory"
+        },
+        {
+          "type": "json_valid",
+          "file": "between.json",
+          "description": "Output is valid JSON"
+        },
+        {
+          "type": "json_field_exists",
+          "file": "between.json",
+          "path": ".direct",
+          "description": "Output contains a 'direct' field for direct edges between the nodes"
+        },
+        {
+          "type": "json_array_contains",
+          "file": "between.json",
+          "path": ".direct",
+          "match": {
+            "type": "supports"
+          },
+          "description": "Direct edges include the supports relationship from copier-0001 to distribution-0003"
+        },
+        {
+          "type": "json_array_contains",
+          "file": "between.json",
+          "path": ".direct",
+          "match": {
+            "type": "derived-from"
+          },
+          "description": "Direct edges include the derived-from relationship from distribution-0003 back to copier-0001"
+        },
+        {
+          "type": "shell_command",
+          "description": "Exactly 2 direct edges connect the two nodes",
+          "command": "jq -e '.direct | length == 2' between.json"
+        },
+        {
+          "type": "shell_command",
+          "description": "Shared neighbors include urn:mif:entity:concept:update-propagation, the entity both concepts mention",
+          "command": "jq -e '.shared | map(. == \"urn:mif:entity:concept:update-propagation\") | any' between.json"
+        }
+      ],
+      "expectations": [
+        "The supports edge in .direct has source copier-0001 and target distribution-0003; the derived-from edge has the reverse direction \u2014 distribution-0003 back to copier-0001 \u2014 confirming a bidirectional relationship.",
+        "The .shared field is a non-empty array of entity URNs, identifying the common conceptual ground both findings share."
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "List all entity nodes in the knowledge graph at `$CLAUDE_PROJECT_DIR/reports/_meta/sample-session/knowledge-graph.json` with their degree. Use `/graph --kind entity`. Write the entity list as a JSON array (not a wrapped object) to `entities.json`.",
+      "expected_output": "An entities.json file containing a JSON array of 4 entity objects, each with an id starting with urn:mif:entity: and a degree or edge-count field.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "entities.json",
+          "description": "Entity list JSON was written to the outputs directory"
+        },
+        {
+          "type": "json_valid",
+          "file": "entities.json",
+          "description": "Output is valid JSON"
+        },
+        {
+          "type": "shell_command",
+          "description": "Array contains exactly 4 entity entries",
+          "command": "jq -e 'length == 4' entities.json"
+        },
+        {
+          "type": "shell_command",
+          "description": "Array includes the copier technology entity by its exact MIF urn",
+          "command": "jq -e 'map(.id == \"urn:mif:entity:technology:copier\") | any' entities.json"
+        }
+      ],
+      "expectations": [
+        "All 4 entity IDs in the array begin with 'urn:mif:entity:' \u2014 no raw label strings or non-MIF identifiers appear.",
+        "Each entry includes a degree field or equivalent showing the count of edges connecting to it; update-propagation has the highest degree (3).",
+        "The four entities are: urn:mif:entity:concept:living-template, urn:mif:entity:concept:update-propagation, urn:mif:entity:technology:cookiecutter, and urn:mif:entity:technology:copier."
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Render an HTML visualization of the knowledge graph at `$CLAUDE_PROJECT_DIR/reports/_meta/sample-session/knowledge-graph.json`. Run `bash $CLAUDE_PROJECT_DIR/scripts/build-graph-viz.sh $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/knowledge-graph.json knowledge-graph.html` to produce the HTML and write it to `knowledge-graph.html` in the current working directory.",
+      "expected_output": "A self-contained knowledge-graph.html file that embeds node and edge data inline, contains labels for all 7 nodes, and shows the graph as 7 nodes and 10 edges.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "knowledge-graph.html",
+          "description": "HTML visualization was written to the outputs directory"
+        },
+        {
+          "type": "file_contains",
+          "file": "knowledge-graph.html",
+          "literal": "Knowledge graph",
+          "description": "HTML title or heading contains 'Knowledge graph'"
+        },
+        {
+          "type": "file_contains",
+          "file": "knowledge-graph.html",
+          "literal": "Copier",
+          "description": "HTML contains the Copier node label"
+        },
+        {
+          "type": "file_contains",
+          "file": "knowledge-graph.html",
+          "literal": "urn:mif:",
+          "description": "HTML embeds the raw urn:mif: identifiers, proving the graph data is inlined"
+        }
+      ],
+      "expectations": [
+        "The HTML is fully self-contained \u2014 the graph JSON data is embedded inline in a <script type='application/json'> block and no external CDN or network fetch is required.",
+        "The heading or title shows '7 nodes, 10 edges', matching the actual sample graph counts from the embedded data."
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Look up the neighborhood of concept node `urn:mif:concept:harness:kg-copier-0001` in the knowledge graph at `$CLAUDE_PROJECT_DIR/reports/_meta/sample-session/knowledge-graph.json`. Use `/graph --node urn:mif:concept:harness:kg-copier-0001`. Write the neighborhood JSON (with node, out, and in fields) to `node.json`.",
+      "expected_output": "A node.json file for the copier concept node showing outgoing edges including a supports edge to distribution-0003, and incoming edges including a contradicts from cookiecutter-0002 and a derived-from from distribution-0003.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "node.json",
+          "description": "Node neighborhood JSON was written to the outputs directory"
+        },
+        {
+          "type": "json_valid",
+          "file": "node.json",
+          "description": "Output is valid JSON"
+        },
+        {
+          "type": "json_array_contains",
+          "file": "node.json",
+          "path": ".out",
+          "match": {
+            "type": "supports"
+          },
+          "description": "Outgoing edges include the supports relationship to distribution-0003"
+        },
+        {
+          "type": "json_array_contains",
+          "file": "node.json",
+          "path": ".in",
+          "match": {
+            "type": "contradicts"
+          },
+          "description": "Incoming edges include the contradicts relationship from cookiecutter-0002"
+        },
+        {
+          "type": "json_array_contains",
+          "file": "node.json",
+          "path": ".in",
+          "match": {
+            "type": "derived-from"
+          },
+          "description": "Incoming edges include the derived-from relationship from distribution-0003"
+        }
+      ],
+      "expectations": [
+        "The supports edge in .out has target 'urn:mif:concept:harness:kg-distribution-0003', confirming the copier \u2192 distribution directional relationship.",
+        "The .in array has exactly 2 edges: a contradicts from urn:mif:concept:harness:kg-cookiecutter-0002 and a derived-from from urn:mif:concept:harness:kg-distribution-0003."
+      ]
+    }
+  ]
+}

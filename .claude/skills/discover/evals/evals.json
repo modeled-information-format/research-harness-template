@@ -1,0 +1,325 @@
+{
+  "skill_name": "discover",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Audit the research corpus for coverage gaps against the config-declared dimension taxonomy. The fixed sample corpus holds exactly one finding per dimension, so it cannot exercise gap detection — build a deliberately skewed corpus first. Create a findings directory `skewed/` containing TWO MIF findings whose `extensions.harness.dimension` is `technical` (copy the JSON shape from `$CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings/finding-copier.json`, give each a distinct `@id`, and set the dimension to `technical`). Build its index: `bash $CLAUDE_PROJECT_DIR/scripts/build-index.sh skewed skewed-index.json`. Then read the authoritative dimension taxonomy from `$CLAUDE_PROJECT_DIR/harness.config.json` (`.dimensions[].id`), count findings per dimension in `skewed-index.json`, and emit the coverage rollup. Write a JSON object `{\"coverage\": [ {\"dimension\": <id>, \"findings\": <count>} ... ]}` covering every config dimension to `gaps.json`, and a readable coverage table that flags the zero-finding dimensions to `gaps.md`.",
+      "expected_output": "gaps.json whose coverage array lists technical with 2 findings and landscape and trajectory with 0 findings each, plus gaps.md that surfaces landscape and trajectory as coverage gaps and recommends filling them, while NOT flagging technical (which is populated).",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "gaps.json",
+          "description": "coverage rollup JSON was written"
+        },
+        {
+          "type": "json_valid",
+          "file": "gaps.json",
+          "description": "gaps.json is valid JSON"
+        },
+        {
+          "type": "json_field_count",
+          "file": "gaps.json",
+          "path": ".coverage",
+          "op": "eq",
+          "expected": 3,
+          "description": "coverage rollup covers all three config dimensions"
+        },
+        {
+          "type": "json_array_contains",
+          "file": "gaps.json",
+          "path": ".coverage",
+          "match": { "dimension": "landscape", "findings": 0 },
+          "description": "landscape is a true zero-finding gap in the skewed corpus"
+        },
+        {
+          "type": "json_array_contains",
+          "file": "gaps.json",
+          "path": ".coverage",
+          "match": { "dimension": "trajectory", "findings": 0 },
+          "description": "trajectory is a true zero-finding gap in the skewed corpus"
+        },
+        {
+          "type": "json_array_contains",
+          "file": "gaps.json",
+          "path": ".coverage",
+          "match": { "dimension": "technical", "findings": 2 },
+          "description": "technical is populated (2 findings) and must NOT be flagged as a gap"
+        },
+        {
+          "type": "file_contains",
+          "file": "gaps.md",
+          "literal": "landscape",
+          "description": "the gap report names the landscape dimension"
+        },
+        {
+          "type": "file_contains",
+          "file": "gaps.md",
+          "literal": "trajectory",
+          "description": "the gap report names the trajectory dimension"
+        }
+      ],
+      "expectations": [
+        "gaps.md identifies landscape and trajectory as the coverage gaps (zero findings) and does not present technical as a gap.",
+        "The report recommends a concrete next step for the empty dimensions (e.g. running /augment to fill them), per the skill's guidance.",
+        "The dimension taxonomy is read from harness.config.json, not hard-coded — all three configured dimensions appear in the rollup."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Find the clusters in the research corpus — sets of findings tied together through the MIF-native knowledge graph by a shared referenced entity. Read the graph at `$CLAUDE_PROJECT_DIR/reports/_meta/sample-session/knowledge-graph.json`, group the `via: \"entity\"` (mentions) edges by their target entity, and keep only entities referenced by more than one finding. Write a JSON object `{\"clusters\": [ {\"entity\": <urn>, \"findings\": [<finding ids>], \"size\": <n>} ... ]}` sorted by descending size to `clusters.json`, and a readable summary naming each cluster by its entity label to `clusters.md`.",
+      "expected_output": "clusters.json with exactly one cluster — the entity urn:mif:entity:concept:update-propagation, shared by all three findings (size 3) — and clusters.md naming the 'update propagation' cluster. The single-finding entities (cookiecutter, copier, living-template) must NOT appear as clusters.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "clusters.json",
+          "description": "cluster JSON was written"
+        },
+        {
+          "type": "json_valid",
+          "file": "clusters.json",
+          "description": "clusters.json is valid JSON"
+        },
+        {
+          "type": "json_field_count",
+          "file": "clusters.json",
+          "path": ".clusters",
+          "op": "eq",
+          "expected": 1,
+          "description": "exactly one shared-entity cluster exists in the corpus"
+        },
+        {
+          "type": "json_array_contains",
+          "file": "clusters.json",
+          "path": ".clusters",
+          "match": {
+            "entity": "urn:mif:entity:concept:update-propagation",
+            "size": 3
+          },
+          "description": "the cluster is the update-propagation entity shared by all 3 findings"
+        },
+        {
+          "type": "shell_command",
+          "command": "jq -e '.clusters | length == 1' clusters.json",
+          "description": "no second cluster exists — single-finding entities are not clusters"
+        },
+        {
+          "type": "file_contains",
+          "file": "clusters.md",
+          "literal": "update propagation",
+          "description": "the cluster is named by its entity label"
+        }
+      ],
+      "expectations": [
+        "Exactly one cluster is reported, keyed on the update-propagation entity that all three findings mention.",
+        "Entities referenced by only one finding (Cookiecutter, Copier, living template) are correctly excluded from the cluster list.",
+        "clusters.md highlights that this cluster bridges findings of different dimensions (technical, landscape, trajectory) — a cross-cutting theme."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Report the stale findings in the corpus. Staleness has two independent signals. (1) Verdict-based: read `$CLAUDE_PROJECT_DIR/reports/_meta/sample-session/research-index.json` and collect findings whose `verdict` is anything other than `survived` (and non-null) — these are epistemically stale regardless of age. (2) Age-based: read the MIF findings at `$CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings/*.json` and list their `created` dates oldest-first. Write a JSON object `{\"verdict_stale\": [ <ids> ], \"age_stale\": [ {\"id\": <id>, \"created\": <date>} ... ]}` to `stale.json`, and a readable report to `stale.md`.",
+      "expected_output": "stale.json with an EMPTY verdict_stale array (all three sample findings are survived) and an age_stale list covering the three findings with their 2026-06-19 created dates. stale.md states there are no verdict-based stale findings and lists the findings by age, without falsely flagging any survived finding as weakened/falsified/quarantined.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "stale.json",
+          "description": "stale report JSON was written"
+        },
+        {
+          "type": "json_valid",
+          "file": "stale.json",
+          "description": "stale.json is valid JSON"
+        },
+        {
+          "type": "json_field_count",
+          "file": "stale.json",
+          "path": ".verdict_stale",
+          "op": "eq",
+          "expected": 0,
+          "description": "no verdict-based stale findings — all three findings are survived"
+        },
+        {
+          "type": "json_field_count",
+          "file": "stale.json",
+          "path": ".age_stale",
+          "op": "eq",
+          "expected": 3,
+          "description": "the age list covers all three findings"
+        },
+        {
+          "type": "file_contains",
+          "file": "stale.md",
+          "literal": "2026-06-19",
+          "description": "the age-based section surfaces the findings' created date"
+        }
+      ],
+      "expectations": [
+        "The verdict-based stale section is empty and the report says so explicitly — no survived finding is mislabeled weakened, falsified, or quarantined.",
+        "The age-based section lists all three findings ordered by their created date.",
+        "Each listed finding carries a recommendation (e.g. /update to refresh or /falsify to re-test), per the skill's output spec."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Run the full corpus audit with `/discover --all` over the sample session at `$CLAUDE_PROJECT_DIR/reports/_meta/sample-session/` (index `research-index.json`, graph `knowledge-graph.json`, findings dir, and dimensions from `$CLAUDE_PROJECT_DIR/harness.config.json`). Produce the three headed sections — Coverage gaps, Clusters, and Stale findings — followed by a one-line summary, and write the complete report to `audit.md`.",
+      "expected_output": "audit.md containing all three section headers (Coverage gaps, Clusters, Stale findings) and a one-line summary in the form 'N gaps, M clusters, P stale findings'.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "audit.md",
+          "description": "the combined audit report was written"
+        },
+        {
+          "type": "file_contains",
+          "file": "audit.md",
+          "literal": "Coverage gaps",
+          "description": "the report has a Coverage gaps section"
+        },
+        {
+          "type": "file_contains",
+          "file": "audit.md",
+          "literal": "Clusters",
+          "description": "the report has a Clusters section"
+        },
+        {
+          "type": "file_contains",
+          "file": "audit.md",
+          "literal": "Stale findings",
+          "description": "the report has a Stale findings section"
+        },
+        {
+          "type": "regex_match",
+          "file": "audit.md",
+          "pattern": "\\d+ gaps?, \\d+ clusters?, \\d+ stale findings?",
+          "description": "the report ends with the summary line in the documented format"
+        },
+        {
+          "type": "file_contains",
+          "file": "audit.md",
+          "literal": "update propagation",
+          "description": "the Clusters section surfaces the real update-propagation cluster"
+        }
+      ],
+      "expectations": [
+        "All three analyses appear as distinct headed sections in the single report.",
+        "The summary line correctly reflects the corpus: against the fixed (unskewed) sample, the clusters count is 1 (update propagation) and the verdict-based stale count is 0.",
+        "The Clusters section names the update-propagation cross-cutting theme rather than recomputing tag co-occurrence."
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Check coverage gaps on the balanced sample corpus where every config-declared dimension has exactly one finding — the normal healthy state. Read $CLAUDE_PROJECT_DIR/harness.config.json for the dimension taxonomy and $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/research-index.json for the index. Write the gap-coverage rollup as `{\"coverage\": [{\"dimension\": <id>, \"findings\": <count>}]}` to `gaps-balanced.json` and a readable table to `gaps-balanced.md`. Do NOT create a skewed corpus — use the sample index as-is.",
+      "expected_output": "gaps-balanced.json showing technical=1, landscape=1, trajectory=1. No dimension has 0 findings. gaps-balanced.md contains all three dimensions in the table and does NOT flag any of them as a gap or emit /augment recommendations.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "gaps-balanced.json",
+          "description": "coverage rollup for balanced corpus was written"
+        },
+        {
+          "type": "json_valid",
+          "file": "gaps-balanced.json",
+          "description": "gaps-balanced.json is valid JSON"
+        },
+        {
+          "type": "json_field_count",
+          "file": "gaps-balanced.json",
+          "path": ".coverage",
+          "op": "eq",
+          "expected": 3,
+          "description": "all three config-declared dimensions appear in the output"
+        },
+        {
+          "type": "json_array_contains",
+          "file": "gaps-balanced.json",
+          "path": ".coverage",
+          "match": { "dimension": "technical", "findings": 1 },
+          "description": "technical has exactly 1 finding in the balanced corpus"
+        },
+        {
+          "type": "json_array_contains",
+          "file": "gaps-balanced.json",
+          "path": ".coverage",
+          "match": { "dimension": "landscape", "findings": 1 },
+          "description": "landscape has exactly 1 finding in the balanced corpus"
+        },
+        {
+          "type": "json_array_contains",
+          "file": "gaps-balanced.json",
+          "path": ".coverage",
+          "match": { "dimension": "trajectory", "findings": 1 },
+          "description": "trajectory has exactly 1 finding in the balanced corpus"
+        },
+        {
+          "type": "shell_command",
+          "command": "jq -e '[.coverage[] | select(.findings == 0)] | length == 0' gaps-balanced.json",
+          "description": "no dimension has 0 findings — the balanced corpus has no genuine gaps"
+        }
+      ],
+      "expectations": [
+        "No dimension is flagged as a coverage gap — each of the three config-declared dimensions has exactly 1 finding and none is at 0 or far below the corpus mean.",
+        "No /augment commands are recommended because the corpus is uniformly balanced."
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Verify that verdict-based stale detection fires correctly when a weakened finding exists. First create directory ./stale-test-findings/ and copy $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings/finding-copier.json there as `finding-survived.json`. Then write a second MIF finding to ./stale-test-findings/finding-weakened.json with: `@id` = `urn:mif:concept:harness:kg-weakened-test`, `title` = `Test weakened finding`, `created` = `2025-01-15T12:00:00Z`, `namespace` = `harness/test`, `extensions.harness.dimension` = `technical`, `extensions.harness.verification.verdict` = `weakened`, `extensions.harness.verification.verdict_basis` = `Evidence partially refuted by counter-source`, and empty `entities`, `citations`, `tags` arrays (follow the schema from finding-copier.json for all other required fields). Build the index: `bash $CLAUDE_PROJECT_DIR/scripts/build-index.sh ./stale-test-findings ./stale-test-index.json`. Run the stale analysis against `./stale-test-index.json` and the finding files in `./stale-test-findings/`. Write structured output to `stale-weakened.json` as `{\"verdict_stale\": [{\"id\": \"...\", \"title\": \"...\", \"verdict\": \"...\", \"verdict_basis\": \"...\"}], \"age_stale\": [{\"id\": \"...\", \"created\": \"...\"}]}` and a readable report to `stale-weakened.md`.",
+      "expected_output": "stale-weakened.json with verdict_stale containing exactly 1 entry — urn:mif:concept:harness:kg-weakened-test — and the survived copier finding absent from verdict_stale. The age_stale list shows 2025-01-15 as an older date than 2026-06-19.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "stale-weakened.json",
+          "description": "stale report JSON for the weakened corpus was written"
+        },
+        {
+          "type": "json_valid",
+          "file": "stale-weakened.json",
+          "description": "stale-weakened.json is valid JSON"
+        },
+        {
+          "type": "json_field_count",
+          "file": "stale-weakened.json",
+          "path": ".verdict_stale",
+          "op": "eq",
+          "expected": 1,
+          "description": "exactly one verdict-stale finding detected — the weakened finding"
+        },
+        {
+          "type": "json_array_contains",
+          "file": "stale-weakened.json",
+          "path": ".verdict_stale",
+          "match": { "verdict": "weakened" },
+          "description": "the weakened verdict finding appears in verdict_stale"
+        },
+        {
+          "type": "shell_command",
+          "command": "jq -e '.verdict_stale[0].id == \"urn:mif:concept:harness:kg-weakened-test\"' stale-weakened.json",
+          "description": "the stale entry ID matches the manufactured weakened finding, not the survived copier"
+        },
+        {
+          "type": "file_contains",
+          "file": "stale-weakened.md",
+          "literal": "weakened",
+          "description": "the stale report names the weakened verdict"
+        },
+        {
+          "type": "file_contains",
+          "file": "stale-weakened.md",
+          "literal": "2025-01-15",
+          "description": "the older created date (2025) surfaces in the age-based section"
+        }
+      ],
+      "expectations": [
+        "urn:mif:concept:harness:kg-weakened-test is flagged in the verdict-stale section with its verdict_basis ('Evidence partially refuted by counter-source') and a /update or /falsify recommendation.",
+        "The survived copier finding does NOT appear in verdict_stale — only the weakened finding is verdict-stale.",
+        "The age list shows 2025-01-15 as older than 2026-06-19, identifying the weakened finding as the most urgently stale."
+      ]
+    }
+  ]
+}

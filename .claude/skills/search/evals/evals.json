@@ -1,0 +1,334 @@
+{
+  "skill_name": "search",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Search my research findings about 'update propagation' using the index at $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/research-index.json and write the matching results to `results-1.md`.",
+      "expected_output": "results-1.md contains exactly the copier finding (kg-copier-0001) whose title includes 'update propagation', and does not include the cookiecutter or distribution findings.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "results-1.md",
+          "description": "Output file results-1.md was created"
+        },
+        {
+          "type": "file_contains",
+          "file": "results-1.md",
+          "literal": "kg-copier-0001",
+          "description": "The copier finding (sole entry whose title/tags contain 'update propagation') is present"
+        },
+        {
+          "type": "file_contains",
+          "file": "results-1.md",
+          "literal": "update propagation",
+          "description": "The matching title phrase from the copier finding appears in the output"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "results-1.md",
+          "literal": "kg-cookiecutter-0002",
+          "description": "The cookiecutter finding (title and tags contain no 'update propagation') is absent"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "results-1.md",
+          "literal": "kg-distribution-0003",
+          "description": "The distribution finding (title and tags contain no 'update propagation') is absent"
+        }
+      ],
+      "expectations": [
+        "Exactly one finding is returned: the Copier finding about update propagation to instantiated projects.",
+        "The footer line reports 1 matching finding (e.g. 'Showing 1 of 3 findings').",
+        "The result is formatted with title, namespace/dimension, verdict, tags, and id fields per the skill output spec."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Find all research findings tagged 'decision' in the index at $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/research-index.json and write the results to `results-2.md`.",
+      "expected_output": "results-2.md contains only distribution-0003 (the sole finding tagged 'decision'), and does not include the cookiecutter or copier findings.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "results-2.md",
+          "description": "Output file results-2.md was created"
+        },
+        {
+          "type": "file_contains",
+          "file": "results-2.md",
+          "literal": "kg-distribution-0003",
+          "description": "The distribution finding (sole bearer of the 'decision' tag) is present"
+        },
+        {
+          "type": "file_contains",
+          "file": "results-2.md",
+          "literal": "living template",
+          "description": "The title phrase unique to the distribution finding appears in the output"
+        },
+        {
+          "type": "file_contains",
+          "file": "results-2.md",
+          "literal": "trajectory",
+          "description": "The dimension 'trajectory' from the distribution finding appears in the output"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "results-2.md",
+          "literal": "kg-cookiecutter-0002",
+          "description": "The cookiecutter finding (no 'decision' tag) is absent"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "results-2.md",
+          "literal": "kg-copier-0001",
+          "description": "The copier finding (no 'decision' tag) is absent"
+        }
+      ],
+      "expectations": [
+        "Exactly one finding is returned: the trajectory-dimension finding about living templates being mandatory.",
+        "The output summary line reports 1 matching result.",
+        "The result shows tags that include 'decision' and verdict 'survived'."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Search the research index at $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/research-index.json for all findings tagged 'template-engine' and write the results to `results-3.md`.",
+      "expected_output": "results-3.md contains both cookiecutter-0002 and copier-0001 findings (both tagged 'template-engine'), and excludes distribution-0003 (tagged 'decision' and 'distribution', not 'template-engine').",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "results-3.md",
+          "description": "Output file results-3.md was created"
+        },
+        {
+          "type": "file_contains",
+          "file": "results-3.md",
+          "literal": "kg-cookiecutter-0002",
+          "description": "The cookiecutter finding (tagged template-engine) is present"
+        },
+        {
+          "type": "file_contains",
+          "file": "results-3.md",
+          "literal": "kg-copier-0001",
+          "description": "The copier finding (tagged template-engine) is present"
+        },
+        {
+          "type": "file_contains",
+          "file": "results-3.md",
+          "literal": "one-time snapshot",
+          "description": "The cookiecutter finding's title phrase 'one-time snapshot' appears in the output"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "results-3.md",
+          "literal": "kg-distribution-0003",
+          "description": "The distribution finding (tagged 'decision' and 'distribution', not 'template-engine') is absent"
+        }
+      ],
+      "expectations": [
+        "Exactly two findings are returned: cookiecutter-0002 and copier-0001.",
+        "The output summary line reports 2 matching findings.",
+        "No finding from dimension 'trajectory' appears — the distribution finding is completely absent."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "What research findings do I have with dimension 'technical'? Search the index at $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/research-index.json and write the results to `results-4.md`.",
+      "expected_output": "results-4.md contains only copier-0001 (the sole finding with dimension 'technical') and does not include the landscape or trajectory findings.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "results-4.md",
+          "description": "Output file results-4.md was created"
+        },
+        {
+          "type": "file_contains",
+          "file": "results-4.md",
+          "literal": "kg-copier-0001",
+          "description": "The copier finding (sole technical-dimension entry) is present"
+        },
+        {
+          "type": "file_contains",
+          "file": "results-4.md",
+          "literal": "update propagation",
+          "description": "The copier finding's title phrase appears confirming the right entry was returned"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "results-4.md",
+          "literal": "kg-cookiecutter-0002",
+          "description": "The cookiecutter finding (landscape dimension) is absent"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "results-4.md",
+          "literal": "kg-distribution-0003",
+          "description": "The distribution finding (trajectory dimension) is absent"
+        }
+      ],
+      "expectations": [
+        "Exactly one finding is returned: the copier finding with dimension 'technical'.",
+        "The output shows dimension 'technical' for the returned finding.",
+        "The summary line reports 1 matching finding."
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "List all research findings in the index at $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/research-index.json that have verdict 'survived' and write the results to `results-5.md`.",
+      "expected_output": "results-5.md contains all three findings (every entry has verdict 'survived'): cookiecutter-0002, copier-0001, and distribution-0003.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "results-5.md",
+          "description": "Output file results-5.md was created"
+        },
+        {
+          "type": "file_contains",
+          "file": "results-5.md",
+          "literal": "kg-cookiecutter-0002",
+          "description": "The cookiecutter finding (verdict: survived) is present"
+        },
+        {
+          "type": "file_contains",
+          "file": "results-5.md",
+          "literal": "kg-copier-0001",
+          "description": "The copier finding (verdict: survived) is present"
+        },
+        {
+          "type": "file_contains",
+          "file": "results-5.md",
+          "literal": "kg-distribution-0003",
+          "description": "The distribution finding (verdict: survived) is present"
+        },
+        {
+          "type": "file_contains",
+          "file": "results-5.md",
+          "literal": "survived",
+          "description": "The verdict label 'survived' appears in the output (all results share this verdict)"
+        }
+      ],
+      "expectations": [
+        "All three findings appear — the full index, since every finding has verdict 'survived'.",
+        "The output summary line reports 3 matching findings.",
+        "Each finding block shows 'Verdict: survived'."
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Search for all findings tagged 'distribution' in the research index at $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/research-index.json and write the results to `results-6.md`.",
+      "expected_output": "results-6.md contains all three findings (all carry the 'distribution' tag): cookiecutter-0002, copier-0001, and distribution-0003.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "results-6.md",
+          "description": "Output file results-6.md was created"
+        },
+        {
+          "type": "file_contains",
+          "file": "results-6.md",
+          "literal": "kg-cookiecutter-0002",
+          "description": "The cookiecutter finding (tagged distribution) is present"
+        },
+        {
+          "type": "file_contains",
+          "file": "results-6.md",
+          "literal": "kg-copier-0001",
+          "description": "The copier finding (tagged distribution) is present"
+        },
+        {
+          "type": "file_contains",
+          "file": "results-6.md",
+          "literal": "kg-distribution-0003",
+          "description": "The distribution finding (tagged distribution) is present"
+        },
+        {
+          "type": "file_contains",
+          "file": "results-6.md",
+          "literal": "Showing 3",
+          "description": "The footer line confirms all 3 findings were returned"
+        }
+      ],
+      "expectations": [
+        "All three findings appear since every index entry carries the 'distribution' tag.",
+        "The output summary line reports 3 matching findings.",
+        "Results span multiple dimensions (landscape, technical, trajectory) confirming the tag crosses dimension boundaries."
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Show me an index summary of the research at $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/research-index.json (invoke the search skill with no filter arguments) and write the resulting JSON summary to `summary.json` (raw JSON, not a markdown code block).",
+      "expected_output": "summary.json is valid JSON with fields: count (integer 3), by_dimension (array of 3 objects, one per dimension), by_verdict (array with 1 entry for 'survived'), and namespaces (array with 1 namespace string).",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "summary.json",
+          "description": "Output file summary.json was created"
+        },
+        {
+          "type": "json_valid",
+          "file": "summary.json",
+          "description": "summary.json contains valid JSON"
+        },
+        {
+          "type": "json_field_equals",
+          "file": "summary.json",
+          "path": ".count",
+          "expected": 3,
+          "description": "The index count field equals 3"
+        },
+        {
+          "type": "json_field_exists",
+          "file": "summary.json",
+          "path": ".by_dimension",
+          "description": "by_dimension grouping is present"
+        },
+        {
+          "type": "json_field_count",
+          "file": "summary.json",
+          "path": ".by_dimension",
+          "op": "eq",
+          "expected": 3,
+          "description": "by_dimension has 3 entries (landscape, technical, trajectory)"
+        },
+        {
+          "type": "json_field_exists",
+          "file": "summary.json",
+          "path": ".by_verdict",
+          "description": "by_verdict grouping is present"
+        },
+        {
+          "type": "json_array_contains",
+          "file": "summary.json",
+          "path": ".by_verdict",
+          "match": {"verdict": "survived"},
+          "description": "by_verdict contains a 'survived' entry"
+        },
+        {
+          "type": "json_field_exists",
+          "file": "summary.json",
+          "path": ".namespaces",
+          "description": "namespaces array is present"
+        },
+        {
+          "type": "json_field_count",
+          "file": "summary.json",
+          "path": ".namespaces",
+          "op": "eq",
+          "expected": 1,
+          "description": "namespaces has 1 entry (harness/example-topic is the only namespace in the index)"
+        }
+      ],
+      "expectations": [
+        "The JSON structure matches the skill's jq template: top-level fields count, by_dimension, by_verdict, namespaces.",
+        "by_dimension has exactly 3 entries, one each for 'landscape', 'technical', and 'trajectory'.",
+        "by_verdict has exactly 1 entry for 'survived' with count 3 (all findings share this verdict)."
+      ]
+    }
+  ]
+}

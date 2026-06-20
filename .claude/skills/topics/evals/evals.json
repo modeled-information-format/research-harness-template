@@ -1,0 +1,209 @@
+{
+  "skill_name": "topics",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Run /topics with no arguments to show my full topic registry. The harness is at $CLAUDE_PROJECT_DIR/harness.config.json and the research index is at $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/research-index.json. When done, write the rendered table and summary line to topics.md in the working directory.",
+      "expected_output": "A Markdown table written to topics.md showing the one registered topic (Example research topic, harness/example-topic, active, 3 findings, survived: 3) with the correct table header and a summary line '1 topics, 1 with findings.'",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "topics.md",
+          "description": "Output file was created"
+        },
+        {
+          "type": "file_contains",
+          "file": "topics.md",
+          "literal": "| Topic | Namespace | Status | Findings | Verdicts |",
+          "description": "Table header matches the exact format specified in SKILL.md"
+        },
+        {
+          "type": "file_contains",
+          "file": "topics.md",
+          "literal": "Example research topic",
+          "description": "The registered topic title appears in the table"
+        },
+        {
+          "type": "file_contains",
+          "file": "topics.md",
+          "literal": "harness/example-topic",
+          "description": "The MIF namespace appears in the table"
+        },
+        {
+          "type": "file_contains",
+          "file": "topics.md",
+          "literal": "active",
+          "description": "The topic status (active) appears in the table"
+        },
+        {
+          "type": "file_contains",
+          "file": "topics.md",
+          "literal": "survived: 3",
+          "description": "Verdict rollup shows all 3 findings as survived — proves the namespace join worked"
+        },
+        {
+          "type": "regex_match",
+          "file": "topics.md",
+          "pattern": "1 topics?, 1 with findings",
+          "description": "Summary line reports 1 topic with 1 having findings"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "topics.md",
+          "literal": "not found",
+          "description": "No error message appears when listing all topics"
+        }
+      ],
+      "expectations": [
+        "The finding count shown in the Findings column is 3, matching the 3 entries in research-index.json for the harness/example-topic namespace.",
+        "The table row for 'Example research topic' has all five cells populated — no empty cells in any column.",
+        "The summary line appears after the table, not before it."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Run /topics -t example to resolve the topic matching 'example'. The harness is at $CLAUDE_PROJECT_DIR/harness.config.json and the research index is at $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/research-index.json. Write the rendered output to topics.md.",
+      "expected_output": "The output in topics.md shows the matched topic (Example research topic) with its namespace, status, and finding rollup including survived: 3. No 'not found' message appears.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "topics.md",
+          "description": "Output file was created"
+        },
+        {
+          "type": "file_contains",
+          "file": "topics.md",
+          "literal": "Example research topic",
+          "description": "The matched topic title appears in the output"
+        },
+        {
+          "type": "file_contains",
+          "file": "topics.md",
+          "literal": "harness/example-topic",
+          "description": "The MIF namespace of the matched topic appears"
+        },
+        {
+          "type": "file_contains",
+          "file": "topics.md",
+          "literal": "survived: 3",
+          "description": "Verdict rollup confirms the namespace join ran and all 3 findings survived"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "topics.md",
+          "literal": "not found",
+          "description": "No 'not found' error appears when the query matches a topic"
+        }
+      ],
+      "expectations": [
+        "The query 'example' matches the registered topic by title substring ('Example research topic') and that topic's row is shown.",
+        "The output is scoped to the single matched topic — it does not render the entire registry with a filter applied on top.",
+        "The topic's status (active) is visible somewhere in the output row."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Run /topics -t zzznotopic to look up a topic that does not exist. The harness is at $CLAUDE_PROJECT_DIR/harness.config.json and the research index is at $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/research-index.json. Write the full output — including any not-found message and the fallback table — to topics.md.",
+      "expected_output": "The output in topics.md contains the exact message 'Topic \"zzznotopic\" not found' and then displays the full topic table as a fallback, per SKILL.md spec.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "topics.md",
+          "description": "Output file was created"
+        },
+        {
+          "type": "file_contains",
+          "file": "topics.md",
+          "literal": "Topic \"zzznotopic\" not found",
+          "description": "Exact not-found message per SKILL.md: Topic \"<query>\" not found"
+        },
+        {
+          "type": "file_contains",
+          "file": "topics.md",
+          "literal": "Example research topic",
+          "description": "The full topic table is shown as fallback after the not-found message"
+        }
+      ],
+      "expectations": [
+        "The not-found message appears before the fallback table, not after it.",
+        "The fallback table is the complete registry (all topics with rollup data), not an empty table.",
+        "The skill does not fabricate or fuzzy-match a topic named 'zzznotopic' — only the exact-literal not-found message and the real registry appear."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Run /topics --status active to filter the registry to active topics only. The harness is at $CLAUDE_PROJECT_DIR/harness.config.json and the research index is at $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/research-index.json. Write the rendered table to topics.md.",
+      "expected_output": "The output in topics.md shows only the active topic (Example research topic, harness/example-topic, active, survived: 3). No non-active topics appear.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "topics.md",
+          "description": "Output file was created"
+        },
+        {
+          "type": "file_contains",
+          "file": "topics.md",
+          "literal": "Example research topic",
+          "description": "The active topic appears in the filtered output"
+        },
+        {
+          "type": "file_contains",
+          "file": "topics.md",
+          "literal": "harness/example-topic",
+          "description": "The namespace of the active topic appears"
+        },
+        {
+          "type": "file_contains",
+          "file": "topics.md",
+          "literal": "active",
+          "description": "The status column confirms the topic is active"
+        },
+        {
+          "type": "file_contains",
+          "file": "topics.md",
+          "literal": "survived: 3",
+          "description": "Verdict rollup for the active topic shows 3 survived findings"
+        }
+      ],
+      "expectations": [
+        "The '--status active' filter returns exactly the one topic that has status=active in harness.config.json.",
+        "No topic with a different status (e.g. archived, draft) appears in the output.",
+        "The finding rollup for the active topic shows the correct count from the research index."
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Run /topics --status archived to filter the registry to archived topics only. The harness is at $CLAUDE_PROJECT_DIR/harness.config.json and the research index is at $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/research-index.json. Write the rendered filtered table to topics.md.",
+      "expected_output": "The output in topics.md shows no topic rows — the only registered topic is active, not archived. 'Example research topic' and 'harness/example-topic' must not appear.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "topics.md",
+          "description": "Output file was created"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "topics.md",
+          "literal": "Example research topic",
+          "description": "The active topic must not appear when filtering by archived status"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "topics.md",
+          "literal": "harness/example-topic",
+          "description": "The active topic's namespace must not appear in the archived-only filter"
+        }
+      ],
+      "expectations": [
+        "The output reflects that no topics have status=archived in harness.config.json, so no data rows appear.",
+        "The skill does not fall back to showing all topics when the status filter matches nothing — it shows an empty or zero-row result.",
+        "The table header row may still appear but contains no data rows beneath it."
+      ]
+    }
+  ]
+}

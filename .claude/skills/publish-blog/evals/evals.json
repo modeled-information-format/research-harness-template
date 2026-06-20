@@ -1,0 +1,249 @@
+{
+  "skill_name": "publish-blog",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Publish a blog post from the research findings in $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings. Run `bash $CLAUDE_PROJECT_DIR/scripts/synthesize-artifact.sh $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings blog $(pwd)/artifact.json` to produce artifact.json, then `bash $CLAUDE_PROJECT_DIR/scripts/render-artifact.sh $(pwd)/artifact.json blog $(pwd)/blog.md` to render it. Confirm zero citation leaks before reporting done.",
+      "expected_output": "blog.md with a # title, lede paragraph, ## section headings, and ## Sources; artifact.json valid JSON with .newsworthiness and at least 3 sections; no internal MIF tokens (urn:mif:, kg-copier-0001, extensions.harness, reports/_meta) in blog.md.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "blog.md",
+          "description": "blog.md output file was created"
+        },
+        {
+          "type": "json_valid",
+          "file": "artifact.json",
+          "description": "artifact.json is valid JSON"
+        },
+        {
+          "type": "json_field_exists",
+          "file": "artifact.json",
+          "path": ".newsworthiness",
+          "description": "artifact carries a newsworthiness signal"
+        },
+        {
+          "type": "json_field_count",
+          "file": "artifact.json",
+          "path": ".sections",
+          "op": "gte",
+          "expected": 3,
+          "description": "artifact has one section per surviving finding (3 total)"
+        },
+        {
+          "type": "regex_match",
+          "file": "blog.md",
+          "pattern": "^# .+",
+          "description": "blog.md opens with a # title line"
+        },
+        {
+          "type": "file_contains",
+          "file": "blog.md",
+          "literal": "## Sources",
+          "description": "blog.md has a ## Sources section"
+        },
+        {
+          "type": "file_contains",
+          "file": "blog.md",
+          "literal": "copier.readthedocs.io",
+          "description": "public primary source URL appears in Sources"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "blog.md",
+          "literal": "urn:mif:",
+          "description": "MIF URNs do not leak into the published post"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "blog.md",
+          "literal": "kg-copier-0001",
+          "description": "internal finding IDs do not leak into the published post"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "blog.md",
+          "literal": "extensions.harness",
+          "description": "harness extension keys do not leak into the published post"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "blog.md",
+          "literal": "reports/_meta",
+          "description": "internal corpus paths do not leak into the published post"
+        },
+        {
+          "type": "regex_not_match",
+          "file": "blog.md",
+          "pattern": "f_[a-z]+_[0-9]+",
+          "description": "internal finding ID handle pattern (f_<dim>_<n>) does not appear in blog"
+        }
+      ],
+      "expectations": [
+        "The blog.md file reads as a standalone publishable post with a clear title, an opening lede paragraph without any section heading, and named ## subheadings for the body sections.",
+        "Every claim in the body traces to a source listed in the ## Sources section; no citation appears in the body that is absent from the Sources list.",
+        "The artifact.json file contains the @type Artifact envelope with finding_refs, sections (one per finding), and a deduplicated sources array — demonstrating the typed contract is intact before rendering."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "I need to verify that falsified findings are excluded from published blog posts. Please do the following: (1) Create a temporary findings directory at /tmp/eval-blog-e2-findings/ and copy the three sample findings from $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings/ into it. (2) Create a fourth file /tmp/eval-blog-e2-findings/finding-falsified.json with the exact JSON shape of finding-copier.json but with these changes: set extensions.harness.verification.verdict to 'falsified', set title to 'FALSIFIED-SENTINEL-XYZ title that must not publish', set content to 'FALSIFIED-SENTINEL-XYZ content that must be excluded from any published output.', set @id to 'urn:mif:concept:harness:kg-falsified-9999'. (3) Run `bash $CLAUDE_PROJECT_DIR/scripts/synthesize-artifact.sh /tmp/eval-blog-e2-findings blog $(pwd)/artifact.json`. (4) Run `bash $CLAUDE_PROJECT_DIR/scripts/render-artifact.sh $(pwd)/artifact.json blog $(pwd)/blog.md`. Confirm the falsified sentinel text does not appear in either artifact.json or blog.md.",
+      "expected_output": "artifact.json and blog.md both produced; the string 'FALSIFIED-SENTINEL-XYZ' is absent from both files; blog.md still contains ## Sources and the surviving public source URLs; artifact.json still has 3 sections (only the 3 surviving findings).",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "blog.md",
+          "description": "blog.md was produced despite the falsified finding"
+        },
+        {
+          "type": "json_valid",
+          "file": "artifact.json",
+          "description": "artifact.json is valid JSON"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "artifact.json",
+          "literal": "FALSIFIED-SENTINEL-XYZ",
+          "description": "falsified finding's sentinel text is absent from the artifact"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "blog.md",
+          "literal": "FALSIFIED-SENTINEL-XYZ",
+          "description": "falsified finding's sentinel text is absent from the rendered blog"
+        },
+        {
+          "type": "file_contains",
+          "file": "blog.md",
+          "literal": "## Sources",
+          "description": "surviving findings still produce a Sources section"
+        },
+        {
+          "type": "json_field_count",
+          "file": "artifact.json",
+          "path": ".sections",
+          "op": "gte",
+          "expected": 3,
+          "description": "artifact has exactly the 3 surviving sections, not 4"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "blog.md",
+          "literal": "urn:mif:",
+          "description": "no MIF URNs appear in the published blog"
+        }
+      ],
+      "expectations": [
+        "The falsified finding is completely absent from all output — not summarised, not hedged, not mentioned as excluded; it simply does not appear.",
+        "The blog and artifact continue to reflect the three surviving findings faithfully, with sources traceable to copier.readthedocs.io and cookiecutter.readthedocs.io."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Publish a blog post from the research in $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings using the 'technical' synthesis genre. Run `bash $CLAUDE_PROJECT_DIR/scripts/synthesize-artifact.sh $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings technical $(pwd)/artifact.json` then `bash $CLAUDE_PROJECT_DIR/scripts/render-artifact.sh $(pwd)/artifact.json blog $(pwd)/blog.md`. Report done when both files are written.",
+      "expected_output": "artifact.json with genre='technical'; blog.md identical in structure to the blog genre — title, lede, ## content headings, ## Sources — and citation-leak clean: no urn:mif:, no internal IDs, copier.readthedocs.io present in Sources.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "blog.md",
+          "description": "blog.md was produced from the technical-genre artifact"
+        },
+        {
+          "type": "json_valid",
+          "file": "artifact.json",
+          "description": "artifact.json is valid JSON"
+        },
+        {
+          "type": "shell_command",
+          "command": "jq -e '.genre == \"technical\"' artifact.json",
+          "description": "artifact.json records the requested synthesis genre"
+        },
+        {
+          "type": "file_contains",
+          "file": "blog.md",
+          "literal": "## Sources",
+          "description": "blog render always produces a ## Sources section regardless of synthesis genre"
+        },
+        {
+          "type": "file_contains",
+          "file": "blog.md",
+          "literal": "copier.readthedocs.io",
+          "description": "public primary source URL survives into the Sources section"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "blog.md",
+          "literal": "urn:mif:",
+          "description": "MIF URNs do not appear in the blog regardless of synthesis genre"
+        },
+        {
+          "type": "regex_not_match",
+          "file": "blog.md",
+          "pattern": "f_[a-z]+_[0-9]+",
+          "description": "internal finding ID pattern is absent from the blog for any genre"
+        },
+        {
+          "type": "regex_match",
+          "file": "blog.md",
+          "pattern": "^# .+",
+          "description": "blog.md starts with a # title regardless of synthesis genre"
+        }
+      ],
+      "expectations": [
+        "The blog.md output is structurally identical to the blog-genre variant — the blog render channel ignores the synthesis genre metadata and always produces title + lede + ## sections + ## Sources.",
+        "The artifact.json genre field is 'technical', confirming the genre parameter was passed through correctly to the synthesis step."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Turn the research from $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings into a publishable blog post. Run `bash $CLAUDE_PROJECT_DIR/scripts/synthesize-artifact.sh $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings blog $(pwd)/artifact.json` then `bash $CLAUDE_PROJECT_DIR/scripts/render-artifact.sh $(pwd)/artifact.json blog $(pwd)/blog.md`. The blog must have a clear title, structured ## body sections (not just the Sources heading), and a ## Sources list with properly formatted links.",
+      "expected_output": "blog.md with a # title on line 1 matching '# Findings: harness/example-topic', at least two ## headings (body sections plus ## Sources), source links in '- [title](url)' format, and cookiecutter.readthedocs.io in the Sources list.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "regex_match",
+          "file": "blog.md",
+          "pattern": "^# Findings:",
+          "description": "title line matches the expected 'Findings: <namespace>' format"
+        },
+        {
+          "type": "regex_match",
+          "file": "blog.md",
+          "pattern": "(?ms)^## (?!Sources).*^## Sources",
+          "description": "blog.md has at least two ## headings (a body section and ## Sources)"
+        },
+        {
+          "type": "file_contains",
+          "file": "blog.md",
+          "literal": "copier.readthedocs.io/en/stable/updating/",
+          "description": "exact primary source URL appears in the Sources list"
+        },
+        {
+          "type": "file_contains",
+          "file": "blog.md",
+          "literal": "Cookiecutter documentation",
+          "description": "source title for the Cookiecutter source appears in the Sources list"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "blog.md",
+          "literal": "extensions.harness",
+          "description": "harness extension metadata does not bleed into the rendered blog"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "blog.md",
+          "literal": "kg-distribution-0003",
+          "description": "internal finding ID for the distribution finding does not appear in the blog"
+        }
+      ],
+      "expectations": [
+        "The ## Sources section contains exactly two entries — 'Cookiecutter documentation' and 'Copier — Updating a project' — because the three findings share one URL (copier.readthedocs.io) which is deduplicated.",
+        "The body of the blog reads as a coherent narrative about template update propagation, not as a raw dump of finding IDs or MIF metadata fields."
+      ]
+    }
+  ]
+}

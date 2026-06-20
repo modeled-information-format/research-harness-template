@@ -1,0 +1,339 @@
+{
+  "skill_name": "book-author",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Write a book chapter from the sample session findings. Use the non-fiction genre.\n\nFindings directory: $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings\n\nIMPORTANT: synthesize-artifact.sh changes directory internally, so both scripts must write their outputs into the current working directory using absolute paths built from pwd. Run the pipeline as follows:\n\n  OUTDIR=$(pwd)\n  $CLAUDE_PROJECT_DIR/scripts/synthesize-artifact.sh \"$CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings\" non-fiction \"$OUTDIR/artifact.json\"\n  $CLAUDE_PROJECT_DIR/scripts/render-artifact.sh \"$OUTDIR/artifact.json\" book \"$OUTDIR/chapter.md\"",
+      "expected_output": "A book chapter written to chapter.md and an intermediate artifact written to artifact.json. The chapter must open with '# Chapter:' title, include a '## Endnotes' section with public source URLs, and must not contain any internal MIF identifiers, URN strings, corpus paths, or finding IDs.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "chapter.md",
+          "description": "Chapter Markdown file was produced"
+        },
+        {
+          "type": "file_exists",
+          "file": "artifact.json",
+          "description": "Intermediate artifact JSON was produced"
+        },
+        {
+          "type": "file_contains",
+          "file": "chapter.md",
+          "literal": "# Chapter:",
+          "description": "Chapter opens with a book-format title"
+        },
+        {
+          "type": "file_contains",
+          "file": "chapter.md",
+          "literal": "## Endnotes",
+          "description": "Chapter ends with an Endnotes section"
+        },
+        {
+          "type": "file_contains",
+          "file": "chapter.md",
+          "literal": "copier.readthedocs.io",
+          "description": "At least one surviving finding's public source URL appears in endnotes"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "chapter.md",
+          "literal": "urn:mif:",
+          "description": "No MIF internal URN identifiers leak into the manuscript"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "chapter.md",
+          "literal": "kg-copier-0001",
+          "description": "No internal finding IDs appear in the chapter"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "chapter.md",
+          "literal": "extensions.harness",
+          "description": "No harness schema paths appear in the chapter"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "chapter.md",
+          "literal": "reports/_meta",
+          "description": "No corpus paths appear in the chapter"
+        },
+        {
+          "type": "regex_not_match",
+          "file": "chapter.md",
+          "pattern": "f_[a-z]+_[0-9]+",
+          "description": "No internal f_<dimension>_<n> finding handles in the manuscript"
+        },
+        {
+          "type": "json_valid",
+          "file": "artifact.json",
+          "description": "Intermediate artifact is valid JSON"
+        },
+        {
+          "type": "json_field_exists",
+          "file": "artifact.json",
+          "path": ".newsworthiness",
+          "description": "Artifact carries a newsworthiness field"
+        },
+        {
+          "type": "json_field_count",
+          "file": "artifact.json",
+          "path": ".sections",
+          "op": "gte",
+          "expected": 3,
+          "description": "Artifact has at least 3 sections (one per surviving finding)"
+        }
+      ],
+      "expectations": [
+        "The chapter opens with '# Chapter:' on the first line followed immediately by a genre/audience blockquote on line 3.",
+        "The first section body serves as the chapter introduction with no heading; subsequent sections each carry a numbered heading like '### 1.' and '### 2.'.",
+        "Every endnote entry resolves to a publicly accessible URL (copier.readthedocs.io or cookiecutter.readthedocs.io) — no internal corpus paths, no urn: scheme URIs.",
+        "The chapter prose is written in coherent paragraphs that synthesize research content, not a literal dump of raw finding fields or JSON."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Write a book chapter using the fiction genre from the sample session findings.\n\nFindings directory: $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings\n\nIMPORTANT: synthesize-artifact.sh changes directory internally, so both scripts must write their outputs into the current working directory using absolute paths built from pwd. Run the pipeline as follows:\n\n  OUTDIR=$(pwd)\n  $CLAUDE_PROJECT_DIR/scripts/synthesize-artifact.sh \"$CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings\" fiction \"$OUTDIR/artifact.json\"\n  $CLAUDE_PROJECT_DIR/scripts/render-artifact.sh \"$OUTDIR/artifact.json\" book \"$OUTDIR/chapter.md\"",
+      "expected_output": "A book chapter written to chapter.md and artifact.json. The artifact's genre field must be 'fiction'. The chapter must include a genre/audience header line and an Endnotes section with public source URLs. The citation-leak gate must hold regardless of genre.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "chapter.md",
+          "description": "Chapter file was produced"
+        },
+        {
+          "type": "file_exists",
+          "file": "artifact.json",
+          "description": "Intermediate artifact JSON was produced"
+        },
+        {
+          "type": "file_contains",
+          "file": "artifact.json",
+          "literal": "fiction",
+          "description": "Artifact genre field is set to fiction"
+        },
+        {
+          "type": "file_contains",
+          "file": "chapter.md",
+          "literal": "Genre: fiction",
+          "description": "Rendered chapter blockquote shows the fiction genre"
+        },
+        {
+          "type": "file_contains",
+          "file": "chapter.md",
+          "literal": "## Endnotes",
+          "description": "Chapter includes an Endnotes section"
+        },
+        {
+          "type": "file_contains",
+          "file": "chapter.md",
+          "literal": "copier.readthedocs.io",
+          "description": "At least one public source URL appears in endnotes"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "chapter.md",
+          "literal": "urn:mif:",
+          "description": "No MIF internal URNs in the chapter"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "chapter.md",
+          "literal": "kg-copier-0001",
+          "description": "No internal finding IDs in the chapter"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "chapter.md",
+          "literal": "extensions.harness",
+          "description": "No harness schema paths in the chapter"
+        },
+        {
+          "type": "regex_not_match",
+          "file": "chapter.md",
+          "pattern": "f_[a-z]+_[0-9]+",
+          "description": "No internal f_<dimension>_<n> finding handles in the chapter"
+        },
+        {
+          "type": "json_valid",
+          "file": "artifact.json",
+          "description": "Artifact JSON is valid"
+        },
+        {
+          "type": "json_field_count",
+          "file": "artifact.json",
+          "path": ".sections",
+          "op": "gte",
+          "expected": 3,
+          "description": "Artifact has at least 3 sections from surviving findings"
+        }
+      ],
+      "expectations": [
+        "The genre blockquote in the rendered chapter reads 'Genre: fiction · audience: general' (or similar), confirming the genre argument was threaded through the synthesizer.",
+        "All surviving findings from the sample session appear in the chapter — genre is a rendering hint passed to the synthesizer, not a content filter.",
+        "Endnotes cite only public URLs (copier.readthedocs.io, cookiecutter.readthedocs.io) — no internal URN or corpus paths appear regardless of genre."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Demonstrate that falsified findings are excluded from the book chapter.\n\nSet up a temporary findings directory containing:\n1. The 3 surviving sample findings (copy these):\n   $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings/finding-copier.json\n   $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings/finding-cookiecutter.json\n   $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings/finding-distribution.json\n2. A 4th finding with verdict 'falsified'. Write it to the temp dir as finding-falsified.json with this exact JSON content:\n{\"@context\":\"https://mif-spec.dev/schema/context.jsonld\",\"@type\":\"Concept\",\"@id\":\"urn:mif:concept:harness:falsified-sentinel-0099\",\"title\":\"FALSIFIED-SENTINEL-XYZ technology claim\",\"content\":\"FALSIFIED-SENTINEL-XYZ content that must not appear in published output.\",\"summary\":\"FALSIFIED-SENTINEL-XYZ summary.\",\"namespace\":\"harness/example-topic\",\"citations\":[{\"@type\":\"Citation\",\"title\":\"FALSIFIED-SENTINEL-XYZ source\",\"url\":\"https://FALSIFIED-SENTINEL-XYZ.example.com/\"}],\"extensions\":{\"harness\":{\"dimension\":\"technical\",\"verification\":{\"verdict\":\"falsified\",\"verdict_basis\":\"Disconfirmed by adversarial search.\"}}}}\n\nThen synthesize and render the chapter.\n\nIMPORTANT: synthesize-artifact.sh changes directory internally, so both scripts must write their outputs into the current working directory using absolute paths built from pwd:\n\n  OUTDIR=$(pwd)\n  TMPDIR=$(mktemp -d)\n  cp \"$CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings/finding-copier.json\" \"$TMPDIR/\"\n  cp \"$CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings/finding-cookiecutter.json\" \"$TMPDIR/\"\n  cp \"$CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings/finding-distribution.json\" \"$TMPDIR/\"\n  # write finding-falsified.json to $TMPDIR/finding-falsified.json\n  $CLAUDE_PROJECT_DIR/scripts/synthesize-artifact.sh \"$TMPDIR\" non-fiction \"$OUTDIR/artifact.json\"\n  $CLAUDE_PROJECT_DIR/scripts/render-artifact.sh \"$OUTDIR/artifact.json\" book \"$OUTDIR/chapter.md\"",
+      "expected_output": "A book chapter from exactly 3 surviving findings. The sentinel string FALSIFIED-SENTINEL-XYZ must not appear anywhere in chapter.md or artifact.json. The artifact must have exactly 3 sections and 3 finding_refs. The chapter must contain copier.readthedocs.io as confirmation of real content from surviving findings.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "chapter.md",
+          "description": "Chapter was produced"
+        },
+        {
+          "type": "file_exists",
+          "file": "artifact.json",
+          "description": "Artifact was produced"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "chapter.md",
+          "literal": "FALSIFIED-SENTINEL-XYZ",
+          "description": "Sentinel string from the falsified finding is absent from the chapter"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "artifact.json",
+          "literal": "FALSIFIED-SENTINEL-XYZ",
+          "description": "Sentinel string is absent from the synthesized artifact"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "chapter.md",
+          "literal": "FALSIFIED-SENTINEL-XYZ.example.com",
+          "description": "The falsified finding's source URL does not appear in endnotes"
+        },
+        {
+          "type": "file_contains",
+          "file": "chapter.md",
+          "literal": "copier.readthedocs.io",
+          "description": "A surviving finding's public URL is present — confirms real content was rendered, not an empty/aborted run"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "chapter.md",
+          "literal": "urn:mif:",
+          "description": "No MIF internal URNs in the chapter"
+        },
+        {
+          "type": "json_valid",
+          "file": "artifact.json",
+          "description": "Artifact is valid JSON"
+        },
+        {
+          "type": "json_field_count",
+          "file": "artifact.json",
+          "path": ".sections",
+          "op": "eq",
+          "expected": 3,
+          "description": "Artifact has exactly 3 sections — the falsified finding was excluded, not merely masked"
+        },
+        {
+          "type": "json_field_count",
+          "file": "artifact.json",
+          "path": ".finding_refs",
+          "op": "eq",
+          "expected": 3,
+          "description": "finding_refs has exactly 3 entries — the falsified finding's @id is excluded from the refs list"
+        }
+      ],
+      "expectations": [
+        "The transcript shows the skill created a temp directory containing 4 JSON files (3 surviving sample findings + finding-falsified.json with the FALSIFIED-SENTINEL-XYZ sentinel) before running synthesize-artifact.sh.",
+        "The synthesizer's stdout confirms 3 sections and 2 sources, and the rendered chapter contains no trace of FALSIFIED-SENTINEL-XYZ or its source URL FALSIFIED-SENTINEL-XYZ.example.com.",
+        "The chapter endnotes cite only public sources from the 3 surviving findings — copier.readthedocs.io and cookiecutter.readthedocs.io."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Write a book chapter from the sample session findings using the technical genre. Verify the full structural layout and that sources are correctly deduplicated — two of the three findings share the same copier.readthedocs.io URL, so the endnotes must contain exactly 2 unique source entries.\n\nFindings directory: $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings\n\nIMPORTANT: synthesize-artifact.sh changes directory internally, so both scripts must write their outputs into the current working directory using absolute paths built from pwd. Run the pipeline as follows:\n\n  OUTDIR=$(pwd)\n  $CLAUDE_PROJECT_DIR/scripts/synthesize-artifact.sh \"$CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings\" technical \"$OUTDIR/artifact.json\"\n  $CLAUDE_PROJECT_DIR/scripts/render-artifact.sh \"$OUTDIR/artifact.json\" book \"$OUTDIR/chapter.md\"",
+      "expected_output": "A book chapter in chapter.md with full structural layout: '# Chapter:' title, genre blockquote, intro paragraph, '### 1.' and '### 2.' numbered subsections, and '## Endnotes' with exactly 2 deduplicated entries (copier.readthedocs.io and cookiecutter.readthedocs.io). No internal MIF plumbing.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "chapter.md",
+          "description": "Chapter file was produced"
+        },
+        {
+          "type": "file_contains",
+          "file": "chapter.md",
+          "literal": "# Chapter:",
+          "description": "Chapter title is in book format"
+        },
+        {
+          "type": "file_contains",
+          "file": "chapter.md",
+          "literal": "### 1.",
+          "description": "First numbered subsection is present"
+        },
+        {
+          "type": "file_contains",
+          "file": "chapter.md",
+          "literal": "### 2.",
+          "description": "Second numbered subsection is present"
+        },
+        {
+          "type": "file_contains",
+          "file": "chapter.md",
+          "literal": "## Endnotes",
+          "description": "Endnotes section is present"
+        },
+        {
+          "type": "file_contains",
+          "file": "chapter.md",
+          "literal": "copier.readthedocs.io",
+          "description": "First public source URL appears in endnotes"
+        },
+        {
+          "type": "file_contains",
+          "file": "chapter.md",
+          "literal": "cookiecutter.readthedocs.io",
+          "description": "Second public source URL appears in endnotes"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "chapter.md",
+          "literal": "urn:mif:",
+          "description": "No MIF internal URNs in the chapter"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "chapter.md",
+          "literal": "reports/_meta",
+          "description": "No corpus paths in the chapter"
+        },
+        {
+          "type": "json_valid",
+          "file": "artifact.json",
+          "description": "Artifact is valid JSON"
+        },
+        {
+          "type": "json_field_exists",
+          "file": "artifact.json",
+          "path": ".newsworthiness",
+          "description": "Artifact carries a newsworthiness field"
+        },
+        {
+          "type": "json_field_count",
+          "file": "artifact.json",
+          "path": ".sources",
+          "op": "eq",
+          "expected": 2,
+          "description": "Sources are deduplicated to exactly 2 unique URLs (copier and cookiecutter share one domain; copier URL appears in 2 findings but deduplicates to 1)"
+        }
+      ],
+      "expectations": [
+        "The chapter has the exact structure: '# Chapter: <title>' on line 1, a blockquote with genre/audience on line 3, the first section body as prose intro (no heading), then '### 1. <heading>' and '### 2. <heading>' subsections.",
+        "The Endnotes section contains exactly 2 entries — '[1]' and '[2]' — because the copier.readthedocs.io URL appears in two findings but is deduplicated by the synthesizer's unique_by(.url) pass.",
+        "The chapter reads as coherent prose derived from the findings, not raw JSON field values or a template skeleton with placeholder text."
+      ]
+    }
+  ]
+}
