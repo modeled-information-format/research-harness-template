@@ -903,9 +903,134 @@ gate_m11() {
 }
 
 # ---------------------------------------------------------------------------
+# Milestone 12 — MIF Ontology conformance (SPEC §8c)
+# Ontology is a deterministic, per-topic member: a vendored definition contract,
+# a yaml registry (core + example data packs) projected on the fly, a catalog of
+# enabled ontologies, per-topic binding, and a topical resolver that classifies a
+# finding's entity_type to exactly one bound ontology and validates its entity.
+# Purely additive.
+# ---------------------------------------------------------------------------
+# Project a vendored ontology YAML to JSON and validate against the contract.
+ajv_onto() { # ajv_onto <ontology.yaml>
+  local j; j="$(mktemp /tmp/onto-XXXXXX.json)"
+  yq -o=json '.' "$1" 2>/dev/null | jq '.' > "$j" 2>/dev/null \
+    && ajv_plain schemas/mif/ontology.schema.json "$j"; local rc=$?
+  rm -f "$j"; return $rc
+}
+# Every vendored ontology: core (schemas/ontologies/) + example packs (packs/ontologies/).
+onto_registry_yaml() {
+  { find schemas/ontologies -maxdepth 2 -type f -name '*.yaml'
+    find packs/ontologies -maxdepth 2 -type f -name '*.ontology.yaml'; } 2>/dev/null | sort
+}
+
+gate_m12() {
+  info "Milestone 12 — MIF Ontology conformance"
+
+  # 12a. The vendored ontology contract validates its sample.
+  if ajv_plain schemas/mif/ontology.schema.json schemas/samples/ontology-definition.sample.json; then
+    ok "vendored ontology.schema.json validates its sample"
+  else
+    bad "vendored ontology.schema.json does not validate its sample"
+  fi
+
+  # 12b. EVERY vendored ontology (core + example packs) validates against the contract.
+  local oy obad="" ocount=0
+  while IFS= read -r oy; do
+    [ -z "$oy" ] && continue
+    ocount=$((ocount+1))
+    ajv_onto "$oy" || obad="${obad}$(basename "$oy") "
+  done < <(onto_registry_yaml)
+  if [ -z "$obad" ] && [ "$ocount" -ge 1 ]; then
+    ok "every vendored ontology validates against the contract ($ocount: core + example packs)"
+  else
+    bad "ontologies failing the contract: ${obad:-none found}"
+  fi
+
+  # 12c. id+version uniqueness across the registry.
+  local dupes
+  dupes=$(while IFS= read -r oy; do [ -z "$oy" ] && continue
+            printf '%s@%s\n' "$(yq -r '.ontology.id' "$oy")" "$(yq -r '.ontology.version' "$oy")"
+          done < <(onto_registry_yaml) | sort | uniq -d)
+  if [ -z "$dupes" ]; then
+    ok "ontology id@version is unique across the registry"
+  else
+    bad "duplicate ontology id@version: $(echo $dupes)"
+  fi
+
+  # 12d. VENDOR.lock checksums match the verbatim vendored files (supply-chain floor).
+  local lbad="" ln=0
+  while IFS=$'\t' read -r lp lsum; do
+    [ -z "$lp" ] && continue; ln=$((ln+1))
+    [ "$(shasum -a 256 "$lp" 2>/dev/null | cut -d' ' -f1)" = "$lsum" ] || lbad="${lbad}${lp} "
+  done < <(jq -r '.files[] | select(.verbatim) | "\(.path)\t\(.sha256)"' schemas/mif/VENDOR.lock 2>/dev/null)
+  if [ -z "$lbad" ] && [ "$ln" -ge 1 ]; then
+    ok "VENDOR.lock checksums match all $ln verbatim vendored files"
+  else
+    bad "VENDOR.lock checksum mismatch: ${lbad:-lockfile unreadable}"
+  fi
+
+  # Build a real catalog (core + k12 enabled) to drive the resolver fixtures.
+  local T; T="$(mktemp -d)"
+  jq '(.ontologies[] | select(.id=="k12-educational-publishing") | .enabled) |= true' harness.config.json > "$T/cfg.json"
+  scripts/sync-packs.sh "$T/cfg.json" "$T/cat.json" "$T/settings.json" >/dev/null 2>&1
+  # config: topic 'edu' binds k12; 'bare' binds nothing
+  jq '.topics = [{"id":"edu","namespace":"x/edu","ontologies":["k12-educational-publishing"]},{"id":"bare","namespace":"x/bare"}]' "$T/cfg.json" > "$T/rcfg.json"
+  local RO="scripts/resolve-ontology.sh"
+  local G='{"name":"Algebra I","entity_type":"title","isbn":"9780000000002","subject":"mathematics","grade_range":{"min":9,"max":12}}'
+  printf '{"@id":"f-good","entity":%s}\n' "$G" > "$T/good.json"
+  printf '{"@id":"f-extra","entity":%s}\n' "$(echo "$G" | jq '.+{vibe:"x"}')" > "$T/extra.json"
+  printf '{"@id":"f-untyped","content":"x"}\n' > "$T/untyped.json"
+  printf '{"@id":"f-missing","entity":{"name":"A","entity_type":"title","subject":"mathematics"}}\n' > "$T/missing.json"
+  printf '{"@id":"f-undecl","entity":{"name":"x","entity_type":"not-a-type"}}\n' > "$T/undecl.json"
+  ro() { $RO "$T/$1.json" --topic "$2" --catalog "$T/cat.json" --config "$T/rcfg.json" --map "$T/$1.$2.map" >/dev/null 2>&1; }
+
+  # 12e. The resolver's pass/fail matrix + recorded mapping.
+  ro untyped edu; local ru=$?
+  ro good edu;    local rg=$?
+  ro extra edu;   local re=$?
+  ro missing edu; local rm=$?
+  ro undecl edu;  local rd=$?
+  ro good bare;   local rb=$?
+  local gro; gro=$(jq -r '.[0] | "\(.resolved_ontology)|\(.basis)|\(.valid)"' "$T/good.edu.map" 2>/dev/null)
+  if [ "$ru" = 0 ] && [ "$rg" = 0 ] && [ "$re" = 0 ] && [ "$rm" != 0 ] && [ "$rd" != 0 ] && [ "$rb" != 0 ] \
+     && [ "$gro" = "k12-educational-publishing@0.1.0|resolved|true" ]; then
+    ok "resolver: typed finding resolves+validates; missing/undeclared/unbound fail; map records the mapping"
+  else
+    bad "resolver matrix wrong (untyped=$ru good=$rg extra=$re missing=$rm undecl=$rd unbound=$rb rec=$gro)"
+  fi
+
+  # 12f. Fail-safe: a missing catalog makes the resolver ABORT (never resolve vacuously).
+  local fs; $RO "$T/good.json" --topic edu --catalog "$T/nope.json" --config "$T/rcfg.json" >/dev/null 2>&1; fs=$?
+  if [ "$fs" != 0 ]; then
+    ok "resolver fails safe on a missing catalog (aborts; never resolves vacuously)"
+  else
+    bad "resolver did not fail safe on a missing catalog (exit $fs)"
+  fi
+
+  # 12g. Binding integrity: a topic binding a DISABLED (uncataloged) ontology fails.
+  jq '.topics = [{"id":"x","namespace":"x/x","ontologies":["software-engineering"]}]' "$T/rcfg.json" > "$T/bad.json"
+  local bind; $RO "$T/good.json" --topic x --catalog "$T/cat.json" --config "$T/bad.json" >/dev/null 2>&1; bind=$?
+  if [ "$bind" != 0 ]; then
+    ok "a topic binding a disabled/uncataloged ontology fails (binding -> catalog integrity)"
+  else
+    bad "binding to a disabled ontology did not fail (exit $bind)"
+  fi
+
+  # 12h. Pack-enable path end-to-end: the enabled k12 pack is cataloged from its
+  #      data pack and a bound topic's finding resolves against it.
+  if jq -e '.ontologies[] | select(.id=="k12-educational-publishing" and .core==false)' "$T/cat.json" >/dev/null 2>&1 && [ "$rg" = 0 ]; then
+    ok "an enabled ontology data pack is cataloged and a bound topic's finding resolves against it"
+  else
+    bad "pack-enable path broken (k12 not cataloged or bound finding did not resolve)"
+  fi
+
+  rm -rf "$T"
+}
+
+# ---------------------------------------------------------------------------
 # Gate registry — each milestone appends its function name here.
 # ---------------------------------------------------------------------------
-GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11)
+GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12)
 
 for g in "${GATES[@]}"; do "$g"; done
 

@@ -1,0 +1,28 @@
+{
+  "ontology": {
+    "id": "sample-ontology",
+    "version": "1.0.0",
+    "description": "Minimal valid ontology for the schema-against-sample gate (gate_m1/gate_m12)."
+  },
+  "entity_types": [
+    {
+      "name": "widget",
+      "base": "semantic",
+      "description": "A sample entity type.",
+      "schema": {
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string", "description": "Widget name" }
+        }
+      }
+    }
+  ],
+  "relationships": {
+    "depends-on": {
+      "description": "A widget depends on another widget.",
+      "from": ["widget"],
+      "to": ["widget"],
+      "symmetric": false
+    }
+  }
+}
