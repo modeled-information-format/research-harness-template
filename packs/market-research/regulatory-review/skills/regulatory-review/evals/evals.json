@@ -3,67 +3,72 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "We're launching a B2B SaaS product in the US and EU that collects personal data from enterprise customers to power an HR analytics dashboard. Employees' performance reviews, salary bands, and demographic info will be stored. Do a regulatory review.",
+      "prompt": "We're launching a B2B SaaS product in the US and EU that collects personal data from enterprise customers to power an HR analytics dashboard. Employees' performance reviews, salary bands, and demographic info will be stored. Do a regulatory review. Write your full output to regulatory-review.md.",
       "expected_output": "A structured Regulatory Review Summary covering: applicable frameworks (GDPR, CCPA/CPRA, and potentially EU AI Act if AI/ML is used), a compliance assessment table with ✓/△/✗ symbols, a Risk Matrix with Likelihood/Impact/Trend columns, Trend Analysis bullets in 'Area: INC/DEC/CONST - Evidence' format, Estimated Compliance Costs broken down by Technology/Personnel/Legal/Training/Audit, Recommendations split into Immediate/Medium-term/Monitoring, Monitoring Indicators naming ≥3 specific regulatory bodies or trackers, and cross-border transfer mechanisms (SCCs or adequacy decisions for US-EU data flow).",
       "files": [],
       "deterministic_checks": [
         {
+          "type": "file_exists",
+          "file": "regulatory-review.md",
+          "description": "Output file regulatory-review.md was created"
+        },
+        {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "regulatory-review.md",
           "pattern": "##\\s*Regulatory Review Summary",
           "description": "Output contains the required top-level section heading"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "regulatory-review.md",
           "pattern": "###\\s*Regulatory Risk Matrix|###\\s*Risk.*Matrix",
           "description": "Output contains a Risk Matrix section"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "regulatory-review.md",
           "pattern": "###\\s*Enforcement.*Penalties|###\\s*Estimated Compliance Costs",
           "description": "Output contains penalty or compliance cost section"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "regulatory-review.md",
           "pattern": "(INC|DEC|CONST)",
           "description": "Trend indicators (INC/DEC/CONST) appear in the output"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "regulatory-review.md",
           "pattern": "GDPR",
           "description": "GDPR is identified as an applicable framework"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "regulatory-review.md",
           "pattern": "CCPA|CPRA",
           "description": "CCPA or CPRA is identified as applicable"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "regulatory-review.md",
           "pattern": "Standard Contractual Clauses|SCC|adequacy",
           "description": "Cross-border transfer mechanism is addressed (US-EU data flow)"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "regulatory-review.md",
           "pattern": "[✓△✗]",
           "description": "Compliance Assessment uses required status symbols"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "regulatory-review.md",
           "pattern": "###\\s*Monitoring Indicators",
           "description": "Monitoring Indicators section is present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "regulatory-review.md",
           "pattern": "4%|EUR 20|20,000,000",
           "description": "GDPR penalty range is included"
         }
@@ -93,55 +98,60 @@
     },
     {
       "id": 2,
-      "prompt": "We're building a children's educational app (ages 6-12) that uses AI to personalize learning. It will collect login info, learning history, and optionally a photo of the child for avatar creation. We plan to launch in the US first. Assess the regulatory landscape.",
+      "prompt": "We're building a children's educational app (ages 6-12) that uses AI to personalize learning. It will collect login info, learning history, and optionally a photo of the child for avatar creation. We plan to launch in the US first. Assess the regulatory landscape. Write your full output to regulatory-review.md.",
       "expected_output": "Regulatory review that prominently identifies COPPA (and COPPA 2.0 proposed) as the primary framework, explains the under-13 verifiable parental consent requirement, addresses FTC Act §5, and covers app-store policy. The Risk Matrix must be populated. Penalty ranges for COPPA (~$50,120 per violation) should appear in the Enforcement & Penalties section. The AI personalization angle should surface EU AI Act and/or EEOC AI guidance references if cross-border expansion is considered or noted as a risk.",
       "files": [],
       "deterministic_checks": [
         {
+          "type": "file_exists",
+          "file": "regulatory-review.md",
+          "description": "Output file regulatory-review.md was created"
+        },
+        {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "regulatory-review.md",
           "pattern": "COPPA",
           "description": "COPPA is identified as a primary applicable framework"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "regulatory-review.md",
           "pattern": "parental consent|verifiable parental",
           "description": "Parental consent requirement is addressed"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "regulatory-review.md",
           "pattern": "\\$50,?120|50,120",
           "description": "COPPA penalty range (~$50,120 per violation) is cited"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "regulatory-review.md",
           "pattern": "FTC",
           "description": "FTC Act is referenced"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "regulatory-review.md",
           "pattern": "##\\s*Regulatory Review Summary",
           "description": "Output uses the required top-level section heading"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "regulatory-review.md",
           "pattern": "###\\s*Regulatory Risk Matrix|Risk.*Matrix",
           "description": "Risk Matrix section is present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "regulatory-review.md",
           "pattern": "(INC|DEC|CONST)",
           "description": "Trend indicators appear in the output"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "regulatory-review.md",
           "pattern": "[✓△✗]",
           "description": "Compliance Assessment uses required status symbols"
         }
@@ -166,61 +176,66 @@
     },
     {
       "id": 3,
-      "prompt": "Our fintech startup is launching a crypto trading platform in both the US and EU. We'll hold customer funds, execute trades, and issue a stablecoin. Customers are retail and institutional. What's the regulatory picture?",
+      "prompt": "Our fintech startup is launching a crypto trading platform in both the US and EU. We'll hold customer funds, execute trades, and issue a stablecoin. Customers are retail and institutional. What's the regulatory picture? Write your full output to regulatory-review.md.",
       "expected_output": "Regulatory review covering: Dodd-Frank, SEC (securities classification), FinCEN/BSA (MSB licensing, AML/KYC), and MiCA (EU stablecoin issuer requirements) as primary frameworks. Risk Matrix populated with cross-border rows. Trend column shows INC for crypto/fintech. Penalty ranges included. Cross-border section addresses US-EU jurisdictional split. Recommendations include Immediate AML/KYC program setup and Medium-term MiCA readiness. Monitoring Indicators name ≥3 sources (e.g., SEC, FinCEN, ESMA).",
       "files": [],
       "deterministic_checks": [
         {
+          "type": "file_exists",
+          "file": "regulatory-review.md",
+          "description": "Output file regulatory-review.md was created"
+        },
+        {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "regulatory-review.md",
           "pattern": "MiCA|Markets in Crypto",
           "description": "MiCA (EU crypto regulation) is identified"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "regulatory-review.md",
           "pattern": "SEC",
           "description": "SEC is identified as applicable regulator"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "regulatory-review.md",
           "pattern": "FinCEN|BSA|MSB",
           "description": "FinCEN/BSA/MSB licensing is referenced"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "regulatory-review.md",
           "pattern": "AML|KYC|anti.money laundering|know.your.customer",
           "description": "AML/KYC compliance obligations are noted"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "regulatory-review.md",
           "pattern": "##\\s*Regulatory Review Summary",
           "description": "Required top-level section heading is present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "regulatory-review.md",
           "pattern": "Risk.*Matrix|Regulatory Risk Matrix",
           "description": "Risk Matrix section is present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "regulatory-review.md",
           "pattern": "INC",
           "description": "At least one INC trend indicator appears (crypto/fintech regulatory trend is INC)"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "regulatory-review.md",
           "pattern": "###\\s*Monitoring Indicators",
           "description": "Monitoring Indicators section is present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "regulatory-review.md",
           "pattern": "stablecoin",
           "description": "Stablecoin-specific regulatory considerations are addressed"
         }
@@ -245,61 +260,66 @@
     },
     {
       "id": 4,
-      "prompt": "I'm doing market research on AI-powered hiring tools. Specifically, I want to understand what regulations companies using these tools need to comply with in the US. Focus on the regulatory landscape only, not the competitive or market sizing angles.",
+      "prompt": "I'm doing market research on AI-powered hiring tools. Specifically, I want to understand what regulations companies using these tools need to comply with in the US. Focus on the regulatory landscape only, not the competitive or market sizing angles. Write your full output to regulatory-review.md.",
       "expected_output": "Regulatory review identifying NYC Local Law 144 (annual bias audit + 10-day candidate notice), EU AI Act (high-risk AI system, conformity assessment), EEOC guidance and Title VII (adverse impact / four-fifths rule), and CCPA/CPRA for candidate data. Risk Matrix populated. Trend shows INC for AI-in-employment regulation. Penalty ranges for NYC LL 144 ($500-$1,500/day) included. Compliance Assessment uses ✓/△/✗ symbols.",
       "files": [],
       "deterministic_checks": [
         {
+          "type": "file_exists",
+          "file": "regulatory-review.md",
+          "description": "Output file regulatory-review.md was created"
+        },
+        {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "regulatory-review.md",
           "pattern": "NYC.*Local Law 144|Local Law 144|LL 144",
           "description": "NYC Local Law 144 is identified as a primary applicable framework"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "regulatory-review.md",
           "pattern": "EEOC|Equal Employment Opportunity",
           "description": "EEOC guidance is referenced"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "regulatory-review.md",
           "pattern": "bias audit|independent.*audit",
           "description": "Annual bias audit requirement is mentioned"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "regulatory-review.md",
           "pattern": "\\$500|\\$1,500|500.*1,500|1,500.*per.*violation",
           "description": "NYC LL 144 penalty range ($500-$1,500 per violation/day) is cited"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "regulatory-review.md",
           "pattern": "EU AI Act|European.*AI.*Act",
           "description": "EU AI Act is referenced"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "regulatory-review.md",
           "pattern": "Title VII|adverse.impact|four.fifths|4/5",
           "description": "EEOC Title VII / four-fifths analysis is addressed"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "regulatory-review.md",
           "pattern": "##\\s*Regulatory Review Summary",
           "description": "Required top-level section heading is present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "regulatory-review.md",
           "pattern": "[✓△✗]",
           "description": "Compliance Assessment uses required status symbols"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "regulatory-review.md",
           "pattern": "INC",
           "description": "Trend indicator INC appears (AI-in-employment regulation is trending INC)"
         }

@@ -3,73 +3,78 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "I'm building a B2B SaaS tool for restaurant inventory management. We charge $299/month per location. There are roughly 660,000 full-service restaurant locations in the US. Based on data from the National Restaurant Association, about 12% use dedicated inventory software today, and realistically I can capture 1-2% of the addressable market in the next 2 years. Can you do a full TAM SAM SOM analysis using bottom-up methodology?",
+      "prompt": "I'm building a B2B SaaS tool for restaurant inventory management. We charge $299/month per location. There are roughly 660,000 full-service restaurant locations in the US. Based on data from the National Restaurant Association, about 12% use dedicated inventory software today, and realistically I can capture 1-2% of the addressable market in the next 2 years. Can you do a full TAM SAM SOM analysis using bottom-up methodology? Write the complete analysis to a file named market-sizing.md.",
       "expected_output": "A Market Sizing Summary table with concrete dollar values for TAM, SAM, and SOM (TAM > SAM > SOM), explicitly named Bottom-Up methodology, step-by-step calculations showing the unit economics (660,000 locations × $299/month × 12 months), Key Assumptions section with at least 2 numbered assumptions, a Data Sources section naming at least one source, and a Confidence Level section.",
       "files": [],
       "deterministic_checks": [
         {
+          "type": "file_exists",
+          "file": "market-sizing.md",
+          "description": "market-sizing.md output file was created"
+        },
+        {
           "type": "regex_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "(?i)bottom[- ]up",
           "description": "Methodology is explicitly named as Bottom-Up"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "(?i)market sizing summary",
           "description": "Output contains a Market Sizing Summary section header"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "(?i)TAM",
           "description": "TAM row is present"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "(?i)SAM",
           "description": "SAM row is present"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "(?i)SOM",
           "description": "SOM row is present"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "\\$\\d+[\\d,.]*[MBK]?",
           "description": "At least one concrete dollar value is present (no $X or $XXM placeholders)"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "(?i)key assumption",
           "description": "Key Assumptions section is present"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "(?i)data source",
           "description": "Data Sources section is present"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "(?i)confidence",
           "description": "Confidence Level section is present"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "(?i)299",
           "description": "User-provided price of $299/month appears verbatim in calculations"
         },
         {
           "type": "regex_not_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "\\$X|\\$XX|\\[insert|TBD|\\$X\\.X",
           "description": "No placeholder values in output"
         }
@@ -85,73 +90,78 @@
     },
     {
       "id": 2,
-      "prompt": "What's the TAM SAM SOM for the global cybersecurity training software market? I'm targeting mid-market companies (100-2,500 employees) in North America. I've seen Gartner estimates that put the overall security awareness training market at around $5.6B globally in 2024 with a 15% CAGR projected through 2029. Use a top-down approach and give me bear/base/bull scenarios.",
+      "prompt": "What's the TAM SAM SOM for the global cybersecurity training software market? I'm targeting mid-market companies (100-2,500 employees) in North America. I've seen Gartner estimates that put the overall security awareness training market at around $5.6B globally in 2024 with a 15% CAGR projected through 2029. Use a top-down approach and give me bear/base/bull scenarios. Write the complete analysis to a file named market-sizing.md.",
       "expected_output": "Top-down market sizing with Gartner's $5.6B figure as the TAM anchor, SAM narrowed to North America mid-market, SOM as a realistic near-term achievable share. Bear/Base/Bull scenario table with Bear < Base < Bull for all metrics. Growth table showing CAGR with INC trend indicator. No placeholder values.",
       "files": [],
       "deterministic_checks": [
         {
+          "type": "file_exists",
+          "file": "market-sizing.md",
+          "description": "market-sizing.md output file was created"
+        },
+        {
           "type": "regex_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "(?i)top[- ]down",
           "description": "Methodology is explicitly named as Top-Down"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "(?i)bear",
           "description": "Bear scenario is present"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "(?i)base",
           "description": "Base scenario is present"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "(?i)bull",
           "description": "Bull scenario is present"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "(?i)INC",
           "description": "INC trend indicator is present (growing market)"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "(?i)CAGR",
           "description": "CAGR is stated"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "5\\.6|5,600",
           "description": "User-provided Gartner $5.6B figure appears in output"
         },
         {
           "type": "regex_not_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "\\$X|\\$XX|\\[insert|TBD",
           "description": "No placeholder values in output"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "(?i)market sizing summary",
           "description": "Market Sizing Summary section header is present"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "(?i)key assumption",
           "description": "Key Assumptions section is present"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "(?i)confidence",
           "description": "Confidence Level section is present"
         }
@@ -167,67 +177,72 @@
     },
     {
       "id": 3,
-      "prompt": "We're building software to prevent data breaches for healthcare organizations. According to IBM's 2024 Cost of a Data Breach Report, the average healthcare breach costs $9.8M. Our product can reduce breach probability by about 60%. We'd capture maybe 15% of prevented breach value as our price. There are approximately 6,000 hospitals in the US and maybe 100,000 smaller healthcare providers. Can you size this market using value theory / willingness-to-pay methodology?",
+      "prompt": "We're building software to prevent data breaches for healthcare organizations. According to IBM's 2024 Cost of a Data Breach Report, the average healthcare breach costs $9.8M. Our product can reduce breach probability by about 60%. We'd capture maybe 15% of prevented breach value as our price. There are approximately 6,000 hospitals in the US and maybe 100,000 smaller healthcare providers. Can you size this market using value theory / willingness-to-pay methodology? Write the complete analysis to a file named market-sizing.md.",
       "expected_output": "Value Theory sizing with the $9.8M breach cost figure used as the pain-point anchor. Calculation chain: breach cost × reduction % × capture rate × customer count. Full TAM/SAM/SOM table with concrete dollar values. IBM cited as a data source. Explicit capture rate of 15% stated and used. No placeholders.",
       "files": [],
       "deterministic_checks": [
         {
+          "type": "file_exists",
+          "file": "market-sizing.md",
+          "description": "market-sizing.md output file was created"
+        },
+        {
           "type": "regex_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "(?i)value[- ]theory|value theory|willingness.to.pay|WTP",
           "description": "Methodology is named as Value Theory or willingness-to-pay"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "9\\.8|9,800,000",
           "description": "User-provided $9.8M breach cost figure appears in output"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "(?i)15.{0,5}%|15 percent",
           "description": "The 15% capture rate appears in the calculation"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "(?i)market sizing summary",
           "description": "Market Sizing Summary section header is present"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "(?i)TAM",
           "description": "TAM is present"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "(?i)SAM",
           "description": "SAM is present"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "(?i)SOM",
           "description": "SOM is present"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "(?i)IBM",
           "description": "IBM is cited as a data source"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "(?i)key assumption",
           "description": "Key Assumptions section is present"
         },
         {
           "type": "regex_not_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "\\$X|\\$XX|\\[insert|TBD",
           "description": "No placeholder values in output"
         }
@@ -243,67 +258,72 @@
     },
     {
       "id": 4,
-      "prompt": "I need market sizing for the physical DVD rental kiosk business in the US. I know this is a declining market — Redbox basically collapsed. Give me a realistic TAM SAM SOM analysis with the decline rate and any scenario range you think is appropriate. I'm looking at a niche operator play targeting rural areas with no streaming access.",
+      "prompt": "I need market sizing for the physical DVD rental kiosk business in the US. I know this is a declining market — Redbox basically collapsed. Give me a realistic TAM SAM SOM analysis with the decline rate and any scenario range you think is appropriate. I'm looking at a niche operator play targeting rural areas with no streaming access. Write the complete analysis to a file named market-sizing.md.",
       "expected_output": "Declining market analysis using Top-Down with DEC trend indicator and a negative CAGR. Full TAM/SAM/SOM with concrete dollar values. DEC trend documented with supporting data. Scenario range (at minimum bear/base). Entry/operating risks noted. No placeholders. TAM > SAM > SOM maintained despite decline.",
       "files": [],
       "deterministic_checks": [
         {
+          "type": "file_exists",
+          "file": "market-sizing.md",
+          "description": "market-sizing.md output file was created"
+        },
+        {
           "type": "regex_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "(?i)DEC",
           "description": "DEC trend indicator is present for the declining market"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "-\\d+\\.?\\d*%|negative.{0,20}CAGR|declin.{0,20}\\d+%",
           "description": "A negative growth rate or declining CAGR is explicitly stated"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "(?i)market sizing summary",
           "description": "Market Sizing Summary section header is present"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "(?i)TAM",
           "description": "TAM is present"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "(?i)SAM",
           "description": "SAM is present"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "(?i)SOM",
           "description": "SOM is present"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "(?i)risk",
           "description": "Entry or operating risks are mentioned"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "(?i)key assumption",
           "description": "Key Assumptions section is present"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "(?i)confidence",
           "description": "Confidence Level section is present"
         },
         {
           "type": "regex_not_match",
-          "source": "output",
+          "file": "market-sizing.md",
           "pattern": "\\$X|\\$XX|\\[insert|TBD",
           "description": "No placeholder values despite the declining/uncertain market"
         }

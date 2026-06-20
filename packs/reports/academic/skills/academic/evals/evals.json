@@ -3,57 +3,74 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "Write a formal academic research report from these survived findings. Topic: 'energy efficiency of large language model inference'. Include all required sections.\n\nFindings:\n- id: urn:mif:f_energy_1 | title: Flash attention 2 reduces GPU memory bandwidth consumption by 37% on A100 hardware | dimension: technical | verdict: survived | citation: https://arxiv.org/abs/2307.08691 | author: Dao | year: 2023\n- id: urn:mif:f_energy_2 | title: Mixture-of-experts routing reduces average activated parameters to 12-15% of total model size | dimension: technical | verdict: survived | citation: https://arxiv.org/abs/2401.04088 | author: Jiang et al. | year: 2024\n- id: urn:mif:f_energy_3 | title: Transformer inference energy scales approximately quadratically with sequence length at current hardware utilization rates | dimension: technical | verdict: survived | citation: https://example.com/scaling-energy-2026 | author: Chen et al. | year: 2026",
+      "prompt": "Write a formal academic research report from these survived findings. Topic: 'energy efficiency of large language model inference'. Include all required sections. Write the report to academic-report.md.\n\nFindings:\n- id: urn:mif:f_energy_1 | title: Flash attention 2 reduces GPU memory bandwidth consumption by 37% on A100 hardware | dimension: technical | verdict: survived | citation: https://arxiv.org/abs/2307.08691 | author: Dao | year: 2023\n- id: urn:mif:f_energy_2 | title: Mixture-of-experts routing reduces average activated parameters to 12-15% of total model size | dimension: technical | verdict: survived | citation: https://arxiv.org/abs/2401.04088 | author: Jiang et al. | year: 2024\n- id: urn:mif:f_energy_3 | title: Transformer inference energy scales approximately quadratically with sequence length at current hardware utilization rates | dimension: technical | verdict: survived | citation: https://example.com/scaling-energy-2026 | author: Chen et al. | year: 2026",
       "expected_output": "A formal academic research report with all six required sections in order: Abstract (150-250 words), Background/Related Context, Method, Findings, Discussion, References. Author-date citations in text (e.g., '(Dao, 2023)') resolving to a full References section. No raw urn:mif: identifiers in prose. Hedged, qualified claims at academic altitude. Full reference entries for all three sources.",
       "files": [],
       "deterministic_checks": [
         {
+          "type": "file_exists",
+          "file": "academic-report.md",
+          "description": "Output file was created"
+        },
+        {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "academic-report.md",
           "pattern": "(?i)abstract",
           "description": "Required Abstract section present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "academic-report.md",
           "pattern": "(?i)background|related context|related work",
           "description": "Required Background/Related Context section present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "academic-report.md",
           "pattern": "(?i)method|methodology",
           "description": "Required Method section present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "academic-report.md",
           "pattern": "(?i)findings|results",
           "description": "Required Findings section present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "academic-report.md",
           "pattern": "(?i)discussion",
           "description": "Required Discussion section present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "academic-report.md",
           "pattern": "(?i)references|bibliography",
           "description": "Required References section present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "academic-report.md",
           "pattern": "\\(Dao,\\s*2023\\)|\\(Jiang[^)]*2024\\)|\\(Chen[^)]*2026\\)",
           "description": "Author-date citation format used in prose (e.g., '(Dao, 2023)')"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "academic-report.md",
           "pattern": "arxiv\\.org|example\\.com/scaling-energy",
           "description": "At least one citation URL from the MIF findings appears in the References section"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "academic-report.md",
+          "literal": "urn:mif:",
+          "description": "No raw urn:mif: identifiers appear in the prose or body text"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "academic-report.md",
+          "literal": "f_energy_",
+          "description": "No internal MIF finding IDs appear in the prose"
         }
       ],
       "expectations": [
@@ -81,45 +98,56 @@
     },
     {
       "id": 2,
-      "prompt": "Produce a formal academic research report on 'agentic AI system failure modes'. The finding set includes one falsified finding and one weakened finding — handle each according to the academic genre rules.\n\nFindings:\n- id: urn:mif:f_agent_1 | title: Prompt injection attacks succeed against 67% of tested autonomous agents in red-team evaluations by Perez and Ribeiro | dimension: security | verdict: survived | citation: https://example.com/prompt-injection-study | author: Perez and Ribeiro | year: 2024\n- id: urn:mif:f_agent_2 | title: Agentic systems exhibit goal drift in 100% of extended autonomous runs exceeding 48 hours with no human checkpoint | dimension: behavioral | verdict: falsified | citation: https://example.com/goal-drift-claim | author: Huang et al. | year: 2025\n- id: urn:mif:f_agent_3 | title: Tool-call error rates increase by approximately 3x when context window utilization exceeds 80% of capacity | dimension: technical | verdict: weakened | citation: https://example.com/context-degradation-study | author: Kim et al. | year: 2025",
+      "prompt": "Produce a formal academic research report on 'agentic AI system failure modes'. The finding set includes one falsified finding and one weakened finding — handle each according to the academic genre rules. Write the report to academic-report.md.\n\nFindings:\n- id: urn:mif:f_agent_1 | title: Prompt injection attacks succeed against 67% of tested autonomous agents in red-team evaluations by Perez and Ribeiro | dimension: security | verdict: survived | citation: https://example.com/prompt-injection-study | author: Perez and Ribeiro | year: 2024\n- id: urn:mif:f_agent_2 | title: Agentic systems exhibit goal drift in 100% of extended autonomous runs exceeding 48 hours with no human checkpoint | dimension: behavioral | verdict: falsified | citation: https://example.com/goal-drift-claim | author: Huang et al. | year: 2025\n- id: urn:mif:f_agent_3 | title: Tool-call error rates increase by approximately 3x when context window utilization exceeds 80% of capacity | dimension: technical | verdict: weakened | citation: https://example.com/context-degradation-study | author: Kim et al. | year: 2025",
       "expected_output": "Academic report that: (1) excludes the falsified finding (f_agent_2 / 100% goal drift claim — must not appear in Findings section), (2) includes the weakened finding (f_agent_3) but annotates it as weakened/uncertain, (3) includes the survived finding (f_agent_1) as settled evidence, (4) maintains all six required sections, (5) uses author-date citations.",
       "files": [],
       "deterministic_checks": [
         {
+          "type": "file_exists",
+          "file": "academic-report.md",
+          "description": "Output file was created"
+        },
+        {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "academic-report.md",
           "pattern": "(?i)abstract",
           "description": "Abstract section present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "academic-report.md",
           "pattern": "(?i)discussion",
           "description": "Discussion section present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "academic-report.md",
           "pattern": "(?i)references|bibliography",
           "description": "References section present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "academic-report.md",
           "pattern": "(?i)perez|67%|prompt injection",
           "description": "Survived finding f_agent_1 (Perez and Ribeiro prompt injection study) appears in the report"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "academic-report.md",
           "pattern": "(?i)kim|context window|80%|3x|tool.call error",
           "description": "Weakened finding f_agent_3 (Kim et al. context degradation) appears in the report (weakened = include with annotation, not exclude)"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "academic-report.md",
           "pattern": "\\(Perez[^)]*2024\\)|\\(Kim[^)]*2025\\)",
           "description": "Author-date citation format present for at least one survived or weakened finding"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "academic-report.md",
+          "literal": "urn:mif:",
+          "description": "No raw urn:mif: identifiers appear in the prose"
         }
       ],
       "expectations": [
@@ -142,75 +170,92 @@
     },
     {
       "id": 3,
-      "prompt": "Write an academic research report from these findings. Topic: 'retrieval-augmented generation accuracy benchmarks'. All four findings survived falsification. Citations are mandatory — every claim must trace to a finding.\n\nFindings:\n- id: urn:mif:f_rag_1 | title: RAGAS framework achieves 0.89 faithfulness score on HotpotQA when top-3 chunks are retrieved | dimension: evaluation | verdict: survived | citation: https://arxiv.org/abs/2309.15217 | author: Es et al. | year: 2023\n- id: urn:mif:f_rag_2 | title: Hybrid sparse-dense retrieval outperforms dense-only retrieval by 7-12 percentage points on multi-hop questions | dimension: technical | verdict: survived | citation: https://example.com/hybrid-retrieval-2025 | author: Zhao and Park | year: 2025\n- id: urn:mif:f_rag_3 | title: Chunk size of 256 tokens outperforms 512-token chunks on precision for fact-dense technical documents | dimension: technical | verdict: survived | citation: https://example.com/chunking-ablation | author: Nakamura et al. | year: 2024\n- id: urn:mif:f_rag_4 | title: Re-ranking with a cross-encoder adds 4-6% absolute NDCG improvement over bi-encoder retrieval alone | dimension: technical | verdict: survived | citation: https://example.com/reranking-study | author: Fernandez | year: 2026",
+      "prompt": "Write an academic research report from these findings. Topic: 'retrieval-augmented generation accuracy benchmarks'. All four findings survived falsification. Citations are mandatory — every claim must trace to a finding. Write the report to academic-report.md.\n\nFindings:\n- id: urn:mif:f_rag_1 | title: RAGAS framework achieves 0.89 faithfulness score on HotpotQA when top-3 chunks are retrieved | dimension: evaluation | verdict: survived | citation: https://arxiv.org/abs/2309.15217 | author: Es et al. | year: 2023\n- id: urn:mif:f_rag_2 | title: Hybrid sparse-dense retrieval outperforms dense-only retrieval by 7-12 percentage points on multi-hop questions | dimension: technical | verdict: survived | citation: https://example.com/hybrid-retrieval-2025 | author: Zhao and Park | year: 2025\n- id: urn:mif:f_rag_3 | title: Chunk size of 256 tokens outperforms 512-token chunks on precision for fact-dense technical documents | dimension: technical | verdict: survived | citation: https://example.com/chunking-ablation | author: Nakamura et al. | year: 2024\n- id: urn:mif:f_rag_4 | title: Re-ranking with a cross-encoder adds 4-6% absolute NDCG improvement over bi-encoder retrieval alone | dimension: technical | verdict: survived | citation: https://example.com/reranking-study | author: Fernandez | year: 2026",
       "expected_output": "A complete academic research report with all six sections. Every factual claim in Findings traces to one of the four supplied findings with an author-date citation. No uncited assertions. No urn:mif: leakage in prose. References section lists all four sources with URLs.",
       "files": [],
       "deterministic_checks": [
         {
+          "type": "file_exists",
+          "file": "academic-report.md",
+          "description": "Output file was created"
+        },
+        {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "academic-report.md",
           "pattern": "(?i)abstract",
           "description": "Abstract section present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "academic-report.md",
           "pattern": "(?i)background|related",
           "description": "Background section present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "academic-report.md",
           "pattern": "(?i)method|methodology",
           "description": "Method section present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "academic-report.md",
           "pattern": "(?i)findings|results",
           "description": "Findings section present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "academic-report.md",
           "pattern": "(?i)discussion",
           "description": "Discussion section present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "academic-report.md",
           "pattern": "(?i)references|bibliography",
           "description": "References section present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "academic-report.md",
           "pattern": "(?i)ragas|faithfulness|0\\.89|hotpotqa",
           "description": "Finding f_rag_1 (RAGAS faithfulness score) referenced in the report"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "academic-report.md",
           "pattern": "(?i)hybrid.*retrieval|sparse.*dense|7.12|multi.hop",
           "description": "Finding f_rag_2 (hybrid retrieval) referenced in the report"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "academic-report.md",
           "pattern": "(?i)256.token|512.token|chunk size|nakamura",
           "description": "Finding f_rag_3 (chunk size ablation) referenced in the report"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "academic-report.md",
           "pattern": "(?i)re.rank|cross.encoder|NDCG|fernandez",
           "description": "Finding f_rag_4 (re-ranking NDCG improvement) referenced in the report"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "academic-report.md",
           "pattern": "\\(Es[^)]*2023\\)|\\(Zhao[^)]*2025\\)|\\(Nakamura[^)]*2024\\)|\\(Fernandez[^)]*2026\\)",
           "description": "At least one author-date inline citation (Es et al. 2023, Zhao and Park 2025, Nakamura et al. 2024, or Fernandez 2026) appears in prose"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "academic-report.md",
+          "literal": "urn:mif:",
+          "description": "No raw urn:mif: identifiers appear in the body text or Findings section"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "academic-report.md",
+          "literal": "f_rag_",
+          "description": "No internal MIF finding ID handles leak into the output body"
         }
       ],
       "expectations": [

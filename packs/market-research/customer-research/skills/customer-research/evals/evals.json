@@ -3,57 +3,61 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "I'm building a B2B SaaS project management tool targeting small engineering teams (5-50 people). We've done 8 customer interviews and have G2 reviews to draw from. Can you run full customer research — I need personas, JTBD analysis, journey mapping, and segmentation before we finalize our positioning.",
+      "prompt": "I'm building a B2B SaaS project management tool targeting small engineering teams (5-50 people). We've done 8 customer interviews and have G2 reviews to draw from. Can you run full customer research — I need personas, JTBD analysis, journey mapping, and segmentation before we finalize our positioning. Write the complete Customer Research Summary to customer-research.md.",
       "expected_output": "A complete Customer Research Summary with all four required sections: at least two named personas (each with role, company size, pain points, and buying trigger), at least three JTBD statements in the mandated format, a journey table covering all six stages (Awareness → Advocacy), and a segment prioritization table with at least three segments each showing size, need intensity, accessibility, competition, and a priority rank. Growth direction indicators (INC/DEC/CONST) appear on each segment. No placeholder text anywhere.",
       "files": [],
       "deterministic_checks": [
         {
+          "type": "file_exists",
+          "file": "customer-research.md",
+          "description": "Output file customer-research.md was created"
+        },
+        {
           "type": "regex_match",
-          "content_field": "output",
+          "file": "customer-research.md",
           "pattern": "## Customer Personas|### Personas",
           "description": "Output contains a Personas section"
         },
         {
           "type": "regex_match",
-          "content_field": "output",
+          "file": "customer-research.md",
           "pattern": "## JTBD Analysis|### Jobs-to-be-Done|## Jobs-to-be-Done",
           "description": "Output contains a JTBD section"
         },
         {
           "type": "regex_match",
-          "content_field": "output",
+          "file": "customer-research.md",
           "pattern": "## Customer Journey|### Journey",
           "description": "Output contains a Customer Journey section"
         },
         {
           "type": "regex_match",
-          "content_field": "output",
+          "file": "customer-research.md",
           "pattern": "## Customer Segments|### Segments|Segmentation",
           "description": "Output contains a Customer Segments section"
         },
         {
           "type": "regex_match",
-          "content_field": "output",
+          "file": "customer-research.md",
           "pattern": "When .+, I want to .+, so I can",
           "description": "At least one JTBD statement uses the mandated 'When ... I want to ... so I can' format"
         },
         {
           "type": "regex_match",
-          "content_field": "output",
+          "file": "customer-research.md",
           "pattern": "INC|DEC|CONST",
           "description": "Output contains at least one trend indicator (INC/DEC/CONST)"
         },
         {
           "type": "regex_match",
-          "content_field": "output",
+          "file": "customer-research.md",
           "pattern": "Awareness",
           "description": "Customer Journey section references the Awareness stage"
         },
         {
-          "type": "regex_match",
-          "content_field": "output",
+          "type": "regex_not_match",
+          "file": "customer-research.md",
           "pattern": "\\$X|TBD|\\[insert\\]|\\[X\\]|placeholder",
-          "negate": true,
           "description": "Output contains no placeholder values"
         }
       ],
@@ -67,45 +71,49 @@
     },
     {
       "id": 2,
-      "prompt": "We're entering the HR tech space with an AI-powered performance review tool. What does our ideal customer look like? Give me the persona breakdown — I specifically need their role, company size they work at, their key pain points, what triggers them to look for a new solution, and what information sources they trust.",
+      "prompt": "We're entering the HR tech space with an AI-powered performance review tool. What does our ideal customer look like? Give me the persona breakdown — I specifically need their role, company size they work at, their key pain points, what triggers them to look for a new solution, and what information sources they trust. Write the persona to customer-research.md.",
       "expected_output": "At least one fully formed persona following the SKILL.md template structure: a persona name and role, company size and industry, stated goals, ranked pain points (major to minor), a representative quote, buying behavior (trigger, research method, decision influence, timeline), and preferred channels. No section left blank or filled with placeholder text.",
       "files": [],
       "deterministic_checks": [
         {
+          "type": "file_exists",
+          "file": "customer-research.md",
+          "description": "Output file customer-research.md was created"
+        },
+        {
           "type": "regex_match",
-          "content_field": "output",
+          "file": "customer-research.md",
           "pattern": "### Profile|\\*\\*Profile\\*\\*|Profile:",
           "description": "Persona contains a Profile subsection"
         },
         {
           "type": "regex_match",
-          "content_field": "output",
+          "file": "customer-research.md",
           "pattern": "### Goals|\\*\\*Goals\\*\\*|Goals:",
           "description": "Persona contains a Goals subsection"
         },
         {
           "type": "regex_match",
-          "content_field": "output",
+          "file": "customer-research.md",
           "pattern": "### Pain Points|\\*\\*Pain Points\\*\\*|Pain Points:",
           "description": "Persona contains a Pain Points subsection"
         },
         {
           "type": "regex_match",
-          "content_field": "output",
+          "file": "customer-research.md",
           "pattern": "### Buying Behavior|\\*\\*Buying Behavior\\*\\*|Buying Behavior:|trigger",
           "description": "Persona contains a Buying Behavior subsection with trigger"
         },
         {
           "type": "regex_match",
-          "content_field": "output",
+          "file": "customer-research.md",
           "pattern": "\"[^\"]{10,}\"",
           "description": "Persona includes a representative quote (at least 10 characters in quotes)"
         },
         {
-          "type": "regex_match",
-          "content_field": "output",
+          "type": "regex_not_match",
+          "file": "customer-research.md",
           "pattern": "\\$X|TBD|\\[insert\\]|\\[role\\]|\\[company\\]",
-          "negate": true,
           "description": "Persona contains no placeholder values"
         }
       ],
@@ -119,49 +127,54 @@
     },
     {
       "id": 3,
-      "prompt": "I need to segment our potential customers for a developer-focused API monitoring tool. We're seeing interest from startups, mid-market SaaS companies, and enterprises. Help me build a segmentation matrix I can use to decide which segment to target first, and flag any segments that are growing or shrinking.",
+      "prompt": "I need to segment our potential customers for a developer-focused API monitoring tool. We're seeing interest from startups, mid-market SaaS companies, and enterprises. Help me build a segmentation matrix I can use to decide which segment to target first, and flag any segments that are growing or shrinking. Write the segmentation matrix and recommendation to customer-research.md.",
       "expected_output": "A segmentation table with at least three named segments, each row containing all six required columns (Segment, Size, Need Intensity, Accessibility, Competition, Priority). Each segment must carry a growth direction indicator (INC/DEC/CONST) and a confidence level. A prioritized recommendation for which segment to target first, backed by the matrix data.",
       "files": [],
       "deterministic_checks": [
         {
+          "type": "file_exists",
+          "file": "customer-research.md",
+          "description": "Output file customer-research.md was created"
+        },
+        {
           "type": "regex_match",
-          "content_field": "output",
+          "file": "customer-research.md",
           "pattern": "\\| Segment |\\|.*Segment.*\\|",
           "description": "Output contains a markdown table with a Segment column"
         },
         {
           "type": "regex_match",
-          "content_field": "output",
+          "file": "customer-research.md",
           "pattern": "Need Intensity|\\bNeed\\b",
           "description": "Segmentation table includes Need Intensity column"
         },
         {
           "type": "regex_match",
-          "content_field": "output",
+          "file": "customer-research.md",
           "pattern": "Accessibility",
           "description": "Segmentation table includes Accessibility column"
         },
         {
           "type": "regex_match",
-          "content_field": "output",
+          "file": "customer-research.md",
           "pattern": "Competition",
           "description": "Segmentation table includes Competition column"
         },
         {
           "type": "regex_match",
-          "content_field": "output",
+          "file": "customer-research.md",
           "pattern": "Priority",
           "description": "Segmentation table includes Priority column"
         },
         {
           "type": "regex_match",
-          "content_field": "output",
+          "file": "customer-research.md",
           "pattern": "INC|DEC|CONST",
           "description": "At least one segment has a growth direction indicator"
         },
         {
           "type": "regex_match",
-          "content_field": "output",
+          "file": "customer-research.md",
           "pattern": "High|Medium|Low",
           "description": "Confidence tier appears in the output"
         }
@@ -176,57 +189,61 @@
     },
     {
       "id": 4,
-      "prompt": "We just did 12 user interviews with SMB owners considering switching from spreadsheets to accounting software. Map their buying journey from first realizing they have a problem to becoming an advocate, and identify where we should focus to reduce friction. I also need the JTBD statements that capture WHY they're making this switch.",
+      "prompt": "We just did 12 user interviews with SMB owners considering switching from spreadsheets to accounting software. Map their buying journey from first realizing they have a problem to becoming an advocate, and identify where we should focus to reduce friction. I also need the JTBD statements that capture WHY they're making this switch. Write the journey map and JTBD analysis to customer-research.md.",
       "expected_output": "A Customer Journey table covering all six stages (Awareness, Consideration, Decision, Purchase, Onboarding, Retention/Advocacy) with Actions, Thoughts, Emotions, Pain Points, and Opportunities columns populated for each stage. At least three JTBD statements in the exact mandated format covering functional, emotional, and related jobs. Specific opportunities identified at the highest-friction stages.",
       "files": [],
       "deterministic_checks": [
         {
+          "type": "file_exists",
+          "file": "customer-research.md",
+          "description": "Output file customer-research.md was created"
+        },
+        {
           "type": "regex_match",
-          "content_field": "output",
+          "file": "customer-research.md",
           "pattern": "Awareness",
           "description": "Journey contains Awareness stage"
         },
         {
           "type": "regex_match",
-          "content_field": "output",
+          "file": "customer-research.md",
           "pattern": "Consideration",
           "description": "Journey contains Consideration stage"
         },
         {
           "type": "regex_match",
-          "content_field": "output",
+          "file": "customer-research.md",
           "pattern": "Decision",
           "description": "Journey contains Decision stage"
         },
         {
           "type": "regex_match",
-          "content_field": "output",
+          "file": "customer-research.md",
           "pattern": "Onboarding",
           "description": "Journey contains Onboarding stage"
         },
         {
           "type": "regex_match",
-          "content_field": "output",
+          "file": "customer-research.md",
           "pattern": "Retention|Advocacy",
           "description": "Journey contains Retention/Advocacy stage"
         },
         {
           "type": "regex_match",
-          "content_field": "output",
+          "file": "customer-research.md",
           "pattern": "Opportunities",
           "description": "Journey table contains an Opportunities column"
         },
         {
           "type": "regex_match",
-          "content_field": "output",
+          "file": "customer-research.md",
           "pattern": "When .+, I want to .+, so I can",
           "description": "At least one JTBD statement follows the mandated 'When...I want to...so I can' format"
         },
         {
-          "type": "regex_match",
-          "content_field": "output",
+          "type": "regex_not_match",
+          "file": "customer-research.md",
           "pattern": "\\$X|TBD|\\[insert\\]|\\[stage\\]",
-          "negate": true,
           "description": "No placeholder values in the output"
         }
       ],

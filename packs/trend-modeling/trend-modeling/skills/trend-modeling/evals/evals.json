@@ -3,55 +3,60 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "I'm analyzing entry into the electric-scooter rental market in Southeast Asia and have very little hard data. The key variables I've identified are: Market Demand (MD), Competitive Intensity (CI), Regulatory Burden (RB), and Infrastructure Readiness (IR). Relationships I believe hold: market demand and competitive intensity are positively correlated (growth attracts rivals), regulatory burden and competitive intensity are negatively correlated (stricter rules deter entrants), and infrastructure readiness and market demand are positively correlated (better roads/charging = more riders). Please run the full trend-modeling analysis including the transitional scenario graph.",
+      "prompt": "I'm analyzing entry into the electric-scooter rental market in Southeast Asia and have very little hard data. The key variables I've identified are: Market Demand (MD), Competitive Intensity (CI), Regulatory Burden (RB), and Infrastructure Readiness (IR). Relationships I believe hold: market demand and competitive intensity are positively correlated (growth attracts rivals), regulatory burden and competitive intensity are negatively correlated (stricter rules deter entrants), and infrastructure readiness and market demand are positively correlated (better roads/charging = more riders). Please run the full trend-modeling analysis including the transitional scenario graph. Write the complete output to a file named trend-model.md.",
       "expected_output": "A complete six-section trend model: Variables table with INC/DEC/CONST assignments, Relationship Matrix showing INC/DEC pairs, Generated Scenarios section, a Mermaid stateDiagram-v2 transitional graph, Terminal Scenario Analysis, and Trade-offs section. Three-valued notation (INC/DEC/CONST) used throughout. Terminal scenarios labeled. Mermaid block is syntactically plausible (stateDiagram-v2, at least one state and one transition).",
       "files": [],
       "deterministic_checks": [
         {
+          "type": "file_exists",
+          "file": "trend-model.md",
+          "description": "trend-model.md output file was created"
+        },
+        {
           "type": "regex_match",
-          "source": "transcript",
+          "file": "trend-model.md",
           "pattern": "(?i)###?\\s*Variables",
           "description": "Output contains a Variables section header"
         },
         {
           "type": "regex_match",
-          "source": "transcript",
+          "file": "trend-model.md",
           "pattern": "(?i)###?\\s*Relationship Matrix",
           "description": "Output contains a Relationship Matrix section header"
         },
         {
           "type": "regex_match",
-          "source": "transcript",
+          "file": "trend-model.md",
           "pattern": "(?i)###?\\s*Generated Scenarios",
           "description": "Output contains a Generated Scenarios section header"
         },
         {
           "type": "regex_match",
-          "source": "transcript",
+          "file": "trend-model.md",
           "pattern": "stateDiagram-v2",
           "description": "Output contains a Mermaid stateDiagram-v2 block"
         },
         {
           "type": "regex_match",
-          "source": "transcript",
+          "file": "trend-model.md",
           "pattern": "(?i)(Terminal Scenario|terminal)",
           "description": "Output references terminal scenarios"
         },
         {
           "type": "regex_match",
-          "source": "transcript",
+          "file": "trend-model.md",
           "pattern": "(?i)###?\\s*(Trade.offs|Multi.Objective)",
           "description": "Output contains a Trade-offs section"
         },
         {
           "type": "regex_match",
-          "source": "transcript",
+          "file": "trend-model.md",
           "pattern": "INC\\(|DEC\\(",
           "description": "Output uses INC(X,Y)/DEC(X,Y) relationship notation"
         },
         {
           "type": "regex_match",
-          "source": "transcript",
+          "file": "trend-model.md",
           "pattern": "\\bINC\\b|\\bDEC\\b|\\bCONST\\b",
           "description": "Output assigns three-valued (INC/DEC/CONST) values to variables"
         }
@@ -81,49 +86,54 @@
     },
     {
       "id": 2,
-      "prompt": "I have correlation data from a market study on telemedicine adoption:\n- Patient Convenience (PC) vs. Adoption Rate (AR): correlation = +0.78\n- Regulatory Complexity (RC) vs. Adoption Rate (AR): correlation = -0.62\n- Adoption Rate (AR) vs. Incumbent Resistance (IR): correlation = +0.55\n- Reimbursement Coverage (RCov) vs. Adoption Rate (AR): correlation = +0.71\n\nConvert these correlations to INC/DEC notation and then run the full three-valued trend analysis for telemedicine adoption in the US market.",
+      "prompt": "I have correlation data from a market study on telemedicine adoption:\n- Patient Convenience (PC) vs. Adoption Rate (AR): correlation = +0.78\n- Regulatory Complexity (RC) vs. Adoption Rate (AR): correlation = -0.62\n- Adoption Rate (AR) vs. Incumbent Resistance (IR): correlation = +0.55\n- Reimbursement Coverage (RCov) vs. Adoption Rate (AR): correlation = +0.71\n\nConvert these correlations to INC/DEC notation and then run the full three-valued trend analysis for telemedicine adoption in the US market. Write the complete output to a file named trend-model.md.",
       "expected_output": "Correlation-to-notation conversion step shown before the matrix (positive → INC(X,Y), negative → DEC(X,Y)). Then the six required sections: Variables, Relationship Matrix, Generated Scenarios, Mermaid stateDiagram-v2 graph, Terminal Scenario Analysis, Trade-offs.",
       "files": [],
       "deterministic_checks": [
         {
+          "type": "file_exists",
+          "file": "trend-model.md",
+          "description": "trend-model.md output file was created"
+        },
+        {
           "type": "regex_match",
-          "source": "transcript",
+          "file": "trend-model.md",
           "pattern": "INC\\(PC|INC\\(Patient Convenience",
           "description": "Positive correlation between Patient Convenience and Adoption Rate is converted to INC notation"
         },
         {
           "type": "regex_match",
-          "source": "transcript",
+          "file": "trend-model.md",
           "pattern": "DEC\\(RC|DEC\\(Regulatory Complexity",
           "description": "Negative correlation for Regulatory Complexity is converted to DEC notation"
         },
         {
           "type": "regex_match",
-          "source": "transcript",
+          "file": "trend-model.md",
           "pattern": "(?i)positive.*INC|INC.*positive",
           "description": "Output explicitly maps positive correlation to INC notation"
         },
         {
           "type": "regex_match",
-          "source": "transcript",
+          "file": "trend-model.md",
           "pattern": "(?i)negative.*DEC|DEC.*negative",
           "description": "Output explicitly maps negative correlation to DEC notation"
         },
         {
           "type": "regex_match",
-          "source": "transcript",
+          "file": "trend-model.md",
           "pattern": "stateDiagram-v2",
           "description": "Output contains a Mermaid stateDiagram-v2 transitional graph"
         },
         {
           "type": "regex_match",
-          "source": "transcript",
+          "file": "trend-model.md",
           "pattern": "(?i)###?\\s*Relationship Matrix",
           "description": "Output contains a Relationship Matrix section"
         },
         {
           "type": "regex_match",
-          "source": "transcript",
+          "file": "trend-model.md",
           "pattern": "(?i)###?\\s*Terminal Scenario|Terminal.*Analysis",
           "description": "Output contains Terminal Scenario Analysis section"
         }
@@ -148,44 +158,48 @@
     },
     {
       "id": 3,
-      "prompt": "Please model trends for the global battery-storage market using three-valued logic. Variables: Manufacturing Scale (MS), Raw Material Costs (RMC), Technology Innovation Rate (TIR), Grid Integration Complexity (GIC), Policy Support (PS), Consumer Adoption (CA), Incumbent Utility Resistance (IUR). Relationships: MS and TIR are positively correlated; RMC and MS are negatively correlated (scale lowers cost); TIR and CA are positively correlated; PS and CA are positively correlated; PS and IUR are negatively correlated; GIC and CA are negatively correlated. I have no precise data — pure qualitative judgment.",
+      "prompt": "Please model trends for the global battery-storage market using three-valued logic. Variables: Manufacturing Scale (MS), Raw Material Costs (RMC), Technology Innovation Rate (TIR), Grid Integration Complexity (GIC), Policy Support (PS), Consumer Adoption (CA), Incumbent Utility Resistance (IUR). Relationships: MS and TIR are positively correlated; RMC and MS are negatively correlated (scale lowers cost); TIR and CA are positively correlated; PS and CA are positively correlated; PS and IUR are negatively correlated; GIC and CA are negatively correlated. I have no precise data — pure qualitative judgment. Write the complete output to a file named trend-model.md.",
       "expected_output": "With 7 variables the skill must follow large-model rules: relationship matrix limited to direct relationships (CONST for unclear pairs), 3-5 key scenarios generated rather than exhaustive enumeration, and terminal scenarios prioritized. All six mandatory sections must still appear. No urn:mif: IDs in the output.",
       "files": [],
       "deterministic_checks": [
         {
+          "type": "file_exists",
+          "file": "trend-model.md",
+          "description": "trend-model.md output file was created"
+        },
+        {
           "type": "regex_match",
-          "source": "transcript",
+          "file": "trend-model.md",
           "pattern": "stateDiagram-v2",
           "description": "Output contains Mermaid stateDiagram-v2 block even for a 7-variable model"
         },
         {
           "type": "regex_match",
-          "source": "transcript",
+          "file": "trend-model.md",
           "pattern": "(?i)###?\\s*Variables",
           "description": "Variables section present"
         },
         {
           "type": "regex_match",
-          "source": "transcript",
+          "file": "trend-model.md",
           "pattern": "(?i)###?\\s*Relationship Matrix",
           "description": "Relationship Matrix section present"
         },
         {
           "type": "regex_match",
-          "source": "transcript",
+          "file": "trend-model.md",
           "pattern": "(?i)###?\\s*(Trade.offs|Multi.Objective)",
           "description": "Trade-offs section present"
         },
         {
-          "type": "regex_match",
-          "source": "transcript",
+          "type": "regex_not_match",
+          "file": "trend-model.md",
           "pattern": "urn:mif:",
-          "negate": true,
           "description": "Output must NOT contain urn:mif: identifiers (internal harness IDs must not leak)"
         },
         {
           "type": "regex_match",
-          "source": "transcript",
+          "file": "trend-model.md",
           "pattern": "\\bCONST\\b",
           "description": "Matrix uses CONST for unclear/unspecified pairs as required by large-model rules"
         }
@@ -215,57 +229,61 @@
     },
     {
       "id": 4,
-      "prompt": "I need a quick qualitative trend model for the craft beer market in my region. I have zero data — just intuitions. Variables: Consumer Preference for Craft (CPC), Number of Local Breweries (NLB), Price Premium Tolerance (PPT), Mainstream Beer Sales (MBS). Rough intuitions: when craft preference goes up, number of local breweries tends to rise; when local brewery count rises, price premium tolerance seems to hold or rise; mainstream beer sales seem to move opposite to craft preference.",
+      "prompt": "I need a quick qualitative trend model for the craft beer market in my region. I have zero data — just intuitions. Variables: Consumer Preference for Craft (CPC), Number of Local Breweries (NLB), Price Premium Tolerance (PPT), Mainstream Beer Sales (MBS). Rough intuitions: when craft preference goes up, number of local breweries tends to rise; when local brewery count rises, price premium tolerance seems to hold or rise; mainstream beer sales seem to move opposite to craft preference. Write the complete output to a file named trend-model.md.",
       "expected_output": "A complete trend model from purely qualitative inputs. All six required sections present. INC/DEC/CONST assignments made despite zero numeric data. Mermaid stateDiagram-v2 graph present. At least one terminal scenario. No refusal to proceed due to lack of data.",
       "files": [],
       "deterministic_checks": [
         {
+          "type": "file_exists",
+          "file": "trend-model.md",
+          "description": "trend-model.md output file was created"
+        },
+        {
           "type": "regex_match",
-          "source": "transcript",
+          "file": "trend-model.md",
           "pattern": "(?i)###?\\s*Variables",
           "description": "Variables section present"
         },
         {
           "type": "regex_match",
-          "source": "transcript",
+          "file": "trend-model.md",
           "pattern": "(?i)###?\\s*Relationship Matrix",
           "description": "Relationship Matrix section present"
         },
         {
           "type": "regex_match",
-          "source": "transcript",
+          "file": "trend-model.md",
           "pattern": "(?i)###?\\s*Generated Scenarios",
           "description": "Generated Scenarios section present"
         },
         {
           "type": "regex_match",
-          "source": "transcript",
+          "file": "trend-model.md",
           "pattern": "stateDiagram-v2",
           "description": "Mermaid stateDiagram-v2 graph present"
         },
         {
           "type": "regex_match",
-          "source": "transcript",
+          "file": "trend-model.md",
           "pattern": "(?i)Terminal Scenario|terminal",
           "description": "Terminal scenario(s) identified"
         },
         {
           "type": "regex_match",
-          "source": "transcript",
+          "file": "trend-model.md",
           "pattern": "(?i)###?\\s*(Trade.offs|Multi.Objective)",
           "description": "Trade-offs section present"
         },
         {
           "type": "regex_match",
-          "source": "transcript",
+          "file": "trend-model.md",
           "pattern": "\\bINC\\b|\\bDEC\\b|\\bCONST\\b",
           "description": "Three-valued tokens (INC/DEC/CONST) assigned to variables"
         },
         {
-          "type": "regex_match",
-          "source": "transcript",
+          "type": "regex_not_match",
+          "file": "trend-model.md",
           "pattern": "(?i)insufficient data|cannot model|need more data|unable to proceed",
-          "negate": true,
           "description": "Skill must NOT refuse to proceed due to lack of numeric data — qualitative analysis is its core purpose"
         }
       ],

@@ -3,33 +3,36 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "Render the research artifact to PDF. The artifact is at /tmp/pdf-test/report.md. Save the output to /tmp/pdf-test/report.pdf.\n\nContents of /tmp/pdf-test/report.md:\n---\n**Title**: AI Infrastructure Analysis 2025\n**Date**: 2025-06-19\n**Scope**: Enterprise GPU cloud providers\n**Confidence**: High\n---\n\n# AI Infrastructure Analysis 2025\n\n## Executive Summary\n\nEnterprise GPU cloud capacity is expanding faster than demand through H1 2026, creating pricing pressure on hyperscalers.\n\n## Key Findings\n\n- GPU spot prices down 38% year-over-year on H100 equivalents\n- Three new entrants with >10K H100 capacity launched in Q1 2025\n- Hyperscalers defending margin via proprietary silicon (TPU v5, Trainium2)\n\n## Market Dynamics\n\nIncumbents are differentiating on managed services rather than raw compute pricing.\n\n## Diagram\n\n```mermaid\ngraph TD\n  A[GPU Supply] --> B[Spot Price]\n  A --> C[Reserved Price]\n  B --> D[Hyperscaler Margin]\n  C --> D\n```\n\n## Conclusion\n\nEnterprise buyers should negotiate reserved capacity contracts now before the supply glut normalises.",
+      "prompt": "Render the research artifact to PDF. The artifact is at /tmp/pdf-test/report.md. Save the output to /tmp/pdf-test/report.pdf.\n\nContents of /tmp/pdf-test/report.md:\n---\n**Title**: AI Infrastructure Analysis 2025\n**Date**: 2025-06-19\n**Scope**: Enterprise GPU cloud providers\n**Confidence**: High\n---\n\n# AI Infrastructure Analysis 2025\n\n## Executive Summary\n\nEnterprise GPU cloud capacity is expanding faster than demand through H1 2026, creating pricing pressure on hyperscalers.\n\n## Key Findings\n\n- GPU spot prices down 38% year-over-year on H100 equivalents\n- Three new entrants with >10K H100 capacity launched in Q1 2025\n- Hyperscalers defending margin via proprietary silicon (TPU v5, Trainium2)\n\n## Market Dynamics\n\nIncumbents are differentiating on managed services rather than raw compute pricing.\n\n## Diagram\n\n```mermaid\ngraph TD\n  A[GPU Supply] --> B[Spot Price]\n  A --> C[Reserved Price]\n  B --> D[Hyperscaler Margin]\n  C --> D\n```\n\n## Conclusion\n\nEnterprise buyers should negotiate reserved capacity contracts now before the supply glut normalises.\n\nAfter running, write a brief execution log to result.txt in the current working directory. The log must include: whether pandoc was found, whether a PDF engine was found (and which one), and the outcome (PDF written or install message shown). Also write the preprocessed Markdown (the artifact with any mermaid blocks replaced by image references or left as text) to preprocessed.md in the current working directory.",
       "expected_output": "The skill runs the dependency check first. If pandoc and a PDF engine are present: extracts the mermaid diagram to /tmp/diagram-report-1.mmd, renders it to PNG, writes /tmp/report-pre.md with the PNG reference replacing the mermaid block, runs pandoc with --toc --toc-depth=3 --pdf-engine, writes /tmp/pdf-test/report.pdf, reports its size and path, and removes temp files. The output PDF is non-empty. If pandoc or every engine is absent: prints an informational install message and exits cleanly with no error.",
       "files": [],
       "deterministic_checks": [
         {
+          "type": "file_exists",
+          "file": "result.txt",
+          "description": "Skill writes result.txt execution log"
+        },
+        {
           "type": "regex_match",
-          "source": "transcript",
+          "file": "result.txt",
           "pattern": "command -v pandoc",
           "description": "Dependency check for pandoc runs before any other work"
         },
         {
-          "type": "shell_command",
-          "command": "echo \"$TRANSCRIPT\" | grep -cE 'urn:mif:/f_[a-z]+_[0-9]+' || true",
-          "expected_exit_code": 0,
-          "expected_stdout": "0",
-          "description": "No urn:mif: finding IDs appear anywhere in the transcript"
+          "type": "regex_not_match",
+          "file": "result.txt",
+          "pattern": "urn:mif:/f_[a-z]+_[0-9]+",
+          "description": "No urn:mif: finding IDs appear anywhere in the execution log"
         },
         {
-          "type": "shell_command",
-          "command": "echo \"$TRANSCRIPT\" | grep -cE 'f_[a-z]+_[0-9]+' || true",
-          "expected_exit_code": 0,
-          "expected_stdout": "0",
+          "type": "regex_not_match",
+          "file": "result.txt",
+          "pattern": "\\bf_[a-z]+_[0-9]+\\b",
           "description": "No f_<dim>_<n> finding IDs leak into any output"
         },
         {
           "type": "regex_match",
-          "source": "transcript",
+          "file": "result.txt",
           "pattern": "(?i)(pandoc not installed|no pdf engine|install|unavailable|weasyprint|xelatex|wkhtmltopdf|report\\.pdf)",
           "description": "Skill either produces a PDF or emits an install message — never silent failure"
         }
@@ -54,41 +57,42 @@
     },
     {
       "id": 2,
-      "prompt": "Render the report to PDF but pandoc is not installed on this machine. Artifact at /tmp/pdf-test/no-pandoc-report.md.\n\nContents of /tmp/pdf-test/no-pandoc-report.md:\n# Supply Chain Resilience Study\n\n## Summary\n\nGlobal semiconductor lead times have normalised to pre-2020 levels as of Q4 2024.\n\n## Findings\n\n- Lead times: 12 weeks median (down from 52 weeks peak)\n- Inventory buffers remain elevated at Tier-1 suppliers\n\n## Conclusion\n\nProcurement teams should reduce safety-stock targets in H1 2025.",
+      "prompt": "Render the report to PDF but pandoc is not installed on this machine. Artifact at /tmp/pdf-test/no-pandoc-report.md.\n\nContents of /tmp/pdf-test/no-pandoc-report.md:\n# Supply Chain Resilience Study\n\n## Summary\n\nGlobal semiconductor lead times have normalised to pre-2020 levels as of Q4 2024.\n\n## Findings\n\n- Lead times: 12 weeks median (down from 52 weeks peak)\n- Inventory buffers remain elevated at Tier-1 suppliers\n\n## Conclusion\n\nProcurement teams should reduce safety-stock targets in H1 2025.\n\nFor this scenario, simulate that pandoc is not installed: run the dependency check (command -v pandoc), detect it is absent, write the install message to result.txt in the current working directory, and stop. Do NOT write any PDF or preprocessed.md. The result.txt must contain the install guidance message (e.g. 'brew install pandoc').",
       "expected_output": "The skill runs 'command -v pandoc', detects it is absent, prints a human-readable message explaining the channel is unavailable and providing the install command ('brew install pandoc'), and stops. No PDF is written, no pandoc command is attempted, and the process exits cleanly (no error code, no exception).",
       "files": [],
       "deterministic_checks": [
         {
+          "type": "file_exists",
+          "file": "result.txt",
+          "description": "Skill writes result.txt containing the install message"
+        },
+        {
           "type": "regex_match",
-          "source": "transcript",
+          "file": "result.txt",
           "pattern": "command -v pandoc",
           "description": "pandoc availability is checked via 'command -v pandoc'"
         },
         {
           "type": "regex_match",
-          "source": "transcript",
+          "file": "result.txt",
           "pattern": "(?i)(not installed|unavailable|install.*pandoc|brew install pandoc)",
-          "description": "Transcript contains an informational message about pandoc being missing with install guidance"
+          "description": "result.txt contains an informational message about pandoc being missing with install guidance"
         },
         {
-          "type": "shell_command",
-          "command": "echo \"$TRANSCRIPT\" | grep -c '^pandoc ' || true",
-          "expected_exit_code": 0,
-          "expected_stdout": "0",
+          "type": "regex_not_match",
+          "file": "result.txt",
+          "pattern": "^pandoc ",
           "description": "No pandoc invocation (starting with 'pandoc ') is made when pandoc is absent"
         },
         {
-          "type": "shell_command",
-          "command": "ls /tmp/pdf-test/no-pandoc-report.pdf 2>/dev/null | wc -l | tr -d ' '",
-          "expected_exit_code": 0,
-          "expected_stdout": "0",
+          "type": "file_not_exists",
+          "file": "no-pandoc-report.pdf",
           "description": "No PDF file is written when pandoc is absent"
         },
         {
-          "type": "shell_command",
-          "command": "echo \"$TRANSCRIPT\" | grep -cE 'urn:mif:/f_[a-z]+_[0-9]+' || true",
-          "expected_exit_code": 0,
-          "expected_stdout": "0",
+          "type": "regex_not_match",
+          "file": "result.txt",
+          "pattern": "urn:mif:/f_[a-z]+_[0-9]+",
           "description": "No urn:mif: IDs appear in the degraded-path output"
         }
       ],
@@ -107,27 +111,31 @@
     },
     {
       "id": 3,
-      "prompt": "Render the following artifact to PDF. The artifact at /tmp/pdf-test/diagram-report.md contains a mermaid diagram that will fail to render (mermaid-cli is not available or the diagram has a syntax error). The skill should degrade gracefully and still produce a PDF from the non-diagram content.\n\nContents of /tmp/pdf-test/diagram-report.md:\n**Title**: Competitive Landscape 2025\n**Date**: 2025-06-19\n**Scope**: SaaS observability tools\n**Confidence**: Medium\n\n# Competitive Landscape 2025\n\n## Overview\n\nFour vendors account for 78% of enterprise observability spend.\n\n## Vendor Comparison\n\n| Vendor | Market Share | YoY Growth |\n|--------|-------------|------------|\n| DatadogCo | 41% | +12% |\n| SplunkCo | 22% | -3% |\n| NewRelicCo | 9% | +1% |\n| Other | 28% | +5% |\n\n```mermaid\nsequenceDiagram\n  THIS IS INTENTIONALLY BROKEN SYNTAX %%%\n  A -->> B: invalid\n```\n\n## Conclusion\n\nThe incumbent duopoly faces pressure from next-gen lightweight agents.",
+      "prompt": "Render the following artifact to PDF. The artifact at /tmp/pdf-test/diagram-report.md contains a mermaid diagram that will fail to render (mermaid-cli is not available or the diagram has a syntax error). The skill should degrade gracefully and still produce a PDF from the non-diagram content.\n\nContents of /tmp/pdf-test/diagram-report.md:\n**Title**: Competitive Landscape 2025\n**Date**: 2025-06-19\n**Scope**: SaaS observability tools\n**Confidence**: Medium\n\n# Competitive Landscape 2025\n\n## Overview\n\nFour vendors account for 78% of enterprise observability spend.\n\n## Vendor Comparison\n\n| Vendor | Market Share | YoY Growth |\n|--------|-------------|------------|\n| DatadogCo | 41% | +12% |\n| SplunkCo | 22% | -3% |\n| NewRelicCo | 9% | +1% |\n| Other | 28% | +5% |\n\n```mermaid\nsequenceDiagram\n  THIS IS INTENTIONALLY BROKEN SYNTAX %%%\n  A -->> B: invalid\n```\n\n## Conclusion\n\nThe incumbent duopoly faces pressure from next-gen lightweight agents.\n\nAfter running, write a brief execution log to result.txt in the current working directory. The log must include: whether pandoc was found, the warning about the failed mermaid diagram, and the outcome. Also write the preprocessed Markdown (with the mermaid block left as raw text since rendering failed) to preprocessed.md in the current working directory.",
       "expected_output": "The skill attempts mermaid-cli rendering on the broken diagram block, detects failure, emits a warning identifying the failed diagram number, leaves the block as raw text in the pre-processed Markdown, and continues. A PDF is still produced from the remaining content. The skill does NOT abort due to the diagram failure.",
       "files": [],
       "deterministic_checks": [
         {
+          "type": "file_exists",
+          "file": "result.txt",
+          "description": "Skill writes result.txt execution log"
+        },
+        {
           "type": "regex_match",
-          "source": "transcript",
+          "file": "result.txt",
           "pattern": "command -v pandoc",
           "description": "Dependency check runs first"
         },
         {
           "type": "regex_match",
-          "source": "transcript",
+          "file": "result.txt",
           "pattern": "(?i)(diagram.*fail|fail.*diagram|warn|could not render|mermaid.*error|diagram.*1|diagram 1)",
           "description": "A warning about the failed diagram is emitted — not a silent failure"
         },
         {
-          "type": "shell_command",
-          "command": "echo \"$TRANSCRIPT\" | grep -cE 'urn:mif:/f_[a-z]+_[0-9]+' || true",
-          "expected_exit_code": 0,
-          "expected_stdout": "0",
+          "type": "regex_not_match",
+          "file": "result.txt",
+          "pattern": "urn:mif:/f_[a-z]+_[0-9]+",
           "description": "No urn:mif: IDs leak into the output despite diagram failure path"
         }
       ],
@@ -151,42 +159,37 @@
     },
     {
       "id": 4,
-      "prompt": "Render the synthesized artifact to PDF. The artifact at /tmp/pdf-test/synthesis-report.md is the output of report-synthesizer and must be rendered cleanly without any internal corpus identifiers leaking into the output.\n\nContents of /tmp/pdf-test/synthesis-report.md:\n**Title**: Autonomous Vehicle Market Analysis\n**Date**: 2025-06-19\n**Scope**: L4+ autonomous passenger vehicles, NA & EU markets\n**Confidence**: Medium-High\n\n# Autonomous Vehicle Market Analysis\n\n## Executive Summary\n\nL4+ autonomous vehicle deployment is entering the commercial scaling phase in limited geofenced corridors, with three operators reporting unit economics that approach breakeven on a per-mile basis.\n\n## Key Findings\n\n- Waymo is operating at an annualized run-rate of 4M paid rides as of Q1 2025\n- Insurance frameworks for AV liability remain unresolved in 34 US states\n- EU type-approval regulation (UN-R157 extension) expected to clear by Q3 2026\n\n## Competitive Dynamics\n\nCapital intensity is the primary barrier to new entrants; sensor bill-of-materials has fallen 62% since 2022 but software validation costs dominate.\n\n## Outlook\n\nCommercial deployment will remain geofence-constrained through 2027 absent federal preemption legislation.",
+      "prompt": "Render the synthesized artifact to PDF. The artifact at /tmp/pdf-test/synthesis-report.md is the output of report-synthesizer and must be rendered cleanly without any internal corpus identifiers leaking into the output.\n\nContents of /tmp/pdf-test/synthesis-report.md:\n**Title**: Autonomous Vehicle Market Analysis\n**Date**: 2025-06-19\n**Scope**: L4+ autonomous passenger vehicles, NA & EU markets\n**Confidence**: Medium-High\n\n# Autonomous Vehicle Market Analysis\n\n## Executive Summary\n\nL4+ autonomous vehicle deployment is entering the commercial scaling phase in limited geofenced corridors, with three operators reporting unit economics that approach breakeven on a per-mile basis.\n\n## Key Findings\n\n- Waymo is operating at an annualized run-rate of 4M paid rides as of Q1 2025\n- Insurance frameworks for AV liability remain unresolved in 34 US states\n- EU type-approval regulation (UN-R157 extension) expected to clear by Q3 2026\n\n## Competitive Dynamics\n\nCapital intensity is the primary barrier to new entrants; sensor bill-of-materials has fallen 62% since 2022 but software validation costs dominate.\n\n## Outlook\n\nCommercial deployment will remain geofence-constrained through 2027 absent federal preemption legislation.\n\nAfter running, write a brief execution log to result.txt in the current working directory. The log must include: whether pandoc was found, whether the artifact was read from its path (not from any findings/ or corpus/ directory), and the outcome. Also write the preprocessed Markdown to preprocessed.md in the current working directory if pandoc is available.",
       "expected_output": "The skill renders the clean synthesized artifact to PDF (or reports pandoc absence). At no point does any internal corpus reference (urn:mif:/f_<dim>_<n> format) appear in the transcript, the pre-processed Markdown, or the PDF. The artifact itself contains no such references (it is a clean report-synthesizer output), and the skill must not inject them. The Phase 0 resolution step reads the artifact file, not any corpus finding files.",
       "files": [],
       "deterministic_checks": [
         {
+          "type": "file_exists",
+          "file": "result.txt",
+          "description": "Skill writes result.txt execution log"
+        },
+        {
           "type": "regex_match",
-          "source": "transcript",
+          "file": "result.txt",
           "pattern": "command -v pandoc",
           "description": "Dependency check runs as mandated"
         },
         {
-          "type": "shell_command",
-          "command": "echo \"$TRANSCRIPT\" | grep -cE 'urn:mif:/f_[a-z]+_[0-9]+' || true",
-          "expected_exit_code": 0,
-          "expected_stdout": "0",
-          "description": "No urn:mif: corpus identifiers appear anywhere in the transcript"
+          "type": "regex_not_match",
+          "file": "result.txt",
+          "pattern": "urn:mif:/f_[a-z]+_[0-9]+",
+          "description": "No urn:mif: corpus identifiers appear anywhere in the execution log"
         },
         {
-          "type": "shell_command",
-          "command": "echo \"$TRANSCRIPT\" | grep -cE '\\bf_[a-z]+_[0-9]+\\b' || true",
-          "expected_exit_code": 0,
-          "expected_stdout": "0",
-          "description": "No bare f_<dim>_<n> finding IDs appear in the transcript"
+          "type": "regex_not_match",
+          "file": "result.txt",
+          "pattern": "\\bf_[a-z]+_[0-9]+\\b",
+          "description": "No bare f_<dim>_<n> finding IDs appear in the execution log"
         },
         {
-          "type": "shell_command",
-          "command": "if [ -f /tmp/pdf-test/report-pre.md ]; then grep -cE 'urn:mif:|f_[a-z]+_[0-9]+' /tmp/pdf-test/report-pre.md || true; else echo '0'; fi",
-          "expected_exit_code": 0,
-          "expected_stdout": "0",
-          "description": "The pre-processed Markdown intermediate file contains no corpus identifiers"
-        },
-        {
-          "type": "shell_command",
-          "command": "echo \"$TRANSCRIPT\" | grep -c 'findings/' || true",
-          "expected_exit_code": 0,
-          "expected_stdout": "0",
+          "type": "regex_not_match",
+          "file": "result.txt",
+          "pattern": "findings/",
           "description": "Skill does not read from any findings/ corpus directory — only from the artifact file"
         }
       ],

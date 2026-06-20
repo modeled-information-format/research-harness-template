@@ -3,45 +3,56 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "Generate a briefing from these three survived findings for our weekly stakeholder sync. Topic is 'LLM inference cost trends', period is 2026-06-12 to 2026-06-19.\n\nFindings:\n- id: urn:mif:f_cost_1 | title: H100 spot prices fell 18% MoM | dimension: cost | verdict: survived | citation: https://example.com/gpu-prices-june2026\n- id: urn:mif:f_cost_2 | title: Speculative decoding cuts token latency 2x on Llama-3 class models | dimension: technical | verdict: survived | citation: https://example.com/spec-decode-bench\n- id: urn:mif:f_cost_3 | title: AWS Bedrock introduced per-token caching in us-east-1 | dimension: landscape | verdict: survived | citation: https://example.com/aws-bedrock-cache",
-      "expected_output": "A terse one-page briefing with Headline, What's New (3 bullets with inline citations), Why It Matters (one line each), What's Next / Asks section, and front matter (title, date, period). No falsified findings. Citations use [1]/[2]/[3] markers or bare links — NOT raw urn:mif: ids in the body text.",
+      "prompt": "Generate a briefing from these three survived findings for our weekly stakeholder sync and write it to briefing.md. Topic is 'LLM inference cost trends', period is 2026-06-12 to 2026-06-19.\n\nFindings:\n- id: urn:mif:f_cost_1 | title: H100 spot prices fell 18% MoM | dimension: cost | verdict: survived | citation: https://example.com/gpu-prices-june2026\n- id: urn:mif:f_cost_2 | title: Speculative decoding cuts token latency 2x on Llama-3 class models | dimension: technical | verdict: survived | citation: https://example.com/spec-decode-bench\n- id: urn:mif:f_cost_3 | title: AWS Bedrock introduced per-token caching in us-east-1 | dimension: landscape | verdict: survived | citation: https://example.com/aws-bedrock-cache",
+      "expected_output": "A terse one-page briefing written to briefing.md with Headline, What's New (3 bullets with inline citations), Why It Matters (one line each), What's Next / Asks section, and front matter (title, date, period). No falsified findings. Citations use [1]/[2]/[3] markers or bare links — NOT raw urn:mif: ids in the body text.",
       "files": [],
       "deterministic_checks": [
         {
+          "type": "file_exists",
+          "file": "briefing.md",
+          "description": "Output file was created"
+        },
+        {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "briefing.md",
           "pattern": "(?i)headline",
           "description": "Output contains a Headline section"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "briefing.md",
           "pattern": "(?i)what.s new",
           "description": "Output contains a What's New section"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "briefing.md",
           "pattern": "(?i)why it matters",
           "description": "Output contains a Why It Matters section"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "briefing.md",
           "pattern": "(?i)what.s next|asks",
           "description": "Output contains a What's Next / Asks section"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "briefing.md",
           "pattern": "2026-06-1[2-9]|June 12|June 19|2026-06-12|2026-06-19",
           "description": "Front matter references the coverage period dates"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "briefing.md",
           "pattern": "\\[1\\]|\\[2\\]|\\[3\\]|example\\.com",
           "description": "Citations appear as inline markers or bare links — not raw urn:mif: in prose"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "briefing.md",
+          "literal": "urn:mif:",
+          "description": "Internal MIF URNs do not appear in the body text"
         }
       ],
       "expectations": [
@@ -64,33 +75,44 @@
     },
     {
       "id": 2,
-      "prompt": "Create a briefing for the Monday standup. Topic: 'open-source AI governance'. Period: 2026-06-16 to 2026-06-19.\n\nFindings:\n- id: urn:mif:f_gov_1 | title: EU AI Act enforcement unit published its first draft compliance template | dimension: regulatory | verdict: survived | citation: https://example.com/eu-ai-act-template\n- id: urn:mif:f_gov_2 | title: Mistral AI released Mixtral-8x22B under Apache 2.0 contrary to earlier reports | dimension: landscape | verdict: falsified | citation: https://example.com/mistral-correction\n- id: urn:mif:f_gov_3 | title: White House issued EO draft mandating model cards for federal procurement | dimension: regulatory | verdict: survived | citation: https://example.com/whitehouse-eo-draft",
-      "expected_output": "Briefing includes the two survived findings (f_gov_1 and f_gov_3) but completely excludes the falsified finding (f_gov_2 / Mixtral Apache 2.0 claim). The falsified finding must not appear in What's New.",
+      "prompt": "Create a briefing for the Monday standup and write it to briefing.md. Topic: 'open-source AI governance'. Period: 2026-06-16 to 2026-06-19.\n\nFindings:\n- id: urn:mif:f_gov_1 | title: EU AI Act enforcement unit published its first draft compliance template | dimension: regulatory | verdict: survived | citation: https://example.com/eu-ai-act-template\n- id: urn:mif:f_gov_2 | title: Mistral AI released Mixtral-8x22B under Apache 2.0 contrary to earlier reports | dimension: landscape | verdict: falsified | citation: https://example.com/mistral-correction\n- id: urn:mif:f_gov_3 | title: White House issued EO draft mandating model cards for federal procurement | dimension: regulatory | verdict: survived | citation: https://example.com/whitehouse-eo-draft",
+      "expected_output": "Briefing written to briefing.md includes the two survived findings (f_gov_1 and f_gov_3) but completely excludes the falsified finding (f_gov_2 / Mixtral Apache 2.0 claim). The falsified finding must not appear in What's New.",
       "files": [],
       "deterministic_checks": [
         {
+          "type": "file_exists",
+          "file": "briefing.md",
+          "description": "Output file was created"
+        },
+        {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "briefing.md",
           "pattern": "(?i)eu ai act|compliance template",
           "description": "Survived finding f_gov_1 (EU AI Act template) is included"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "briefing.md",
           "pattern": "(?i)white house|model card|federal procurement|executive order|EO draft",
           "description": "Survived finding f_gov_3 (White House EO draft) is included"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "briefing.md",
           "pattern": "(?i)headline",
           "description": "Required Headline section present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "briefing.md",
           "pattern": "(?i)what.s next|asks",
           "description": "Required What's Next / Asks section present"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "briefing.md",
+          "literal": "urn:mif:",
+          "description": "Internal MIF URNs do not appear in the output"
         }
       ],
       "expectations": [
@@ -108,27 +130,38 @@
     },
     {
       "id": 3,
-      "prompt": "Briefing please, for the exec sync. Topic: 'vector database market'. Period: 2026-05-01 to 2026-06-19.\n\nFindings:\n- id: urn:mif:f_vdb_1 | title: Pinecone raised Series C at $750M valuation | dimension: landscape | verdict: weakened | citation: https://example.com/pinecone-series-c | note: disconfirming evidence found that the valuation figure may be $650M\n- id: urn:mif:f_vdb_2 | title: Weaviate added native sparse-dense hybrid search | dimension: technical | verdict: survived | citation: https://example.com/weaviate-hybrid\n- id: urn:mif:f_vdb_3 | title: pgvector 0.8 released with HNSW index compression | dimension: technical | verdict: inconclusive | citation: https://example.com/pgvector-08",
-      "expected_output": "Briefing includes all three findings (weakened and inconclusive ones are flagged inline, not excluded), with f_vdb_1 flagged as uncertain and f_vdb_3 flagged as inconclusive. Survived finding f_vdb_2 presented without qualification.",
+      "prompt": "Please write a briefing for the exec sync to briefing.md. Topic: 'vector database market'. Period: 2026-05-01 to 2026-06-19.\n\nFindings:\n- id: urn:mif:f_vdb_1 | title: Pinecone raised Series C at $750M valuation | dimension: landscape | verdict: weakened | citation: https://example.com/pinecone-series-c | note: disconfirming evidence found that the valuation figure may be $650M\n- id: urn:mif:f_vdb_2 | title: Weaviate added native sparse-dense hybrid search | dimension: technical | verdict: survived | citation: https://example.com/weaviate-hybrid\n- id: urn:mif:f_vdb_3 | title: pgvector 0.8 released with HNSW index compression | dimension: technical | verdict: inconclusive | citation: https://example.com/pgvector-08",
+      "expected_output": "Briefing written to briefing.md includes all three findings (weakened and inconclusive ones are flagged inline, not excluded), with f_vdb_1 flagged as uncertain and f_vdb_3 flagged as inconclusive. Survived finding f_vdb_2 presented without qualification.",
       "files": [],
       "deterministic_checks": [
         {
+          "type": "file_exists",
+          "file": "briefing.md",
+          "description": "Output file was created"
+        },
+        {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "briefing.md",
           "pattern": "(?i)weaviate|sparse.dense|hybrid search",
           "description": "Survived finding f_vdb_2 (Weaviate hybrid search) is present without qualification"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "briefing.md",
           "pattern": "(?i)pinecone",
           "description": "Weakened finding f_vdb_1 (Pinecone valuation) is present (weakened means included with flag, not excluded)"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "briefing.md",
           "pattern": "(?i)pgvector|hnsw|compression",
           "description": "Inconclusive finding f_vdb_3 (pgvector 0.8) is present"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "briefing.md",
+          "literal": "urn:mif:",
+          "description": "Internal MIF URNs do not appear in the output"
         }
       ],
       "expectations": [
@@ -151,57 +184,68 @@
     },
     {
       "id": 4,
-      "prompt": "I need a briefing from these research findings. Topic: 'GPU supply chain'. Period: 2026-06-01 to 2026-06-19.\n\nFindings:\n- id: urn:mif:f_gpu_1 | title: TSMC 3nm capacity fully booked through Q1 2027 | dimension: supply | verdict: survived | citation: https://example.com/tsmc-3nm-capacity\n- id: urn:mif:f_gpu_2 | title: NVIDIA H200 shipments delayed 6 weeks due to CoWoS packaging constraint | dimension: supply | verdict: survived | citation: https://example.com/h200-delay\n- id: urn:mif:f_gpu_3 | title: AMD MI300X production ramping ahead of schedule | dimension: supply | verdict: survived | citation: https://example.com/mi300x-ramp\n- id: urn:mif:f_gpu_4 | title: Samsung HBM3e rejected by NVIDIA quality gate for second consecutive quarter | dimension: supply | verdict: survived | citation: https://example.com/samsung-hbm3e",
-      "expected_output": "A terse one-page briefing covering the 4 survived findings. Output must be tight and decision-focused — not a lengthy essay. The What's Next / Asks section must name at least one concrete next action or decision needed, not a generic 'continue monitoring'.",
+      "prompt": "I need a briefing from these research findings. Write it to briefing.md. Topic: 'GPU supply chain'. Period: 2026-06-01 to 2026-06-19.\n\nFindings:\n- id: urn:mif:f_gpu_1 | title: TSMC 3nm capacity fully booked through Q1 2027 | dimension: supply | verdict: survived | citation: https://example.com/tsmc-3nm-capacity\n- id: urn:mif:f_gpu_2 | title: NVIDIA H200 shipments delayed 6 weeks due to CoWoS packaging constraint | dimension: supply | verdict: survived | citation: https://example.com/h200-delay\n- id: urn:mif:f_gpu_3 | title: AMD MI300X production ramping ahead of schedule | dimension: supply | verdict: survived | citation: https://example.com/mi300x-ramp\n- id: urn:mif:f_gpu_4 | title: Samsung HBM3e rejected by NVIDIA quality gate for second consecutive quarter | dimension: supply | verdict: survived | citation: https://example.com/samsung-hbm3e",
+      "expected_output": "A terse one-page briefing written to briefing.md covering the 4 survived findings. Output must be tight and decision-focused — not a lengthy essay. The What's Next / Asks section must name at least one concrete next action or decision needed, not a generic 'continue monitoring'.",
       "files": [],
       "deterministic_checks": [
         {
+          "type": "file_exists",
+          "file": "briefing.md",
+          "description": "Output file was created"
+        },
+        {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "briefing.md",
           "pattern": "(?i)headline",
           "description": "Headline section present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "briefing.md",
           "pattern": "(?i)what.s new",
           "description": "What's New section present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "briefing.md",
           "pattern": "(?i)why it matters",
           "description": "Why It Matters section present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "briefing.md",
           "pattern": "(?i)what.s next|asks",
           "description": "What's Next / Asks section present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "briefing.md",
           "pattern": "(?i)tsmc|3nm",
           "description": "Finding f_gpu_1 (TSMC capacity) referenced"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "briefing.md",
           "pattern": "(?i)h200|delay|6 week|packaging",
           "description": "Finding f_gpu_2 (H200 delay) referenced"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "briefing.md",
           "pattern": "(?i)AMD|MI300X|ramp",
           "description": "Finding f_gpu_3 (AMD MI300X ramp) referenced"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "briefing.md",
           "pattern": "(?i)samsung|HBM|quality gate|rejected",
           "description": "Finding f_gpu_4 (Samsung HBM3e rejection) referenced"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "briefing.md",
+          "literal": "urn:mif:",
+          "description": "Internal MIF URNs do not appear in the output"
         }
       ],
       "expectations": [

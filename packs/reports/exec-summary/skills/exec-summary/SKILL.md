@@ -1,7 +1,7 @@
 ---
 name: exec-summary
 description: Genre template for a 1-2 page decision-oriented executive summary (BLUF, key findings, recommendation, risks). Use when the deliverable is a short brief for decision-makers who will act without reading a full report.
-version: 1.0.0
+version: 1.0.1
 ---
 
 # Genre Template: Executive Summary
@@ -25,6 +25,8 @@ explore alternatives, or expose intermediate analysis.
 
 1. **BLUF (Bottom Line Up Front)** — one paragraph: the answer and the recommended action,
    stated before any context. Never open with method or background.
+   The heading MUST literally contain the acronym "BLUF" (e.g. `## BLUF (Bottom Line Up Front)`)
+   so automated checks can locate it.
 2. **Key Findings** — 3 to 5 bullets, each a single load-bearing fact with its "so what".
    Every bullet traces to at least one finding's MIF `@id`.
 3. **Recommendation** — one bold, specific, actionable directive. Include What / Why / How / Risk.
@@ -33,8 +35,11 @@ explore alternatives, or expose intermediate analysis.
 
 ## Citation Style
 
-Inline numeric markers `[1]`, `[2]` resolving to a compact footnote list. Each marker points
-at the originating MIF finding's `@id` / `urn:mif:` citation. No bibliography — footnotes only.
+Inline numeric markers `[1]`, `[2]` resolving to a compact footnote list. Each footnote MUST
+resolve to the primary-source URL (e.g. `https://example.com/report`). The MIF finding `@id`
+is internal traceability metadata only — it MUST NOT appear in the footnote list, the document
+body, or anywhere else in the rendered output. Never print `f_<dim>_<n>` handles or `urn:mif:`
+URNs in the output. No bibliography — footnotes only.
 
 ## Required Figures & Matter
 
@@ -49,5 +54,8 @@ at the originating MIF finding's `@id` / `urn:mif:` citation. No bibliography �
 - The summary must stand alone: a reader who reads only this document can act correctly.
 - Quantify at least one finding. Never fabricate a number; present a range when sources
   disagree and hedge ("estimated", "data suggests") for uncertain claims.
-- Exclude any finding whose verification verdict is `falsified`.
+- Exclude any finding whose verification verdict is `falsified`. A falsified finding leaves
+  ZERO trace in the document — do NOT mention its numbers, figures, claims, or source in any
+  section, including Risks & Caveats. Do not reference, cite, hedge against, or restate
+  anything from a falsified finding. Treat it as if it never existed.
 - Use active voice throughout.

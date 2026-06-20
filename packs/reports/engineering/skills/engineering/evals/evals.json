@@ -3,61 +3,61 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "Generate an engineering report from these findings for our team. We are deciding which message-queue technology to adopt for the event pipeline. Decision drivers: throughput >1M msg/s, at-least-once delivery, operational simplicity, and cloud-managed option available.\n\nFindings:\n- id: urn:mif:f_technical_1 | title: Apache Kafka sustains 2M msg/s on a 3-broker cluster in benchmarks | dimension: technical | verdict: survived | citation: https://example.com/kafka-bench-2026\n- id: urn:mif:f_technical_2 | title: AWS SQS FIFO queues are capped at 3000 TPS per queue by default | dimension: technical | verdict: survived | citation: https://example.com/aws-sqs-limits\n- id: urn:mif:f_technical_3 | title: Redpanda Cloud offers a fully managed Kafka-compatible API with no ZooKeeper dependency | dimension: landscape | verdict: survived | citation: https://example.com/redpanda-cloud-2026\n- id: urn:mif:f_technical_4 | title: Self-managed Kafka requires dedicated ops team averaging 0.5 FTE per cluster | dimension: technical | verdict: survived | citation: https://example.com/kafka-ops-cost",
+      "prompt": "Generate an engineering report from these findings for our team and write it to engineering-report.md. We are deciding which message-queue technology to adopt for the event pipeline. Decision drivers: throughput >1M msg/s, at-least-once delivery, operational simplicity, and cloud-managed option available.\n\nFindings:\n- id: urn:mif:f_technical_1 | title: Apache Kafka sustains 2M msg/s on a 3-broker cluster in benchmarks | dimension: technical | verdict: survived | citation: https://example.com/kafka-bench-2026\n- id: urn:mif:f_technical_2 | title: AWS SQS FIFO queues are capped at 3000 TPS per queue by default | dimension: technical | verdict: survived | citation: https://example.com/aws-sqs-limits\n- id: urn:mif:f_technical_3 | title: Redpanda Cloud offers a fully managed Kafka-compatible API with no ZooKeeper dependency | dimension: landscape | verdict: survived | citation: https://example.com/redpanda-cloud-2026\n- id: urn:mif:f_technical_4 | title: Self-managed Kafka requires dedicated ops team averaging 0.5 FTE per cluster | dimension: technical | verdict: survived | citation: https://example.com/kafka-ops-cost",
       "expected_output": "A complete engineering report with all six required sections (Problem/Context, Options Considered, Trade-offs, Decision, Implementation Notes, Consequences), a markdown comparison table (options vs. criteria), front matter with title/date/status/decision-drivers, and inline numeric citations. No raw urn:mif: ids in the body prose.",
       "files": [],
       "deterministic_checks": [
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "engineering-report.md",
           "pattern": "(?i)problem|context",
           "description": "Section 1: Problem / Context is present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "engineering-report.md",
           "pattern": "(?i)options considered",
           "description": "Section 2: Options Considered is present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "engineering-report.md",
           "pattern": "(?i)trade.offs?",
           "description": "Section 3: Trade-offs is present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "engineering-report.md",
           "pattern": "(?i)decision",
           "description": "Section 4: Decision is present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "engineering-report.md",
           "pattern": "(?i)implementation notes?",
           "description": "Section 5: Implementation Notes is present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "engineering-report.md",
           "pattern": "(?i)consequences?",
           "description": "Section 6: Consequences is present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "engineering-report.md",
           "pattern": "\\|[-: ]+\\|",
           "description": "Comparison table separator row present (markdown table required by spec)"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "engineering-report.md",
           "pattern": "proposed|accepted|superseded",
           "description": "Front matter status field (proposed / accepted / superseded) is present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "engineering-report.md",
           "pattern": "\\[1\\]|\\[2\\]|\\[3\\]|\\[4\\]|example\\.com",
           "description": "Citations rendered as [N] markers or bare links — not raw urn:mif: ids"
         }
@@ -87,55 +87,55 @@
     },
     {
       "id": 2,
-      "prompt": "Write an engineering decision report. We're evaluating whether to use server-side rendering (SSR) or client-side rendering (CSR) for our new customer portal. Decision drivers: initial load time <2s on 3G, SEO indexability, team React expertise, time-to-interactive.\n\nFindings:\n- id: urn:mif:f_perf_1 | title: SSR reduces time-to-first-byte by ~300ms vs CSR on 3G in controlled tests | dimension: performance | verdict: survived | citation: https://example.com/ssr-perf-study\n- id: urn:mif:f_perf_2 | title: Next.js App Router supports incremental static regeneration and streaming SSR | dimension: technical | verdict: survived | citation: https://example.com/nextjs-approuter\n- id: urn:mif:f_perf_3 | title: Google confirmed Googlebot executes JavaScript for SPA indexing but with a crawl budget delay of 2-5 days | dimension: technical | verdict: weakened | citation: https://example.com/google-spa-indexing | note: disconfirming evidence suggests the crawl delay varies widely and may be longer for large SPAs\n- id: urn:mif:f_perf_4 | title: CSR bundle hydration adds 800ms TTI on mid-range mobile for a 200KB JS payload | dimension: performance | verdict: survived | citation: https://example.com/csr-hydration-cost",
+      "prompt": "Write an engineering decision report and write it to engineering-report.md. We're evaluating whether to use server-side rendering (SSR) or client-side rendering (CSR) for our new customer portal. Decision drivers: initial load time <2s on 3G, SEO indexability, team React expertise, time-to-interactive.\n\nFindings:\n- id: urn:mif:f_perf_1 | title: SSR reduces time-to-first-byte by ~300ms vs CSR on 3G in controlled tests | dimension: performance | verdict: survived | citation: https://example.com/ssr-perf-study\n- id: urn:mif:f_perf_2 | title: Next.js App Router supports incremental static regeneration and streaming SSR | dimension: technical | verdict: survived | citation: https://example.com/nextjs-approuter\n- id: urn:mif:f_perf_3 | title: Google confirmed Googlebot executes JavaScript for SPA indexing but with a crawl budget delay of 2-5 days | dimension: technical | verdict: weakened | citation: https://example.com/google-spa-indexing | note: disconfirming evidence suggests the crawl delay varies widely and may be longer for large SPAs\n- id: urn:mif:f_perf_4 | title: CSR bundle hydration adds 800ms TTI on mid-range mobile for a 200KB JS payload | dimension: performance | verdict: survived | citation: https://example.com/csr-hydration-cost",
       "expected_output": "Engineering report with all six required sections, a comparison table (SSR vs CSR on decision drivers), front matter, and inline citations. The weakened finding (f_perf_3) must be flagged as uncertain, not stated as settled fact. No falsified findings present but weakened one must carry a qualifier.",
       "files": [],
       "deterministic_checks": [
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "engineering-report.md",
           "pattern": "(?i)problem|context",
           "description": "Section 1: Problem / Context is present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "engineering-report.md",
           "pattern": "(?i)options considered",
           "description": "Section 2: Options Considered is present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "engineering-report.md",
           "pattern": "(?i)trade.offs?",
           "description": "Section 3: Trade-offs is present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "engineering-report.md",
           "pattern": "(?i)implementation notes?",
           "description": "Section 5: Implementation Notes is present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "engineering-report.md",
           "pattern": "(?i)consequences?",
           "description": "Section 6: Consequences is present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "engineering-report.md",
           "pattern": "\\|[-: ]+\\|",
           "description": "Markdown comparison table present (separator row check)"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "engineering-report.md",
           "pattern": "(?i)ssr|server.side render",
           "description": "SSR option is discussed"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "engineering-report.md",
           "pattern": "(?i)csr|client.side render",
           "description": "CSR option is discussed"
         }
@@ -160,73 +160,73 @@
     },
     {
       "id": 3,
-      "prompt": "Engineering decision doc please. Topic: choosing an observability backend for our microservices platform. Decision drivers: cost at 10TB/day ingest, OpenTelemetry native support, query latency <5s for last-24h spans, self-hosted option.\n\nFindings:\n- id: urn:mif:f_obs_1 | title: Grafana Tempo stores traces at ~$0.02/GB/month with object storage backend | dimension: cost | verdict: survived | citation: https://example.com/grafana-tempo-cost\n- id: urn:mif:f_obs_2 | title: Datadog APM charges per host plus a per-span ingestion fee that reaches $8k/month at 10TB/day | dimension: cost | verdict: survived | citation: https://example.com/datadog-pricing-2026\n- id: urn:mif:f_obs_3 | title: Honeycomb natively supports OTel and provides column-based storage optimized for high-cardinality trace queries | dimension: technical | verdict: survived | citation: https://example.com/honeycomb-otel\n- id: urn:mif:f_obs_4 | title: Datadog recently acquired Kubernetes manifest diffing tool Hydra to expand its CI observability offering | dimension: landscape | verdict: falsified | citation: https://example.com/datadog-hydra | note: Hydra acquisition is unconfirmed; source was an unverified blog post",
+      "prompt": "Engineering decision doc please — write the report to engineering-report.md. Topic: choosing an observability backend for our microservices platform. Decision drivers: cost at 10TB/day ingest, OpenTelemetry native support, query latency <5s for last-24h spans, self-hosted option.\n\nFindings:\n- id: urn:mif:f_obs_1 | title: Grafana Tempo stores traces at ~$0.02/GB/month with object storage backend | dimension: cost | verdict: survived | citation: https://example.com/grafana-tempo-cost\n- id: urn:mif:f_obs_2 | title: Datadog APM charges per host plus a per-span ingestion fee that reaches $8k/month at 10TB/day | dimension: cost | verdict: survived | citation: https://example.com/datadog-pricing-2026\n- id: urn:mif:f_obs_3 | title: Honeycomb natively supports OTel and provides column-based storage optimized for high-cardinality trace queries | dimension: technical | verdict: survived | citation: https://example.com/honeycomb-otel\n- id: urn:mif:f_obs_4 | title: Datadog recently acquired Kubernetes manifest diffing tool Hydra to expand its CI observability offering | dimension: landscape | verdict: falsified | citation: https://example.com/datadog-hydra | note: Hydra acquisition is unconfirmed; source was an unverified blog post",
       "expected_output": "Engineering report covering Grafana Tempo, Datadog APM, and Honeycomb as candidates. The falsified finding (f_obs_4, Datadog Hydra acquisition) must NOT appear in the Options or Decision reasoning. All six required sections, comparison table, and front matter required.",
       "files": [],
       "deterministic_checks": [
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "engineering-report.md",
           "pattern": "(?i)problem|context",
           "description": "Section 1: Problem / Context is present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "engineering-report.md",
           "pattern": "(?i)options considered",
           "description": "Section 2: Options Considered is present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "engineering-report.md",
           "pattern": "(?i)trade.offs?",
           "description": "Section 3: Trade-offs is present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "engineering-report.md",
           "pattern": "(?i)decision",
           "description": "Section 4: Decision is present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "engineering-report.md",
           "pattern": "(?i)implementation notes?",
           "description": "Section 5: Implementation Notes is present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "engineering-report.md",
           "pattern": "(?i)consequences?",
           "description": "Section 6: Consequences is present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "engineering-report.md",
           "pattern": "\\|[-: ]+\\|",
           "description": "Comparison table separator row present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "engineering-report.md",
           "pattern": "proposed|accepted|superseded",
           "description": "Front matter status field present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "engineering-report.md",
           "pattern": "(?i)grafana|tempo",
           "description": "Grafana Tempo (survived finding f_obs_1) is represented as a candidate"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "engineering-report.md",
           "pattern": "(?i)datadog",
           "description": "Datadog APM (survived finding f_obs_2) is represented as a candidate"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "engineering-report.md",
           "pattern": "(?i)honeycomb",
           "description": "Honeycomb (survived finding f_obs_3) is represented as a candidate"
         }
@@ -256,61 +256,61 @@
     },
     {
       "id": 4,
-      "prompt": "Write an engineering report on whether to adopt Rust or Go for our new high-throughput data pipeline service. Decision drivers: memory safety without GC pauses, compile-time correctness guarantees, team familiarity (current team knows Go, zero Rust experience), ecosystem maturity for Kafka client libraries.\n\nFindings:\n- id: urn:mif:f_lang_1 | title: Go's garbage collector introduced sub-1ms pause times in Go 1.21+ for heap sizes under 4GB | dimension: technical | verdict: survived | citation: https://example.com/go-gc-pauses-121\n- id: urn:mif:f_lang_2 | title: Rust's ownership model eliminates data races and use-after-free bugs at compile time | dimension: technical | verdict: survived | citation: https://example.com/rust-safety-model\n- id: urn:mif:f_lang_3 | title: The rdkafka Rust crate wraps librdkafka and is the primary Kafka client for Rust; sarama is the dominant Go Kafka client with broad production adoption | dimension: technical | verdict: survived | citation: https://example.com/kafka-clients-comparison\n- id: urn:mif:f_lang_4 | title: Rust onboarding time for Go engineers averages 3-6 months to productive contribution based on industry surveys | dimension: technical | verdict: inconclusive | citation: https://example.com/rust-onboarding-survey | note: survey sample size was small (n=47); confidence is low",
+      "prompt": "Write an engineering report on whether to adopt Rust or Go for our new high-throughput data pipeline service, and write it to engineering-report.md. Decision drivers: memory safety without GC pauses, compile-time correctness guarantees, team familiarity (current team knows Go, zero Rust experience), ecosystem maturity for Kafka client libraries.\n\nFindings:\n- id: urn:mif:f_lang_1 | title: Go's garbage collector introduced sub-1ms pause times in Go 1.21+ for heap sizes under 4GB | dimension: technical | verdict: survived | citation: https://example.com/go-gc-pauses-121\n- id: urn:mif:f_lang_2 | title: Rust's ownership model eliminates data races and use-after-free bugs at compile time | dimension: technical | verdict: survived | citation: https://example.com/rust-safety-model\n- id: urn:mif:f_lang_3 | title: The rdkafka Rust crate wraps librdkafka and is the primary Kafka client for Rust; sarama is the dominant Go Kafka client with broad production adoption | dimension: technical | verdict: survived | citation: https://example.com/kafka-clients-comparison\n- id: urn:mif:f_lang_4 | title: Rust onboarding time for Go engineers averages 3-6 months to productive contribution based on industry surveys | dimension: technical | verdict: inconclusive | citation: https://example.com/rust-onboarding-survey | note: survey sample size was small (n=47); confidence is low",
       "expected_output": "Engineering report comparing Rust vs Go on the four decision drivers, with all six required sections, a comparison table, front matter, and inline citations. The inconclusive onboarding-time finding must be flagged as low-confidence. The decision must name one language and justify it against the trade-offs.",
       "files": [],
       "deterministic_checks": [
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "engineering-report.md",
           "pattern": "(?i)problem|context",
           "description": "Section 1: Problem / Context is present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "engineering-report.md",
           "pattern": "(?i)options considered",
           "description": "Section 2: Options Considered is present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "engineering-report.md",
           "pattern": "(?i)trade.offs?",
           "description": "Section 3: Trade-offs is present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "engineering-report.md",
           "pattern": "(?i)decision",
           "description": "Section 4: Decision is present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "engineering-report.md",
           "pattern": "(?i)implementation notes?",
           "description": "Section 5: Implementation Notes is present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "engineering-report.md",
           "pattern": "(?i)consequences?",
           "description": "Section 6: Consequences is present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "engineering-report.md",
           "pattern": "\\|[-: ]+\\|",
           "description": "Markdown comparison table present"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "engineering-report.md",
           "pattern": "(?i)rust",
           "description": "Rust is evaluated as a candidate"
         },
         {
           "type": "regex_match",
-          "target": "transcript",
+          "file": "engineering-report.md",
           "pattern": "(?i)\\bgo\\b|golang",
           "description": "Go is evaluated as a candidate"
         }

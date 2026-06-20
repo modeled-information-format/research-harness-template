@@ -3,73 +3,78 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "I'm the CFO of a B2B SaaS startup and need a full financial analysis. Here are our Q3 numbers: CAC is $600, monthly ARPU is $100, annual gross churn is 20%, gross margin is 80%. We're growing at 45% YoY and our operating margin is 5%. Last quarter MRR was $800k, this quarter it's $900k. We also had $50k in expansion MRR and $30k in churn MRR this quarter from a $800k starting base. Give me the full analysis including unit economics, Rule of 40, and NRR.",
+      "prompt": "I'm the CFO of a B2B SaaS startup and need a full financial analysis. Here are our Q3 numbers: CAC is $600, monthly ARPU is $100, annual gross churn is 20%, gross margin is 80%. We're growing at 45% YoY and our operating margin is 5%. Last quarter MRR was $800k, this quarter it's $900k. We also had $50k in expansion MRR and $30k in churn MRR this quarter from a $800k starting base. Give me the full analysis including unit economics, Rule of 40, and NRR. Write your complete analysis to a file named financial-analysis.md.",
       "expected_output": "Financial Analysis Summary covering all six required output sections. Unit Economics section must compute: LTV = $4,800, LTV:CAC = 8:1, Payback = 7.5 months. Key Metrics table with those exact figures. Rule of 40 score of 50 (45% growth + 5% margin). NRR calculation: (800 + 50 - 30) / 800 = 102.5%. All benchmarks cited against SaaS norms. Trend indicators INC/DEC/CONST present. No placeholder values.",
       "files": [],
       "deterministic_checks": [
         {
+          "type": "file_exists",
+          "file": "financial-analysis.md",
+          "description": "financial-analysis.md output file was created"
+        },
+        {
           "type": "regex_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "(?i)financial analysis summary",
           "description": "Output contains the required Financial Analysis Summary section header"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "(?i)unit economics",
           "description": "Unit Economics section is present"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "4[,.]?800|\\$4800",
           "description": "LTV value of $4,800 is computed and present"
         },
         {
           "type": "regex_match",
-          "source": "output",
-          "pattern": "8.?:?.?1|8x|8 to 1",
+          "file": "financial-analysis.md",
+          "pattern": "8\\.?:?\\.?1|8x|8 to 1",
           "description": "LTV:CAC ratio of 8:1 is stated"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "7\\.5|7½",
           "description": "Payback period of 7.5 months is computed"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "(?i)rule of 40",
           "description": "Rule of 40 framework is applied"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "\\b50\\b.{0,60}rule.{0,30}40|rule.{0,30}40.{0,60}\\b50\\b",
           "description": "Rule of 40 score of 50 is present"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "(?i)NRR|net revenue retention|net dollar retention",
           "description": "NRR metric is computed"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "102\\.?5?%|102%",
           "description": "NRR of 102.5% (or ~102%) is present"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "INC|DEC|CONST",
           "description": "At least one trend indicator is present"
         },
         {
           "type": "regex_not_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "\\$X|\\$XX|\\[insert|TBD|\\[LTV\\]|\\[CAC\\]",
           "description": "No placeholder values in output"
         }
@@ -85,73 +90,78 @@
     },
     {
       "id": 2,
-      "prompt": "We're a B2B SaaS startup that's been burning cash. Our CAC is $2,400, monthly ARPU is $50, annual gross churn is 60%, and gross margin is 65%. We have $1.2M ARR and are growing at 80% YoY but our operating margin is -85%. We're trying to fundraise Series A. What's our financial health honestly? Give me the unit economics and a full analysis.",
+      "prompt": "We're a B2B SaaS startup that's been burning cash. Our CAC is $2,400, monthly ARPU is $50, annual gross churn is 60%, and gross margin is 65%. We have $1.2M ARR and are growing at 80% YoY but our operating margin is -85%. We're trying to fundraise Series A. What's our financial health honestly? Give me the unit economics and a full analysis. Write your complete analysis to a file named financial-analysis.md.",
       "expected_output": "Financial Analysis Summary that flags the unsustainable unit economics immediately. LTV = $650, LTV:CAC = 0.27:1 — below the 1:1 unsustainable threshold per SKILL.md. Payback ≈ 73.8 months — far outside the <18-month early-stage benchmark. Rule of 40 = 80 + (-85) = -5 — fails. Alert on LTV:CAC < 1 must be explicitly raised. Health Assessment must reflect critical risk.",
       "files": [],
       "deterministic_checks": [
         {
+          "type": "file_exists",
+          "file": "financial-analysis.md",
+          "description": "financial-analysis.md output file was created"
+        },
+        {
           "type": "regex_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "(?i)financial analysis summary",
           "description": "Output contains the Financial Analysis Summary section header"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "(?i)unit economics",
           "description": "Unit Economics section is present"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "\\$?6[45][0-9]|650",
           "description": "LTV value of approximately $650 is computed"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "0\\.2[0-9]|0\\.27|unsustainable|<.?1.?:?.?1|below.{0,20}1:1",
           "description": "LTV:CAC below 1:1 (unsustainable) is flagged"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "(?i)unsustainable|critical|alert|warning|red flag",
           "description": "An explicit alert or warning about unit economics viability is raised"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "(?i)rule of 40",
           "description": "Rule of 40 framework is applied"
         },
         {
           "type": "regex_not_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "rule of 40.{0,100}pass|≥ ?40.{0,50}pass|score.{0,30}pass",
           "description": "Rule of 40 is NOT reported as passing (score is -5, a fail)"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "(?i)payback",
           "description": "Payback Period is computed"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "7[0-9]|73\\.?8?|74",
           "description": "Payback period of approximately 73-74 months is stated"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "(?i)financial health assessment",
           "description": "Financial Health Assessment section is present"
         },
         {
           "type": "regex_not_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "\\$X|\\$XX|\\[insert|TBD",
           "description": "No placeholder values in output"
         }
@@ -167,73 +177,78 @@
     },
     {
       "id": 3,
-      "prompt": "I run a SaaS company and need to know if we pass the Rule of 40. We're at $5M ARR, grew from $4.237M last year (so you can compute the growth rate). Our COGS are $1.1M and operating expenses are $3.2M total (including COGS). Gross margin is 78%. What's our Rule of 40 score and full profitability analysis?",
+      "prompt": "I run a SaaS company and need to know if we pass the Rule of 40. We're at $5M ARR, grew from $4.237M last year (so you can compute the growth rate). Our COGS are $1.1M and operating expenses are $3.2M total (including COGS). Gross margin is 78%. What's our Rule of 40 score and full profitability analysis? Write your complete analysis to a file named financial-analysis.md.",
       "expected_output": "YoY growth rate computed as ($5M - $4.237M) / $4.237M = 18% (approximately). Operating margin = ($5M - $3.2M) / $5M = 36%. Rule of 40 = 18 + 36 = 54 — passes at 54. Gross margin confirmed at 78% (above 70% SaaS benchmark). Full profitability section with Gross Margin, Operating Margin, Net Margin table. Trend indicator for revenue direction.",
       "files": [],
       "deterministic_checks": [
         {
+          "type": "file_exists",
+          "file": "financial-analysis.md",
+          "description": "financial-analysis.md output file was created"
+        },
+        {
           "type": "regex_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "(?i)financial analysis summary",
           "description": "Output contains the Financial Analysis Summary section header"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "(?i)rule of 40",
           "description": "Rule of 40 framework is applied"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "\\b1[78]\\s*%|17\\.?[0-9]*%|18\\.?[0-9]*%",
           "description": "YoY growth rate of approximately 18% is computed"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "36\\s*%|36\\.?[0-9]*%",
           "description": "Operating margin of 36% is computed"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "\\b5[0-9]\\b.{0,60}rule.{0,30}40|rule.{0,30}40.{0,60}\\b5[0-9]\\b|score.{0,30}5[0-9]",
           "description": "Rule of 40 score in the 50s range is present (approximately 54)"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "(?i)profitability assessment|profitability",
           "description": "Profitability Assessment section is present"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "78\\s*%",
           "description": "Gross margin of 78% is confirmed in the analysis"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "INC|DEC|CONST",
           "description": "At least one trend indicator is present"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "(?i)gross margin",
           "description": "Gross Margin metric appears in the Key Metrics or Profitability table"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "(?i)operating margin",
           "description": "Operating Margin metric appears in the output"
         },
         {
           "type": "regex_not_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "\\$X|\\$XX|\\[insert|TBD",
           "description": "No placeholder values in output"
         }
@@ -249,73 +264,78 @@
     },
     {
       "id": 4,
-      "prompt": "We're a usage-based pricing SaaS (think Twilio-style). Revenue last month was $200k, this month is $230k. ARPU varies month-to-month based on usage. We have 180 customers this month, up from 160 last month. Gross margin is 72%. No fixed subscription — customers pay per API call. Annual churn is 15% by count but we have strong expansion: NRR is 130%. Walk me through our revenue model classification, unit economics, and whether our pricing strategy is appropriate for a usage-based model.",
+      "prompt": "We're a usage-based pricing SaaS (think Twilio-style). Revenue last month was $200k, this month is $230k. ARPU varies month-to-month based on usage. We have 180 customers this month, up from 160 last month. Gross margin is 72%. No fixed subscription — customers pay per API call. Annual churn is 15% by count but we have strong expansion: NRR is 130%. Walk me through our revenue model classification, unit economics, and whether our pricing strategy is appropriate for a usage-based model. Write your complete analysis to a file named financial-analysis.md.",
       "expected_output": "Revenue Model classified as Usage-Based with INC trend indicator. ARPU computed as $230k / 180 = $1,277.78 (current month). MoM growth = (230 - 200) / 200 = 15%. LTV computed using the provided inputs. NRR of 130% flagged as strong (above 110% growth-stage benchmark). Pricing Analysis section addresses usage-based strategy and its fit. No placeholders.",
       "files": [],
       "deterministic_checks": [
         {
+          "type": "file_exists",
+          "file": "financial-analysis.md",
+          "description": "financial-analysis.md output file was created"
+        },
+        {
           "type": "regex_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "(?i)financial analysis summary",
           "description": "Output contains the Financial Analysis Summary section header"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "(?i)usage.based|usage based",
           "description": "Revenue model is classified as usage-based"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "(?i)revenue model",
           "description": "Revenue Model section is present"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "INC",
           "description": "INC trend indicator is applied to the usage-based model"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "(?i)NRR|net revenue retention|net dollar retention",
           "description": "NRR metric is referenced"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "130\\s*%",
           "description": "NRR of 130% appears verbatim from the prompt data"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "15\\s*%",
           "description": "MoM growth rate of 15% is present (or annual churn of 15% is referenced)"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "(?i)pricing analysis|pricing strategy",
           "description": "Pricing Analysis section is present"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "(?i)unit economics",
           "description": "Unit Economics section is present"
         },
         {
           "type": "regex_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "1[,.]?2[0-9][0-9]|1277|1278|ARPU.{0,30}\\$1[,.]?[0-9]{3}",
           "description": "ARPU of approximately $1,277-1,278 is computed from $230k / 180 customers"
         },
         {
           "type": "regex_not_match",
-          "source": "output",
+          "file": "financial-analysis.md",
           "pattern": "\\$X|\\$XX|\\[insert|TBD",
           "description": "No placeholder values in output"
         }

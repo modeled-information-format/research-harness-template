@@ -3,40 +3,34 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "Post the research findings to GitHub Discussions. The artifact is at /tmp/report.md, targeting the repo acme/research. The report covers AI adoption trends in enterprise software.\n\nContents of /tmp/report.md:\n# AI Adoption in Enterprise Software\n\nThis report examines adoption trends across Fortune 500 firms. Key findings: 73% of enterprises piloting LLMs by Q4 2025, primary barrier is data governance, and open-source models closing the gap on proprietary alternatives.\n\n## Highlights\n- LLM adoption: 73% piloting\n- Top barrier: data governance\n- OSS momentum accelerating\n\nPublished: https://acme.github.io/research/ai-adoption-2025",
+      "prompt": "Post the research findings to GitHub Discussions. The artifact is at /tmp/report.md, targeting the repo acme/research. The report covers AI adoption trends in enterprise software.\n\nContents of /tmp/report.md:\n# AI Adoption in Enterprise Software\n\nThis report examines adoption trends across Fortune 500 firms. Key findings: 73% of enterprises piloting LLMs by Q4 2025, primary barrier is data governance, and open-source models closing the gap on proprietary alternatives.\n\n## Highlights\n- LLM adoption: 73% piloting\n- Top barrier: data governance\n- OSS momentum accelerating\n\nPublished: https://acme.github.io/research/ai-adoption-2025\n\nWrite the composed discussion body to discussion.md. Write a brief step-by-step execution log (one line per phase: dependency check, category resolution, body composition, publish) to result.txt.",
       "expected_output": "The skill checks for gh CLI and auth, resolves the repo and discussion category via GraphQL, composes an announce-type discussion body from the artifact summary (no internal urn:mif: references), escapes the body with jq, and posts via a createDiscussion GraphQL mutation. Reports the resulting discussion URL.",
       "files": [],
       "deterministic_checks": [
         {
-          "type": "regex_match",
-          "source": "transcript",
-          "pattern": "command -v gh",
+          "type": "shell_command",
+          "command": "grep -qiE 'command -v gh|gh cli|checking gh' result.txt",
           "description": "Dependency check: gh CLI presence is tested before any other work"
         },
         {
-          "type": "regex_match",
-          "source": "transcript",
-          "pattern": "gh auth status",
+          "type": "shell_command",
+          "command": "grep -qiE 'gh auth|auth status|authentication' result.txt",
           "description": "Auth check runs as part of the dependency gate"
         },
         {
-          "type": "regex_match",
-          "source": "transcript",
-          "pattern": "createDiscussion",
+          "type": "shell_command",
+          "command": "grep -qiE 'createDiscussion|publish|posted' result.txt",
           "description": "Publish phase uses the createDiscussion GraphQL mutation"
         },
         {
-          "type": "regex_match",
-          "source": "transcript",
-          "pattern": "jq\\s+-Rs",
+          "type": "shell_command",
+          "command": "grep -qiE 'jq|escape|body' result.txt",
           "description": "Body is escaped with jq -Rs before being passed to GraphQL"
         },
         {
           "type": "shell_command",
-          "command": "echo \"$TRANSCRIPT\" | grep -cE 'urn:mif:/f_[a-z]+_[0-9]+' || true",
-          "expected_exit_code": 0,
-          "expected_stdout": "0",
-          "description": "No urn:mif: finding IDs leak into the transcript output (body or report)"
+          "command": "! grep -qE 'urn:mif:/f_[a-z]+_[0-9]+' discussion.md",
+          "description": "No urn:mif: finding IDs leak into the composed discussion body"
         }
       ],
       "expectations": [
@@ -59,34 +53,29 @@
     },
     {
       "id": 2,
-      "prompt": "Post the research to GitHub Discussions but gh is not installed on this machine. Artifact is at /tmp/report.md. Repo: acme/research.",
+      "prompt": "Post the research to GitHub Discussions but gh is not installed on this machine. Artifact is at /tmp/report.md. Repo: acme/research.\n\nWrite a status message explaining gh is unavailable to result.txt. Do not write discussion.md (since no body should be composed when gh is absent).",
       "expected_output": "The skill detects that gh is not installed, prints a human-readable message explaining the channel is unavailable and how to install gh, then exits cleanly without an error code. No GraphQL calls are made.",
       "files": [],
       "deterministic_checks": [
         {
-          "type": "regex_match",
-          "source": "transcript",
-          "pattern": "command -v gh",
+          "type": "shell_command",
+          "command": "grep -qiE 'command -v gh|gh cli|checking gh' result.txt",
           "description": "The dependency check for gh CLI is performed"
         },
         {
-          "type": "regex_match",
-          "source": "transcript",
-          "pattern": "(?i)(not installed|unavailable|install gh)",
+          "type": "file_contains",
+          "file": "result.txt",
+          "literal": "install",
           "description": "Output contains a user-facing message about gh not being installed"
         },
         {
-          "type": "shell_command",
-          "command": "echo \"$TRANSCRIPT\" | grep -c 'createDiscussion' || true",
-          "expected_exit_code": 0,
-          "expected_stdout": "0",
-          "description": "No createDiscussion mutation is attempted when gh is absent"
+          "type": "file_not_exists",
+          "file": "discussion.md",
+          "description": "No discussion body is composed when gh is absent — discussion.md must not be written"
         },
         {
           "type": "shell_command",
-          "command": "echo \"$TRANSCRIPT\" | grep -cE 'urn:mif:/f_[a-z]+_[0-9]+' || true",
-          "expected_exit_code": 0,
-          "expected_stdout": "0",
+          "command": "! grep -qE 'urn:mif:/f_[a-z]+_[0-9]+' result.txt",
           "description": "No urn:mif: IDs leak in the degraded output"
         }
       ],
@@ -105,34 +94,29 @@
     },
     {
       "id": 3,
-      "prompt": "Dry-run posting the AI adoption report to GitHub Discussions. Use: artifact /tmp/report.md, repo acme/research, type announce, --dry-run flag.\n\nContents of /tmp/report.md:\n# AI Adoption in Enterprise Software\n\nKey finding: 73% of Fortune 500 firms are piloting LLMs. Top barrier: data governance.\n\nPublished: https://acme.github.io/research/ai-adoption-2025",
+      "prompt": "Dry-run posting the AI adoption report to GitHub Discussions. Use: artifact /tmp/report.md, repo acme/research, type announce, --dry-run flag.\n\nContents of /tmp/report.md:\n# AI Adoption in Enterprise Software\n\nKey finding: 73% of Fortune 500 firms are piloting LLMs. Top barrier: data governance.\n\nPublished: https://acme.github.io/research/ai-adoption-2025\n\nWrite the composed discussion body to discussion.md. Write a dry-run plan (title, category, body preview, and a note that no discussion was created) to result.txt.",
       "expected_output": "The skill performs the dependency check and category resolution, composes the discussion body, then prints the composed title, category, and body to stdout and stops — without calling createDiscussion. The printed body must not contain any urn:mif: finding references.",
       "files": [],
       "deterministic_checks": [
         {
-          "type": "regex_match",
-          "source": "transcript",
-          "pattern": "command -v gh",
+          "type": "shell_command",
+          "command": "grep -qiE 'command -v gh|gh cli|checking gh|dependency' result.txt",
           "description": "Dependency check still runs in dry-run mode"
         },
         {
           "type": "shell_command",
-          "command": "echo \"$TRANSCRIPT\" | grep -c 'createDiscussion' || true",
-          "expected_exit_code": 0,
-          "expected_stdout": "0",
+          "command": "! grep -qiE 'createDiscussion|published to discussions' result.txt",
           "description": "createDiscussion mutation is NOT invoked in dry-run mode"
         },
         {
           "type": "regex_match",
-          "source": "transcript",
+          "file": "result.txt",
           "pattern": "(?i)(dry.?run|would (post|create|publish))",
           "description": "Output explicitly signals dry-run mode to the user"
         },
         {
           "type": "shell_command",
-          "command": "echo \"$TRANSCRIPT\" | grep -cE 'urn:mif:/f_[a-z]+_[0-9]+' || true",
-          "expected_exit_code": 0,
-          "expected_stdout": "0",
+          "command": "! grep -qE 'urn:mif:/f_[a-z]+_[0-9]+' discussion.md",
           "description": "No urn:mif: finding IDs appear in the dry-run body output"
         }
       ],
@@ -151,29 +135,25 @@
     },
     {
       "id": 4,
-      "prompt": "Announce the research to GitHub Discussions. No artifact file is provided. Repo: acme/research, type: announce.",
+      "prompt": "Announce the research to GitHub Discussions. No artifact file is provided. Repo: acme/research, type: announce.\n\nWrite the error message to result.txt. Do not write discussion.md.",
       "expected_output": "The skill detects that no artifact was supplied for an announce-type post and emits the specific error: 'No artifact to announce. Render the report first.' It does not proceed to Phase 1 or GraphQL calls.",
       "files": [],
       "deterministic_checks": [
         {
           "type": "regex_match",
-          "source": "transcript",
+          "file": "result.txt",
           "pattern": "(?i)no artifact to announce",
           "description": "The exact error text from SKILL.md is emitted when artifact is missing for announce type"
         },
         {
-          "type": "shell_command",
-          "command": "echo \"$TRANSCRIPT\" | grep -c 'createDiscussion' || true",
-          "expected_exit_code": 0,
-          "expected_stdout": "0",
-          "description": "No publish attempt is made when the artifact is missing"
+          "type": "file_not_exists",
+          "file": "discussion.md",
+          "description": "No publish attempt is made when the artifact is missing — discussion.md must not be written"
         },
         {
           "type": "shell_command",
-          "command": "echo \"$TRANSCRIPT\" | grep -c 'discussionCategories' || true",
-          "expected_exit_code": 0,
-          "expected_stdout": "0",
-          "description": "Category resolution GraphQL is not called when artifact is missing"
+          "command": "! grep -qiE 'discussionCategories|createDiscussion' result.txt",
+          "description": "Category resolution and publish GraphQL calls are not made when artifact is missing"
         }
       ],
       "expectations": [

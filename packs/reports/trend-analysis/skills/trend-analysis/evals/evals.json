@@ -27,43 +27,43 @@
         {
           "type": "file_contains",
           "file": "reports/ai-enterprise/trend-analysis.md",
-          "value": "## Trajectory",
+          "literal": "## Trajectory",
           "description": "Output contains required Trajectory section heading"
         },
         {
           "type": "file_contains",
           "file": "reports/ai-enterprise/trend-analysis.md",
-          "value": "## Signals",
+          "literal": "## Signals",
           "description": "Output contains required Signals section heading"
         },
         {
           "type": "file_contains",
           "file": "reports/ai-enterprise/trend-analysis.md",
-          "value": "## Scenarios",
+          "literal": "## Scenarios",
           "description": "Output contains required Scenarios section heading"
         },
         {
           "type": "file_contains",
           "file": "reports/ai-enterprise/trend-analysis.md",
-          "value": "## Drivers",
+          "literal": "## Drivers",
           "description": "Output contains required Drivers & Inhibitors section heading"
         },
         {
           "type": "file_contains",
           "file": "reports/ai-enterprise/trend-analysis.md",
-          "value": "## Implications",
+          "literal": "## Implications",
           "description": "Output contains required Implications & Watch-list section heading"
         },
         {
           "type": "file_not_contains",
           "file": "reports/ai-enterprise/trend-analysis.md",
-          "value": "urn:mif:",
+          "literal": "urn:mif:",
           "description": "MIF URNs must not leak into narrative output"
         },
         {
           "type": "file_not_contains",
           "file": "reports/ai-enterprise/trend-analysis.md",
-          "value": "f_falsified_1",
+          "literal": "f_falsified_1",
           "description": "Falsified finding must be excluded from report"
         },
         {
@@ -118,25 +118,25 @@
         {
           "type": "file_contains",
           "file": "reports/quantum/trend-analysis.md",
-          "value": "## Trajectory",
+          "literal": "## Trajectory",
           "description": "Trajectory section present even with minimal findings"
         },
         {
           "type": "file_contains",
           "file": "reports/quantum/trend-analysis.md",
-          "value": "## Scenarios",
+          "literal": "## Scenarios",
           "description": "Scenarios section present even with minimal findings"
         },
         {
           "type": "file_contains",
           "file": "reports/quantum/trend-analysis.md",
-          "value": "5-year",
+          "literal": "5-year",
           "description": "5-year horizon stated in the document"
         },
         {
           "type": "file_not_contains",
           "file": "reports/quantum/trend-analysis.md",
-          "value": "urn:mif:",
+          "literal": "urn:mif:",
           "description": "MIF URNs must not appear in the output narrative"
         },
         {
@@ -193,43 +193,43 @@
         {
           "type": "file_contains",
           "file": "reports/climate-tech/trend-analysis.md",
-          "value": "## Trajectory",
+          "literal": "## Trajectory",
           "description": "Required Trajectory section heading present"
         },
         {
           "type": "file_contains",
           "file": "reports/climate-tech/trend-analysis.md",
-          "value": "## Signals",
+          "literal": "## Signals",
           "description": "Required Signals section heading present"
         },
         {
           "type": "file_contains",
           "file": "reports/climate-tech/trend-analysis.md",
-          "value": "## Scenarios",
+          "literal": "## Scenarios",
           "description": "Required Scenarios section heading present"
         },
         {
           "type": "file_not_contains",
           "file": "reports/climate-tech/trend-analysis.md",
-          "value": "urn:mif:",
+          "literal": "urn:mif:",
           "description": "No MIF URN leakage in the narrative"
         },
         {
           "type": "file_not_contains",
           "file": "reports/climate-tech/trend-analysis.md",
-          "value": "f_falsified_exclude",
+          "literal": "f_falsified_exclude",
           "description": "Falsified finding ID not present in output"
         },
         {
           "type": "file_not_contains",
           "file": "reports/climate-tech/trend-analysis.md",
-          "value": "eliminated fossil fuel subsidies",
+          "literal": "eliminated fossil fuel subsidies",
           "description": "Falsified claim content not reproduced in the output"
         },
         {
           "type": "file_contains",
           "file": "reports/climate-tech/trend-analysis.md",
-          "value": "2028",
+          "literal": "2028",
           "description": "3-year horizon (end of 2028) present in the document"
         },
         {
@@ -288,37 +288,37 @@
         {
           "type": "file_contains",
           "file": "reports/remote-work/trend-analysis.md",
-          "value": "## Trajectory",
+          "literal": "## Trajectory",
           "description": "Trajectory section heading present"
         },
         {
           "type": "file_contains",
           "file": "reports/remote-work/trend-analysis.md",
-          "value": "## Signals",
+          "literal": "## Signals",
           "description": "Signals section heading present"
         },
         {
           "type": "file_contains",
           "file": "reports/remote-work/trend-analysis.md",
-          "value": "## Drivers",
+          "literal": "## Drivers",
           "description": "Drivers & Inhibitors section heading present"
         },
         {
           "type": "file_contains",
           "file": "reports/remote-work/trend-analysis.md",
-          "value": "## Scenarios",
+          "literal": "## Scenarios",
           "description": "Scenarios section heading present"
         },
         {
           "type": "file_contains",
           "file": "reports/remote-work/trend-analysis.md",
-          "value": "## Implications",
+          "literal": "## Implications",
           "description": "Implications & Watch-list section heading present"
         },
         {
           "type": "file_not_contains",
           "file": "reports/remote-work/trend-analysis.md",
-          "value": "urn:mif:",
+          "literal": "urn:mif:",
           "description": "No raw MIF URN leakage in narrative"
         },
         {
