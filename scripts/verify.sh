@@ -1043,6 +1043,20 @@ gate_m12() {
     bad "generic/ambiguity wrong (core-only generic=$gen ro=$genro ambiguous=$amb disambiguated=$dis)"
   fi
 
+  # 12j. ontology-review.sh reviews/validates coverage across a topic's findings:
+  #      correct typed/untyped/invalid counts; --strict fails when invalid mappings exist.
+  mkdir -p "$T/reports/edu/findings"
+  printf '{"@id":"f-good","entity":%s}\n' "$G" > "$T/reports/edu/findings/good.json"
+  printf '{"@id":"f-untyped","content":"x"}\n' > "$T/reports/edu/findings/untyped.json"
+  printf '{"@id":"f-missing","entity":{"name":"A","entity_type":"title","subject":"mathematics"}}\n' > "$T/reports/edu/findings/missing.json"
+  local rv; rv=$(scripts/ontology-review.sh --topic edu --reports-dir "$T/reports" --config "$T/rcfg.json" --catalog "$T/cat.json" 2>/dev/null | tail -1)
+  scripts/ontology-review.sh --topic edu --strict --reports-dir "$T/reports" --config "$T/rcfg.json" --catalog "$T/cat.json" >/dev/null 2>&1; local rvs=$?
+  if printf '%s' "$rv" | grep -q "1 typed, 1 untyped, 1 invalid" && [ "$rvs" != 0 ]; then
+    ok "ontology-review reports correct typed/untyped/invalid coverage; --strict fails on invalid mappings"
+  else
+    bad "ontology-review wrong (summary='$rv' strict-exit=$rvs)"
+  fi
+
   rm -rf "$T"
 }
 

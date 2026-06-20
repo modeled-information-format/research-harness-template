@@ -99,6 +99,7 @@ run_neg "ontology-missing-required" bash -c "scripts/resolve-ontology.sh evals/f
 run_neg "ontology-unbound-for-topic" bash -c "scripts/resolve-ontology.sh evals/fixtures/ontology/good.json   --topic bare $OC --map \"$TMP/o7.json\""
 run_neg "ontology-ambiguous"        bash -c "scripts/resolve-ontology.sh evals/fixtures/ontology/ambiguous.json --topic eng $OC --map \"$TMP/o8.json\""
 run     "ontology-disambiguated"    bash -c "scripts/resolve-ontology.sh evals/fixtures/ontology/disambig.json  --topic eng $OC --map \"$TMP/o9.json\""
+run     "ontology-review-coverage"  bash -c "mkdir -p \"$TMP/rep/edu/findings\" && cp evals/fixtures/ontology/good.json \"$TMP/rep/edu/findings/\" && scripts/ontology-review.sh --topic edu --strict --reports-dir \"$TMP/rep\" $OC"
 
 echo
 if [ "$FAIL" -gt 0 ]; then
