@@ -1,0 +1,6 @@
+{"ontologies":[
+ {"id":"mif-generic","version":"1.0.0","source":"schemas/ontologies/mif-generic/1.0.0.yaml","core":true},
+ {"id":"mif-base","version":"0.1.0","source":"schemas/ontologies/mif-base/0.1.0.yaml","core":true},
+ {"id":"shared-traits","version":"0.1.0","source":"schemas/ontologies/shared-traits/0.1.0.yaml","core":true},
+ {"id":"k12-educational-publishing","version":"0.1.0","source":"packs/ontologies/k12-educational-publishing/k12-educational-publishing.ontology.yaml","core":false}
+]}
