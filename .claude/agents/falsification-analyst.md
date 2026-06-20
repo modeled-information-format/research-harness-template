@@ -16,10 +16,6 @@ tools:
   - Glob
   - Grep
   - Read
-  - SendMessage
-  - TaskGet
-  - TaskList
-  - TaskUpdate
   - WebFetch
   - WebSearch
   - Write
@@ -206,7 +202,7 @@ weakened further is quarantined rather than dropped to an invalid level.
 
 ---
 
-## Step 8: Write the session report and signal completion
+## Step 8: Write the session report and return your result
 
 Write a human-readable `$REPORTS_DIR/{YYYY-MM-DD}-falsification-report.md` (date
 is today's UTC date) with:
@@ -217,21 +213,18 @@ is today's UTC date) with:
 - the remediation applied (quarantined / downgraded / annotated);
 - an epistemic caveat naming the actual query budget used per claim.
 
-Then:
+Then make your **final message** your return value to the orchestrator (you run as
+a nameless subagent — no `SendMessage`, no shared task list):
 
 ```text
-TaskUpdate(taskId, status: "completed")
-SendMessage(
-  to: "team-lead",
-  message: {
-    report: "{report.md path}",
-    verdicts: { falsified: N, weakened: N, survived: N, inconclusive: N },
-    quarantined: N,
-    downgraded: N
-  },
-  summary: "Falsification complete: {N} falsified, {N} weakened, {N} survived, {N} inconclusive"
-)
+report: "{report.md path}"
+verdicts: { falsified: N, weakened: N, survived: N, inconclusive: N }
+quarantined: N
+downgraded: N
 ```
+
+The verdicts and remediation are already written to the finding files on disk;
+this return is the orchestrator's roll-up.
 
 ---
 

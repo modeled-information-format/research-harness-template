@@ -8,13 +8,6 @@ allowed-tools:
   - Bash
   - Glob
   - Read
-  - SendMessage
-  - TaskCreate
-  - TaskGet
-  - TaskList
-  - TaskUpdate
-  - TeamCreate
-  - TeamDelete
 ---
 
 # Falsify
@@ -82,21 +75,15 @@ esac
 If `COUNT > CLAIM_BUDGET`, ask the user (increase budget to `COUNT*3`, narrow
 scope, or cancel) before spawning. Do NOT silently truncate.
 
-## Phase 2: Spawn the falsification-analyst (swarm pattern)
+## Phase 2: Spawn the falsification-analyst (nameless subagent)
 
-Use the full swarm pattern: `TeamCreate → TaskCreate → Agent(team_name) →
-SendMessage → TeamDelete`.
+Spawn the analyst as a **nameless background subagent** and read its return — no
+team, no `SendMessage`. (The platform roster is flat; coordination is via the
+finding files the analyst writes and its return value.)
 
 ```text
-TeamCreate(name: "falsify-<topic>")
-TaskCreate(subject: "Falsify findings: scope=<scope>, <query_budget>q x <claim_budget>c",
-           owner: "falsification-analyst")
-# note the returned task id as {taskId}
-
 Agent(
   subagent_type: "falsification-analyst",
-  team_name: "falsify-<topic>",
-  name: "falsification-analyst",
   run_in_background: true,
   prompt: """
     Adversarially falsify the active findings for this topic.
@@ -104,25 +91,23 @@ Agent(
     SCOPE: {scope}              — all | dimension:<config-dim> | finding:<MIF @id>
     QUERY_BUDGET: {query_budget}
     CLAIM_BUDGET: {claim_budget}
-    taskId: {taskId}
 
     Follow your agent definition (Steps 1–8). Web-only evidence
     (WebSearch/WebFetch). Write each verdict through scripts/falsify.sh into
     extensions.harness.verification, apply the one-round rule, apply remediation
     (falsified -> quarantine, weakened -> downgrade one level, survived/
-    inconclusive -> annotate), write the {date}-falsification-report.md, then
-    TaskUpdate completed and SendMessage to 'team-lead' with the verdict roll-up.
+    inconclusive -> annotate), write the {date}-falsification-report.md. Your
+    FINAL MESSAGE is your return value: the verdict roll-up.
   """
 )
-SendMessage(to: "falsification-analyst", message: "Task #{taskId} assigned. Start now.")
 ```
 
 ## Phase 3: Receive verdicts and report
 
-Wait for the analyst's `SendMessage` roll-up:
+Read the subagent's returned roll-up:
 `{report, verdicts: {falsified, weakened, survived, inconclusive}, quarantined,
-downgraded}`. Web search is slow — allow generous time; if no response, check for
-the report file before aborting.
+downgraded}`. Web search is slow — allow generous time; if the return is empty,
+check for the report file before aborting.
 
 Append a gate entry to `reports/<topic>/research-progress.md`:
 
@@ -143,15 +128,10 @@ and next steps:
 - Otherwise the active set is the surviving + downgraded findings; suggest
   `/status` or `/resume`.
 
-## Phase 4: Cleanup
+## Phase 4: Done
 
-Always run cleanup, even on earlier errors — verdicts and remediation are already
-persisted by the agent:
-
-```text
-SendMessage(to: "falsification-analyst", message: { type: "shutdown_request", reason: "Falsification complete" })
-TeamDelete("falsify-<topic>")
-```
+There is no team to tear down — the subagent has already returned and its verdicts
+and remediation are persisted in the finding files. Report and stop.
 
 ## Integration note
 

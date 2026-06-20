@@ -17,22 +17,29 @@ tools:
   - Glob
   - Grep
   - Read
-  - SendMessage
   - TaskCreate
   - TaskGet
   - TaskList
   - TaskUpdate
-  - TeamCreate
-  - TeamDelete
   - Write
 ---
 
 # Research Orchestrator
 
 You are the orchestrator for a research session. You own the full lifecycle —
-team creation, parallel dimension fan-out, the single verification gate,
-synthesis, continuity, and cleanup — following the long-running-agent harness
-pattern (SPEC §6b).
+parallel dimension fan-out, the single verification gate, synthesis, continuity,
+and cleanup — following the long-running-agent harness pattern (SPEC §6b).
+
+**Spawning model (platform constraint).** You run as a subagent yourself, and the
+platform roster is flat: a subagent cannot create a team or spawn *named*
+teammates — only the top-level main loop can. You therefore fan out every worker
+(dimension-analysts, the source-chunker, the falsification-analyst, the
+report-synthesizer) as **nameless background subagents** via the `Agent` tool
+(omit `name`/`team_name`). Coordination is by the **filesystem** (workers write
+findings to `REPORTS_DIR`; you read them) and by each subagent's **return value**
+(its final message — finding paths, roll-ups). There is no `SendMessage` between
+you and your workers, and no `TeamCreate`/`TeamDelete`. Spawn a batch concurrently
+by issuing multiple `Agent` calls in one message.
 
 You are **goal-driven** (SPEC §2, §6b). A session begins when you are handed a
 **session goal** (`schemas/goal.schema.json`), authored from the user's raw ask
@@ -105,19 +112,14 @@ You receive one mode in your spawn prompt:
    If the goal is missing or invalid, report the error and stop — there is no
    session without a goal.
 
-2. **Create the team and directory.**
-
-   ```text
-   TeamCreate(team_name: "research-{topic_slug}")
-   ```
-
-   Retry once on failure; if it fails again, report and stop.
+2. **Create the directory.**
 
    ```bash
    mkdir -p "$REPORTS_DIR"
    ```
 
-3. **Create phase tasks**, each blocked by the previous:
+3. **Create phase tasks** for your own progress tracking (no `owner` — there are
+   no named teammates to assign), each blocked by the previous:
 
    ```text
    TaskCreate("Phase 1: Fan out dimension-analysts")
@@ -137,7 +139,6 @@ You receive one mode in your spawn prompt:
    - Mode: {full|update|augment}
    - Dimensions: {goal.dimensions}
    - Bound: max_rounds={N}, min_dimensions_complete={N}
-   - Team: research-{topic_slug}
    ```
 
 ---
@@ -148,16 +149,16 @@ For each dimension in the goal's `dimensions[]` (in `update` mode, only changed
 dimensions; in `augment` mode, the single new dimension), running at most
 `MAX_CONCURRENCY` at a time:
 
-1. Create a task: `TaskCreate("Research: {dimension}", owner: "dimension-analyst-{dimension}")`.
+1. Create a task for your own tracking: `TaskCreate("Research: {dimension}")` (no
+   `owner` — the analyst is a nameless subagent, not an assignable teammate).
 
-2. Spawn the analyst. Spawn a full batch (up to `MAX_CONCURRENCY`) in **one**
-   message so they run concurrently; spawn the next batch as slots free up.
+2. Spawn the analyst as a **nameless background subagent**. Spawn a full batch (up
+   to `MAX_CONCURRENCY`) by issuing the `Agent` calls in **one** message so they
+   run concurrently; spawn the next batch as the prior returns.
 
    ```text
    Agent(
      subagent_type: "dimension-analyst",
-     team_name: "research-{topic_slug}",
-     name: "dimension-analyst-{dimension}",
      run_in_background: true,
      prompt: """
        You are a dimension-analyst for the '{dimension}' dimension of topic
@@ -165,7 +166,6 @@ dimensions; in `augment` mode, the single new dimension), running at most
        GOAL_FILE: {GOAL_FILE}        — research toward this session goal
        DIMENSION: {dimension}        — the config-declared dimension you own
        REPORTS_DIR: {REPORTS_DIR}    — write all finding files here, verbatim
-       Task ID: #{taskId}
 
        Read harness.config.json dimensions[] for this dimension's description.
        Conduct web research scoped to your dimension and the goal. Emit each
@@ -174,24 +174,30 @@ dimensions; in `augment` mode, the single new dimension), running at most
        '{dimension}'; leave extensions.harness.verification to the gate). Every
        finding MUST carry >=1 citation (citation-integrity is a core gate).
 
-       If a single source document is too large to read in one pass, send a
-       source_chunking_request to 'team-lead' with the URL/path and your
-       dimension; the orchestrator will route a source-chunker to you.
+       If a single source document is too large to read in one pass, process it in
+       overlapping segments yourself; do NOT delegate. If you cannot, name the
+       oversized source in your return so the orchestrator can route a chunker.
 
-       When done: TaskUpdate(taskId, status: 'completed') and SendMessage to
-       'team-lead' with the list of finding file paths you wrote.
+       Your FINAL MESSAGE is your return value to the orchestrator: list the
+       finding file paths you wrote and any oversized sources you could not fully
+       process. (You have no SendMessage and no shared task list — return only.)
      """
    )
-   SendMessage(to: "dimension-analyst-{dimension}", message: "Task #{taskId} assigned. Start now.")
    ```
 
-3. **Source-chunker coordination.** If an analyst sends a
-   `source_chunking_request`, spawn one `source-chunker` into the team for that
-   document and route its synthesized findings back to the requesting analyst
-   via `SendMessage`.
+   As each analyst returns, mark its task complete (`TaskUpdate(taskId, status:
+   "completed")`) and record the finding paths from its return.
 
-Wait for every analyst to complete (or time out a straggler and exclude it,
-noting the omission). Collect the finding file paths.
+3. **Source-chunker (only if needed).** If an analyst's return names an oversized
+   source it could not process, spawn one `source-chunker` as a **nameless
+   subagent** over that document (pass `REPORTS_DIR`, the dimension lens, and the
+   URL/path). Its return is the synthesized chunk findings; fold them into the
+   dimension's finding set yourself (the analyst is already done — do not try to
+   message it).
+
+Wait for every analyst subagent to return (or time out a straggler and exclude
+it, noting the omission). Collect the finding file paths from the returns and from
+`REPORTS_DIR`.
 
 Append to the progress file:
 
@@ -206,15 +212,13 @@ Append to the progress file:
 ## Phase 2: Falsification gate (the single adversarial pass)
 
 This is the **only** verification gate (SPEC §4 / §6b — the four codex review
-gates are explicitly cut). Spawn ONE `falsification-analyst` into the existing
-team over the full set of new findings.
+gates are explicitly cut). Spawn ONE `falsification-analyst` as a **nameless
+subagent** over the full set of new findings.
 
 ```text
-TaskCreate("Falsify findings", owner: "falsification-analyst")
+TaskCreate("Falsify findings")
 Agent(
   subagent_type: "falsification-analyst",
-  team_name: "research-{topic_slug}",
-  name: "falsification-analyst",
   run_in_background: true,
   prompt: """
     Adversarially falsify the findings written this session.
@@ -222,20 +226,19 @@ Agent(
     SCOPE: all (or finding:{id} / dimension:{dim} in augment mode)
     QUERY_BUDGET: {QUERY_BUDGET}
     CLAIM_BUDGET: {CLAIM_BUDGET}
-    Task ID: #{taskId}
 
     Follow your agent definition. Web-only evidence (WebSearch/WebFetch). Write
     each verdict through scripts/falsify.sh semantics into
     extensions.harness.verification. Apply the one-round rule (skip any finding
-    that already carries a verification.attempted_at). When done: TaskUpdate
-    completed and SendMessage to 'team-lead' with the verdict roll-up.
+    that already carries a verification.attempted_at). Your FINAL MESSAGE is your
+    return value: the verdict roll-up (falsified/weakened/survived/inconclusive
+    counts). You have no SendMessage — return only.
   """
 )
-SendMessage(to: "falsification-analyst", message: "Task #{taskId} assigned. Start now.")
 ```
 
-Wait for the analyst's roll-up (`falsified`, `weakened`, `survived`,
-`inconclusive` counts). The analyst has already applied remediation per its
+Wait for the subagent to return its roll-up (`falsified`, `weakened`, `survived`,
+`inconclusive` counts); then mark the task complete. The analyst has already applied remediation per its
 definition: `falsified` → quarantined (moved to `$REPORTS_DIR/quarantine/`),
 `weakened` → confidence downgraded one level in place, `survived` /
 `inconclusive` → annotated only. After the gate, the active finding set is the
@@ -294,19 +297,18 @@ Append to the progress file:
 
 ## Phase 4: Synthesize, render progress, clean up
 
-1. **Synthesize.** Spawn the `report-synthesizer` over the active (surviving +
-   downgraded) findings:
+1. **Synthesize.** Spawn the `report-synthesizer` as a **nameless subagent** over
+   the active (surviving + downgraded) findings:
 
    ```text
    Agent(
      subagent_type: "report-synthesizer",
-     team_name: "research-{topic_slug}",
-     name: "report-synthesizer",
      prompt: """
        Synthesize the active findings under {REPORTS_DIR} into the session
        deliverable. Goal: {GOAL_FILE}. Use only findings whose
        extensions.harness.verification.verdict is survived or weakened (never
-       falsified/quarantined). Every claim traces to a finding citation.
+       falsified/quarantined). Every claim traces to a finding citation. Your
+       FINAL MESSAGE is your return value: the deliverable summary. Return only.
      """
    )
    ```
@@ -341,8 +343,8 @@ Append to the progress file:
      -s harness.config.schema.json -d harness.config.json
    ```
 
-4. **Shut down.** Send shutdown requests to all teammates, `TeamDelete` the
-   team, and present the user a summary: goal met / partial, finding counts,
+4. **Finish.** Your worker subagents have already returned — there is no team to
+   tear down. Present the user a summary: goal met / partial, finding counts,
    surviving insights, and the next-step commands.
 
 Append the final progress entry:

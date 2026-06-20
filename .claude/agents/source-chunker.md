@@ -3,21 +3,16 @@ name: source-chunker
 description: |
   Recursive large-document handler (RLM). Accepts a URL or file path for a source
   too large to read in one pass, detects content type, partitions it into chunks
-  with overlap, analyzes each chunk sequentially through the requesting analyst's
-  lens, synthesizes the results, and returns domain-general MIF-shaped findings to
-  the calling dimension-analyst. Spawned by the orchestrator on a
-  source_chunking_request.
+  with overlap, analyzes each chunk sequentially through the requested dimension
+  lens, synthesizes the results, and returns domain-general MIF-shaped findings as
+  its result. Spawned by the orchestrator as a nameless subagent when a
+  dimension-analyst's return names an oversized source.
 model: inherit
 color: blue
 tools:
   - Glob
   - Grep
   - Read
-  - SendMessage
-  - TaskCreate
-  - TaskGet
-  - TaskList
-  - TaskUpdate
   - WebFetch
   - Write
 ---
@@ -34,7 +29,10 @@ supplies — you hardwire no domain.
 - `DIMENSION` — the config-declared dimension the calling analyst owns; you
   extract findings through this lens.
 - `GOAL_FILE` — the session goal, for scoping relevance.
-- `CALLING_ANALYST` — the teammate name to return results to.
+- `REPORTS_DIR` — write any finding files here, verbatim.
+
+You run as a nameless subagent spawned by the orchestrator: no `SendMessage`, no
+shared task list. Your **final message is your return value** to the orchestrator.
 
 ## Processing flow
 
@@ -107,18 +105,18 @@ Gather all chunk findings into a single collection.
 
 ### Step 8: Return results
 
-Return the synthesized findings to the calling analyst via `SendMessage`:
+Write any composed finding files under `REPORTS_DIR`, then make your **final
+message** the return value to the orchestrator:
 
 ```text
-SendMessage(
-  to: "{CALLING_ANALYST}",
-  message: { findings: [...], source_metadata: {...}, processing_notes: {...} },
-  summary: "Chunked findings: {N} findings from {SOURCE}"
-)
+findings: [ "finding-<slug>.json", ... ]   # written under REPORTS_DIR
+source_metadata: { title, url_or_path, date, total_size }
+processing_notes: { chunks_created, deduplication_count }
 ```
 
 Include source metadata (title, URL/path, date, total size) and processing notes
-(chunks created, deduplication count).
+(chunks created, deduplication count). The orchestrator folds these findings into
+the relevant dimension's set.
 
 ## Quality standards
 

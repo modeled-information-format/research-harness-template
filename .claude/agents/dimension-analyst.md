@@ -27,12 +27,7 @@ tools:
   - Glob
   - Grep
   - Read
-  - SendMessage
   - Skill
-  - TaskCreate
-  - TaskGet
-  - TaskList
-  - TaskUpdate
   - WebFetch
   - WebSearch
   - Write
@@ -142,18 +137,13 @@ different angle/synonyms; (3) if all retries fail, log the gap and continue.
 
 ### Large documents
 
-If a fetched source exceeds ~15K tokens, request delegation through the
-orchestrator rather than truncating:
-
-```text
-SendMessage(to: "orchestrator", message: {
-  type: "source_chunking_request", url: "<url>", dimension: "<DIMENSION>",
-  token_estimate: N, extraction_focus: "<what to extract>"
-}, summary: "<DIMENSION>: requesting source-chunker for a large document")
-```
-
-Wait for the chunked findings, then integrate them. (You cannot spawn sub-agents;
-the source-chunker is coordinated by the orchestrator.)
+If a fetched source exceeds ~15K tokens, process it in **overlapping segments
+yourself** (page through it with successive WebFetch/Read calls, carrying ~10%
+overlap, and accumulate the evidence) rather than truncating. You run as a
+nameless subagent with no `SendMessage` and no shared task list, so you cannot
+hand a source off mid-run. If a source is genuinely too large for you to process,
+do not fabricate around it: **name it in your return** (see Step 7) so the
+orchestrator can route a source-chunker over it.
 
 ## Step 4 — Compose each finding as a MIF memory unit
 
@@ -224,22 +214,24 @@ Before signaling completion, verify research quality:
   the new evidence, and re-write + re-validate the affected findings.
 - **Never invent evidence to close a gap** — log unresolved gaps instead.
 
-## Step 7 — Signal completion
+## Step 7 — Return your result
 
-1. Mark your task complete (when spawned as a swarm teammate):
-   `TaskUpdate(taskId, status: "completed")`.
-2. Notify the orchestrator (only if spawned with a `team_name`):
+You are a nameless subagent: your **final message is your return value** to the
+orchestrator. You have no `SendMessage` and no shared task list. Make the final
+message a compact, machine-readable summary of what you produced:
 
-   ```text
-   SendMessage(to: "orchestrator", message: {
-     dimension: "<DIMENSION>",
-     topic: "<TOPIC>",
-     methodology: "<pack:skill | general-web-research>",
-     finding_files: ["finding-<slug>.json", ...],
-     finding_count: N,
-     unresolved_gaps: ["..."]
-   }, summary: "<DIMENSION> analysis complete — N findings, awaiting falsification")
-   ```
+```text
+dimension: "<DIMENSION>"
+topic: "<TOPIC>"
+methodology: "<pack:skill | general-web-research>"
+finding_files: ["finding-<slug>.json", ...]   # written under REPORTS_DIR
+finding_count: N
+oversized_sources: ["<url>", ...]              # too large to process — orchestrator may chunk
+unresolved_gaps: ["..."]
+```
+
+The findings themselves are already on disk under `REPORTS_DIR`; this return is
+the orchestrator's index into them and its signal that you are done.
 
 ## Quality standards
 

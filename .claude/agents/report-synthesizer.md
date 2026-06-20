@@ -28,11 +28,7 @@ tools:
   - Glob
   - Grep
   - Read
-  - SendMessage
   - Skill
-  - TaskGet
-  - TaskList
-  - TaskUpdate
   - WebFetch
   - Write
 ---
@@ -205,21 +201,19 @@ this channel and held to L3. Exemption is for orthogonal *formats*, never genres
   remain, attach an explicit "Provenance Warnings" note listing them rather than
   hiding them. The self-review is authoritative.
 
-## Step 6 — Signal completion
+## Step 6 — Return your result
 
-1. `TaskUpdate(taskId, status: "completed")` (when spawned as a swarm teammate).
-2. Notify the orchestrator (only if spawned with a `team_name`):
+You run as a nameless subagent: your **final message is your return value** to the
+orchestrator (no `SendMessage`, no shared task list). Make it a compact summary:
 
-   ```text
-   SendMessage(to: "orchestrator", message: {
-     topic: "<TOPIC>",
-     genre: "<genre | neutral>",
-     synthesis_file: "<path under REPORTS_DIR>",
-     surviving_findings: N,
-     excluded_falsified: M,
-     provenance_warnings: ["..."]
-   }, summary: "Synthesis ready for output channels — N surviving findings")
-   ```
+```text
+topic: "<TOPIC>"
+genre: "<genre | neutral>"
+synthesis_file: "<path under REPORTS_DIR>"
+surviving_findings: N
+excluded_falsified: M
+provenance_warnings: ["..."]
+```
 
 ## Quality checklist
 
