@@ -73,6 +73,11 @@ Set `TOPIC=<topic>`, `REPORTS_DIR="reports/$TOPIC"`, `GOAL_FILE="$REPORTS_DIR/go
    `done < total` and failing checks. If the plan is `nothing to do`, the session
    is already complete — tell the user and do NOT re-spawn.
 
+   **If `reconcile-session.sh` exits non-zero, STOP.** It fails safe: a non-zero
+   exit means the ajv toolchain/environment is broken, not that work remains.
+   Report the broken environment and do NOT re-spawn — never treat a reconcile
+   failure as "everything remaining" (that would re-run the entire paid session).
+
 4. Summarize for the user before re-spawning: topic, goal statement, last phase,
    the reconcile plan (which dimensions still need work), active vs quarantined
    finding counts, and which checks remain unmet.

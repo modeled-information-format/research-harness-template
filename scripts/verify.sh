@@ -886,6 +886,19 @@ gate_m11() {
     bad "falsified finding mis-counted (technical total=$ftot done=$fdone; expected 1/0)"
   fi
 
+  # 11j (fail-safe — THE cost guard). A broken ajv toolchain must make reconcile
+  # ABORT (non-zero), not read every finding as invalid and emit a re-run-everything
+  # plan. Shim a failing `ajv` onto PATH (jq/find still work) and assert reconcile
+  # exits non-zero and prints no "need work" plan.
+  local bad_out bad_rc
+  mkdir -p "$T/badbin"; printf '#!/bin/sh\nexit 1\n' > "$T/badbin/ajv"; chmod +x "$T/badbin/ajv"
+  bad_out=$(PATH="$T/badbin:$PATH" scripts/reconcile-session.sh "$RD2" 2>/dev/null); bad_rc=$?
+  if [ "$bad_rc" -ne 0 ] && ! printf '%s' "$bad_out" | grep -q 'need work'; then
+    ok "reconcile fails safe on a broken ajv toolchain (aborts; never emits a re-run-everything plan)"
+  else
+    bad "reconcile did NOT fail safe (rc=$bad_rc; out: ${bad_out//$'\n'/ | })"
+  fi
+
   rm -rf "$T"
 }
 

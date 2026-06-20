@@ -93,7 +93,15 @@ remaining-work plan. A finding is **done** only when it is schema-valid AND gate
 `*.tmp`/hidden partial writes are excluded from done-counts, so `/resume` never
 reworks completed findings. Reconcile is byte-deterministic and idempotent (no
 wall-clock field; sorted records) — two runs over the same disk produce identical
-output. `scripts/write-finding.sh <src> <findings-dir> <name>` is the write half:
-a finding lands in `findings/` only after it validates (stage + ajv + atomic
-rename), so a half-written finding is never visible. `verify.sh` `gate_m11`
-asserts all of this against a fixture session.
+output. `scripts/write-finding.sh <src> <findings-dir> <name>` is the atomic-to-valid
+primitive for placing an **already-valid** finding (e.g. an import): it lands in
+`findings/` only after full-schema validation (stage + ajv + atomic rename). The
+dimension-analyst stages its own *raw, pre-gate* findings into `findings/` the same
+atomic way (stage + validate the fields it owns + rename) — those are not
+full-schema-valid until the falsification gate stamps a verdict, so they go through
+the analyst's inline atomic write, not `write-finding.sh`. Reconcile **fails safe**:
+if ajv cannot validate a known-good sample it aborts non-zero and writes no
+checkpoint, so a broken toolchain never produces a "re-run everything" plan; callers
+treat a non-zero reconcile as "stop", never "everything remaining". `verify.sh`
+`gate_m11` asserts all of this — including against the real shipped sample session
+and under a broken ajv.

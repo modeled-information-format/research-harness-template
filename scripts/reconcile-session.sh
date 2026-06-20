@@ -34,6 +34,18 @@ ajv_ok() { # validate one finding file against the MIF-backed findings schema
     -d "$1" >/dev/null 2>&1
 }
 
+# Fail SAFE, not open. If the ajv toolchain cannot validate a KNOWN-GOOD finding,
+# the environment is broken (ajv missing, schema refs unresolvable, wrong cwd,
+# node broken). Do NOT then read every finding as invalid and emit a
+# "re-run everything" plan — that re-runs the entire expensive session. Abort with
+# no state.json and no plan; the caller must treat a non-zero exit as
+# "cannot determine remaining work — stop", never as "everything remaining".
+if ! ajv_ok "$ROOT/schemas/samples/finding.sample.json"; then
+  echo "reconcile: ajv cannot validate the known-good sample finding — toolchain/environment is broken." >&2
+  echo "reconcile: refusing to emit a plan (it would falsely mark every finding remaining and re-run the whole session)." >&2
+  exit 3
+fi
+
 # All real finding files: findings/<*>.json (canonical) + flat finding-*.json
 # (defensive). Hidden (.*) and *.tmp are in-flight partial writes; skip them.
 list_findings() {

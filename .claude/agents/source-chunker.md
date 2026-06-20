@@ -30,7 +30,8 @@ supplies — you hardwire no domain.
 - `DIMENSION` — the config-declared dimension the calling analyst owns; you
   extract findings through this lens.
 - `GOAL_FILE` — the session goal, for scoping relevance.
-- `REPORTS_DIR` — write any finding files here, verbatim.
+- `REPORTS_DIR` — write finding files into `$REPORTS_DIR/findings/` (the canonical
+  dir the orchestrator's reconcile and synthesize/graph/index all read).
 
 You run as a nameless subagent spawned by the orchestrator: no `SendMessage`, no
 shared task list. Your **final message is your return value** to the orchestrator.
@@ -106,7 +107,7 @@ Gather all chunk findings into a single collection.
 
 ### Step 8: Return results
 
-Write any composed finding files under `REPORTS_DIR`, then make your **final
+Write any composed finding files into `$REPORTS_DIR/findings/`, then make your **final
 message** the return value to the orchestrator:
 
 ```text
