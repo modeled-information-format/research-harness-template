@@ -10,6 +10,7 @@ description: |
 model: inherit
 color: blue
 tools:
+  - Bash
   - Glob
   - Grep
   - Read
@@ -109,7 +110,7 @@ Write any composed finding files under `REPORTS_DIR`, then make your **final
 message** the return value to the orchestrator:
 
 ```text
-findings: [ "finding-<slug>.json", ... ]   # written under REPORTS_DIR
+finding_files: [ "finding-<slug>.json", ... ]   # written under REPORTS_DIR
 source_metadata: { title, url_or_path, date, total_size }
 processing_notes: { chunks_created, deduplication_count }
 ```

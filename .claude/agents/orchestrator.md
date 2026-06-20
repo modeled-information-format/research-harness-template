@@ -149,8 +149,9 @@ For each dimension in the goal's `dimensions[]` (in `update` mode, only changed
 dimensions; in `augment` mode, the single new dimension), running at most
 `MAX_CONCURRENCY` at a time:
 
-1. Create a task for your own tracking: `TaskCreate("Research: {dimension}")` (no
-   `owner` — the analyst is a nameless subagent, not an assignable teammate).
+1. Create a task for your own tracking: `TaskCreate("Research: {dimension}")` —
+   capture the returned id as `{taskId}` (no `owner`: the analyst is a nameless
+   subagent, not an assignable teammate).
 
 2. Spawn the analyst as a **nameless background subagent**. Spawn a full batch (up
    to `MAX_CONCURRENCY`) by issuing the `Agent` calls in **one** message so they
@@ -216,7 +217,7 @@ gates are explicitly cut). Spawn ONE `falsification-analyst` as a **nameless
 subagent** over the full set of new findings.
 
 ```text
-TaskCreate("Falsify findings")
+TaskCreate("Falsify findings")   # capture the returned id as {taskId}
 Agent(
   subagent_type: "falsification-analyst",
   run_in_background: true,
@@ -238,7 +239,8 @@ Agent(
 ```
 
 Wait for the subagent to return its roll-up (`falsified`, `weakened`, `survived`,
-`inconclusive` counts); then mark the task complete. The analyst has already applied remediation per its
+`inconclusive` counts); then mark the task complete:
+`TaskUpdate(taskId, status: "completed")`. The analyst has already applied remediation per its
 definition: `falsified` → quarantined (moved to `$REPORTS_DIR/quarantine/`),
 `weakened` → confidence downgraded one level in place, `survived` /
 `inconclusive` → annotated only. After the gate, the active finding set is the
