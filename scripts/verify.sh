@@ -1207,6 +1207,20 @@ JSON
     bad "the shipped corpus broke (findings $nfind, real concept nodes $nreal, or non-conformant)"
   fi
 
+  # 13i. An unbound topic carrying an unresolved DOMAIN type fails validation, and the
+  #      failure NAMES the topic and points to /ontology-review (the remediation path).
+  mkdir -p "$T/orphan/orphan-topic/findings"
+  printf '%s\n' '{"@id":"urn:mif:concept:o:f","title":"F","extensions":{"harness":{"verification":{"verdict":"survived"}}},"entities":[{"@type":"EntityReference","entity":{"@id":"urn:mif:entity:t:k"},"name":"K","entityType":"title"}]}' > "$T/orphan/orphan-topic/findings/f.json"
+  echo '{"topics":[{"id":"orphan-topic","namespace":"o/x"}]}' > "$T/orphan-cfg.json"
+  scripts/build-concordance.sh "$T/orphan" "$T/orphan.json" >/dev/null 2>&1
+  local omsg orc
+  omsg=$(scripts/validate-concordance.sh "$T/orphan.json" --config "$T/orphan-cfg.json" --catalog "$T/cat.json" 2>&1); orc=$?
+  if [ "$orc" != 0 ] && printf '%s' "$omsg" | grep -q "orphan-topic" && printf '%s' "$omsg" | grep -q "/ontology-review"; then
+    ok "an unresolved-type topic fails validation; the message names the topic and points to /ontology-review"
+  else
+    bad "validate remedy message wrong (exit=$orc, names-topic/ontology-review missing)"
+  fi
+
   rm -rf "$T"
 }
 

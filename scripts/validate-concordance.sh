@@ -64,12 +64,12 @@ if ! viol=$(jq -rn --slurpfile W "$GRAPH" --argjson onto "$ONTO" --argjson allow
               --argjson builtin "$BUILTIN" --argjson structural "$STRUCTURAL" '
   $W[0] as $G
   | ($G.nodes | map({key:.id, value:.}) | from_entries) as $byid
-  | def allowed_ids($topics): [ $topics[] | $allowed[.] // [] ] | add // [] | unique;
+  | def allowed_ids($topics): [ ($topics // [])[] | $allowed[.] // [] ] | add // [] | unique;
     ( [ $G.nodes[]
         | select(.entityType != null and (.external != true))
         | .entityType as $et
         | select( ( ($builtin | index($et)) or any(allowed_ids(.topics)[]; ($onto[.].types // []) | index($et)) ) | not )
-        | "node \(.id): entityType \($et) not in MIF core nor declared by any bound ontology" ] )
+        | "node \(.id) (topic: \((.topics // []) | join(","))): entityType \($et) not in MIF core nor declared by a bound ontology — fix: /ontology-review --topic \((.topics // [])[0] // "<id>") --enrich" ] )
   + ( [ $G.edges[] | select(.via == "relationship")
         | . as $e
         | ($byid[$e.source] // {}) as $s
@@ -78,7 +78,7 @@ if ! viol=$(jq -rn --slurpfile W "$GRAPH" --argjson onto "$ONTO" --argjson allow
           else
             ( [ allowed_ids($s.topics // [])[] | ($onto[.].rels[$e.type] // empty) ] ) as $rels
             | if ($rels | length) == 0
-              then "edge \($e.source) ->\($e.type)-> \($e.target): relationship type not MIF-core nor declared by any bound ontology"
+              then "edge \($e.source) ->\($e.type)-> \($e.target) (topic: \(($s.topics // []) | join(","))): relationship type not MIF-core nor declared by a bound ontology — fix: /ontology-review --topic \(($s.topics // [])[0] // "<id>") --enrich"
               elif any($rels[]; ((.from // []) | index($s.entityType)) and ((.to // []) | index($t.entityType)))
               then empty
               else "edge \($e.source) ->\($e.type)-> \($e.target): from/to domain violation (\($s.entityType // "null") -> \($t.entityType // "null"))"
@@ -94,4 +94,9 @@ if [ -z "$viol" ]; then
 fi
 printf '%s\n' "$viol" >&2
 echo "validate-concordance: $(printf '%s\n' "$viol" | grep -c .) conformance violation(s) — fail" >&2
+# Only suggest /ontology-review when a violation is an undeclared TYPE (a binding gap the
+# tool can fix). A from/to domain violation is a data/modeling issue — no footer for it.
+if printf '%s\n' "$viol" | grep -q "/ontology-review"; then
+  echo "validate-concordance: bind/enrich the named topic(s) with /ontology-review --topic <id> --enrich, then rebuild." >&2
+fi
 exit 1
