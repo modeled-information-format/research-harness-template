@@ -278,67 +278,64 @@ This is the **only** verification gate (SPEC §4 / §6b — the four codex revie
 gates are explicitly cut). Spawn ONE `falsification-analyst` as a **nameless
 subagent** over the full set of new findings.
 
-**Open the gate window first.** `scripts/falsify.sh` is blocked outside this pass by a
-PreToolUse hook (`.claude/hooks/guard-falsify-gate.sh`) — that is what stops a dimension-
-analyst from self-grading siblings. Open the window for this single pass by creating the
-orchestrator-owned marker, and **remove it the moment the analyst returns** (a stale marker
-leaves the gate runnable):
+**The gate window stays open across the slice loop.** `scripts/falsify.sh` is blocked
+outside this pass by a PreToolUse hook (`.claude/hooks/guard-falsify-gate.sh`) — that is
+what stops a dimension-analyst from self-grading siblings. Open the orchestrator-owned
+marker once before the loop and **close it when the loop exits** (the hook's freshness check
+bounds a leaked marker, but close it promptly anyway):
 
-**Size the gate budget to the finding set — this is a DEEP harness.** A thorough
-dimension yields tens of findings; the gate must verify EVERY one, so `CLAIM_BUDGET`
-scales UP to the active finding count. Never cap the analyst's output or truncate the
-working set to fit a fixed budget — the breadth is the point; the gate grows to match
-it. Also scope the gate to what this run produced:
+**Gate a deep set in bounded slices — and reap a stalled slice. This is a DEEP harness.**
+A thorough dimension yields tens of findings; one long-running gate sub-agent over all of
+them can be interrupted (session / background-task lifecycle) and leave most findings ungated
+with no signal — a dangling session you cannot reap. So gate the ungated remainder off **disk
+state** in bounded slices, re-reading disk each round, until every in-scope finding is gated
+or progress stops. The one-round rule makes a re-spawn idempotent (already-gated findings are
+skipped), so no finding is re-graded and a stalled slice costs only itself. A slice of ≤ BATCH
+findings stays well under `CLAIM_BUDGET`, so it never trips the analyst's fail-loud guard —
+the bounded loop, not a budget knob, is what lets the gate scale to depth.
 
 ```bash
 touch "$REPORTS_DIR/.gate-active"   # opens THIS topic's single Phase-2 gate window
-# Budget the gate to the actual active set so the harness's own depth never trips the
-# falsification-analyst's fail-loud overflow guard (CLAIM_BUDGET is a FLOOR, not a cap):
-FCOUNT=$(ls "$REPORTS_DIR"/findings/*.json 2>/dev/null | wc -l | tr -d ' ')
-GATE_CLAIM_BUDGET=$(( FCOUNT > CLAIM_BUDGET ? FCOUNT : CLAIM_BUDGET ))
-# augment over a single named dimension grades only that dimension's set; else grade all.
-if [ "$MODE" = augment ] && [ -n "${DIMENSION:-}" ]; then GATE_SCOPE="dimension:$DIMENSION"; else GATE_SCOPE="all"; fi
+BATCH=12; NOPROG=0                  # slice size; consecutive no-progress rounds
+# @ids of UNGATED findings (missing verification.attempted_at). In augment over a single named
+# DIMENSION, narrow with `select(.extensions.harness.dimension=="$DIMENSION")`:
+ungated(){ for f in "$REPORTS_DIR"/findings/*.json; do
+  jq -e '.extensions.harness.verification.attempted_at? // empty | length>0' "$f" >/dev/null 2>&1 \
+    || jq -r '.["@id"]' "$f"; done; }
 ```
 
-```text
-TaskCreate("Falsify findings")   # capture the returned id as {taskId}
-Agent(
-  subagent_type: "falsification-analyst",
-  run_in_background: true,
-  prompt: """
-    Adversarially falsify the findings written this session.
-    REPORTS_DIR: {REPORTS_DIR}
-    SCOPE: {GATE_SCOPE}
-    QUERY_BUDGET: {QUERY_BUDGET}
-    CLAIM_BUDGET: {GATE_CLAIM_BUDGET}
+`TaskCreate("Falsify findings")` — capture the returned id as `{taskId}`. Then loop:
 
-    Follow your agent definition. Web-only evidence (WebSearch/WebFetch). Write
-    each verdict through scripts/falsify.sh semantics into
-    extensions.harness.verification. Apply the one-round rule (skip any finding
-    that already carries a verification.attempted_at). Your FINAL MESSAGE is your
-    return value: the verdict roll-up (falsified/weakened/survived/inconclusive
-    counts). You have no SendMessage — return only.
-  """
-)
-```
+1. `ungated | head -n "$BATCH" > "$REPORTS_DIR/.gate-batch"`; `REM=$(ungated | wc -l)`.
+2. If `REM` is 0 the gate is **COMPLETE** — break.
+3. Spawn ONE `falsification-analyst` (`run_in_background: true`) over the slice with
+   `SCOPE: batch:$REPORTS_DIR/.gate-batch`, `QUERY_BUDGET: {QUERY_BUDGET}`,
+   `CLAIM_BUDGET: {CLAIM_BUDGET}`, and the usual prompt (web-only evidence; write each verdict
+   through `scripts/falsify.sh`; one-round rule; remediation; append to the
+   `{YYYY-MM-DD}-falsification-report.md`; FINAL MESSAGE = the batch roll-up).
+   Then **do NOT block on its return — poll**: in a bounded `Bash` loop `sleep` ~20s and re-count
+   how many of the batch's `@id`s now carry `attempted_at` (and `TaskGet {taskId}` for the slice's
+   status). Stop polling when the batch is fully gated OR no new finding gates across ~3 consecutive
+   polls (the slice hung or was interrupted), then go to step 4. Disk state and task status — not the
+   return — are the signals you act on, so you move past a non-returning slice instead of hanging.
+4. Re-read disk. If the round gated **zero** new findings, `NOPROG=$((NOPROG+1))`; else `0`.
+5. If `NOPROG` reaches 2, STOP — do not hang or fake a verdict; the remaining ungated findings
+   are reported PARTIAL (below) and `/falsify` finishes them.
 
-Wait for the subagent to return its roll-up (`falsified`, `weakened`, `survived`,
-`inconclusive` counts); then **close the gate window** and mark the task complete:
+Close the window and mark the task complete:
 
 ```bash
-rm -f "$REPORTS_DIR/.gate-active"   # closes the window — falsify.sh is blocked again
+rm -f "$REPORTS_DIR/.gate-active" "$REPORTS_DIR/.gate-batch"
 ```
 
-`TaskUpdate(taskId, status: "completed")`. **If the return is empty or missing**
-(the subagent died after writing verdicts but before returning), recover the
-counts from disk rather than blocking or logging a zero gate — read the
-`{YYYY-MM-DD}-falsification-report.md` (UTC date) and/or tally
-`extensions.harness.verification.verdict` across the finding files, exactly as
-`/falsify` does. The analyst has already applied remediation per its
-definition: `falsified` → quarantined (moved to `$REPORTS_DIR/quarantine/`),
-`weakened` → confidence downgraded one level in place, `survived` /
-`inconclusive` → annotated only. After the gate, the active finding set is the
-surviving + downgraded findings.
+`TaskUpdate(taskId, status: "completed")`. **Tally verdicts from disk** (the source of truth —
+a stalled slice may return nothing): count `extensions.harness.verification.verdict` across the
+finding files plus the `quarantine/` siblings, and the still-ungated count. The analyst has
+applied remediation per its definition: `falsified` → quarantined (moved to
+`$REPORTS_DIR/quarantine/`), `weakened` → confidence downgraded one level in place, `survived`
+/ `inconclusive` → annotated only. After the gate, the active finding set is the surviving +
+downgraded findings; **if any remain ungated the gate is PARTIAL** — record that and note
+`/falsify` finishes it.
 
 Append to the progress file:
 

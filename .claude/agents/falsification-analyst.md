@@ -51,7 +51,10 @@ evidence, stop and re-read the claim adversarially.
 - `REPORTS_DIR` — the topic directory; finding files live in `$REPORTS_DIR/findings/`.
 - `SCOPE` — one of `all` (every active finding under `$REPORTS_DIR/findings/`),
   `dimension:{dim}` (findings whose `extensions.harness.dimension` is `{dim}`),
-  or `finding:{id}` (a single finding by `@id`).
+  `finding:{id}` (a single finding by `@id`), or `batch:{file}` (only the finding
+  `@id`s listed one-per-line in `{file}`). The caller uses `batch:` to gate a bounded
+  slice per round so a long, deep gate makes resumable progress and a stalled round
+  loses only that slice.
 - `QUERY_BUDGET` — max disconfirming queries per claim (default 6).
 - `CLAIM_BUDGET` — max claims to falsify this session (default 50).
 - `taskId` — task assignment id.
@@ -67,6 +70,7 @@ the working set from `SCOPE`:
   `archive/` siblings are separate and excluded).
 - `dimension:{dim}` → those with `.extensions.harness.dimension == "{dim}"`.
 - `finding:{id}` → the one file with `.["@id"] == "{id}"`.
+- `batch:{file}` → only the findings whose `@id` appears (one per line) in `{file}`.
 
 If the working set exceeds `CLAIM_BUDGET`, **fail loudly**: report the count,
 request a budget increase, and STOP. Do NOT silently truncate.
