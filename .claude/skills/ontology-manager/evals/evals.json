@@ -1,0 +1,474 @@
+{
+  "skill_name": "ontology-manager",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Scaffold a new MIF ontology for a customer-support domain. Use the skill's scaffold_ontology.sh script to generate the YAML skeleton: run `bash $CLAUDE_PROJECT_DIR/.claude/skills/ontology-manager/scripts/scaffold_ontology.sh customer-support 0.1.0 --extends mif-base > customer-support.ontology.yaml`. Then validate the generated file using `bash $CLAUDE_PROJECT_DIR/.claude/skills/ontology-manager/scripts/validate_ontology.sh customer-support.ontology.yaml > validate-output.txt 2>&1`. Report the validation result.",
+      "expected_output": "customer-support.ontology.yaml is created with ontology.id=customer-support, ontology.version=0.1.0, the mif-base extends entry, and the cognitive triad namespaces. validate-output.txt ends with 'Status: VALID' (0 errors).",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "customer-support.ontology.yaml",
+          "description": "scaffold produced the ontology YAML file"
+        },
+        {
+          "type": "file_contains",
+          "file": "customer-support.ontology.yaml",
+          "literal": "id: customer-support",
+          "description": "ontology.id is set to customer-support"
+        },
+        {
+          "type": "file_contains",
+          "file": "customer-support.ontology.yaml",
+          "literal": "version: \"0.1.0\"",
+          "description": "ontology.version is set to 0.1.0"
+        },
+        {
+          "type": "file_contains",
+          "file": "customer-support.ontology.yaml",
+          "literal": "- mif-base",
+          "description": "the extends block lists mif-base as a parent"
+        },
+        {
+          "type": "file_contains",
+          "file": "customer-support.ontology.yaml",
+          "literal": "_semantic:",
+          "description": "the cognitive triad _semantic namespace is present"
+        },
+        {
+          "type": "file_contains",
+          "file": "customer-support.ontology.yaml",
+          "literal": "_episodic:",
+          "description": "the cognitive triad _episodic namespace is present"
+        },
+        {
+          "type": "file_contains",
+          "file": "customer-support.ontology.yaml",
+          "literal": "_procedural:",
+          "description": "the cognitive triad _procedural namespace is present"
+        },
+        {
+          "type": "file_exists",
+          "file": "validate-output.txt",
+          "description": "validation was run and output captured"
+        },
+        {
+          "type": "file_contains",
+          "file": "validate-output.txt",
+          "literal": "Status: VALID",
+          "description": "the scaffolded ontology passes validation with zero errors"
+        }
+      ],
+      "expectations": [
+        "The scaffolded YAML has the full standard structure: namespaces, entity_types, traits, relationships, and discovery sections.",
+        "The extends block is rendered under the ontology metadata block, not at top-level.",
+        "validate-output.txt confirms 0 errors — the skeleton is schema-compliant out of the box."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Scaffold a standalone ontology (no extends) with id `lab-notebook` at version `0.2.0`, then add a new entity type to it using yq. Run:\n1. `bash $CLAUDE_PROJECT_DIR/.claude/skills/ontology-manager/scripts/scaffold_ontology.sh lab-notebook 0.2.0 > lab-notebook.ontology.yaml`\n2. Add an entity type named `experiment` with base `episodic` and trait `timestamped`, with a required `title` field of type string:\n   `yq -i '.entity_types += [{\"name\": \"experiment\", \"description\": \"A lab experiment record\", \"base\": \"episodic\", \"traits\": [\"timestamped\"], \"schema\": {\"required\": [\"title\"], \"properties\": {\"title\": {\"type\": \"string\", \"description\": \"Experiment title\"}}}}]' lab-notebook.ontology.yaml`\n3. Validate: `bash $CLAUDE_PROJECT_DIR/.claude/skills/ontology-manager/scripts/validate_ontology.sh lab-notebook.ontology.yaml > validate-lab.txt 2>&1`\n4. Inspect the entities section as JSON: `bash $CLAUDE_PROJECT_DIR/.claude/skills/ontology-manager/scripts/inspect_ontology.sh lab-notebook.ontology.yaml --section entities --json > entities.json`",
+      "expected_output": "lab-notebook.ontology.yaml contains the experiment entity type with base=episodic, traits=[timestamped]. validate-lab.txt shows Status: VALID. entities.json is a valid JSON array containing an object with name=experiment.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "lab-notebook.ontology.yaml",
+          "description": "scaffold produced the lab-notebook YAML"
+        },
+        {
+          "type": "file_contains",
+          "file": "lab-notebook.ontology.yaml",
+          "literal": "name: experiment",
+          "description": "the new entity type name is present in the YAML"
+        },
+        {
+          "type": "file_contains",
+          "file": "lab-notebook.ontology.yaml",
+          "literal": "base: episodic",
+          "description": "the experiment entity has episodic base type"
+        },
+        {
+          "type": "file_contains",
+          "file": "validate-lab.txt",
+          "literal": "Status: VALID",
+          "description": "ontology with added entity passes validation"
+        },
+        {
+          "type": "file_exists",
+          "file": "entities.json",
+          "description": "inspect --json produced the entities JSON file"
+        },
+        {
+          "type": "json_valid",
+          "file": "entities.json",
+          "description": "entities.json is valid JSON"
+        },
+        {
+          "type": "json_array_contains",
+          "file": "entities.json",
+          "path": ".",
+          "match": {"name": "experiment", "base": "episodic"},
+          "description": "entities array contains the experiment entity with correct base type"
+        }
+      ],
+      "expectations": [
+        "The experiment entity type appears in entity_types with name, base, traits, and schema.required all set correctly.",
+        "The trait reference (timestamped) resolves without error since it is defined in the same ontology scaffold.",
+        "entities.json from inspect --json lists both the scaffolded example-entity and the new experiment entity."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Validate an intentionally malformed ontology file to confirm the validator catches errors. First create a broken YAML file by running:\n`printf 'ontology:\\n  id: Bad_ID\\n  version: not-semver\\n' > broken.ontology.yaml`\nThen run validation:\n`bash $CLAUDE_PROJECT_DIR/.claude/skills/ontology-manager/scripts/validate_ontology.sh broken.ontology.yaml > broken-validate.txt 2>&1; echo \"EXIT:$?\" >> broken-validate.txt`\nReport what errors the validator detected.",
+      "expected_output": "broken-validate.txt contains two ERROR lines: one for the invalid ID format (Bad_ID has an underscore) and one for the invalid version (not-semver). The file ends with EXIT:1 (non-zero exit). Status line reads INVALID.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "broken.ontology.yaml",
+          "description": "the malformed input file was created"
+        },
+        {
+          "type": "file_exists",
+          "file": "broken-validate.txt",
+          "description": "validation output was captured"
+        },
+        {
+          "type": "file_contains",
+          "file": "broken-validate.txt",
+          "literal": "must match",
+          "description": "the bad-ID error is reported explicitly (ontology.id ... must match)"
+        },
+        {
+          "type": "file_contains",
+          "file": "broken-validate.txt",
+          "literal": "is not valid semver",
+          "description": "the bad-version error is reported explicitly (ontology.version ... is not valid semver)"
+        },
+        {
+          "type": "file_contains",
+          "file": "broken-validate.txt",
+          "literal": "Status: INVALID",
+          "description": "validator reports INVALID status for the broken file"
+        },
+        {
+          "type": "file_contains",
+          "file": "broken-validate.txt",
+          "literal": "EXIT:1",
+          "description": "validator exits with code 1 for an invalid ontology"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "broken-validate.txt",
+          "literal": "Status: VALID",
+          "description": "VALID is NOT present — the file is definitively invalid"
+        }
+      ],
+      "expectations": [
+        "The ERROR for the ID ('Bad_ID must match ^[a-z][a-z0-9-]*$') is reported explicitly.",
+        "The ERROR for the version ('not-semver is not valid semver') is reported explicitly.",
+        "The validator does not swallow both errors and report only the first one — both violations appear in the output."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Inspect the software-engineering example ontology that ships with the harness. Run the inspect_ontology.sh script against it:\n1. Full summary: `bash $CLAUDE_PROJECT_DIR/.claude/skills/ontology-manager/scripts/inspect_ontology.sh $CLAUDE_PROJECT_DIR/packs/ontologies/software-engineering/software-engineering.ontology.yaml > inspect-summary.txt`\n2. Entities section as JSON: `bash $CLAUDE_PROJECT_DIR/.claude/skills/ontology-manager/scripts/inspect_ontology.sh $CLAUDE_PROJECT_DIR/packs/ontologies/software-engineering/software-engineering.ontology.yaml --section entities --json > se-entities.json`\n3. Relationships section as JSON: `bash $CLAUDE_PROJECT_DIR/.claude/skills/ontology-manager/scripts/inspect_ontology.sh $CLAUDE_PROJECT_DIR/packs/ontologies/software-engineering/software-engineering.ontology.yaml --section relationships --json > se-relationships.json`\nReport entity count, relationship count, and a list of entity names.",
+      "expected_output": "inspect-summary.txt shows entity count >= 1 and relationship count >= 1. se-entities.json is a JSON array. se-relationships.json is a JSON object with at least one key. The ENTITY TYPES and RELATIONSHIPS sections appear in inspect-summary.txt.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "inspect-summary.txt",
+          "description": "full summary inspection output was captured"
+        },
+        {
+          "type": "file_contains",
+          "file": "inspect-summary.txt",
+          "literal": "ENTITY TYPES:",
+          "description": "the summary includes the ENTITY TYPES section header"
+        },
+        {
+          "type": "file_contains",
+          "file": "inspect-summary.txt",
+          "literal": "RELATIONSHIPS:",
+          "description": "the summary includes the RELATIONSHIPS section header"
+        },
+        {
+          "type": "file_contains",
+          "file": "inspect-summary.txt",
+          "literal": "NAMESPACES:",
+          "description": "the summary includes the NAMESPACES section header"
+        },
+        {
+          "type": "file_exists",
+          "file": "se-entities.json",
+          "description": "entities section JSON was produced"
+        },
+        {
+          "type": "json_valid",
+          "file": "se-entities.json",
+          "description": "se-entities.json is valid JSON"
+        },
+        {
+          "type": "json_field_count",
+          "file": "se-entities.json",
+          "path": ".",
+          "op": "gte",
+          "expected": 1,
+          "description": "software-engineering ontology has at least 1 entity type"
+        },
+        {
+          "type": "file_exists",
+          "file": "se-relationships.json",
+          "description": "relationships section JSON was produced"
+        },
+        {
+          "type": "json_valid",
+          "file": "se-relationships.json",
+          "description": "se-relationships.json is valid JSON"
+        }
+      ],
+      "expectations": [
+        "inspect-summary.txt header line shows 'Ontology: software-engineering' with a version number.",
+        "se-entities.json lists at least the well-known entity types from the software-engineering ontology (e.g. service, repository, decision).",
+        "se-relationships.json is a named-key object (not an array) because relationships are a mapping in the YAML."
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Convert the scaffolded biology-research-lab ontology to JSON, then to JSON-LD. Run:\n1. `bash $CLAUDE_PROJECT_DIR/.claude/skills/ontology-manager/scripts/convert_format.sh yaml2json $CLAUDE_PROJECT_DIR/packs/ontologies/biology-research-lab/biology-research-lab.ontology.yaml biology-research-lab.ontology.json > convert-json.txt 2>&1`\n2. `bash $CLAUDE_PROJECT_DIR/.claude/skills/ontology-manager/scripts/convert_format.sh yaml2jsonld $CLAUDE_PROJECT_DIR/packs/ontologies/biology-research-lab/biology-research-lab.ontology.yaml biology-research-lab.ontology.jsonld > convert-jsonld.txt 2>&1`\nReport the structure of both output files and confirm both contain the expected ontology data.",
+      "expected_output": "biology-research-lab.ontology.json is valid JSON with ontology.id=biology-research-lab. biology-research-lab.ontology.jsonld is valid JSON with @context and @type=mif:Ontology plus the ontology data embedded. Both convert-*.txt files report success.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "biology-research-lab.ontology.json",
+          "description": "yaml2json produced the JSON output file"
+        },
+        {
+          "type": "json_valid",
+          "file": "biology-research-lab.ontology.json",
+          "description": "the JSON output is valid JSON"
+        },
+        {
+          "type": "json_field_equals",
+          "file": "biology-research-lab.ontology.json",
+          "path": ".ontology.id",
+          "expected": "biology-research-lab",
+          "description": "ontology.id is biology-research-lab in the JSON output"
+        },
+        {
+          "type": "json_field_exists",
+          "file": "biology-research-lab.ontology.json",
+          "path": ".entity_types",
+          "description": "entity_types key is present in the JSON output"
+        },
+        {
+          "type": "file_exists",
+          "file": "biology-research-lab.ontology.jsonld",
+          "description": "yaml2jsonld produced the JSON-LD output file"
+        },
+        {
+          "type": "json_valid",
+          "file": "biology-research-lab.ontology.jsonld",
+          "description": "the JSON-LD output is valid JSON"
+        },
+        {
+          "type": "json_field_exists",
+          "file": "biology-research-lab.ontology.jsonld",
+          "path": ".\"@context\"",
+          "description": "JSON-LD envelope has a @context key"
+        },
+        {
+          "type": "json_field_equals",
+          "file": "biology-research-lab.ontology.jsonld",
+          "path": ".\"@type\"",
+          "expected": "mif:Ontology",
+          "description": "JSON-LD @type is mif:Ontology"
+        },
+        {
+          "type": "file_contains",
+          "file": "convert-json.txt",
+          "literal": "Converted:",
+          "description": "yaml2json conversion reported success"
+        },
+        {
+          "type": "file_contains",
+          "file": "convert-jsonld.txt",
+          "literal": "Converted:",
+          "description": "yaml2jsonld conversion reported success"
+        }
+      ],
+      "expectations": [
+        "The JSON-LD @context value is the mif-spec.dev canonical URL (https://mif-spec.dev/schema/ontology/ontology.context.jsonld).",
+        "The original YAML ontology data (namespaces, entity_types, relationships, etc.) is fully preserved in both output formats.",
+        "No PyPI tools are invoked — conversion uses only yq and jq."
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Convert a JSON ontology back to YAML using json2yaml mode. First scaffold a new ontology and convert it to JSON:\n1. `bash $CLAUDE_PROJECT_DIR/.claude/skills/ontology-manager/scripts/scaffold_ontology.sh roundtrip-test 1.0.0 > roundtrip.ontology.yaml`\n2. `bash $CLAUDE_PROJECT_DIR/.claude/skills/ontology-manager/scripts/convert_format.sh yaml2json roundtrip.ontology.yaml roundtrip.ontology.json`\n3. `bash $CLAUDE_PROJECT_DIR/.claude/skills/ontology-manager/scripts/convert_format.sh json2yaml roundtrip.ontology.json roundtrip-back.ontology.yaml`\n4. Validate the roundtripped YAML: `bash $CLAUDE_PROJECT_DIR/.claude/skills/ontology-manager/scripts/validate_ontology.sh roundtrip-back.ontology.yaml > roundtrip-validate.txt 2>&1`\nConfirm the roundtripped YAML still passes validation.",
+      "expected_output": "roundtrip.ontology.json is valid JSON. roundtrip-back.ontology.yaml is a YAML file containing ontology.id=roundtrip-test. roundtrip-validate.txt shows Status: VALID.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "roundtrip.ontology.json",
+          "description": "YAML to JSON conversion succeeded"
+        },
+        {
+          "type": "json_valid",
+          "file": "roundtrip.ontology.json",
+          "description": "roundtrip.ontology.json is valid JSON"
+        },
+        {
+          "type": "json_field_equals",
+          "file": "roundtrip.ontology.json",
+          "path": ".ontology.id",
+          "expected": "roundtrip-test",
+          "description": "the JSON intermediate has the correct ontology ID"
+        },
+        {
+          "type": "file_exists",
+          "file": "roundtrip-back.ontology.yaml",
+          "description": "JSON back to YAML conversion produced a file"
+        },
+        {
+          "type": "file_contains",
+          "file": "roundtrip-back.ontology.yaml",
+          "literal": "id: roundtrip-test",
+          "description": "roundtripped YAML retains the ontology ID"
+        },
+        {
+          "type": "file_exists",
+          "file": "roundtrip-validate.txt",
+          "description": "validation of roundtripped YAML was run"
+        },
+        {
+          "type": "file_contains",
+          "file": "roundtrip-validate.txt",
+          "literal": "Status: VALID",
+          "description": "the roundtripped YAML passes validation — format is lossless for required fields"
+        }
+      ],
+      "expectations": [
+        "The json2yaml roundtrip does not lose ontology.id or ontology.version — they survive through JSON and back.",
+        "The roundtripped YAML passes validate_ontology.sh with 0 errors, confirming the convert_format.sh json2yaml mode produces schema-compliant output.",
+        "No PyPI tools are invoked — conversion uses only yq."
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Add a custom trait and a discovery pattern to an ontology, then confirm they appear correctly in the inspect output. Run:\n1. Scaffold: `bash $CLAUDE_PROJECT_DIR/.claude/skills/ontology-manager/scripts/scaffold_ontology.sh knowledge-base 0.1.0 > knowledge-base.ontology.yaml`\n2. Add a custom trait named `reviewed`:\n   `yq -i '.traits.reviewed = {\"description\": \"Marks content that has been reviewed\", \"fields\": {\"reviewed_by\": {\"type\": \"string\", \"description\": \"Reviewer name\"}, \"reviewed_at\": {\"type\": \"string\", \"format\": \"date-time\", \"description\": \"Review timestamp\"}}}' knowledge-base.ontology.yaml`\n3. Add a content discovery pattern:\n   `yq -i '.discovery.content_patterns += [{\"pattern\": \"\\\\bknowledge\\\\s+base\\\\b\", \"namespace\": \"_semantic/knowledge\", \"context\": \"knowledge management\"}]' knowledge-base.ontology.yaml`\n4. Validate: `bash $CLAUDE_PROJECT_DIR/.claude/skills/ontology-manager/scripts/validate_ontology.sh knowledge-base.ontology.yaml > kb-validate.txt 2>&1`\n5. Inspect traits as JSON: `bash $CLAUDE_PROJECT_DIR/.claude/skills/ontology-manager/scripts/inspect_ontology.sh knowledge-base.ontology.yaml --section traits --json > kb-traits.json`\n6. Inspect discovery as JSON: `bash $CLAUDE_PROJECT_DIR/.claude/skills/ontology-manager/scripts/inspect_ontology.sh knowledge-base.ontology.yaml --section discovery --json > kb-discovery.json`",
+      "expected_output": "kb-validate.txt shows Status: VALID. kb-traits.json contains a reviewed trait with fields reviewed_by and reviewed_at. kb-discovery.json shows enabled=true and content_patterns containing the added regex pattern.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "knowledge-base.ontology.yaml",
+          "description": "knowledge-base ontology was scaffolded"
+        },
+        {
+          "type": "file_contains",
+          "file": "knowledge-base.ontology.yaml",
+          "literal": "reviewed:",
+          "description": "the custom reviewed trait was added to the YAML"
+        },
+        {
+          "type": "file_contains",
+          "file": "kb-validate.txt",
+          "literal": "Status: VALID",
+          "description": "ontology with added trait and discovery pattern passes validation"
+        },
+        {
+          "type": "file_exists",
+          "file": "kb-traits.json",
+          "description": "traits section JSON was produced by inspect"
+        },
+        {
+          "type": "json_valid",
+          "file": "kb-traits.json",
+          "description": "kb-traits.json is valid JSON"
+        },
+        {
+          "type": "json_field_exists",
+          "file": "kb-traits.json",
+          "path": ".reviewed",
+          "description": "the reviewed trait key is present in the traits JSON"
+        },
+        {
+          "type": "json_field_exists",
+          "file": "kb-traits.json",
+          "path": ".reviewed.fields.reviewed_by",
+          "description": "the reviewed_by field is present in the reviewed trait"
+        },
+        {
+          "type": "file_exists",
+          "file": "kb-discovery.json",
+          "description": "discovery section JSON was produced by inspect"
+        },
+        {
+          "type": "json_valid",
+          "file": "kb-discovery.json",
+          "description": "kb-discovery.json is valid JSON"
+        },
+        {
+          "type": "json_field_count",
+          "file": "kb-discovery.json",
+          "path": ".content_patterns",
+          "op": "gte",
+          "expected": 1,
+          "description": "discovery JSON has at least 1 content pattern (the one we added)"
+        }
+      ],
+      "expectations": [
+        "kb-traits.json shows both the scaffolded traits (timestamped, confidence) and the new reviewed trait — none are lost.",
+        "The discovery pattern regex (\\bknowledge\\s+base\\b) is stored correctly in the YAML and survives the inspect round-trip into kb-discovery.json.",
+        "The validator's regex check passes for the new pattern — the Python re module can compile it without error."
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "Attempt to scaffold an ontology with an invalid ID to verify the scaffold script rejects it. Run:\n`bash $CLAUDE_PROJECT_DIR/.claude/skills/ontology-manager/scripts/scaffold_ontology.sh 'Invalid_ID' 0.1.0 > bad-scaffold.yaml 2>&1; echo \"EXIT:$?\" >> bad-scaffold.yaml`\nThen try a valid scaffold to confirm the script works normally:\n`bash $CLAUDE_PROJECT_DIR/.claude/skills/ontology-manager/scripts/scaffold_ontology.sh valid-id 0.1.0 > good-scaffold.yaml`\nReport what happened with the invalid ID attempt.",
+      "expected_output": "bad-scaffold.yaml contains an error message about the invalid ID and EXIT:1 (non-zero exit). good-scaffold.yaml is a valid scaffold with id: valid-id.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "bad-scaffold.yaml",
+          "description": "output file was created capturing the invalid scaffold attempt"
+        },
+        {
+          "type": "file_contains",
+          "file": "bad-scaffold.yaml",
+          "literal": "EXIT:1",
+          "description": "scaffold exits with code 1 for invalid ID"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "bad-scaffold.yaml",
+          "literal": "id: Invalid_ID",
+          "description": "scaffold did NOT emit YAML with the invalid ID"
+        },
+        {
+          "type": "file_exists",
+          "file": "good-scaffold.yaml",
+          "description": "valid scaffold with correct ID was created"
+        },
+        {
+          "type": "file_contains",
+          "file": "good-scaffold.yaml",
+          "literal": "id: valid-id",
+          "description": "valid scaffold has the correct ontology ID"
+        }
+      ],
+      "expectations": [
+        "The error message in bad-scaffold.yaml references the ID format constraint (^[a-z][a-z0-9-]*$) or says the ID is invalid.",
+        "No partial YAML skeleton is emitted before the error — the script fails cleanly without producing a corrupt YAML file.",
+        "good-scaffold.yaml passes a mental validation check: it has ontology, namespaces, entity_types, traits, relationships, and discovery sections."
+      ]
+    }
+  ]
+}

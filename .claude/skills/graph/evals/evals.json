@@ -58,10 +58,21 @@
           "type": "shell_command",
           "description": "Entity count in by_kind is exactly 4",
           "command": "jq -e '.by_kind | map(select(.kind==\"entity\"))[0].count == 4' stats.json"
+        },
+        {
+          "type": "json_field_exists",
+          "file": "stats.json",
+          "path": ".by_edge_type",
+          "description": "by_edge_type array is present in output"
+        },
+        {
+          "type": "shell_command",
+          "description": "by_edge_type contains exactly 4 distinct edge types",
+          "command": "jq -e '.by_edge_type | length == 4' stats.json"
         }
       ],
       "expectations": [
-        "The by_edge_type array contains exactly 4 entries covering all relationship types in the graph: contradicts (1 edge), derived-from (2 edges), mentions (6 edges), and supports (1 edge).",
+        "The by_edge_type array contains entries for exactly four distinct edge types and no others: contradicts (1 edge), derived-from (2 edges), mentions (6 edges), and supports (1 edge).",
         "The skill also reports the most-connected nodes by degree, identifying urn:mif:entity:concept:update-propagation as the most-referenced entity node with 3 incoming mention edges."
       ]
     },
@@ -117,18 +128,30 @@
         },
         {
           "type": "shell_command",
-          "description": "Every node id starts with urn:mif: \u2014 MIF-native invariant",
+          "description": "Every node id starts with urn:mif: — MIF-native invariant",
           "command": "jq -e '.nodes | all(.id | startswith(\"urn:mif:\"))' knowledge-graph.json"
         },
         {
           "type": "shell_command",
-          "description": "Every edge via field is 'relationship' or 'entity' \u2014 no bare tag strings",
+          "description": "Every edge via field is 'relationship' or 'entity' — no bare tag strings",
           "command": "jq -e '.edges | all(.via == \"relationship\" or .via == \"entity\")' knowledge-graph.json"
+        },
+        {
+          "type": "file_contains",
+          "file": "knowledge-graph.json",
+          "literal": "KnowledgeGraph",
+          "description": "@type field value 'KnowledgeGraph' is present in the output"
+        },
+        {
+          "type": "file_contains",
+          "file": "knowledge-graph.json",
+          "literal": "build-graph.sh",
+          "description": "Generator attribution references build-graph.sh"
         }
       ],
       "expectations": [
-        "The @type field is 'KnowledgeGraph' and the generator field references 'build-graph.sh (MIF-native; SPEC \u00a76c)', proving the output is from the correct MIF pipeline.",
-        "No edge type is a raw tag string \u2014 all edge types are MIF relationship keywords (supports, contradicts, derived-from) or 'mentions'."
+        "The @type field is 'KnowledgeGraph' and the generator field references 'build-graph.sh (MIF-native; SPEC §6c)', proving the output is from the correct MIF pipeline.",
+        "No edge type is a raw tag string — all edge types are MIF relationship keywords (supports, contradicts, derived-from) or 'mentions'."
       ]
     },
     {
@@ -179,11 +202,21 @@
             "source": "urn:mif:concept:harness:kg-distribution-0003"
           },
           "description": "Incoming edges include the distribution concept's mention"
+        },
+        {
+          "type": "shell_command",
+          "description": "Exactly 3 incoming edges for the most-mentioned entity node",
+          "command": "jq -e '.in | length == 3' node.json"
+        },
+        {
+          "type": "shell_command",
+          "description": "Outgoing edges array is empty — entity nodes are never edge sources",
+          "command": "jq -e '.out | length == 0' node.json"
         }
       ],
       "expectations": [
-        "The .in array contains exactly 3 edges, all of type 'mentions' and via 'entity', one from each of the three concept nodes in the corpus \u2014 this entity is the most-mentioned node in the graph.",
-        "The .out array is empty because entity nodes are never edge sources in this MIF graph \u2014 outgoing edges are only emitted from concept (finding) nodes."
+        "The .in array contains exactly 3 edges, all of type 'mentions' and via 'entity', one from each of the three concept nodes in the corpus — this entity is the most-mentioned node in the graph.",
+        "The .out array is empty because entity nodes are never edge sources in this MIF graph — outgoing edges are only emitted from concept (finding) nodes."
       ]
     },
     {
@@ -238,7 +271,7 @@
         }
       ],
       "expectations": [
-        "The supports edge in .direct has source copier-0001 and target distribution-0003; the derived-from edge has the reverse direction \u2014 distribution-0003 back to copier-0001 \u2014 confirming a bidirectional relationship.",
+        "The supports edge in .direct has source copier-0001 and target distribution-0003; the derived-from edge has the reverse direction — distribution-0003 back to copier-0001 — confirming a bidirectional relationship.",
         "The .shared field is a non-empty array of entity URNs, identifying the common conceptual ground both findings share."
       ]
     },
@@ -267,10 +300,15 @@
           "type": "shell_command",
           "description": "Array includes the copier technology entity by its exact MIF urn",
           "command": "jq -e 'map(.id == \"urn:mif:entity:technology:copier\") | any' entities.json"
+        },
+        {
+          "type": "shell_command",
+          "description": "All entity IDs begin with urn:mif:entity:",
+          "command": "jq -e 'all(.id | startswith(\"urn:mif:entity:\"))' entities.json"
         }
       ],
       "expectations": [
-        "All 4 entity IDs in the array begin with 'urn:mif:entity:' \u2014 no raw label strings or non-MIF identifiers appear.",
+        "All 4 entity IDs in the array begin with 'urn:mif:entity:' — no raw label strings or non-MIF identifiers appear.",
         "Each entry includes a degree field or equivalent showing the count of edges connecting to it; update-propagation has the highest degree (3).",
         "The four entities are: urn:mif:entity:concept:living-template, urn:mif:entity:concept:update-propagation, urn:mif:entity:technology:cookiecutter, and urn:mif:entity:technology:copier."
       ]
@@ -303,10 +341,16 @@
           "file": "knowledge-graph.html",
           "literal": "urn:mif:",
           "description": "HTML embeds the raw urn:mif: identifiers, proving the graph data is inlined"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "knowledge-graph.html",
+          "literal": "cdn.jsdelivr.net",
+          "description": "HTML does not load from external CDN — self-contained requirement"
         }
       ],
       "expectations": [
-        "The HTML is fully self-contained \u2014 the graph JSON data is embedded inline in a <script type='application/json'> block and no external CDN or network fetch is required.",
+        "The HTML is fully self-contained — the graph JSON data is embedded inline in a <script type='application/json'> block or equivalent and no external CDN or network fetch is required.",
         "The heading or title shows '7 nodes, 10 edges', matching the actual sample graph counts from the embedded data."
       ]
     },
@@ -352,11 +396,235 @@
             "type": "derived-from"
           },
           "description": "Incoming edges include the derived-from relationship from distribution-0003"
+        },
+        {
+          "type": "shell_command",
+          "description": "Exactly 2 incoming edges for the copier concept node",
+          "command": "jq -e '.in | length == 2' node.json"
         }
       ],
       "expectations": [
-        "The supports edge in .out has target 'urn:mif:concept:harness:kg-distribution-0003', confirming the copier \u2192 distribution directional relationship.",
+        "The supports edge in .out has target 'urn:mif:concept:harness:kg-distribution-0003', confirming the copier → distribution directional relationship.",
         "The .in array has exactly 2 edges: a contradicts from urn:mif:concept:harness:kg-cookiecutter-0002 and a derived-from from urn:mif:concept:harness:kg-distribution-0003."
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "Build the cross-topic concordance from the sample session data. Run `bash $CLAUDE_PROJECT_DIR/scripts/build-concordance.sh $CLAUDE_PROJECT_DIR/reports/_meta concordance.json` to produce `concordance.json` in the current working directory. The sample session findings live at `$CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings/`.",
+      "expected_output": "A concordance.json file with @type 'Concordance', 7 nodes (3 concept + 4 entity) and 10 edges, where concept nodes carry verdict, topics, entityType, ontology, and flagged fields — distinguishing the concordance from a plain knowledge-graph.json.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "concordance.json",
+          "description": "Concordance JSON file was written to the outputs directory"
+        },
+        {
+          "type": "json_valid",
+          "file": "concordance.json",
+          "description": "Output is valid JSON"
+        },
+        {
+          "type": "file_contains",
+          "file": "concordance.json",
+          "literal": "Concordance",
+          "description": "@type is 'Concordance' — not 'KnowledgeGraph'"
+        },
+        {
+          "type": "file_contains",
+          "file": "concordance.json",
+          "literal": "build-concordance.sh",
+          "description": "Generator attribution references build-concordance.sh"
+        },
+        {
+          "type": "json_field_count",
+          "file": "concordance.json",
+          "path": ".nodes",
+          "op": "eq",
+          "expected": 7,
+          "description": "Concordance contains exactly 7 nodes"
+        },
+        {
+          "type": "json_field_count",
+          "file": "concordance.json",
+          "path": ".edges",
+          "op": "eq",
+          "expected": 10,
+          "description": "Concordance contains exactly 10 edges"
+        },
+        {
+          "type": "shell_command",
+          "description": "Concept nodes carry a 'topics' array — concordance-specific field absent in knowledge-graph.json",
+          "command": "jq -e '[.nodes[] | select(.kind==\"concept\")] | all(has(\"topics\"))' concordance.json"
+        },
+        {
+          "type": "shell_command",
+          "description": "Concept nodes carry a 'verdict' field",
+          "command": "jq -e '[.nodes[] | select(.kind==\"concept\")] | all(has(\"verdict\"))' concordance.json"
+        },
+        {
+          "type": "shell_command",
+          "description": "All 3 survived concepts are topic 'sample-session'",
+          "command": "jq -e '[.nodes[] | select(.kind==\"concept\") | .topics[]] | unique == [\"sample-session\"]' concordance.json"
+        },
+        {
+          "type": "shell_command",
+          "description": "All concept verdicts are 'survived' (3 findings, all survived)",
+          "command": "jq -e '[.nodes[] | select(.kind==\"concept\") | .verdict] | all(. == \"survived\")' concordance.json"
+        }
+      ],
+      "expectations": [
+        "The concordance differentiates from a plain knowledge graph by carrying per-concept verdict (survived), flagged (false), topics ([\"sample-session\"]), entityType (null — no ontology bound), and ontology (null) fields on every concept node.",
+        "The generator field in the concordance JSON explicitly references 'build-concordance.sh (MIF-native ontological spine; SPEC §8d)', confirming the correct script was used."
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "Validate the concordance built from the sample session. First build it: `bash $CLAUDE_PROJECT_DIR/scripts/build-concordance.sh $CLAUDE_PROJECT_DIR/reports/_meta concordance.json`. Then validate: `bash $CLAUDE_PROJECT_DIR/scripts/validate-concordance.sh concordance.json > validate.txt 2>&1`. Write the validation output to `validate.txt`.",
+      "expected_output": "validate.txt containing 'conformant' — the sample findings are all untyped (entityType null), so no undeclared domain type violations exist. Exit code 0.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "concordance.json",
+          "description": "Concordance was built before validation"
+        },
+        {
+          "type": "file_exists",
+          "file": "validate.txt",
+          "description": "Validation output file was written"
+        },
+        {
+          "type": "file_contains",
+          "file": "validate.txt",
+          "literal": "conformant",
+          "description": "Validation reports conformant — exit 0 for an untyped-but-valid corpus"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "validate.txt",
+          "literal": "conformance violation",
+          "description": "No conformance violations on the all-untyped sample corpus"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "validate.txt",
+          "literal": "refusing to validate",
+          "description": "Validator did not abort due to missing catalog or config"
+        }
+      ],
+      "expectations": [
+        "The validate-concordance script exits 0 and prints exactly one line of the form 'validate-concordance: conformant (7 nodes, 10 edges)', with the node and edge counts matching the built concordance.",
+        "The validation output does NOT contain '/ontology-review' — the untyped sample findings are valid (entityType null passes the node loop filter), so the script identifies no gaps requiring ontology binding."
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "Show corpus-wide stats for the concordance. Build it first: `bash $CLAUDE_PROJECT_DIR/scripts/build-concordance.sh $CLAUDE_PROJECT_DIR/reports/_meta concordance.json`. Then compute concordance stats with `/graph --concordance --stats` using: `jq '{nodes:(.nodes|length),edges:(.edges|length),by_kind:[.nodes|group_by(.kind)[]|{kind:.[0].kind,count:length}],by_verdict:[.nodes|map(select(.kind==\"concept\"))|group_by(.verdict)[]|{verdict:(.[0].verdict//\"untyped\"),count:length}],by_topic:[.nodes|map(.topics[])|group_by(.)[]|{topic:.[0],count:length}]}' concordance.json > stats.json`.",
+      "expected_output": "A stats.json with nodes=7, edges=10, by_kind showing concept:3 and entity:4, by_verdict showing survived:3, and by_topic showing sample-session:7.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "stats.json",
+          "description": "Concordance stats JSON was written"
+        },
+        {
+          "type": "json_valid",
+          "file": "stats.json",
+          "description": "Output is valid JSON"
+        },
+        {
+          "type": "json_field_equals",
+          "file": "stats.json",
+          "path": ".nodes",
+          "expected": 7,
+          "description": "Total node count is 7"
+        },
+        {
+          "type": "json_field_equals",
+          "file": "stats.json",
+          "path": ".edges",
+          "expected": 10,
+          "description": "Total edge count is 10"
+        },
+        {
+          "type": "json_array_contains",
+          "file": "stats.json",
+          "path": ".by_kind",
+          "match": {
+            "kind": "concept",
+            "count": 3
+          },
+          "description": "by_kind shows 3 concept nodes"
+        },
+        {
+          "type": "json_array_contains",
+          "file": "stats.json",
+          "path": ".by_kind",
+          "match": {
+            "kind": "entity",
+            "count": 4
+          },
+          "description": "by_kind shows 4 entity nodes"
+        },
+        {
+          "type": "json_array_contains",
+          "file": "stats.json",
+          "path": ".by_verdict",
+          "match": {
+            "verdict": "survived",
+            "count": 3
+          },
+          "description": "by_verdict shows all 3 concepts survived"
+        },
+        {
+          "type": "json_array_contains",
+          "file": "stats.json",
+          "path": ".by_topic",
+          "match": {
+            "topic": "sample-session",
+            "count": 7
+          },
+          "description": "by_topic shows 7 nodes attributed to sample-session"
+        }
+      ],
+      "expectations": [
+        "The by_verdict breakdown is unique to the concordance — it would not exist in plain per-topic graph stats — confirming the skill operated on concordance.json, not knowledge-graph.json.",
+        "The by_topic field confirms the concordance spans topics correctly; with a single-topic corpus, 'sample-session' accounts for all 7 nodes."
+      ]
+    },
+    {
+      "id": 11,
+      "prompt": "After building the concordance (`bash $CLAUDE_PROJECT_DIR/scripts/build-concordance.sh $CLAUDE_PROJECT_DIR/reports/_meta concordance.json`), use `/graph --concordance` to detect coverage gaps — topics with no bound ontology (untyped concept nodes). Run: `jq -r '[.nodes[] | select(.kind==\"concept\" and .entityType==null) | .topics[]] | unique[]' concordance.json > gaps.txt`. Then report any topics that need `/ontology-review --topic <id> --enrich` to bind an ontology.",
+      "expected_output": "A gaps.txt file containing 'sample-session', identifying it as a topic with untyped concept nodes (entityType null). The skill recommends running `/ontology-review --topic sample-session --enrich`.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "gaps.txt",
+          "description": "Coverage gap report file was written"
+        },
+        {
+          "type": "file_contains",
+          "file": "gaps.txt",
+          "literal": "sample-session",
+          "description": "sample-session is identified as a topic with untyped concept nodes"
+        },
+        {
+          "type": "file_exists",
+          "file": "concordance.json",
+          "description": "Concordance was built before gap detection"
+        },
+        {
+          "type": "shell_command",
+          "description": "Exactly 1 untyped topic in the sample corpus",
+          "command": "jq -e '[.nodes[] | select(.kind==\"concept\" and .entityType==null) | .topics[]] | unique | length == 1' concordance.json"
+        }
+      ],
+      "expectations": [
+        "The skill surfaces 'sample-session' as a topic with untyped findings and recommends running `/ontology-review --topic sample-session --enrich` to bind/enrich the ontology, then rebuild with `--concordance --build`.",
+        "The skill distinguishes this as a soft gap (missing ontology binding), not a hard conformance violation — it notes that untyped findings are valid nodes but leaves the spine under-typed."
       ]
     }
   ]
