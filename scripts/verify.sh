@@ -1221,6 +1221,28 @@ JSON
     bad "validate remedy message wrong (exit=$orc, names-topic/ontology-review missing)"
   fi
 
+  # 13j. Scale: build over a large corpus via the streaming (temp-file/--slurpfile) path
+  #      that replaced the argv accumulation. All N findings appear as real,
+  #      verdict-carrying concept nodes and the build is byte-identical across runs.
+  #      (This exercises the streaming path's correctness + determinism at scale; it does
+  #      not by itself reach the platform ARG_MAX ceiling — that is removed structurally
+  #      by not accumulating JSON on argv.)
+  mkdir -p "$T/big/scale/findings"
+  local n=400 i
+  i=1; while [ "$i" -le "$n" ]; do
+    printf '{"@id":"urn:mif:concept:s:f%d","title":"finding %d","extensions":{"harness":{"verification":{"verdict":"survived"}}},"entities":[{"@type":"EntityReference","entity":{"@id":"urn:mif:entity:org:acme"},"name":"Acme","entityType":"Organization"}]}\n' "$i" "$i" > "$T/big/scale/findings/f$i.json"
+    i=$((i+1))
+  done
+  scripts/build-concordance.sh "$T/big" "$T/big1.json" >/dev/null 2>&1
+  scripts/build-concordance.sh "$T/big" "$T/big2.json" >/dev/null 2>&1
+  local bigcount
+  bigcount=$(jq '[.nodes[] | select(.kind=="concept" and (.external|not) and .verdict != null)] | length' "$T/big1.json" 2>/dev/null)
+  if [ "$bigcount" = "$n" ] && diff -q "$T/big1.json" "$T/big2.json" >/dev/null 2>&1; then
+    ok "streaming build scales: all $n findings become real verdict-carrying concept nodes; the build is byte-identical across runs"
+  else
+    bad "scale build wrong (concept nodes $bigcount of $n, or non-deterministic)"
+  fi
+
   rm -rf "$T"
 }
 
