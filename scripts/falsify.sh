@@ -49,8 +49,17 @@ else
   ENTRY='{}'
 fi
 
-VERDICT=$(jq -r '.verdict // "survived"' <<<"$ENTRY")
-BASIS=$(jq -r '.basis // "Adversarial queries executed; no disconfirming evidence found."' <<<"$ENTRY")
+# An EXPLICIT fixture verdict is recorded as-is. A finding with NO fixture entry was not
+# adversarially tested this run, so we WITHHOLD a pass: default to `inconclusive`, never
+# `survived`. A default `survived` is a false pass — and the one-round rule below makes it
+# permanent, the exact contamination a stray (non-gate) invocation caused.
+if [ -z "$(jq -r '.verdict // empty' <<<"$ENTRY")" ]; then
+  VERDICT="inconclusive"
+  BASIS="No disconfirming-evidence entry supplied — finding was not adversarially tested this run."
+else
+  VERDICT=$(jq -r '.verdict' <<<"$ENTRY")
+  BASIS=$(jq -r '.basis // "Adversarial queries executed; no disconfirming evidence found."' <<<"$ENTRY")
+fi
 
 # Deterministic UTC timestamp from the fixture if provided, else a fixed marker
 # (scripts cannot call the clock in some sandboxes; the agent supplies real time).
