@@ -484,8 +484,11 @@ Append to the progress file:
        Synthesize the active findings under {REPORTS_DIR} into the session
        deliverable. Goal: {GOAL_FILE}. Use only findings whose
        extensions.harness.verification.verdict is survived or weakened (never
-       falsified/quarantined). Every claim traces to a finding citation. Your
-       FINAL MESSAGE is your return value: the deliverable summary. Return only.
+       falsified/quarantined). Every claim traces to a finding citation.
+       Then run your Step 4c — reconcile the topic's navigation README
+       (reports/{TOPIC_SLUG}/README.md): build the backbone, write SYNTHESIS-GRADE
+       Key Findings (not the draft), and pass `--check`. Your FINAL MESSAGE is your
+       return value: the deliverable summary. Return only.
      """
    )
    ```
@@ -520,22 +523,27 @@ Append to the progress file:
      -s harness.config.schema.json -d harness.config.json
    ```
 
-4. **Reconcile the topic README** (the navigation index — every topic-mutating
-   run leaves it current). Rebuild the deterministic README from the substrate,
-   then validate it:
+4. **Confirm the topic README** (the navigation index — every topic-mutating run
+   leaves it current). The `report-synthesizer` you spawned in step 1 authors the
+   synthesis-grade README in its Step 4c. Verify it landed and report its gate
+   status — but do NOT hard-block the run on it: you have no `Skill` tool and
+   cannot synthesize Key Findings yourself, so a skeleton fallback is a
+   degraded-but-acceptable state that `/start`'s `readme`-skill step (or a manual
+   `readme` run) finishes.
 
    ```bash
-   bash scripts/build-topic-readme.sh "$TOPIC_SLUG"
-   bash scripts/build-topic-readme.sh "$TOPIC_SLUG" --check
+   [ -f "$REPORTS_DIR/README.md" ] || bash scripts/build-topic-readme.sh "$TOPIC_SLUG"
+   bash scripts/build-topic-readme.sh "$TOPIC_SLUG" --check \
+     || echo "NOTE: README needs synthesis-grade Key Findings — run the readme skill (e.g. via /start)."
    ```
 
-   The README at `reports/<topic>/README.md` is a navigation projection (title,
-   counts, purpose, dimensions, key findings, report table, tags), modeled on a
-   research corpus's per-directory READMEs — **not** a MIF Level-3 report, so it
-   carries no frontmatter and is exempt from the output-conformance gate. For
-   sharper Purpose/Key Findings prose, invoke the `readme` skill, which refines
-   those two sections on top of this deterministic build; the `--check` gate
-   (sections present, counts match the substrate, no dangling links) must pass.
+   `reports/<topic>/README.md` is a navigation projection (title, verdict-aware
+   counts, purpose, synthesis-grade key findings, reports + findings-by-dimension
+   tables, tags), modeled on a research corpus's per-directory READMEs — **not** a
+   MIF Level-3 report, so it carries no frontmatter and is exempt from the
+   output-conformance gate. The `--check` gate also fails closed if the Key
+   Findings are still the auto-generated draft, which is why a fallback skeleton
+   reports as needing the `readme` skill.
 
 5. **Finish.** Your worker subagents have already returned — there is no team to
    tear down. **Release the run lock** so the topic is free for the next run:

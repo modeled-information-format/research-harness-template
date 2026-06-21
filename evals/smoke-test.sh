@@ -107,27 +107,44 @@ else
   note "FAIL: gate re-ran on an already-falsified finding ($RERUN)"; fail=1
 fi
 
-# Phase 7 — the topic README reconcile (orchestrator Phase 4) is deterministic
-# and self-validating: build from the sample substrate, then assert the structural
-# gate passes (sections present, counts projected from findings, no dangling links).
+# Phase 7 — the topic README reconcile (orchestrator Phase 4 / report-synthesizer
+# Step 4c). The gate ENFORCES synthesis: a freshly built skeleton (Key Findings =
+# the deterministic draft) must be REFUSED; the same README must PASS once the Key
+# Findings are synthesized. This is the floor that protects against shipping the
+# skeleton.
 RM="$TMP/README.md"
-if bash scripts/build-topic-readme.sh example-topic \
-      --findings reports/_meta/sample-session/findings --out "$RM" >/dev/null 2>&1 \
-   && bash scripts/build-topic-readme.sh example-topic \
-      --findings reports/_meta/sample-session/findings --out "$RM" --check >/dev/null 2>&1; then
-  note "topic README builds from the substrate and passes its validation gate"
+SF="reports/_meta/sample-session/findings"
+bash scripts/build-topic-readme.sh example-topic --findings "$SF" --out "$RM" >/dev/null 2>&1
+if bash scripts/build-topic-readme.sh example-topic --findings "$SF" --out "$RM" --check >/dev/null 2>&1; then
+  note "FAIL: gate accepted the un-synthesized skeleton"; fail=1
 else
-  note "FAIL: topic README build/check failed"; fail=1
+  note "README gate refuses the un-synthesized skeleton (synthesis enforced)"
 fi
 
-# The 'created' trigger: a topic with zero findings still yields a valid README.
+# Simulate synthesis: replace the Key Findings draft with a cross-finding bullet.
+awk '
+  /^## Key Findings$/ { print; print ""; print "- Synthesized cross-finding insight with specifics."; print ""; skip=1; next }
+  skip && /^## / { skip=0; print; next }
+  skip { next }
+  { print }
+' "$RM" > "$RM.tmp" && mv "$RM.tmp" "$RM"
+if bash scripts/build-topic-readme.sh example-topic --findings "$SF" --out "$RM" --check >/dev/null 2>&1; then
+  note "README gate passes once Key Findings are synthesized"
+else
+  note "FAIL: gate rejected a synthesized README"; fail=1
+fi
+
+# The 'created' trigger: a zero-findings topic yields a valid README (synthesis
+# gate is exempt — there is nothing to synthesize) and passes --check.
 mkdir -p "$TMP/empty"
 if bash scripts/build-topic-readme.sh example-topic --findings "$TMP/empty" \
       --out "$TMP/empty-README.md" >/dev/null 2>&1 \
-   && grep -qF '**Findings:** 0' "$TMP/empty-README.md"; then
-  note "created-but-unstarted topic gets a valid zero-findings README"
+   && grep -qF '**Findings:** 0' "$TMP/empty-README.md" \
+   && bash scripts/build-topic-readme.sh example-topic --findings "$TMP/empty" \
+      --out "$TMP/empty-README.md" --check >/dev/null 2>&1; then
+  note "created-but-unstarted topic gets a valid zero-findings README (gate passes)"
 else
-  note "FAIL: zero-findings README not produced"; fail=1
+  note "FAIL: zero-findings README not produced/validated"; fail=1
 fi
 
 if [ "$fail" -eq 0 ]; then

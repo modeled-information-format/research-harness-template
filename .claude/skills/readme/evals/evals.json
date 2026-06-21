@@ -3,8 +3,8 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "Build and validate the navigation README for a topic from its MIF findings. Run exactly:\n\n  OUTDIR=$(pwd)\n  bash $CLAUDE_PROJECT_DIR/scripts/build-topic-readme.sh example-topic --findings $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings --out $OUTDIR/README.md\n  bash $CLAUDE_PROJECT_DIR/scripts/build-topic-readme.sh example-topic --findings $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings --out $OUTDIR/README.md --check\n\nConfirm the README has the required sections, the finding and source counts match the substrate, and the structural check passes.",
-      "expected_output": "README.md with an H1 title, a metadata header (Research ID, Created/Updated, Findings/Sources), and Purpose, Dimensions, Key Findings, Reports, and Tags sections. Findings is 3 and Sources is 2 (computed from the sample substrate, not hand-authored). The --check gate exits 0.",
+      "prompt": "Build the navigation README backbone for a topic from its MIF findings and confirm the structure. Run exactly:\n\n  OUTDIR=$(pwd)\n  bash $CLAUDE_PROJECT_DIR/scripts/build-topic-readme.sh example-topic --findings $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings --out $OUTDIR/README.md\n\nConfirm the README has the verdict-aware metadata header and every required section.",
+      "expected_output": "README.md with an H1 title; a metadata header reading '**Findings:** 3 (survived 3) | **Sources:** 2 unique URLs' and a Status line; and Purpose, Dimensions, Key Findings, Reports, Findings by Dimension, and Tags sections. Counts and the verdict breakdown are projected from the substrate, not hand-authored.",
       "files": [],
       "deterministic_checks": [
         {
@@ -15,37 +15,38 @@
         {
           "type": "file_contains",
           "file": "README.md",
-          "literal": "**Findings:** 3 | **Sources:** 2",
-          "description": "counts are computed from the substrate (3 findings, 2 distinct source URLs)"
+          "literal": "**Findings:** 3 (survived 3) | **Sources:** 2 unique URLs",
+          "description": "verdict-aware counts + exact source total, projected from the substrate"
+        },
+        {
+          "type": "file_contains",
+          "file": "README.md",
+          "literal": "## Findings by Dimension",
+          "description": "the per-dimension findings table is present"
         },
         {
           "type": "file_contains",
           "file": "README.md",
           "literal": "## Key Findings",
-          "description": "the README carries a Key Findings section"
+          "description": "the Key Findings section is present"
         },
         {
           "type": "file_contains",
           "file": "README.md",
-          "literal": "## Dimensions",
-          "description": "the README carries a Dimensions section"
-        },
-        {
-          "type": "shell_command",
-          "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/build-topic-readme.sh\" example-topic --findings \"$CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings\" --out README.md --check",
-          "description": "the structural validation gate passes (sections present, counts match, no dangling links)"
+          "literal": "## Reports",
+          "description": "the Reports table is present"
         }
       ],
       "expectations": [
-        "The README is a navigation index, not a MIF report — it has an H1 title and no MIF frontmatter.",
-        "Findings and Sources counts are projected from the findings substrate, never invented.",
-        "The structural check passes before the README is reported reconciled."
+        "The README is a navigation index, not a MIF report — H1 title, no MIF frontmatter.",
+        "The metadata header carries the verdict breakdown and the exact unique-source count.",
+        "All structural sections are present, including Findings by Dimension."
       ]
     },
     {
       "id": 2,
-      "prompt": "The validation gate must fail closed when a README is missing or drifted. Demonstrate it. Run:\n\n  OUTDIR=$(pwd)\n  bash $CLAUDE_PROJECT_DIR/scripts/build-topic-readme.sh example-topic --out $OUTDIR/none.md --check ; echo \"check exit: $?\"\n\nThe check must exit non-zero (the README does not exist), so a missing/invalid README can never be reported as reconciled.",
-      "expected_output": "build-topic-readme.sh --check exits non-zero because reports/none.md does not exist; the gate fails closed.",
+      "prompt": "The gate must fail closed when a README is missing. Run:\n\n  OUTDIR=$(pwd)\n  bash $CLAUDE_PROJECT_DIR/scripts/build-topic-readme.sh example-topic --out $OUTDIR/none.md --check ; echo \"check exit: $?\"\n\nThe check must exit non-zero (the README does not exist).",
+      "expected_output": "build-topic-readme.sh --check exits non-zero because the README does not exist; the gate fails closed.",
       "files": [],
       "deterministic_checks": [
         {
@@ -55,14 +56,14 @@
         }
       ],
       "expectations": [
-        "The check is a real gate, not advisory — a missing or invalid README returns non-zero.",
+        "The check is a real gate, not advisory — a missing README returns non-zero.",
         "The agent reports the failure honestly rather than claiming the README shipped."
       ]
     },
     {
       "id": 3,
-      "prompt": "A just-created topic with zero findings must still get a valid README (the 'created' trigger). Run:\n\n  OUTDIR=$(pwd)\n  mkdir -p $OUTDIR/empty-findings\n  bash $CLAUDE_PROJECT_DIR/scripts/build-topic-readme.sh example-topic --findings $OUTDIR/empty-findings --out $OUTDIR/README.md\n  bash $CLAUDE_PROJECT_DIR/scripts/build-topic-readme.sh example-topic --findings $OUTDIR/empty-findings --out $OUTDIR/README.md --check\n\nConfirm the zero-findings README is valid and passes the check.",
-      "expected_output": "A README with Findings: 0, a 'No findings yet' Key Findings bullet, and all required sections; the --check gate passes.",
+      "prompt": "A just-created topic with zero findings must still get a valid README (the 'created' trigger). Run:\n\n  OUTDIR=$(pwd)\n  mkdir -p $OUTDIR/empty-findings\n  bash $CLAUDE_PROJECT_DIR/scripts/build-topic-readme.sh example-topic --findings $OUTDIR/empty-findings --out $OUTDIR/README.md\n  bash $CLAUDE_PROJECT_DIR/scripts/build-topic-readme.sh example-topic --findings $OUTDIR/empty-findings --out $OUTDIR/README.md --check\n\nConfirm the zero-findings README is valid and passes the check (the synthesis gate is exempt — there is nothing to synthesize).",
+      "expected_output": "A README with Findings: 0, a 'No findings yet' Key Findings bullet, all required sections; --check passes.",
       "files": [],
       "deterministic_checks": [
         {
@@ -79,13 +80,31 @@
         },
         {
           "type": "shell_command",
-          "command": "mkdir -p empty-findings && bash \"$CLAUDE_PROJECT_DIR/scripts/build-topic-readme.sh\" example-topic --findings empty-findings --out README.md --check",
-          "description": "the zero-findings README passes the structural gate"
+          "command": "mkdir -p empty-findings && bash \"$CLAUDE_PROJECT_DIR/scripts/build-topic-readme.sh\" example-topic --findings empty-findings --out README.md && bash \"$CLAUDE_PROJECT_DIR/scripts/build-topic-readme.sh\" example-topic --findings empty-findings --out README.md --check",
+          "description": "the zero-findings README builds and passes the gate (synthesis check exempt)"
         }
       ],
       "expectations": [
         "The 'created' trigger produces a valid README even before any research has run.",
         "Empty/partial state never errors the build or the check."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "The gate ENFORCES synthesis: a freshly built skeleton (Key Findings = the deterministic draft) must be refused, and the same README must pass once Key Findings are synthesized. Demonstrate the full cycle.",
+      "expected_output": "The un-synthesized skeleton fails --check with a 'synthesis not applied' error; after the Key Findings are rewritten as cross-finding bullets, --check passes. This is the floor that prevents shipping the skeleton.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "shell_command",
+          "command": "set -e; SF=\"$CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings\"; bash \"$CLAUDE_PROJECT_DIR/scripts/build-topic-readme.sh\" example-topic --findings \"$SF\" --out README.md; if bash \"$CLAUDE_PROJECT_DIR/scripts/build-topic-readme.sh\" example-topic --findings \"$SF\" --out README.md --check 2>/dev/null; then echo 'skeleton wrongly passed'; exit 1; fi; awk '/^## Key Findings$/{print;print \"\";print \"- Synthesized cross-finding bullet with specifics.\";print \"\";s=1;next} s&&/^## /{s=0;print;next} s{next} {print}' README.md > R && mv R README.md; bash \"$CLAUDE_PROJECT_DIR/scripts/build-topic-readme.sh\" example-topic --findings \"$SF\" --out README.md --check",
+          "description": "skeleton is refused (synthesis not applied); synthesized README passes the gate"
+        }
+      ],
+      "expectations": [
+        "The gate distinguishes the auto-generated draft from real synthesis and refuses the draft.",
+        "Once Key Findings synthesize across findings, the same README passes.",
+        "This guarantees the shipped README is never the bare skeleton."
       ]
     }
   ]

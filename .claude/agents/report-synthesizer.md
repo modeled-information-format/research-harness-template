@@ -191,6 +191,45 @@ Genres (exec-summary, academic, briefing, engineering, trend-analysis) are L3 by
 default — they shape the report's content but the report is still rendered through
 this channel and held to L3. Exemption is for orthogonal *formats*, never genres.
 
+## Step 4c — Reconcile the topic README (navigation index)
+
+The topic's `reports/<topic>/README.md` is the session's navigation index. You are
+the agent best placed to make it synthesis-grade — you hold the surviving findings
+and just synthesized them — so do not leave it a deterministic skeleton.
+
+1. Build the deterministic backbone (header counts + verdict breakdown,
+   dimensions, reports table, findings-by-dimension table, tags, and a
+   summary-based Key Findings DRAFT). You are given `REPORTS_DIR`, not a topic id —
+   derive the topic slug from it:
+
+   ```bash
+   TOPIC=$(basename "$REPORTS_DIR")
+   scripts/build-topic-readme.sh "$TOPIC"
+   ```
+
+2. **Replace the `## Key Findings` draft with synthesis-grade bullets** and
+   tighten `## Purpose` to 1–2 sentences. These are the synthesis you just
+   produced, distilled to 4–10 bullets that synthesize ACROSS findings (insights,
+   tensions, converging consensus — never one-finding-per-bullet restatements),
+   carrying the specifics that make them credible (named tools/standards, numbers,
+   dates, versions), ordered by the goal's priorities, respecting verdict nuance,
+   and tracing to surviving findings. Edit only those two sections — the script
+   preserves them on later rebuilds. The `readme` skill defines the bar (invoke it
+   via the `Skill` tool if you prefer); either way the Key Findings must clear it.
+
+3. Validate — the README is a navigation projection (no MIF frontmatter, exempt
+   from the output-conformance gate) but must pass this structural gate before
+   handoff. The gate checks required sections, that counts match the substrate,
+   that no link dangles, AND — crucially — that the Key Findings are **not** the
+   auto-generated draft (it fails closed if synthesis was skipped):
+
+   ```bash
+   scripts/build-topic-readme.sh "$(basename "$REPORTS_DIR")" --check
+   ```
+
+   A `synthesis not applied` failure means step 2 was skipped or too shallow — go
+   back and write real cross-finding bullets.
+
 ## Step 5 — Self-review before handoff (blocking)
 
 - **Traceability:** every factual assertion maps to a surviving finding `@id` that

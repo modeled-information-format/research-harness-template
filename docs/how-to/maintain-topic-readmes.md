@@ -1,10 +1,12 @@
 # How to maintain topic READMEs
 
 Every report topic carries a navigation `README.md` at `reports/<topic>/README.md`
-— a compact index of what the topic holds: title, research id, created/updated
-dates, finding and source counts, purpose, dimensions, key findings, a table of
-rendered reports, and tags. It is modeled on the per-directory READMEs in a
-research corpus.
+— a compact index of what the topic holds: title; a metadata header with research
+id, created/updated dates, a verdict-aware finding count (`survived`/`weakened`/
+`quarantined`), the unique-source total, and status; purpose; dimensions;
+**synthesis-grade key findings**; a reports table; a findings-by-dimension table;
+an optional artifacts table; and tags. It is modeled on the per-directory READMEs
+in a research corpus.
 
 The README is a **navigation projection, not a report of record.** Like the
 `blog` and `book` channels it is MIF-exempt — it carries no MIF frontmatter and is
@@ -24,8 +26,14 @@ counts and tables are never hand-authored.
 
 ## Reconcile it yourself
 
-Use the `readme` skill — it builds the deterministic README, refines the Purpose
-and Key Findings prose from the findings, and runs the validation gate:
+The **Key Findings** are synthesis-grade: 4–10 bullets that synthesize *across*
+findings (insights, tensions, converging consensus — never one-finding-per-bullet
+restatements), carrying the specifics that make them credible. At synthesis time
+the `report-synthesizer` agent authors them (it holds the surviving findings); the
+deterministic script only seeds a summary-based draft.
+
+Use the `readme` skill — it builds the deterministic backbone, synthesizes the
+Key Findings and Purpose from the findings, and runs the validation gate:
 
 ```text
 readme --topic <id>     # one topic
@@ -45,7 +53,7 @@ bash scripts/build-topic-readme.sh <topic> --check    # structural validation ga
 `build-topic-readme.sh <topic> --check` fails closed (non-zero exit) unless:
 
 - the README exists and has every required section (Purpose, Dimensions, Key
-  Findings, Reports, Tags);
+  Findings, Reports, Findings by Dimension, Tags);
 - the stated `**Findings:** N` count matches the finding files on disk; and
 - every report linked in the Reports table exists.
 
@@ -60,7 +68,7 @@ Findings** prose and the original **Created** date are preserved if the README
 already exists, so prose the `readme` skill or a human refined is never clobbered
 by the next synthesis (the same contract the reference reindexer follows).
 
-> The reference corpus READMEs also carry an optional **Artifacts** table for
-> channel-pack outputs (audio, slides, infographics). That is intentionally not
-> generated here yet — the template's channel packs ship disabled and have no
-> fixed per-topic artifact path to index. Add it when a channel pack defines one.
+An **Artifacts** table is emitted only when channel-pack outputs exist on disk
+under `reports/<topic>/_assets/` or `reports/<topic>/slides/` (audio, slides,
+infographics, mind maps) — it is omitted entirely for topics without assets, so a
+plain research topic is never cluttered with an empty table.
