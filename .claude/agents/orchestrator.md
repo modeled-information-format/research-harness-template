@@ -126,11 +126,42 @@ You receive one mode in your spawn prompt:
    author one). In `augment` mode, if a named `DIMENSION` is **not** among the goal's
    `dimensions[]`, report it and stop rather than researching an unknown lens.
 
-2. **Create the directory.**
+2. **Create the directory and acquire the topic run lock.**
 
    ```bash
    mkdir -p "$REPORTS_DIR"
+   # Topic-level mutual exclusion. A topic's findings live in one shared dir, and
+   # two concurrent runs corrupt each other — the documented CONCURRENCY INCIDENT
+   # stripped 10 verification blocks and DELETED 2 findings (unrecoverable) when
+   # multiple runs wrote one topic's findings/ at once. Refuse to start a second
+   # LIVE run on this topic. A crashed run's lock ages out (staleness window) so
+   # /resume re-acquires; the lock is refreshed at each phase boundary (below) and
+   # released on every graceful exit.
+   if ! scripts/run-lock.sh acquire "$REPORTS_DIR" "orchestrator/$MODE"; then
+     echo "Another live run owns $REPORTS_DIR — stopping so its findings are not corrupted." >&2
+     exit 3
+   fi
    ```
+
+   If the lock is held by another live run, **STOP and report it — do not fan
+   out.** `/resume` re-enters this same path: a prior run that crashed left a
+   stale lock that ages out, or `scripts/run-lock.sh steal "$REPORTS_DIR"` forces
+   recovery.
+
+   Two invariants govern the lock for the rest of the run — apply them everywhere,
+   not just on the happy path:
+
+   - **Refresh at every phase boundary.** Phase 1 fan-out, the Phase 2 gate loop,
+     and Phase 4 synthesis each `scripts/run-lock.sh refresh "$REPORTS_DIR"` so a
+     long phase never ages the lock out underneath a live run (a stolen lock =
+     two concurrent writers = the corruption this prevents).
+   - **Release before EVERY stop.** The rule is simple: *if you are about to stop
+     this orchestrator — for any reason — run `scripts/run-lock.sh release
+     "$REPORTS_DIR"` as your last action first.* That covers Phase 4 completion,
+     the rate-limited PARTIAL stop, a `reconcile-session.sh` / ontology-resolution
+     / toolchain failure that forces a STOP, the gate's PARTIAL stop, and any
+     bound abort. Only an uncatchable crash skips it, and staleness covers that —
+     never leave the lock held on a path you chose to stop on.
 
 3. **Create phase tasks** for your own progress tracking (no `owner` — there are
    no named teammates to assign), each blocked by the previous:
@@ -187,7 +218,10 @@ dimension when none is named), running at most `MAX_CONCURRENCY` at a time:
                                        canonical dir synthesize/graph/index/reconcile read)
 
        Read harness.config.json dimensions[] for this dimension's description.
-       Conduct web research scoped to your dimension and the goal. Emit each
+       Conduct EXHAUSTIVE web research scoped to your dimension and the goal —
+       enumerate the dimension's FULL germane set (a broad domain yields dozens to
+       hundreds of entities; research to saturation, not to a handful). Under-capturing
+       forces costly re-runs and is the failure mode to avoid. Emit each
        finding as an individual MIF memory unit (set extensions.harness.dimension
        = '{dimension}'; leave extensions.harness.verification to the gate) and
        validate the structure you are responsible for — the falsification gate
@@ -207,7 +241,9 @@ dimension when none is named), running at most `MAX_CONCURRENCY` at a time:
    ```
 
    As each analyst returns, mark its task complete (`TaskUpdate(taskId, status:
-   "completed")`) and record the finding paths from its return.
+   "completed")`), record the finding paths from its return, and
+   `scripts/run-lock.sh refresh "$REPORTS_DIR"` — fan-out is the longest phase, so
+   refresh on each return keeps the lock from aging out before the gate even starts.
 
 3. **Source-chunker (only if needed).** For **each** entry in an analyst's
    returned `oversized_sources` list, spawn a `source-chunker` as a **nameless
@@ -233,9 +269,34 @@ dimension when none is named), running at most `MAX_CONCURRENCY` at a time:
    `extensions.harness.dimension`, so they join that dimension's finding set
    automatically (the analyst is already done — do not try to message it).
 
-Wait for every analyst subagent to return (or time out a straggler and exclude
-it, noting the omission). Collect the finding file paths from the returns and from
-`REPORTS_DIR`.
+Wait for every analyst subagent to return, then **reap failures from disk — never
+silently exclude a dimension.** A dimension whose analyst returned a rate-limit / error
+notice (e.g. `"You've hit your session limit"`), or that has **zero** findings under
+`$REPORTS_DIR/findings/` with `extensions.harness.dimension == {dim}`, FAILED this pass:
+
+```bash
+# dimensions that produced nothing this pass (drive off disk, not the return):
+for d in $WORK_DIMS; do
+  n=$(for f in "$REPORTS_DIR"/findings/*.json; do [ -e "$f" ] || continue
+        jq -e --arg d "$d" '.extensions.harness.dimension==$d' "$f" >/dev/null 2>&1 && echo x; done | wc -l)
+  [ "$n" -eq 0 ] && echo "$d"
+done
+```
+
+- **Retry** each failed dimension by re-spawning its analyst (a fresh sub-agent clears a
+  transient or per-sub-agent rate-limit), up to **2** retries per dimension.
+- If a dimension STILL produces zero after retries, the account is hard rate-limited
+  (`resets <time>`): **stop fanning out, record those dimensions as `rate_limited` /
+  incomplete in `research-progress.md` and `state.json`, and report plainly** — e.g.
+  "dimensions X, Y produced 0 findings: your Claude session limit was hit (resets <time>);
+  re-run `/resume` after it resets to finish them." Mark the session **PARTIAL**. NEVER
+  mark a zero/rate-killed dimension complete and NEVER proceed to the gate or synthesis as
+  if the corpus is whole (a zero-finding dimension stays `done < total`, so `/resume` and
+  the Phase 3 loop re-fan it out). This is a terminal stop — **release the run
+  lock** (`scripts/run-lock.sh release "$REPORTS_DIR"`) so `/resume` re-acquires
+  cleanly after the limit resets.
+
+Collect the finding file paths from the returns and from `REPORTS_DIR`.
 
 **Checkpoint.** Snapshot durable state from disk so a crash/interrupt here is
 recoverable without re-running completed work:
@@ -307,8 +368,9 @@ ungated(){ for f in "$REPORTS_DIR"/findings/*.json; do [ -e "$f" ] || continue  
 
 `TaskCreate("Falsify findings")` — capture the returned id as `{taskId}`. Then loop:
 
-1. **Refresh the window** (`touch "$REPORTS_DIR/.gate-active"`) so the marker never ages past the
-   hook's `-mmin -240` freshness bound during a long loop. Then
+1. **Refresh the window and the run lock** (`touch "$REPORTS_DIR/.gate-active"` and
+   `scripts/run-lock.sh refresh "$REPORTS_DIR"`) so neither marker ages past its
+   freshness bound during a long loop. Then
    `ungated | head -n "$BATCH" > "$REPORTS_DIR/.gate-batch"`; `REM=$(ungated | wc -l)`.
 2. If `REM` is 0 the gate is **COMPLETE** — break.
 3. Spawn ONE `falsification-analyst` (`run_in_background: true`) over the slice with
@@ -367,8 +429,10 @@ A dimension whose `state.json` `dimensions[d]` has `done == total` is COMPLETE �
 **never re-fan-out a complete dimension** (re-running burns research/falsification
 budget). Loop only dimensions the plan reports with `done < total`, plus any
 dimension an unmet goal check names. **If `reconcile-session.sh` exits non-zero it
-has failed safe (broken toolchain) — STOP and report; do NOT re-fan-out, and never
-treat the failure as "everything remaining".**
+has failed safe (broken toolchain) — release the run lock
+(`scripts/run-lock.sh release "$REPORTS_DIR"`, per the Phase 0 release invariant),
+STOP and report; do NOT re-fan-out, and never treat the failure as "everything
+remaining".**
 
 Evaluate the goal's `completion_condition.checks[]` against the current state.
 Each check is a transcript-verifiable fact (it may carry an optional `verify`
@@ -408,8 +472,10 @@ Append to the progress file:
 
 ## Phase 4: Synthesize, render progress, clean up
 
-1. **Synthesize.** Spawn the `report-synthesizer` as a **nameless subagent** over
-   the active (surviving + downgraded) findings:
+1. **Synthesize.** First `scripts/run-lock.sh refresh "$REPORTS_DIR"` (synthesis can
+   be long — keep the lock fresh so it is not stolen before you release it in step 4),
+   then spawn the `report-synthesizer` as a **nameless subagent** over the active
+   (surviving + downgraded) findings:
 
    ```text
    Agent(
@@ -455,8 +521,14 @@ Append to the progress file:
    ```
 
 4. **Finish.** Your worker subagents have already returned — there is no team to
-   tear down. Present the user a summary: goal met / partial, finding counts,
-   surviving insights, and the next-step commands.
+   tear down. **Release the run lock** so the topic is free for the next run:
+
+   ```bash
+   scripts/run-lock.sh release "$REPORTS_DIR"
+   ```
+
+   Present the user a summary: goal met / partial, finding counts, surviving
+   insights, and the next-step commands.
 
 Append the final progress entry:
 

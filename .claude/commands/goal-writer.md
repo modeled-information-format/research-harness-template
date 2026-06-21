@@ -80,7 +80,8 @@ actually runs:
 | --- | --- |
 | A finding exists and validates | `ajv validate --spec=draft2020 --strict=false -c ajv-formats -s schemas/findings.schema.json -r schemas/mif/mif.schema.json -r schemas/mif/definitions/entity-reference.schema.json -d <finding file>` exits 0 |
 | Coverage for a dimension | a `jq`/`ls` count over the per-finding files in `reports/<topic>/` whose `extensions.harness.dimension == "<dim>"` meets a threshold (count individual files — never an aggregate) |
-| A named sub-question is answered | ≥1 finding tagged for that sub-question carries `extensions.harness.verification.verdict` ∈ {survived, weakened} (never falsified) |
+| A named sub-question with an **externally-falsifiable** answer is answered | ≥1 finding tagged for that sub-question carries `extensions.harness.verification.verdict` ∈ {survived, weakened} (never falsified) — use this shape ONLY when the finding's load-bearing claim is a web-checkable fact |
+| An **internal-design / corpus-structure** requirement holds (a discovery-pattern spec, a reuse-vs-mint mapping, internal counts, a versioning plan) | a `jq`/`ls` assertion over the finding's **structure/content** — existence + the required fields/shape are present — NOT a gate verdict. The web-only gate can only return `inconclusive` on an internally-decided claim, so a `verdict ∈ {survived,weakened}` check is **unsatisfiable** for it; assert the disk fact instead |
 | Citation integrity | `scripts/check-citation-integrity.sh` over the active findings exits 0 |
 | The adversarial gate ran | the gate emits one `falsification-gate: run` line per finding to stderr; assert the run count (e.g. `== 1` per finding this round) |
 | A deliverable exists | `ls -s reports/<topic>/<deliverable>` shows a non-empty file |
@@ -112,6 +113,14 @@ session resolves it before fan-out:
 2. **Every check transcript-verifiable.** Each check's `verify` prints the
    `ajv` / `jq` / `ls` / gate-log evidence a fresh evaluator reads. Never write a
    check no command can prove.
+   - **Match the check shape to the claim, or it is unsatisfiable.** Reserve a
+     `verdict ∈ {survived, weakened}` check for a finding whose load-bearing claim
+     is **externally web-falsifiable**; for an **internal-design / corpus-structure**
+     requirement use a disk assertion (the two right-hand rows of the evidence-surface
+     table above). The web-only gate can only return `inconclusive` on an
+     internally-decided claim, so a verdict check over it can never pass — that is a
+     flaw in the goal, not a research gap, exactly as `inventory_no_dup` /
+     `finding_valid` / `deliverables_exist` are disk checks, not verdict checks.
 3. **Carry the invariants.** Findings are individual MIF units under
    `reports/<topic>/`; every finding carries ≥1 citation; no fabricated URLs;
    surviving findings only feed synthesis; do not delete or overwrite prior

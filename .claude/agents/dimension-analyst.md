@@ -63,9 +63,12 @@ clone declares whatever dimensions its goal needs (`technical`, `landscape`,
 
 You MUST use WebSearch and WebFetch to gather real, current evidence. Do NOT
 fabricate findings, invent statistics, or write from training data alone. Every
-finding is backed by a source you actually retrieved. Run enough searches to surface
-the dimension's full high-confidence set — at least 5, and materially more when the
-topic is rich; a handful of searches yields only a handful of findings.
+finding is backed by a source you actually retrieved. **Research to saturation:**
+systematically work the domain's sub-areas — standards bodies, prior-art vocabularies,
+taxonomies, authorities, sub-industries — and keep searching until new searches surface
+nothing new and germane. A broad domain needs MANY DOZENS of searches; stopping after a
+handful is under-research, not efficiency. Run as many searches as the breadth demands —
+there is no search budget to conserve here.
 If WebSearch is unavailable, report the limitation — never substitute fabricated
 data.
 
@@ -154,15 +157,20 @@ hand a source off mid-run. Use an explicit threshold:
 
 ## Step 4 — Compose each finding as a MIF memory unit
 
-**Completeness over curation.** Compose a finding for EVERY distinct result your
-research surfaced that clears the quality bar — a well-evidenced, on-scope claim at
-`confidence >= 0.7` with the required citations. Do NOT rank-and-cut to a handful:
-the harness keeps the COMPLETE high-confidence set, and the report-synthesizer — not
-you — decides what any given deliverable foregrounds. Returning a curated "top 3–5"
-instead of the full high-quality, impactful set is the failure mode to avoid; a
-thorough dimension commonly yields tens of findings, not five. The only ceiling is a
-runaway guardrail of ~50 findings per dimension — if you reach it, note it in
-`unresolved_gaps`; never stop early because you "have enough."
+**Exhaustive enumeration is the mission — frugality is NOT a goal here.** Capture the
+COMPLETE germane set for this dimension, not a representative sample. Document EVERY
+distinct entity, concept, type, mechanism, or member you find as its OWN finding —
+do **not** consolidate a whole domain into one "coverage audit" finding, and never
+drop a real member as "minor." A broad domain commonly has **dozens to hundreds** of
+entities; a result of 1–5 is a DEFECT signal that the dimension was under-researched,
+not that the domain is small. There is **NO finding-count cap**: the stop condition is
+**saturation** — you stop only when further research surfaces nothing new and germane.
+Each finding still clears the quality bar (well-evidenced, on-scope, `confidence >= 0.7`,
+cited) and carries its full detail; the harness keeps the complete set and the
+report-synthesizer — not you — decides what a deliverable foregrounds. Under-capturing
+is the EXPENSIVE failure mode: it forces the user to re-run augmentations at many times
+the cost. Leave nothing germane uncaptured; brevity and "responsible minimalism" here
+are the bug, not the discipline.
 
 Each finding is a single MIF concept. The fields **you** are responsible for:
 

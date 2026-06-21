@@ -37,6 +37,10 @@ TMP=$(mktemp -d); trap 'rm -rf "$TMP"' EXIT
 # 1. Engine pipeline smoke test (orchestrator → one falsification gate → MIF finding).
 run "engine-smoke" bash evals/smoke-test.sh
 
+# 1b. Topic run lock: two concurrent runs on one topic are mutually exclusive
+#     (prevents the shared-findings/ corruption vector).
+run "run-lock-mutual-exclusion" bash evals/run-lock-test.sh
+
 # 2. Citation-integrity: a clean finding passes; a bad one is flagged.
 run     "citation-integrity-good" scripts/check-citation-integrity.sh schemas/samples/citation-good.sample.json
 run_neg "citation-integrity-bad"  scripts/check-citation-integrity.sh schemas/samples/citation-bad.sample.json
