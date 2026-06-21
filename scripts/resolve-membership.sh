@@ -48,7 +48,7 @@ FRESH=$(jq -c '.freshness // {}' "$CONFIG" 2>/dev/null || echo '{}')
 FILES=$(find "$FINDINGS_DIR" -maxdepth 1 -name '*.json' 2>/dev/null | sort)
 
 if [ -z "$FILES" ]; then
-  CLASSIFIED='{"members":[],"stale":[],"in_scope_dims":[]}'
+  CLASSIFIED='{"member_objs":[],"stale":[]}'
 else
   # shellcheck disable=SC2086
   CLASSIFIED=$(jq -s \
@@ -70,9 +70,8 @@ else
                    | if $t == null then true else (now > ($t + $ttl*86400)) end
               end) }
       )
-    | { members: [ .[] | select(.in_scope) | .id ],
-        stale:   [ .[] | select(.in_scope and .stale) | .id ],
-        in_scope_dims: ([ .[] | select(.in_scope) | .dim ] | unique) }' \
+    | { member_objs: [ .[] | select(.in_scope) | {id, dim} ],
+        stale:       [ .[] | select(.in_scope and .stale) | .id ] }' \
     $FILES)
 fi
 
@@ -81,18 +80,27 @@ OUT_DIR="$TOPIC_DIR/goals"
 OUT="$OUT_DIR/goal-$VERSION.members.json"
 mkdir -p "$OUT_DIR"
 
+# Preserve exclusions: ids the goal-writer's judgement removed as out-of-scope on a
+# prior resolve of THIS version. Re-resolving (e.g. after gap research) honors them
+# so a deterministic pass never re-adds what was deliberately excluded.
+EXCL=$(jq -c '.excluded // []' "$OUT" 2>/dev/null || echo '[]')
+[ -n "$EXCL" ] || EXCL='[]'
+
 jq -n \
   --arg version "$VERSION" \
   --arg generated "$GENERATED" \
   --argjson dims "$DIMS" \
-  --argjson c "$CLASSIFIED" '
-  {
-    version: $version,
-    generated: $generated,
-    members: $c.members,
-    stale: $c.stale,
-    gap_dimensions: ($dims - $c.in_scope_dims)
-  }' > "$OUT" || die "failed to write $OUT"
+  --argjson c "$CLASSIFIED" \
+  --argjson excl "$EXCL" '
+  ($c.member_objs | map(select(.id as $i | ($excl | index($i)) == null))) as $kept
+  | {
+      version: $version,
+      generated: $generated,
+      members: ($kept | map(.id)),
+      stale: ($c.stale - $excl),
+      excluded: $excl,
+      gap_dimensions: ($dims - ($kept | map(.dim) | unique))
+    }' > "$OUT" || die "failed to write $OUT"
 
 echo "wrote $OUT"
-jq -r '"  members: \(.members|length) | stale: \(.stale|length) | gap_dimensions: \(.gap_dimensions|join(", ") // "none")"' "$OUT"
+jq -r '"  members: \(.members|length) | stale: \(.stale|length) | excluded: \(.excluded|length) | gap_dimensions: \(.gap_dimensions|join(", ") // "none")"' "$OUT"

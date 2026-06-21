@@ -13,7 +13,6 @@
 
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 2
-ROOT="$(pwd)"
 
 # Template vs instance. The distributable template carries copier.yml; an
 # instantiated harness has it stripped at generation. Template-only self-tests
@@ -428,6 +427,7 @@ gate_m6() {
   # 6a. blog is the first-class always-on channel skill (flat, in the core). book is now an
   #     OPTIONAL channel pack (packs/channels/book) — not a flat core skill.
   local s smiss=""
+  # shellcheck disable=SC2043  # intentionally a one-item list today; kept as a loop so more first-class skills can be appended.
   for s in publish-blog; do
     if [ -f ".claude/skills/$s/SKILL.md" ] && grep -q '^description:' ".claude/skills/$s/SKILL.md"; then :; else
       smiss="${smiss}${s} "
@@ -1360,10 +1360,20 @@ gate_m15() {
   fi
 
   # 15b. A versioned goal validates against the schema (back-compat: lineage optional).
-  if ajv_mif schemas/goal.schema.json "$T/gl.json"; then
+  if ajv_plain schemas/goal.schema.json "$T/gl.json"; then
     ok "a versioned goal (version/supersedes/revision) validates against goal.schema.json"
   else
     bad "versioned goal failed goal.schema.json"
+  fi
+
+  # 15b'. A real finding carrying the new gathered_under field still validates
+  #       against findings.schema.json with the MIF closure registered.
+  jq '.extensions.harness.gathered_under = "gv-000000000000"' \
+    reports/_meta/sample-session/findings/finding-copier.json > "$T/fgu.json"
+  if ajv_mif schemas/findings.schema.json "$T/fgu.json"; then
+    ok "a finding carrying extensions.harness.gathered_under validates against findings.schema.json"
+  else
+    bad "finding with gathered_under failed findings.schema.json"
   fi
 
   # 15c. Reshape reuse: stage a topic, classify v1, then reshape (drop a dimension,
@@ -1406,6 +1416,34 @@ gate_m15() {
     ok "freshness flips on a fresh attempted_at (stale $stale2 < members $mem2); mirror projects goal_versions[] ($proj)"
   else
     bad "freshness/mirror wrong (stale2=$stale2 mem2=$mem2 projected=$proj)"
+  fi
+
+  # 15e. The CORE LOOP (the reuse-and-stop guarantee): a new gap finding stamped
+  #      gathered_under=v2 joins members on re-resolve and CLOSES the gap; then
+  #      excluding it (as goal-writer does) PERSISTS — re-resolve does not re-add it
+  #      and its dimension returns to the gap. This is the path /start --update walks.
+  jq -n --arg v "$V2" '{"@id":"urn:mif:concept:harness:econ-1","title":"econ","namespace":"harness/tt",
+    citations:[{"@type":"Citation",citationType:"website",citationRole:"supports",title:"e",url:"https://e.example"}],
+    extensions:{harness:{dimension:"economic",
+      verification:{verdict:"survived",verdict_basis:"x",attempted_at:(now|todateiso8601)},
+      gathered_under:$v}}}' > "$P/reports/tt/findings/finding-econ.json"
+  CLAUDE_PROJECT_DIR="$P" scripts/resolve-membership.sh tt "$V2" >/dev/null 2>&1
+  local M="$P/reports/tt/goals/goal-$V2.members.json" gap_closed econ_in gu
+  gap_closed=$(jq -r '.gap_dimensions | join(",")' "$M")
+  econ_in=$(jq '[.members[] | select(. == "urn:mif:concept:harness:econ-1")] | length' "$M")
+  gu=$(jq -r '.extensions.harness.gathered_under' "$P/reports/tt/findings/finding-econ.json")
+  # Now exclude it as goal-writer would, and re-resolve — exclusion must persist.
+  jq '.members -= ["urn:mif:concept:harness:econ-1"] | .excluded += ["urn:mif:concept:harness:econ-1"]' \
+    "$M" > "$M.tmp" && mv "$M.tmp" "$M"
+  CLAUDE_PROJECT_DIR="$P" scripts/resolve-membership.sh tt "$V2" >/dev/null 2>&1
+  local econ_excluded gap_reopened
+  econ_excluded=$(jq '.excluded | index("urn:mif:concept:harness:econ-1") != null' "$M")
+  gap_reopened=$(jq -r '.gap_dimensions | join(",")' "$M")
+  if [ -z "$gap_closed" ] && [ "$econ_in" = 1 ] && [ "$gu" = "$V2" ] \
+     && [ "$econ_excluded" = true ] && [ "$gap_reopened" = economic ]; then
+    ok "core loop: gap finding joins members and closes the gap (gathered_under=$gu); exclusion persists on re-resolve"
+  else
+    bad "core loop wrong (gap_closed='$gap_closed' econ_in=$econ_in gu=$gu excluded=$econ_excluded reopened='$gap_reopened')"
   fi
 
   rm -rf "$T"

@@ -76,11 +76,21 @@ Steps:
    ```
 
    This deterministic pass writes `reports/<topic>/goals/goal-$NEW.members.json`
-   (members / stale / gap_dimensions). Then **refine it with judgment** the
-   deterministic filter cannot apply: review each member against the new
-   `scope.out_of_scope` / `non_goals`, and remove (with `jq`) any finding that is
-   now genuinely out of scope — note which and why. The `gap_dimensions`, plus any
-   check with no supporting member, are the research gap.
+   (`members` / `stale` / `excluded` / `gap_dimensions`). Then **refine it with
+   judgment** the deterministic filter cannot apply: review each member against the
+   new `scope.out_of_scope` / `non_goals`, and for any finding now genuinely out of
+   scope, **move its id into `excluded[]`** (do not just delete it) so a later
+   re-resolve never re-adds it:
+
+   ```bash
+   jq --arg id "<finding @id>" \
+     '.members -= [$id] | .excluded += [$id] | .gap_dimensions = (.gap_dimensions)' \
+     reports/<topic>/goals/goal-$NEW.members.json > tmp.$$ && mv tmp.$$ reports/<topic>/goals/goal-$NEW.members.json
+   ```
+
+   The `gap_dimensions`, plus any check with no supporting member, are the research
+   gap. (The excluded finding stays in the corpus — it still serves earlier
+   versions; it is only out of *this* version's working set.)
 6. **Print the report**: new version id + `supersedes`, and the carry / gap / stale
    counts (`jq` over the members file). This is the transcript evidence.
 7. **STOP — do not spawn.** Tell the user to run `/start --update` (membership-aware)

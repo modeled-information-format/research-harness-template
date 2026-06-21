@@ -27,7 +27,7 @@ sha256_hex() {
   else die "no sha256 tool (need sha256sum, shasum, or openssl)"; fi
 }
 
-NORM=$(jq -S 'del(.version, .supersedes, .revision)' "$GOAL") \
+NORM=$(jq -cS 'del(.version, .supersedes, .revision)' "$GOAL") \
   || die "invalid goal JSON: $GOAL"
 
 HASH=$(printf '%s' "$NORM" | sha256_hex)

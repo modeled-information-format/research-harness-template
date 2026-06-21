@@ -13,11 +13,13 @@ two harness-local requirements (§8b):
   `verification` (the adversarial-falsification verdict: one of `falsified`,
   `weakened`, `survived`, `inconclusive`, with a `verdict_basis`).
 - `extensions.harness.gathered_under` (optional, SPEC §11) — the single goal
-  version (`gv-…`) whose research first produced the finding (provenance).
-- `extensions.harness.goal_versions[]` (optional, derived) — the goal versions the
-  finding is in scope for. A re-derivable membership mirror; the per-version
-  members files (`reports/<topic>/goals/goal-<hash>.members.json`) are authority,
-  and `build-index.sh` projects this onto each index entry (with `stale_in[]`).
+  version (`gv-…`) whose research first produced the finding (provenance), stamped
+  by the orchestrator when the finding lands.
+
+Membership (which goal versions a finding is **in scope for**) is *not* a finding
+field — it is a re-derivable projection. The per-version members files
+(`reports/<topic>/goals/goal-<hash>.members.json`) are authority; `build-index.sh`
+projects `goal_versions[]` and `stale_in[]` onto each **research-index** entry.
 
 Validate with the vendored MIF closure registered:
 
