@@ -9,7 +9,7 @@ description: |
   applies remediation: falsified → quarantine, weakened → downgrade one level,
   survived/inconclusive → annotate only. Enforces the one-round rule. Spawned by
   the orchestrator (Phase 2) or invoked standalone via /falsify.
-model: inherit
+model: opus
 color: red
 tools:
   - Bash
@@ -192,7 +192,7 @@ After verdicts are written, remediate each finding by its verdict:
 | Verdict | Remediation |
 | --- | --- |
 | `falsified` | **Quarantine** — move the finding file to `$REPORTS_DIR/quarantine/`. It is removed from the active set; downstream synthesis never sees it. |
-| `weakened` | **Downgrade one level** — lower the finding's confidence one step (`provenance.trustLevel` / `provenance.confidence`: high→medium, medium→low, low→quarantine). Append the disconfirming sources to `citations[]` and a qualifier to `summary`. |
+| `weakened` | **Downgrade one level** — step the finding one rung DOWN the real `provenance.trustLevel` ladder (`verified` → `high_confidence` → `moderate_confidence` → `low_confidence` → `uncertain`); a finding already at `uncertain` is quarantined instead. Lower `provenance.confidence` accordingly if present. Append the disconfirming sources to `citations[]` and a qualifier to `summary`. |
 | `survived` | **Unchanged** — annotation only (the verification block records the basis and query count). |
 | `inconclusive` | **Unchanged** — annotation only. |
 

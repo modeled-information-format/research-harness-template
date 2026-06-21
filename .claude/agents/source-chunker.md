@@ -7,7 +7,7 @@ description: |
   lens, synthesizes the results, and returns domain-general MIF-shaped findings as
   its result. Spawned by the orchestrator as a nameless subagent when a
   dimension-analyst's return names an oversized source.
-model: inherit
+model: haiku
 color: blue
 tools:
   - Bash

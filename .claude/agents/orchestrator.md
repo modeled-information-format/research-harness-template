@@ -9,7 +9,7 @@ description: |
   report-synthesizer. Loops until the goal's completion_condition.checks hold or
   the stated bound is hit. Owns continuity (research-progress.md + /resume).
   Spawned by the start, update, and augment commands with a mode parameter.
-model: inherit
+model: sonnet
 color: cyan
 tools:
   - Agent
@@ -232,9 +232,10 @@ scripts/reconcile-session.sh "$REPORTS_DIR"   # writes $REPORTS_DIR/state.json +
 
 **Ontology resolution (SPEC §8c).** If the topic binds an ontology
 (`harness.config.json` `topics[].ontologies`), resolve every finding's mapping and
-record it. Findings the analyst left untyped stay untyped (core); a finding whose
-stamped `entity_type` does not resolve against the topic's bound ontologies is a
-real error to fix, not to ignore:
+record it. Findings the analyst left untyped are auto-classified by the resolver from the
+bound ontologies' discovery patterns (`content_pattern` → `suggest_entity`) where one
+unambiguously matches, else recorded untyped (core); a finding whose stamped `entity_type`
+does not resolve against the topic's bound ontologies is a real error to fix, not to ignore:
 
 ```bash
 for f in "$REPORTS_DIR"/findings/*.json; do

@@ -21,7 +21,7 @@ description: |
   assistant: "I'll spawn a dimension-analyst for DIMENSION=technical to gather additional cited findings."
   <commentary>Single-dimension augmentation reuses the same agent.</commentary>
   </example>
-model: inherit
+model: sonnet
 tools:
   - Bash
   - Glob
@@ -171,12 +171,16 @@ Each finding is a single MIF concept. The fields **you** are responsible for:
   `citationRole` (e.g. `supports`), a `citationType`, a `title`, and `accessed`.
 - `extensions.harness.dimension` set to your `DIMENSION`.
 
-**Do NOT write `extensions.harness.verification`.** You research *before* the
-adversarial gate, so you cannot honestly know a verdict. The
-falsification-analyst / `scripts/falsify.sh` stamps `verification` afterward;
-fabricating a verdict would corrupt the single verification pass. Emitting
-`dimension` + `citations[]` + provenance is your half of the contract; the gate
-completes it.
+**Do NOT write `extensions.harness.verification`, and NEVER run the falsification
+gate yourself** — not `scripts/falsify.sh`, not `/falsify`, not by grading any
+finding. You research *before* the gate, so you cannot honestly know a verdict.
+The gate is the **orchestrator's single Phase-2 pass over the WHOLE finding set**,
+run once after every dimension finishes. If you run it you stamp a premature,
+evidence-less verdict (an un-fixtured finding defaults to `survived`) that the
+one-round rule makes **permanent** — the real gate then *skips* it, silently
+corrupting the verification of every finding you touched, your siblings' included.
+Emitting `dimension` + `citations[]` + provenance is your half of the contract;
+the gate completes it.
 
 Model your output on `schemas/samples/finding.sample.json`.
 
@@ -247,7 +251,10 @@ Stamp only a type you are confident in (entity fields must satisfy that type's d
 schema — required fields and any enum/pattern). If no type fits, **leave the finding
 untyped** — that is valid; do not invent a mapping. The deterministic
 `scripts/resolve-ontology.sh` (run by the orchestrator) validates and records every
-mapping; a finding you stamp with a type that does not resolve will fail that gate.
+mapping AND, for a finding you leave untyped, attempts discovery-pattern classification
+from the bound ontologies' own `content_pattern` → `suggest_entity` before recording it
+untyped — so a clearly on-topic finding still gets a domain type without you guessing.
+A finding you stamp with a type that does not resolve will fail that gate.
 
 ## Step 6 — Self-reflection (max 2 refinement iterations)
 

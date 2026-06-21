@@ -22,7 +22,7 @@ description: |
   assistant: "With the `reports` pack enabled, I'll apply its `engineering` genre template to the surviving findings and emit a typed synthesis the channels can render."
   <commentary>Genre is an opt-in template from a pack; the core stays domain-general.</commentary>
   </example>
-model: inherit
+model: opus
 tools:
   - Bash
   - Glob
