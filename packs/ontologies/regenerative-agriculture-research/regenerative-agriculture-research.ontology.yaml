@@ -390,8 +390,8 @@ relationships:
     from: []
     to: []
     symmetric: true
-  enables:
-    description: "Infrastructure or input enables an agronomic or husbandry practice"
+  supports:
+    description: "Infrastructure or practice supports an operation"
     from:
       - farm-infrastructure
       - equipment-or-input
@@ -407,13 +407,13 @@ discovery:
   patterns:
     - content_pattern: "\\b(lambing|ewe|newborn|colostrum|dystocia)\\b"
       suggest_entity: husbandry-practice
-      suggest_namespace: semantic/husbandry
+      suggest_namespace: _semantic/husbandry
     - content_pattern: "\\b(grazing|pasture|soil|forage|rotational)\\b"
       suggest_entity: agronomic-practice
-      suggest_namespace: semantic/agronomy
+      suggest_namespace: _semantic/agronomy
     - content_pattern: "\\b(fence|fencing|irrigation|tower|PoE|LoRaWAN|mesh)\\b"
       suggest_entity: farm-infrastructure
-      suggest_namespace: semantic/infrastructure
+      suggest_namespace: _semantic/infrastructure
     - content_pattern: "\\b(grant|cost-share|EQIP|NRCS|funding|program)\\b"
       suggest_entity: grant-program
-      suggest_namespace: semantic/funding
+      suggest_namespace: _semantic/funding

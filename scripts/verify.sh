@@ -1009,6 +1009,19 @@ gate_m12() {
     bad "resolver matrix wrong (untyped=$ru good=$rg extra=$re missing=$rm undecl=$rd unbound=$rb rec=$gro)"
   fi
 
+  # 12e2. Discovery-pattern classification: an UNTYPED finding whose CONTENT matches a bound
+  #       ontology's discovery content_pattern is deterministically classified (basis
+  #       "discovery"); a finding matching >1 distinct type stays untyped (no silent pick).
+  printf '{"@id":"f-disc","content":"This textbook ISBN edition covers algebra"}\n' > "$T/disc.json"
+  printf '{"@id":"f-amb","content":"textbook ISBN curriculum program series"}\n' > "$T/amb.json"
+  ro disc edu; local rdc=$?; local dco; dco=$(jq -r '.[0]|"\(.entity_type)|\(.basis)"' "$T/disc.edu.map" 2>/dev/null)
+  ro amb edu;  local ramb=$?; local aco; aco=$(jq -r '.[0]|"\(.entity_type)|\(.basis)"' "$T/amb.edu.map" 2>/dev/null)
+  if [ "$rdc" = 0 ] && [ "$dco" = "title|discovery" ] && [ "$ramb" = 0 ] && [ "$aco" = "null|untyped" ]; then
+    ok "discovery classification: content-matched finding -> typed (basis discovery); ambiguous multi-type match stays untyped"
+  else
+    bad "discovery classification wrong (disc=$rdc/$dco amb=$ramb/$aco)"
+  fi
+
   # 12f. Fail-safe: a missing catalog makes the resolver ABORT (never resolve vacuously).
   local fs; $RO "$T/good.json" --topic edu --catalog "$T/nope.json" --config "$T/rcfg.json" >/dev/null 2>&1; fs=$?
   if [ "$fs" != 0 ]; then
@@ -1241,6 +1254,19 @@ JSON
     ok "streaming build scales: all $n findings become real verdict-carrying concept nodes; the build is byte-identical across runs"
   else
     bad "scale build wrong (concept nodes $bigcount of $n, or non-deterministic)"
+  fi
+
+  # 13k. The MIF-native STRUCTURAL relationship set is now harness-owned in
+  #      validate-concordance.sh (moved out of the vendored mif-generic contract). Pin it:
+  #      silently dropping a name would stop treating that link as structural (and start
+  #      from/to-enforcing it, or reject it); adding one would over-broaden the skip.
+  local expected_sc actual_sc
+  expected_sc='["contradicts","depends-on","derived-from","part-of","refines","relates-to","supersedes","supports","updates"]'
+  actual_sc=$(grep -E "^STRUCTURAL_CORE=" scripts/validate-concordance.sh | sed "s/^STRUCTURAL_CORE=//; s/^'//; s/'$//" | jq -cS 'sort' 2>/dev/null)
+  if [ "$actual_sc" = "$expected_sc" ]; then
+    ok "STRUCTURAL_CORE pinned to the 9 MIF-native structural relationships (harness-owned, not in the vendored contract)"
+  else
+    bad "STRUCTURAL_CORE drifted from the pinned MIF-native set: $actual_sc"
   fi
 
   rm -rf "$T"

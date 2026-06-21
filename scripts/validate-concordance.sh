@@ -51,13 +51,20 @@ for tp in $(jq -r '.topics[].id' "$CONFIG" 2>/dev/null); do
   ALLOWED=$(jq -c --arg t "$tp" --argjson ids "$ids" '. + {($t):$ids}' <<<"$ALLOWED")
 done
 # MIF core vocabulary, always valid: the built-in entity types (the entity-reference
-# enum, e.g. Concept/Person/Organization/Technology/File) and the STRUCTURAL relationship
-# types declared by CORE ontologies (domain-agnostic links like supports/derived-from).
-# Domain-ontology relationships are NOT in this set, so they still get from/to-enforced.
+# enum, e.g. Concept/Person/Organization/Technology/File) and the MIF-native STRUCTURAL
+# relationship types — domain-agnostic links treated as structural (no from/to check).
+# These names are MIF spec vocabulary (schemas/mif/mif.schema.json names derived-from /
+# supersedes / relates-to; ontology.context.jsonld defines Supersedes). The set is owned
+# HERE by the harness, NOT injected into the vendored mif-generic ontology contract, and
+# is unioned with any relationship a CORE ontology itself declares (e.g. mif-base) so it
+# stays exactly what it was. Domain-ontology relationships are NOT in this set, so they
+# still get from/to-enforced.
 BUILTIN=$(jq -c '[.. | .enum? | select(.) | .[]] | map(select(type=="string" and test("^[A-Z]"))) | unique' \
             "$ROOT/schemas/mif/definitions/entity-reference.schema.json" 2>/dev/null); [ -z "$BUILTIN" ] && BUILTIN='[]'
 core_arr=$(printf '%s\n' $core_ids | sed '/^$/d' | jq -R . | jq -cs .)
-STRUCTURAL=$(jq -cn --argjson onto "$ONTO" --argjson core "$core_arr" '[ $core[] | ($onto[.].rels // {} | keys[]) ] | unique')
+STRUCTURAL_CORE='["supports","contradicts","derived-from","relates-to","supersedes","refines","part-of","depends-on","updates"]'
+STRUCTURAL=$(jq -cn --argjson base "$STRUCTURAL_CORE" --argjson onto "$ONTO" --argjson core "$core_arr" \
+              '($base + [ $core[] | ($onto[.].rels // {} | keys[]) ]) | unique')
 
 # All conformance logic in one jq (deterministic, portable).
 if ! viol=$(jq -rn --slurpfile W "$GRAPH" --argjson onto "$ONTO" --argjson allowed "$ALLOWED" \

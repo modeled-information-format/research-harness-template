@@ -137,7 +137,10 @@ ajv validate --spec=draft2020 --strict=false \
   -s schemas/goal.schema.json -d reports/<topic>/goal.json
 ```
 
-Then return the goal JSON and the `/goal` prose in two labelled code blocks:
+Then return the goal JSON and the `/goal` prose in two labelled code blocks. The
+`/goal` prose MUST END with the verbatim begin-with-`/start` reminder shown below —
+it travels INSIDE the goal text, so the agent that later reads the ACTIVE goal is
+told not to bypass the harness by hand-spawning agents:
 
 ```json
 // reports/<topic>/goal.json — validates against schemas/goal.schema.json
@@ -146,7 +149,12 @@ Then return the goal JSON and the `/goal` prose in two labelled code blocks:
 
 ```text
 /goal prose: [the same measurable end state in plain language, ready to paste
-into Claude Code's /goal, including any clarifying question needed to proceed]
+into Claude Code's /goal, including any clarifying question needed to proceed.]
+
+To begin, run `/start` — DO NOT directly spawn the orchestrator or any research
+agent (dimension-analyst, falsification-analyst, …) yourself. `/start` loads this
+goal.json and runs them under the harness's phase + continuity machinery; hand-
+spawning bypasses it. Author/clarify the goal, then STOP and wait for `/start`.
 ```
 
 ## Example
@@ -189,6 +197,11 @@ exactly once over the set; and `scripts/check-citation-integrity.sh` exits 0.
 Constraints: findings are individual MIF units under reports/template-distribution/;
 no fabricated URLs; surviving findings only feed synthesis. Bound: stop after 3
 rounds and report unmet checks; remedy a thin dimension with `/augment <dimension>`.
+
+To begin, run `/start` — DO NOT directly spawn the orchestrator or any research
+agent (dimension-analyst, falsification-analyst, …) yourself. `/start` loads this
+goal.json and runs them under the harness's phase + continuity machinery; hand-
+spawning bypasses it. Author/clarify the goal, then STOP and wait for `/start`.
 ```
 
 ## Critical rules
@@ -206,3 +219,9 @@ rounds and report unmet checks; remedy a thin dimension with `/augment <dimensio
   file), AND emit the `/goal` prose. Do not leave the JSON as prose only.
 - NEVER use placeholders. Use real values; when one is genuinely unknown, add a
   concise clarifying question to the prose.
+- **DO NOT DIRECT-SPAWN — and make the goal SAY SO.** Authoring the goal is the END of
+  this command's job: never spawn the orchestrator or any research agent yourself. AND
+  the emitted `/goal` prose MUST END with the verbatim begin-with-`/start` reminder (see
+  Output format). That line rides INSIDE the goal text, so the agent that later reads the
+  ACTIVE goal is told to run `/start` rather than hand-spawn the orchestrator (the failure
+  this guard exists to stop). Emit `goal.json` + the prose ending in that reminder, then STOP.
