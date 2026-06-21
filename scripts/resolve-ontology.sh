@@ -10,8 +10,10 @@
 #   - an ambiguous type (declared by >1 bound ontology) without an explicit
 #     ontology.id -> non-zero; an ontology.id outside the topic's bound set -> non-zero;
 #   - an entity failing the resolved type's required fields -> non-zero.
-# Classification (which type a finding resembles) is an upstream agent step that
-# stamps entity.entity_type; this script only resolves + validates + records.
+# A typed finding (entity.entity_type stamped by the analyst) is resolved + validated +
+# recorded. An UNTYPED finding falls back to deterministic classification from the bound
+# domain ontologies' OWN discovery patterns (content_pattern -> suggest_entity) before being
+# recorded untyped — so findings express a domain type instead of defaulting to generic.
 #
 # Usage: resolve-ontology.sh <finding.json> [--topic <id>] [--catalog <p>] [--config <p>]
 #   exit 0 = resolved or untyped; non-zero = unresolvable / invalid / environment broken.
@@ -73,11 +75,52 @@ record() { # entity_type resolved_ontology basis valid
   fi
 }
 
-# 1. Untyped finding (no entity block, no ontology ref) -> nothing to resolve.
+# Portable (bash 3.2 — no associative arrays): resolve an ontology id to its cataloged
+# source path. Empty result = not cataloged/enabled. (Defined here so the discovery
+# fallback below can use it; the binding resolution further down uses it too.)
+src_of() { jq -r --arg id "$1" '.ontologies[]? | select(.id==$id) | .source' "$CATALOG" | head -1; }
+
+# Deterministic classification fallback — reuses the ontology's OWN discovery metadata
+# (NOT a separate classifier): apply the topic's bound DOMAIN ontologies' discovery
+# content_patterns (content_pattern -> suggest_entity) to the finding text. Echoes
+# "<entity_type>\t<ontology_id>" on a match (suggest_entity must be a type the ontology
+# declares), empty otherwise. Deterministic (ontologies + patterns sorted).
+classify_from_discovery() {
+  [ -n "$TOPIC" ] && [ -f "$CATALOG" ] || return 0
+  local bound aid src od disc='[]' text hit
+  bound=$(jq -r --arg t "$TOPIC" '.topics[]? | select(.id==$t) | .ontologies[]?' "$CONFIG" 2>/dev/null | sed 's/@.*//' | sort -u)
+  [ -n "$bound" ] || return 0
+  for aid in $bound; do
+    src="$(src_of "$aid")"; [ -z "$src" ] && continue
+    od=$(yq -o=json '.' "$ROOT/$src" 2>/dev/null) || continue
+    disc=$(jq -c --arg ont "$aid" --argjson o "$od" '
+      . + ([ ($o.entity_types // [] | map(.name)) as $types
+             | ($o.discovery.patterns // [])[] | . as $p
+             | select($p.content_pattern and $p.suggest_entity and ($types | index($p.suggest_entity)))
+             | {pattern:$p.content_pattern, type:$p.suggest_entity, ont:$ont} ])' <<<"$disc" 2>/dev/null) || return 0
+  done
+  text=$(jq -r 'del(.["@context","@type","@id"]) | [.. | strings] | join(" ")' "$FINDING" 2>/dev/null)
+  [ -n "$text" ] || return 0
+  hit=$(jq -rn --arg t "$text" --argjson d "$disc" '
+    [ $d[] | . as $e | select(try ($t | test($e.pattern; "i")) catch false) ]
+    | sort_by(.type, .ont) | if length==0 then "" else "\(.[0].type)\t\(.[0].ont)" end' 2>/dev/null)
+  printf '%s' "$hit"
+}
+
+# 1. Untyped finding (no entity block, no ontology ref). Try a deterministic discovery-
+#    pattern classification before recording it untyped.
 has_entity=false; jq -e 'has("entity") and (.entity != null)' "$FINDING" >/dev/null 2>&1 && has_entity=true
 if [ -z "$et" ] && [ -z "$oid" ] && [ "$has_entity" != true ]; then
+  dhit=$(classify_from_discovery)
+  if [ -n "$dhit" ]; then
+    det=$(printf '%s' "$dhit" | cut -f1); dont=$(printf '%s' "$dhit" | cut -f2)
+    dver=$(yq -r '.ontology.version' "$ROOT/$(src_of "$dont")" 2>/dev/null)
+    record "$det" "$dont@$dver" "discovery" true
+    echo "resolve-ontology: $fid classified as $det via $dont discovery pattern — ok"
+    exit 0
+  fi
   record "" "" "untyped" true
-  echo "resolve-ontology: $fid is untyped (no entity/ontology) — ok"
+  echo "resolve-ontology: $fid is untyped (no entity/ontology, no discovery match) — ok"
   exit 0
 fi
 # 1b. Typing intent present (entity block or ontology ref) but entity_type empty ->
@@ -94,10 +137,6 @@ fi
 
 # 3. Build the topic's BOUND set: core (always) + this topic's bound ids (each of
 #    which MUST be cataloged/enabled). An explicit binding to a non-cataloged id fails.
-# Portable (bash 3.2 — no associative arrays): resolve an ontology id to its
-# cataloged source path. Empty result = not cataloged/enabled.
-src_of() { jq -r --arg id "$1" '.ontologies[]? | select(.id==$id) | .source' "$CATALOG" | head -1; }
-
 core_ids=$(jq -r '.ontologies[]? | select(.core) | .id' "$CATALOG")
 allowed=""
 for c in $core_ids; do allowed="$allowed $c"; done
