@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://research-harness.dev/schema/artifact.schema.json",
   "title": "Findings-to-Artifact Contract",
-  "description": "The typed intermediate the report-synthesizer produces from surviving findings and that every output channel renders (SPEC §6d). It separates the two orthogonal axes — the deliverable genre (what the document is) and the delivery channel (how it is rendered). Blog and book are first-class channels; other channels arrive via the channels pack. Every section traces to the MIF finding @ids it draws on, and every source is a MIF-shaped citation, so the citation-integrity and citation-leak gates run uniformly across all outputs.",
+  "description": "The typed intermediate the report-synthesizer produces from surviving findings and that every output channel renders (SPEC §6d). It separates the two orthogonal axes — the deliverable genre (what the document is) and the delivery channel (how it is rendered). Blog is the first-class channel; book and other channels arrive via optional channel packs. Every section traces to the MIF finding @ids it draws on, and every source is a MIF-shaped citation, so the citation-integrity and citation-leak gates run uniformly across all outputs.",
   "type": "object",
   "required": ["@type", "title", "genre", "sections", "sources", "finding_refs"],
   "additionalProperties": false,

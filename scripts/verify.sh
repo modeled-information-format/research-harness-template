@@ -435,7 +435,7 @@ gate_m6() {
   done
   # book-author must NOT remain a flat core skill, and must live in the book channel pack.
   [ -f ".claude/skills/book-author/SKILL.md" ] && smiss="${smiss}book-author-still-flat "
-  if [ -f "packs/channels/book/skills/book-author/SKILL.md" ] && grep -q '"kind": "channel"' packs/channels/book/.claude-plugin/plugin.json; then :; else
+  if [ -f "packs/channels/book/skills/book-author/SKILL.md" ] && jq -e '.kind=="channel"' packs/channels/book/.claude-plugin/plugin.json >/dev/null 2>&1; then :; else
     smiss="${smiss}book-pack-missing "
   fi
   if [ -z "$smiss" ]; then
@@ -1308,16 +1308,19 @@ gate_m14() {
   local HK=".claude/hooks/guard-falsify-gate.sh"
   mkdir -p "$T/reports/tA/findings"
   hd() { local o; o=$(printf '%s' "$1" | CLAUDE_PROJECT_DIR="$T" bash "$HK" 2>/dev/null); [ -z "$o" ] && echo allow || printf '%s' "$o" | jq -r '.hookSpecificOutput.permissionDecision'; }
-  local d_no d_yes d_rep
+  local d_no d_yes d_rep d_stale
   rm -f "$T/reports/tA/.gate-active"
   d_no=$(hd '{"tool_input":{"command":"scripts/falsify.sh reports/tA/findings/f.json fx"}}')
   touch "$T/reports/tA/.gate-active"
   d_yes=$(hd '{"tool_input":{"command":"scripts/falsify.sh reports/tA/findings/f.json fx"}}')
   d_rep=$(hd '{"tool_input":{"command":"scripts/falsify.sh reports/tA/report-finding.json fx"}}')
-  if [ "$d_no" = deny ] && [ "$d_yes" = allow ] && [ "$d_rep" = allow ]; then
-    ok "phase-gate hook: findings-grade denied without the topic window, allowed within it; report-finding always allowed"
+  # A STALE marker (left by a crashed gate) ages out of the freshness window -> denied.
+  touch -t 200001010000 "$T/reports/tA/.gate-active"
+  d_stale=$(hd '{"tool_input":{"command":"scripts/falsify.sh reports/tA/findings/f.json fx"}}')
+  if [ "$d_no" = deny ] && [ "$d_yes" = allow ] && [ "$d_rep" = allow ] && [ "$d_stale" = deny ]; then
+    ok "phase-gate hook: denied without the window, allowed within a fresh window, denied on a STALE window; report-finding always allowed"
   else
-    bad "phase-gate hook wrong (no-window=$d_no window=$d_yes report=$d_rep)"
+    bad "phase-gate hook wrong (no-window=$d_no fresh=$d_yes report=$d_rep stale=$d_stale)"
   fi
 
   rm -rf "$T"

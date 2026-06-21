@@ -90,7 +90,7 @@
     },
     "outputs": {
       "type": "array",
-      "description": "Enabled output channels. blog and book are always-on first-class outputs (SPEC §6d); others arrive via the channels pack. The generic `report` channel (reports/<topic>/<slug>.md) is the canonical MIF Level-3 source of truth and is never exempt; the channels here are projections of it.",
+      "description": "Enabled output channels. blog is the always-on first-class output (SPEC §6d); book and other channels arrive via optional channel packs. The generic `report` channel (reports/<topic>/<slug>.md) is the canonical MIF Level-3 source of truth and is never exempt; the channels here are projections of it.",
       "items": {
         "type": "object",
         "required": ["channel"],

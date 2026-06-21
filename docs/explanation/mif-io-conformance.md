@@ -26,7 +26,7 @@ provenance, and the falsification verdict; its body is the human-readable conten
 `findings.schema.json`.
 
 The generic `report` channel is the **canonical source of truth**. The published
-channels (`blog`, `book`, and channel packs) are **projections** of the same
+channels (`blog` and channel packs, including `book`) are **projections** of the same
 artifact, rendered for human/format-specific consumption. They declare exemption
 because their formats are orthogonal to MIF — the citation-leak gate keeps published
 prose free of internal MIF identity, so the MIF lives in the report, not the post.
