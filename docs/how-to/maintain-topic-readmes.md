@@ -54,8 +54,9 @@ bash scripts/build-topic-readme.sh <topic> --check    # structural validation ga
 
 - the README exists and has every required section (Purpose, Dimensions, Key
   Findings, Reports, Findings by Dimension, Tags);
-- the stated `**Findings:** N` count matches the finding files on disk; and
-- every report linked in the Reports table exists.
+- the stated `**Findings:** N` count matches the finding files on disk;
+- the Key Findings are synthesized, not the auto-generated draft; and
+- every file linked in any table (Reports and the optional Artifacts table) exists.
 
 Markdown formatting is enforced separately by the bundled `md_guard` hook on
 write. A just-created topic with zero findings still produces a valid README.

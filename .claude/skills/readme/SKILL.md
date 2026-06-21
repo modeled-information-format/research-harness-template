@@ -16,7 +16,7 @@ modeled on a research corpus's per-directory READMEs. Its structure:
 
 **Research ID:** <slug>
 **Created:** <date> | **Updated:** <date>
-**Findings:** <N> (survived S, weakened W) | **Sources:** <N>+ unique URLs
+**Findings:** <N> (survived S, weakened W) | **Sources:** <N> unique URLs
 **Status:** <status>
 
 ---

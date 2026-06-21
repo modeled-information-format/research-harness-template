@@ -86,7 +86,7 @@ read_findings() {
       verdicts: (reduce .[] as $f ({};
         .[($f.extensions.harness.verification.verdict // "none")] += 1)),
       by_dim: ([.[] | (.extensions.harness.dimension // "unspecified")]
-        | group_by(.) | map({dim: .[0], count: length})
+        | sort | group_by(.) | map({dim: .[0], count: length})
         | sort_by(-.count)),
       key: (
         map(select((.extensions.harness.verification.verdict // "") as $v

@@ -12,7 +12,6 @@
 
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 2
-ROOT="$(pwd)"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
