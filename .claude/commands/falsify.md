@@ -86,10 +86,18 @@ progress stops. The one-round rule (`attempted_at`) makes a re-spawn idempotent 
 already-gated finding is skipped — so re-gating the remainder never re-grades and always
 resumes cleanly (this is also what makes re-running `/falsify` safe).
 
-**Open the gate window once** (`scripts/falsify.sh` is blocked outside it by the
-`guard-falsify-gate.sh` PreToolUse hook), then loop:
+**Acquire the topic run lock, then open the gate window once** (`scripts/falsify.sh`
+is blocked outside the window by the `guard-falsify-gate.sh` PreToolUse hook). The
+run lock serializes this standalone gate against a concurrent orchestrator (or a
+second `/falsify`) on the same topic — both mutate the shared `findings/`, and two
+at once corrupt it. If the lock is held by a live run, STOP and tell the user a run
+already owns this topic; do not gate. Release it in Phase 4.
 
 ```bash
+if ! scripts/run-lock.sh acquire "$REPORTS_DIR" "falsify"; then
+  echo "Another live run owns $REPORTS_DIR — not gating (it would race the active writer)." >&2
+  exit 3
+fi
 touch "$REPORTS_DIR/.gate-active"          # opens THIS topic's gate window
 CLAIM_BUDGET={claim_budget}                 # the gate budget passed to each slice (default 50)
 BATCH=$(( CLAIM_BUDGET < 12 ? CLAIM_BUDGET : 12 ))   # a slice must NOT exceed CLAIM_BUDGET or the analyst fail-louds
@@ -103,8 +111,9 @@ ungated(){ for f in "$REPORTS_DIR"/findings/*.json; do [ -e "$f" ] || continue  
 
 Each round:
 
-1. **Refresh the window** — `touch "$REPORTS_DIR/.gate-active"` so the marker never ages past the
-   hook's freshness bound (`-mmin -240`) during a long multi-slice loop. Then
+1. **Refresh the window and run lock** — `touch "$REPORTS_DIR/.gate-active"` and
+   `scripts/run-lock.sh refresh "$REPORTS_DIR"` so neither marker ages past its freshness bound
+   (`-mmin -240`) during a long multi-slice loop. Then
    `ungated | head -n "$BATCH" > "$REPORTS_DIR/.gate-batch"`; `REM=$(ungated | wc -l)`.
 2. **If `REM` is 0 the gate is COMPLETE** — break the loop.
 3. Spawn ONE analyst over the slice (`SCOPE: batch:$REPORTS_DIR/.gate-batch`), Phase 2b below.
@@ -190,9 +199,13 @@ steps:
 ## Phase 4: Done
 
 There is no team to tear down — each slice's verdicts and remediation are persisted in the
-finding files on disk (the gate window is closed in Phase 2). Confirm the window marker is
-gone (`ls "$REPORTS_DIR"/.gate-active` returns nothing) so a future gate is not left runnable,
-then report and stop.
+finding files on disk (the gate window is closed in Phase 2). **Release the topic run lock**
+and confirm both markers are gone so a future gate is not left runnable, then report and stop:
+
+```bash
+scripts/run-lock.sh release "$REPORTS_DIR"
+ls "$REPORTS_DIR"/.gate-active "$REPORTS_DIR"/.run-lock 2>/dev/null   # expect: nothing
+```
 
 ## Integration note
 
