@@ -131,6 +131,9 @@ the relevant dimension's set.
 
 ## Quality standards
 
+- **Completeness over curation** — emit every high-confidence finding the document
+  yields; do not rank-and-cut to a curated top-N. The harness keeps the complete set
+  and the report-synthesizer decides what to foreground.
 - Preserve every significant finding from every chunk.
 - Maintain source attribution through chunking so each returned finding can carry
   a citation.

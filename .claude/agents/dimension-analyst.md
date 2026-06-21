@@ -63,7 +63,9 @@ clone declares whatever dimensions its goal needs (`technical`, `landscape`,
 
 You MUST use WebSearch and WebFetch to gather real, current evidence. Do NOT
 fabricate findings, invent statistics, or write from training data alone. Every
-finding is backed by a source you actually retrieved. Run at least 5 web searches.
+finding is backed by a source you actually retrieved. Run enough searches to surface
+the dimension's full high-confidence set — at least 5, and materially more when the
+topic is rich; a handful of searches yields only a handful of findings.
 If WebSearch is unavailable, report the limitation — never substitute fabricated
 data.
 
@@ -151,6 +153,16 @@ hand a source off mid-run. Use an explicit threshold:
   Step 7) so the orchestrator routes a source-chunker over it.
 
 ## Step 4 — Compose each finding as a MIF memory unit
+
+**Completeness over curation.** Compose a finding for EVERY distinct result your
+research surfaced that clears the quality bar — a well-evidenced, on-scope claim at
+`confidence >= 0.7` with the required citations. Do NOT rank-and-cut to a handful:
+the harness keeps the COMPLETE high-confidence set, and the report-synthesizer — not
+you — decides what any given deliverable foregrounds. Returning a curated "top 3–5"
+instead of the full high-quality, impactful set is the failure mode to avoid; a
+thorough dimension commonly yields tens of findings, not five. The only ceiling is a
+runaway guardrail of ~50 findings per dimension — if you reach it, note it in
+`unresolved_gaps`; never stop early because you "have enough."
 
 Each finding is a single MIF concept. The fields **you** are responsible for:
 
@@ -300,6 +312,8 @@ the orchestrator's index into them and its signal that you are done.
 
 ## Output
 
-Return a brief summary: number of findings, the methodology used, top 3–5 key
-insights, confidence assessment, and any unresolved gaps. The findings themselves
-live as validated MIF JSON files in `$REPORTS_DIR`.
+Return a brief summary: number of findings, the methodology used, the high-quality,
+impactful key results, confidence assessment, and any unresolved gaps. (Summarizing
+a few highlights here is fine — but every high-confidence finding must already be
+WRITTEN to disk; the summary never substitutes for the complete finding set.) The
+findings themselves live as validated MIF JSON files in `$REPORTS_DIR`.
