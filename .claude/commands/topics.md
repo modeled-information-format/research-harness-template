@@ -66,7 +66,7 @@ the output:
 /start --topic <id>          # start (needs a goal — author with /goal-writer)
 /status --topic <id>         # current session state
 /resume --topic <id>         # continue a session
-/augment <dimension> --topic <id>   # deepen one config-declared dimension
+/start --augment <dimension> --topic <id>   # deepen one config-declared dimension
 /falsify --topic <id>        # re-run the adversarial gate
 ```
 

@@ -117,8 +117,8 @@ session resolves it before fan-out:
    surviving findings only feed synthesis; do not delete or overwrite prior
    findings.
 4. **A real bound.** Set `max_rounds` and `min_dimensions_complete`. On an unmet
-   check within bound, the remedy is a targeted `/augment <dimension>`, not a full
-   re-run.
+   check within bound, the remedy is a targeted `/start --augment <dimension>`, not a
+   full re-run.
 5. **Concrete values.** Real integer counts, a real `topic` id, the
    config-declared dimension names. When a value is genuinely unknown, add a
    clarifying question — never a placeholder like `[DIMENSION]` or `[TOPIC]`.
@@ -204,7 +204,7 @@ active findings validate against the MIF-backed schema; the falsification gate r
 exactly once over the set; and `scripts/check-citation-integrity.sh` exits 0.
 Constraints: findings are individual MIF units under reports/template-distribution/;
 no fabricated URLs; surviving findings only feed synthesis. Bound: stop after 3
-rounds and report unmet checks; remedy a thin dimension with `/augment <dimension>`.
+rounds and report unmet checks; remedy a thin dimension with `/start --augment <dimension>`.
 
 The authoritative completion checks are defined in
 reports/template-distribution/goal.json (`completion_condition.checks`); this run is

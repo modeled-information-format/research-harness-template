@@ -80,14 +80,14 @@ disconfirming findings; weak/falsified ids go only in the disconfirming column.
 - **Non-`survived` verdicts are tripwires** — surface them whenever an affected
   finding enters the conversation.
 - **Say "the corpus doesn't cover this"** when it doesn't — gaps are findings
-  too; hand them to `/discover --gaps` or `/augment`.
+  too; hand them to `/discover --gaps` or `/start --augment`.
 
 ## Handoffs
 
 | Conversation surfaces | Hand off to |
 | --- | --- |
 | A pure retrieval need | `/search <query>` |
-| A coverage gap or thin dimension | `/discover --gaps` or `/augment <dimension> <topic>` |
+| A coverage gap or thin dimension | `/discover --gaps` or `/start --augment <dimension> --topic <topic>` |
 | A relationship/visualization question | `/graph` |
 | A claim needing adversarial web verification | `/falsify` |
 | An idea worth becoming new research | `/start` |

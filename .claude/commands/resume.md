@@ -55,7 +55,7 @@ Set `TOPIC=<topic>`, `REPORTS_DIR="reports/$TOPIC"`, `GOAL_FILE="$REPORTS_DIR/go
    If `goal.json` is missing, stop: "No session goal for `<topic>`; author one
    with `/goal-writer` and `/start` fresh." If the last entry is
    **Session Complete** and all checks held, tell the user the session is already
-   done (suggest `/status`, `/augment`, `/falsify`) and ask whether to resume
+   done (suggest `/status`, `/start --augment`, `/falsify`) and ask whether to resume
    anyway.
 
 3. **Reconcile remaining work from disk (authoritative).** Derive the structured
@@ -138,4 +138,4 @@ or inspect `reports/<topic>/research-progress.md` directly.
 
 - Updated `reports/<topic>/research-progress.md` with the continued phase log.
 - Refreshed active finding set under `reports/<topic>/`.
-- Next steps: `/status`, `/augment <dimension>`, `/falsify`.
+- Next steps: `/status`, `/start --augment <dimension>`, `/falsify`.

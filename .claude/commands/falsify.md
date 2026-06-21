@@ -137,8 +137,8 @@ Present the verdict counts, the report path
 (`reports/<topic>/{date}-falsification-report.md`), the quarantined finding ids,
 and next steps:
 
-- If any finding was **falsified**, recommend `/augment <affected-dimension>` to
-  re-research with the disconfirming evidence in mind before synthesizing.
+- If any finding was **falsified**, recommend `/start --augment <affected-dimension>`
+  to re-research with the disconfirming evidence in mind before synthesizing.
 - Otherwise the active set is the surviving + downgraded findings; suggest
   `/status` or `/resume`.
 
@@ -150,6 +150,6 @@ and remediation are persisted in the finding files. Report and stop.
 ## Integration note
 
 The orchestrator runs this same gate as its Phase 2 inside every session. Use
-`/falsify` standalone to re-test a finding set (e.g. after `/augment`), or to
+`/falsify` standalone to re-test a finding set (e.g. after `/start --augment`), or to
 falsify a single finding by `@id`. The one-round rule means a finding already
 carrying a verdict this session is passed through unchanged.

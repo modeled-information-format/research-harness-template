@@ -1,7 +1,7 @@
 ---
 name: start
-description: Start a new research session. Ensures a session goal exists, registers the topic, then delegates to the orchestrator agent in full mode.
-argument-hint: "[--topic <id>] [--goal <path>] [<research ask>]"
+description: Start or extend a research session. Full mode (default) ensures a goal exists, registers the topic, and delegates to the orchestrator; --augment [<dimension>] deepens one dimension (or every thin dimension if omitted) and --update re-runs changed dimensions against the existing goal.
+argument-hint: "[--topic <id>] [--goal <path>] [--augment [<dimension>]] [--update] [<research ask>]"
 allowed-tools:
   - Agent
   - AskUserQuestion
@@ -14,12 +14,13 @@ allowed-tools:
 
 # Start
 
-Begins a new research session and delegates to the `orchestrator` agent in
-`full` mode. The orchestrator is **goal-driven** (SPEC §2, §6b): it consumes a
-session goal (`schemas/goal.schema.json`) and loops fan-out → falsify →
-synthesize until the goal's `completion_condition.checks` hold or its `bound` is
-hit. It does NOT run elicitation — this command's job is to ensure a valid
-`GOAL_FILE` exists, register the topic, and spawn the orchestrator.
+Begins a new research session (default) — or **extends** an existing one with
+`--augment`/`--update` — and delegates to the `orchestrator` agent in the matching
+mode (`full | augment | update`). The orchestrator is **goal-driven** (SPEC §2,
+§6b): it consumes a session goal (`schemas/goal.schema.json`) and loops fan-out →
+falsify → synthesize until the goal's `completion_condition.checks` hold or its
+`bound` is hit. It does NOT run elicitation — this command's job is to ensure a
+valid `GOAL_FILE` exists, register the topic, and spawn the orchestrator.
 
 ## Arguments
 
@@ -30,7 +31,22 @@ backticks and angle brackets.
   derive from the ask: lowercase, hyphenate, truncate to 40 chars.
 - `--goal <path>` — path to an existing validated `goal.json`. If omitted, look
   for `reports/<topic>/goal.json`.
-- Remaining text is the raw research ask.
+- `--augment [<dimension>]` — extend an EXISTING session (orchestrator `augment`
+  mode): with a dimension, re-research that single config-declared dimension to add
+  more findings; with no dimension, re-research EVERY config-declared dimension. The
+  named dimension is honored unconditionally — the harness does not second-guess
+  which dimensions "need" it. Gates the new findings and merges. Requires an existing
+  goal and prior findings; never authors a goal or overwrites progress.
+- `--update` — re-run the dimensions whose inputs changed against the existing goal
+  (orchestrator `update` mode). Requires an existing goal.
+- Remaining text is the raw research ask (full mode only).
+
+Resolve the **mode** from these flags: `--augment [<dimension>]` → `MODE=augment`
+with `DIMENSION=<dimension>` (empty when the dimension is omitted); `--update` →
+`MODE=update`; otherwise `MODE=full`. `--augment` and `--update` are mutually
+exclusive and operate only on a topic that already has a goal and prior findings —
+if either is missing, tell the user to run `/start` (full) first; do NOT author a
+goal or fan out all dimensions for them.
 
 ## Phase 0: Resolve the session goal
 
@@ -66,7 +82,11 @@ when present; otherwise use the `--topic`/derived id. Set
 ls "reports/$TOPIC/research-progress.md" 2>/dev/null
 ```
 
-If a progress file exists, prior research is present. Ask:
+**In `augment`/`update` mode, skip this prompt** — they always extend the existing
+session. If no progress file exists in those modes there is nothing to extend: tell
+the user to run `/start` (full) first, and stop.
+
+In `full` mode, if a progress file exists, prior research is present. Ask:
 
 > Previous research found for `<topic>`. Resume it (`/resume`), or start fresh
 > (overwrites prior progress)?
@@ -132,17 +152,21 @@ core-only is valid — its findings simply stay untyped.
 
 ## Phase 3: Delegate to the orchestrator
 
-Spawn the `orchestrator` agent in `full` mode with the inputs its
-"Inputs (spawn prompt)" contract requires:
+Spawn the `orchestrator` agent in the resolved `{MODE}` with the inputs its
+"Inputs (spawn prompt)" contract requires. Pass `DIMENSION` only in `augment` mode
+(the single dimension to deepen, or empty to deepen every thin dimension); omit it
+otherwise:
 
 ```text
 Agent(
   subagent_type: "orchestrator",
   name: "orchestrator",
   prompt: """
-    You are the research orchestrator for a NEW session.
+    You are the research orchestrator for this session ({MODE} mode).
 
-    MODE: full
+    MODE: {MODE}                      — full | update | augment
+    DIMENSION: {DIMENSION}            — augment mode only: the single dimension to deepen
+                                        (empty = deepen every config-declared dimension)
     GOAL_FILE: {GOAL_FILE}            — the validated session goal; research toward it
     TOPIC: <user_input>{topic}</user_input>
     TOPIC_SLUG: {TOPIC}
@@ -151,11 +175,12 @@ Agent(
     QUERY_BUDGET: 6
     CLAIM_BUDGET: 50
 
-    Execute the full goal-driven orchestration per your agent definition:
-    Phase 0 (load+validate goal, team, progress) → Phase 1 (fan out
-    dimension-analysts across the goal's dimensions[]) → Phase 2 (single
-    falsification gate) → Phase 3 (completion check / loop to bound) →
-    Phase 4 (synthesize surviving findings, render progress, cleanup).
+    Execute the goal-driven orchestration for this MODE per your agent definition:
+    Phase 0 (load+validate goal, progress) → Phase 1 (fan out dimension-analysts —
+    full: every goal dimension; update: only changed dimensions; augment: the single
+    DIMENSION, or every declared dimension when DIMENSION is empty) → Phase 2 (single
+    falsification gate over the new findings) → Phase 3 (completion check / loop to
+    bound) → Phase 4 (synthesize surviving findings, render progress, cleanup).
 
     Follow all protocols in your agent definition.
   """
@@ -182,4 +207,4 @@ After completion:
 - Findings as individual MIF units under `reports/<topic>/`.
 - Continuity log at `reports/<topic>/research-progress.md`.
 - Quarantined (falsified) findings under `reports/<topic>/quarantine/`.
-- Next steps: `/status`, `/augment <dimension>`, `/falsify`, `/resume`.
+- Next steps: `/status`, `/start --augment [<dimension>]`, `/falsify`, `/resume`.

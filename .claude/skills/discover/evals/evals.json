@@ -61,7 +61,7 @@
       ],
       "expectations": [
         "gaps.md identifies landscape and trajectory as the coverage gaps (zero findings) and does not present technical as a gap.",
-        "The report recommends a concrete next step for the empty dimensions (e.g. running /augment to fill them), per the skill's guidance.",
+        "The report recommends a concrete next step for the empty dimensions (e.g. running /start --augment to fill them), per the skill's guidance.",
         "The dimension taxonomy is read from harness.config.json, not hard-coded — all three configured dimensions appear in the rollup."
       ]
     },
@@ -213,7 +213,7 @@
     {
       "id": 5,
       "prompt": "Check coverage gaps on the balanced sample corpus where every config-declared dimension has exactly one finding — the normal healthy state. Read $CLAUDE_PROJECT_DIR/harness.config.json for the dimension taxonomy and $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/research-index.json for the index. Write the gap-coverage rollup as `{\"coverage\": [{\"dimension\": <id>, \"findings\": <count>}]}` to `gaps-balanced.json` and a readable table to `gaps-balanced.md`. Do NOT create a skewed corpus — use the sample index as-is.",
-      "expected_output": "gaps-balanced.json showing technical=1, landscape=1, trajectory=1. No dimension has 0 findings. gaps-balanced.md contains all three dimensions in the table and does NOT flag any of them as a gap or emit /augment recommendations.",
+      "expected_output": "gaps-balanced.json showing technical=1, landscape=1, trajectory=1. No dimension has 0 findings. gaps-balanced.md contains all three dimensions in the table and does NOT flag any of them as a gap or emit /start --augment recommendations.",
       "files": [],
       "deterministic_checks": [
         {
@@ -263,7 +263,7 @@
       ],
       "expectations": [
         "No dimension is flagged as a coverage gap — each of the three config-declared dimensions has exactly 1 finding and none is at 0 or far below the corpus mean.",
-        "No /augment commands are recommended because the corpus is uniformly balanced."
+        "No /start --augment commands are recommended because the corpus is uniformly balanced."
       ]
     },
     {

@@ -91,6 +91,9 @@ You receive one mode in your spawn prompt:
 - `GOAL_FILE` — path to the validated session goal JSON.
 - `TOPIC` / `TOPIC_SLUG` — topic id; `REPORTS_DIR` = `reports/<topic_slug>`.
 - `MODE` — `full | update | augment`.
+- `DIMENSION` — `augment` mode only: the single config-declared dimension to deepen,
+  honored unconditionally. Empty/absent in augment mode means deepen EVERY
+  config-declared dimension. Ignored in `full` / `update`.
 - `MAX_CONCURRENCY` — cap on simultaneous dimension-analysts (default 3).
 - `QUERY_BUDGET` / `CLAIM_BUDGET` — falsification budgets passed through to the
   gate (defaults 6 and 50). These are spawn-prompt parameters, not config fields.
@@ -146,7 +149,8 @@ You receive one mode in your spawn prompt:
 ## Phase 1: Fan out dimension-analysts (capped concurrency)
 
 For each dimension in the goal's `dimensions[]` (in `update` mode, only changed
-dimensions; in `augment` mode, the single new dimension), running at most
+dimensions; in `augment` mode, the single `DIMENSION` from the spawn prompt — or,
+when `DIMENSION` is empty, every config-declared dimension), running at most
 `MAX_CONCURRENCY` at a time:
 
 1. Create a task for your own tracking: `TaskCreate("Research: {dimension}")` —
@@ -412,8 +416,8 @@ Append to the progress file:
    - Quarantined: {N} (falsified — see quarantine/)
 
    ## Next Steps
-   - `/augment <dimension>` — add a dimension
-   - `/update` — refresh with latest data
+   - `/start --augment [<dimension>]` — deepen a dimension (all thin if omitted)
+   - `/start --update` — refresh with latest data
    - `/resume` — continue this session
    ```
 

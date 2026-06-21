@@ -89,8 +89,8 @@ Show a compact status:
 - **Findings** — active count, verdict roll-up (survived / weakened /
   inconclusive / ungraded), and quarantined (falsified) count.
 - **Last phase** — the most recent phase-log entry from the progress file.
-- **Next steps** — `/resume` to continue, `/augment <dimension>` to deepen a thin
-  dimension, `/falsify` to re-run the gate, `/start` for a fresh session.
+- **Next steps** — `/resume` to continue, `/start --augment <dimension>` to deepen a
+  named dimension, `/falsify` to re-run the gate, `/start` for a fresh session.
 
 If `goal.json` is absent, say so plainly — the session has no contract to gate
 against; recommend `/goal-writer`.

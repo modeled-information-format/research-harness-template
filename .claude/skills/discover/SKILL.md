@@ -44,7 +44,7 @@ jq -n \
 ```
 
 Present as a table; flag any dimension at 0, or far below the corpus mean, and
-recommend `/augment <dimension> <topic>` to fill it.
+recommend `/start --augment <dimension> --topic <topic>` to fill it.
 
 ## Clusters
 
