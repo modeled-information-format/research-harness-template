@@ -1359,20 +1359,18 @@ gate_m15() {
     bad "goal-version wrong (h1=$h1 h2=$h2 lineage=$hl content=$hc)"
   fi
 
-  # 15b. A versioned goal validates against the schema with RFC 3339 date formats
-  #      enforced (revision.date is format:date) — -c ajv-formats, the canonical
-  #      validation path, so the format is checked rather than ignored.
-  if ajv validate --spec=draft2020 --strict=false -c ajv-formats \
-       -s schemas/goal.schema.json -d "$T/gl.json" >/dev/null 2>&1; then
+  # 15b. A versioned goal validates against the schema. ajv_plain carries
+  #      -c ajv-formats, so revision.date's RFC 3339 format:date is enforced, not
+  #      ignored — use the canonical helper rather than re-spelling the flags.
+  if ajv_plain schemas/goal.schema.json "$T/gl.json"; then
     ok "a versioned goal (version/supersedes/revision) validates against goal.schema.json"
   else
     bad "versioned goal failed goal.schema.json"
   fi
-  # revision.date is RFC 3339 format:date and is ENFORCED under -c ajv-formats:
-  # a non-date string is rejected (it would be silently ignored without -c).
+  # revision.date is RFC 3339 format:date and is ENFORCED (ajv-formats): a non-date
+  # string is rejected — it would be silently ignored without the formats plugin.
   jq '.revision.date = "June 1 2026"' "$T/gl.json" > "$T/gbad.json"
-  if ajv validate --spec=draft2020 --strict=false -c ajv-formats \
-       -s schemas/goal.schema.json -d "$T/gbad.json" >/dev/null 2>&1; then
+  if ajv_plain schemas/goal.schema.json "$T/gbad.json"; then
     bad "a malformed revision.date was accepted (RFC date format not enforced)"
   else
     ok "a malformed revision.date is rejected (RFC 3339 date format enforced)"

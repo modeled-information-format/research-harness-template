@@ -19,7 +19,7 @@ You produce TWO things, in this order:
 
 1. **A goal JSON file** — `reports/<topic>/goal.json`, valid against
    `schemas/goal.schema.json`. This is the `GOAL_FILE` the orchestrator loads in
-   its Phase 0 (`ajv validate -c ajv-formats -s schemas/goal.schema.json -d "$GOAL_FILE"`).
+   its Phase 0 (`ajv validate --spec=draft2020 --strict=false -c ajv-formats -s schemas/goal.schema.json -d "$GOAL_FILE"`).
 2. **The `/goal` prose** — a short paragraph the user can drop into Claude
    Code's `/goal`, describing the same measurable end state in plain language.
 

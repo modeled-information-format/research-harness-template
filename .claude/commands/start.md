@@ -61,7 +61,7 @@ goal or fan out all dimensions for them.
 ## Phase 0: Resolve the session goal
 
 The orchestrator's Phase 0 runs
-`ajv validate -c ajv-formats -s schemas/goal.schema.json -d "$GOAL_FILE"` and stops if the goal
+`ajv validate --spec=draft2020 --strict=false -c ajv-formats -s schemas/goal.schema.json -d "$GOAL_FILE"` and stops if the goal
 is missing or invalid. So a valid `GOAL_FILE` must exist before delegation.
 
 1. If `--goal <path>` was given, set `GOAL_FILE` to it.
