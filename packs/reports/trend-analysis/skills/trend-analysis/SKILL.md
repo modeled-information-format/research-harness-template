@@ -54,3 +54,5 @@ observation's date so trajectory claims are time-anchored.
 - State confidence per scenario; surface findings whose verdict is `weakened` or
   `inconclusive` rather than hiding them. Exclude `falsified` units.
 - Present ranges, not false precision, when sources disagree.
+- **Exhaustive coverage**: build the report from the FULL surviving findings corpus — every surviving finding is treated with its own evidence (claim, citations, entities), never condensed to a cherry-picked subset. A silently dropped finding is a defect.
+- **MIF level**: rendered through the `report` channel at MIF Level 3 (authoritative concept frontmatter + falsification verdict); any published projection (blog/book) is at least MIF Level 1 — never bare, frontmatter-less prose.

@@ -45,7 +45,7 @@
       "channel": "blog",
       "enabled": true,
       "mifExempt": true,
-      "mifExemptReason": "Published blog prose is orthogonal to MIF: the citation-leak gate keeps it free of internal MIF identity, so the MIF source of truth lives in the report channel, not the post."
+      "mifExemptReason": "Published blog prose is a MIF Level-1 output — its frontmatter carries the post's own urn:mif:blog: concept identity — but is exempt from the L3 I/O conformance gate because its published FORMAT is orthogonal to the L3 report. The body carries no internal finding identity (citation-leak gate); the canonical L3 source of truth is the report channel."
     }
   ],
   "freshness": {
@@ -68,6 +68,11 @@
   "packs": [
     {
       "name": "book",
+      "enabled": false,
+      "source": "bundled"
+    },
+    {
+      "name": "diataxis",
       "enabled": false,
       "source": "bundled"
     },

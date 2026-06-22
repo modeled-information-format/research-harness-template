@@ -65,3 +65,5 @@ URNs in the output. No bibliography — footnotes only.
   "was found to", "were identified", "is provided by", "it was determined". Rewrite as active:
   write "Three controlled pilots show 40% efficiency gains" not "the 40% reduction is drawn
   from three controlled pilots".
+- **Account for every finding**: synthesize across the ENTIRE surviving corpus. Compress to summary altitude, but never silently drop a finding — fold thin, weakened, or inconclusive ones into the picture rather than omitting them (only `falsified` units leave zero trace).
+- **MIF level**: rendered through the `report` channel at MIF Level 3 (≥ Level 1 minimum) — never bare, frontmatter-less prose.

@@ -38,7 +38,7 @@
         {
           "type": "file_not_contains",
           "file": "chapter.md",
-          "literal": "urn:mif:",
+          "literal": "urn:mif:concept:",
           "description": "No MIF internal URN identifiers leak into the manuscript"
         },
         {
@@ -135,7 +135,7 @@
         {
           "type": "file_not_contains",
           "file": "chapter.md",
-          "literal": "urn:mif:",
+          "literal": "urn:mif:concept:",
           "description": "No MIF internal URNs in the chapter"
         },
         {
@@ -219,7 +219,7 @@
         {
           "type": "file_not_contains",
           "file": "chapter.md",
-          "literal": "urn:mif:",
+          "literal": "urn:mif:concept:",
           "description": "No MIF internal URNs in the chapter"
         },
         {
@@ -300,7 +300,7 @@
         {
           "type": "file_not_contains",
           "file": "chapter.md",
-          "literal": "urn:mif:",
+          "literal": "urn:mif:concept:",
           "description": "No MIF internal URNs in the chapter"
         },
         {

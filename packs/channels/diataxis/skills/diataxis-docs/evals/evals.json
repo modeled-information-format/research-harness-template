@@ -1,0 +1,47 @@
+{
+  "skill_name": "diataxis-docs",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Render a complete Diátaxis documentation set from the sample session findings corpus.\n\nRun:\n\n  OUTDIR=$(pwd)\n  $CLAUDE_PROJECT_DIR/packs/channels/diataxis/scripts/render-diataxis.sh \"$CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings\" \"$OUTDIR/docs\" example-topic\n\nThe renderer reads the surviving findings directly (no separate synthesis step) and writes a full Diátaxis tree under docs/.",
+      "expected_output": "A complete Diátaxis documentation tree under docs/: a top-level index.md; a reference/ page per finding (grouped by dimension) plus reference/index.md; a per-dimension explanation/<dim>.md and how-to/apply-<dim>.md plus their indexes; and tutorials/getting-started.md, a per-dimension tutorials/<dim>.md, and tutorials/index.md. Every page carries MIF Level-1 frontmatter (a base concept @context/@type/@id/conceptType/created plus diataxis_type) with no frontmatter title:, one body H1, and prose free of any internal-research identity (no urn:mif:concept:/report:, no extensions.harness or corpus paths, no finding handles).",
+      "files": [],
+      "deterministic_checks": [
+        { "type": "file_exists", "file": "docs/index.md", "description": "Top-level documentation landing page" },
+        { "type": "file_exists", "file": "docs/reference/index.md", "description": "Reference quadrant index" },
+        { "type": "file_exists", "file": "docs/explanation/index.md", "description": "Explanation quadrant index" },
+        { "type": "file_exists", "file": "docs/how-to/index.md", "description": "How-to quadrant index" },
+        { "type": "file_exists", "file": "docs/tutorials/index.md", "description": "Tutorials quadrant index" },
+        { "type": "file_exists", "file": "docs/tutorials/getting-started.md", "description": "Orientation tutorial across the corpus" },
+        { "type": "file_exists", "file": "docs/reference/technical/copier-provides-update-propagation-to-instantiated-projects.md", "description": "A per-finding reference page (one per finding, grouped by dimension)" },
+        { "type": "file_exists", "file": "docs/explanation/technical.md", "description": "A per-dimension explanation page" },
+        { "type": "file_exists", "file": "docs/how-to/apply-technical.md", "description": "A per-dimension how-to guide" },
+        { "type": "file_exists", "file": "docs/tutorials/technical.md", "description": "A per-dimension guided tutorial" },
+        { "type": "file_contains", "file": "docs/reference/technical/copier-provides-update-propagation-to-instantiated-projects.md", "literal": "diataxis_type: reference", "description": "Reference page carries the reference diataxis_type marker" },
+        { "type": "file_contains", "file": "docs/reference/technical/copier-provides-update-propagation-to-instantiated-projects.md", "literal": "\"@id\": urn:mif:doc:", "description": "Reference page carries its own MIF L1 urn:mif:doc: identity" },
+        { "type": "file_contains", "file": "docs/reference/technical/copier-provides-update-propagation-to-instantiated-projects.md", "literal": "conceptType:", "description": "Reference page carries the MIF L1 conceptType field" },
+        { "type": "file_contains", "file": "docs/reference/technical/copier-provides-update-propagation-to-instantiated-projects.md", "literal": "## Evidence", "description": "Reference page documents its evidence/citations" },
+        { "type": "file_contains", "file": "docs/reference/technical/copier-provides-update-propagation-to-instantiated-projects.md", "literal": "copier.readthedocs.io", "description": "Reference page cites the finding's public source" },
+        { "type": "file_contains", "file": "docs/how-to/apply-technical.md", "literal": "diataxis_type: how-to", "description": "How-to carries the how-to diataxis_type marker" },
+        { "type": "file_contains", "file": "docs/explanation/technical.md", "literal": "diataxis_type: explanation", "description": "Explanation carries the explanation diataxis_type marker" },
+        { "type": "file_contains", "file": "docs/tutorials/getting-started.md", "literal": "diataxis_type: tutorial", "description": "Tutorial carries the tutorial diataxis_type marker" },
+        { "type": "file_not_contains", "file": "docs/reference/technical/copier-provides-update-propagation-to-instantiated-projects.md", "literal": "urn:mif:concept:", "description": "No finding-concept URN identity leaks into a reference page (its own urn:mif:doc: @id is legitimate)" },
+        { "type": "file_not_contains", "file": "docs/reference/technical/copier-provides-update-propagation-to-instantiated-projects.md", "literal": "extensions.harness", "description": "No harness schema paths in a reference page" },
+        { "type": "file_not_contains", "file": "docs/reference/technical/copier-provides-update-propagation-to-instantiated-projects.md", "literal": "reports/_meta", "description": "No corpus paths in a reference page" },
+        { "type": "regex_not_match", "file": "docs/reference/technical/copier-provides-update-propagation-to-instantiated-projects.md", "pattern": "f_[a-z]+_[0-9]+", "description": "No internal f_<dimension>_<n> finding handles in a reference page" },
+        { "type": "file_not_contains", "file": "docs/explanation/technical.md", "literal": "urn:mif:concept:", "description": "No finding-concept URN identity leaks into an explanation page" },
+        { "type": "file_not_contains", "file": "docs/explanation/technical.md", "literal": "extensions.harness", "description": "No harness schema paths in an explanation page" },
+        { "type": "file_not_contains", "file": "docs/explanation/technical.md", "literal": "reports/_meta", "description": "No corpus paths in an explanation page" },
+        { "type": "regex_not_match", "file": "docs/explanation/technical.md", "pattern": "f_[a-z]+_[0-9]+", "description": "No internal f_<dimension>_<n> finding handles in an explanation page" },
+        { "type": "file_not_contains", "file": "docs/how-to/apply-technical.md", "literal": "urn:mif:concept:", "description": "No finding-concept URN identity leaks into a how-to page" },
+        { "type": "file_not_contains", "file": "docs/how-to/apply-technical.md", "literal": "extensions.harness", "description": "No harness schema paths in a how-to page" },
+        { "type": "file_not_contains", "file": "docs/how-to/apply-technical.md", "literal": "reports/_meta", "description": "No corpus paths in a how-to page" },
+        { "type": "regex_not_match", "file": "docs/how-to/apply-technical.md", "pattern": "f_[a-z]+_[0-9]+", "description": "No internal f_<dimension>_<n> finding handles in a how-to page" },
+        { "type": "file_not_contains", "file": "docs/tutorials/getting-started.md", "literal": "urn:mif:concept:", "description": "No finding-concept URN identity leaks into the tutorial" },
+        { "type": "file_not_contains", "file": "docs/tutorials/getting-started.md", "literal": "extensions.harness", "description": "No harness schema paths in the tutorial" },
+        { "type": "file_not_contains", "file": "docs/tutorials/getting-started.md", "literal": "reports/_meta", "description": "No corpus paths in the tutorial" },
+        { "type": "regex_not_match", "file": "docs/tutorials/getting-started.md", "pattern": "f_[a-z]+_[0-9]+", "description": "No internal f_<dimension>_<n> finding handles in the tutorial" }
+      ]
+    }
+  ]
+}

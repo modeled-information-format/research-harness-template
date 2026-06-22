@@ -116,6 +116,12 @@ jq -r '.packs[] | select(.name=="reports" and .enabled) | .name' harness.config.
 
 Build the synthesis from surviving findings:
 
+- **Cover every surviving finding (exhaustive).** The synthesizer emits one
+  section per surviving finding, carrying that finding's own evidence (sources,
+  entities, dimension, verdict) onto its section; never condense the corpus to a
+  cherry-picked subset. A long-form genre (academic, engineering, trend-analysis)
+  renders each finding in depth; a brief genre (exec-summary, briefing) still
+  accounts for every finding at summary altitude — none is silently dropped.
 - **Trace every claim to a finding `@id`.** Each assertion in the synthesis must
   reference the surviving finding(s) it rests on. Do not introduce statistics or
   claims absent from the findings.
@@ -158,7 +164,10 @@ is therefore **never exempt** — it is held to the same L3 bar as a finding
 with `citations`, `provenance`, and `extensions.harness.verification`) over a
 Markdown body. The published channels (`blog`, `book`, and channel packs) are
 **projections** of the same artifact and declare exemption in their manifests; the
-report channel is where MIF conformance is enforced.
+report channel is where L3 conformance is enforced. Each published projection still
+carries MIF **Level-1** frontmatter (its own `urn:mif:<channel>:` concept identity),
+so every report output is at least L1 — only the L3 I/O gate is waived for their
+orthogonal published format.
 
 Because a report carries `extensions.harness.verification`, it must actually pass
 the adversarial falsification gate — **never synthesize a verdict.** Order:

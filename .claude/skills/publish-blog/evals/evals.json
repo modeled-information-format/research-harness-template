@@ -52,7 +52,7 @@
         {
           "type": "file_not_contains",
           "file": "blog.md",
-          "literal": "urn:mif:",
+          "literal": "urn:mif:concept:",
           "description": "MIF URNs do not leak into the published post"
         },
         {
@@ -131,7 +131,7 @@
         {
           "type": "file_not_contains",
           "file": "blog.md",
-          "literal": "urn:mif:",
+          "literal": "urn:mif:concept:",
           "description": "no MIF URNs appear in the published blog"
         }
       ],
@@ -176,7 +176,7 @@
         {
           "type": "file_not_contains",
           "file": "blog.md",
-          "literal": "urn:mif:",
+          "literal": "urn:mif:concept:",
           "description": "MIF URNs do not appear in the blog regardless of synthesis genre"
         },
         {

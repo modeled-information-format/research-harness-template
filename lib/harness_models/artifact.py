@@ -7,13 +7,29 @@ from typing import Literal, NotRequired, TypedDict
 type FindingRef = str
 
 
+class Source(TypedDict):
+    title: str
+    url: str
+    citationType: NotRequired[str]
+    citationRole: NotRequired[str]
+
+
+class Entity(TypedDict):
+    name: NotRequired[str]
+    entityType: NotRequired[str]
+
+
 class Section(TypedDict):
     heading: str
     body: str
     supports: NotRequired[list[str]]
+    sources: NotRequired[list[Source]]
+    entities: NotRequired[list[Entity]]
+    dimension: NotRequired[str]
+    verdict: NotRequired[str]
 
 
-class Source(TypedDict):
+class Source1(TypedDict):
     title: str
     url: str
     citationType: str
@@ -36,7 +52,7 @@ FindingsToArtifactContract = TypedDict(
         "newsworthiness": NotRequired[Literal["high", "medium", "low"]],
         "finding_refs": list[FindingRef],
         "sections": list[Section],
-        "sources": list[Source],
+        "sources": list[Source1],
         "mif": NotRequired[Mif],
     },
 )

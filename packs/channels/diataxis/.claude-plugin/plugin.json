@@ -1,0 +1,22 @@
+{
+  "name": "diataxis",
+  "version": "1.0.0",
+  "kind": "channel",
+  "mif": {
+    "exempt": true,
+    "reason": "Diátaxis documentation is authored, mode-pure prose (tutorials, how-to guides, reference, explanation) at MIF Level 1, not the Level-3 finding contract. Each page's frontmatter carries the page's OWN urn:mif:doc: identity (validated by schemas/diataxis-doc.schema.json); the body prose carries no internal-research identity — finding/concept ids (urn:mif:concept:/report:), corpus paths, and finding handles are scrubbed (the pack's eval asserts this). The Level-3 source of truth lives in the generic report channel, not the documentation set, so the channel is exempt from the L3 I/O conformance gate."
+  },
+  "description": "Render a research topic's entire surviving findings corpus into a complete Diátaxis documentation set — a reference page per finding, a per-dimension explanation, how-to, and guided tutorial, plus index/landing pages — every page carrying MIF Level-1 frontmatter and a diataxis_type marker. A per-topic channel that reads the findings corpus directly; the doc count scales with the research.",
+  "license": "MIT",
+  "author": {
+    "name": "zircote"
+  },
+  "provides": {
+    "skills": [
+      "diataxis-docs"
+    ],
+    "channels": [
+      "diataxis"
+    ]
+  }
+}

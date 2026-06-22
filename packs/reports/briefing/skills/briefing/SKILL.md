@@ -49,3 +49,5 @@ where a footnote is overkill. Markers resolve to the MIF finding's `@id` / `urn:
 - Every "what's new" bullet carries a "why it matters" — no orphan updates.
 - Exclude `falsified` findings; flag `weakened` / `inconclusive` ones inline rather than
   presenting them as settled.
+- **Account for every finding**: synthesize across the ENTIRE surviving corpus. Compress to the delta, but never silently drop a finding — note thin or weakened ones rather than omitting them.
+- **MIF level**: rendered through the `report` channel at MIF Level 3 (≥ Level 1 minimum) — never bare, frontmatter-less prose.

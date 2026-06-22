@@ -1,0 +1,11 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@type": "Concept",
+  "@id": "urn:mif:doc:harness/example-topic:overview-tutorials",
+  "conceptType": "procedural",
+  "content": "This tutorial walks you through the example topic one step at a time.",
+  "created": "2026-06-22T00:00:00Z",
+  "namespace": "harness/example-topic",
+  "diataxis_type": "tutorial",
+  "audience": "newcomers"
+}

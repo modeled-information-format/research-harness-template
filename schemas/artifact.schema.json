@@ -47,6 +47,39 @@
             "type": "array",
             "description": "MIF finding @ids this section draws on.",
             "items": { "type": "string", "pattern": "^urn:mif:" }
+          },
+          "sources": {
+            "type": "array",
+            "description": "The citations of the finding(s) this section rests on, so every channel can attribute evidence per finding (diataxis-level rigor) rather than only as a flat list. Same MIF citation shape as the top-level sources[].",
+            "items": {
+              "type": "object",
+              "required": ["title", "url"],
+              "properties": {
+                "title": { "type": "string" },
+                "url": { "type": "string", "format": "uri" },
+                "citationType": { "type": "string" },
+                "citationRole": { "type": "string" }
+              }
+            }
+          },
+          "entities": {
+            "type": "array",
+            "description": "The named entities (concepts, technologies, organizations) the finding references, carried through for per-section context.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string" },
+                "entityType": { "type": "string" }
+              }
+            }
+          },
+          "dimension": {
+            "type": "string",
+            "description": "The research dimension the finding belongs to."
+          },
+          "verdict": {
+            "type": "string",
+            "description": "The finding's adversarial-falsification verdict (survived | weakened | inconclusive)."
           }
         }
       }

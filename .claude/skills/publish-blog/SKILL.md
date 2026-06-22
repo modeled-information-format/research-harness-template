@@ -39,8 +39,10 @@ citation-integrity and citation-leak gates run uniformly across both.
 
 4. **Gate the output.** The post must read as if written from public primary
    sources alone. The bundled `check-citation-leak.sh` hook fires on write; before
-   reporting done, confirm zero leaks (no finding ids, `urn:mif:` ids, or
-   `reports/<slug>/` paths) and that every claim traces to a `## Sources` entry.
+   reporting done, confirm the body has zero leaks (no finding/concept ids
+   `urn:mif:concept:`/`urn:mif:report:`, no `reports/<slug>/` paths) and that every
+   claim traces to a `## Sources` entry. The post's own `urn:mif:blog:` frontmatter
+   id (its MIF Level-1 identity) is not a leak.
 
 ## Non-negotiables
 

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-harness.dev/schema/diataxis-doc.schema.json",
+  "title": "Diátaxis documentation concept (MIF Level 1)",
+  "description": "The frontmatter-plus-body projection of a Diátaxis quadrant document: a MIF v1.0 base concept (schemas/mif/mif.schema.json — @context, @type, @id, conceptType, content, created) plus the diataxis_type quadrant marker. This is MIF Level 1 — the document carries stable, typed MIF identity but NOT the Level-3 additions (provenance, citations, entities, and the harness falsification verdict) that schemas/findings.schema.json requires; the canonical L3 source of truth remains the report channel. The base $ref points at the REAL vendored MIF schema; this file only adds, never overrides (no additionalProperties:false, so the concept's own @-prefixed keys are preserved).",
+  "allOf": [
+    { "$ref": "https://mif-spec.dev/schema/mif.schema.json" },
+    {
+      "type": "object",
+      "required": ["diataxis_type"],
+      "properties": {
+        "diataxis_type": {
+          "type": "string",
+          "enum": ["tutorial", "how-to", "reference", "explanation"],
+          "description": "The Diátaxis quadrant this document serves (SPEC §6d channel pack)."
+        }
+      }
+    }
+  ]
+}

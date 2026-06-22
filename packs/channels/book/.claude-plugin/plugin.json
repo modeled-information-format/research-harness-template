@@ -4,7 +4,7 @@
   "kind": "channel",
   "mif": {
     "exempt": true,
-    "reason": "Published book prose is orthogonal to MIF markdown; the citation-leak gate keeps it free of internal MIF identity, so the MIF Level-3 source of truth lives in the generic report channel, not the book."
+    "reason": "Published book prose is a MIF Level-1 output — each chapter's frontmatter carries the chapter's own urn:mif:book: concept identity — but is exempt from the L3 I/O conformance gate because its published FORMAT is orthogonal to the L3 report. The body carries no internal finding identity (citation-leak gate); the canonical L3 source of truth lives in the generic report channel."
   },
   "description": "Author a long-form, multi-chapter book from a research session's surviving findings.",
   "license": "MIT",

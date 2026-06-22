@@ -54,3 +54,5 @@ mandatory (MIF Level 3). No uncited claims.
 - Report verification verdicts; do not silently drop `weakened` or `inconclusive` findings,
   annotate them. Exclude only `falsified` units.
 - Hedge uncertain claims; present ranges when sources disagree.
+- **Exhaustive coverage**: build the report from the FULL surviving findings corpus — every surviving finding is treated with its own evidence (claim, citations, entities), never condensed to a cherry-picked subset. A silently dropped finding is a defect.
+- **MIF level**: rendered through the `report` channel at MIF Level 3 (authoritative concept frontmatter + falsification verdict); any published projection (blog/book) is at least MIF Level 1 — never bare, frontmatter-less prose.
