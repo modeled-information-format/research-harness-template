@@ -739,6 +739,10 @@ gate_m10() {
   local md bad_r=""
   while IFS= read -r md; do
     [ -z "$md" ] && continue
+    # Only the canonical report channel (reports/<topic>/<topic>.md) is non-exempt.
+    # mifExempt channels (<topic>.blog.md, <topic>.book.md) and the continuity log
+    # (research-progress.md) are not L3 reports and must not be projected.
+    [ "$(basename "$md" .md)" = "$(basename "$(dirname "$md")")" ] || continue
     scripts/mif-project.sh "$md" >/dev/null 2>&1 || bad_r="${bad_r}$md "
   done < <(find reports -mindepth 2 -maxdepth 2 -name '*.md' -not -path 'reports/_meta/*' 2>/dev/null)
   if [ -z "$bad_r" ]; then
