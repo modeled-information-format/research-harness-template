@@ -74,7 +74,8 @@ def main() -> int:
         if not os.path.exists(sample_path):
             report(False, f"fixture-present:{schema_rel}", f"missing {sample_rel}")
             continue
-        sample = json.load(open(sample_path))
+        with open(sample_path) as fh:
+            sample = json.load(fh)
 
         # 1. emitted output validates against the real schema
         out = os.path.join(tmp, schema_rel.replace("/", "_") + ".json")

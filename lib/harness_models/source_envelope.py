@@ -14,11 +14,6 @@ Provenance = TypedDict(
             "agent_inferred",
             "external_import",
             "system_generated",
-            "user_explicit",
-            "user_implicit",
-            "agent_inferred",
-            "external_import",
-            "system_generated",
         ],
         "confidence": NotRequired[float],
         "trustLevel": NotRequired[

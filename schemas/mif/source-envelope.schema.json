@@ -14,15 +14,7 @@
           "required": ["sourceType"],
           "properties": {
             "sourceType": {
-              "type": "string",
-              "description": "How the source entered: agent_inferred for a live WebFetch/WebSearch, external_import for a corpus import.",
-              "enum": [
-                "user_explicit",
-                "user_implicit",
-                "agent_inferred",
-                "external_import",
-                "system_generated"
-              ]
+              "description": "How the source entered: agent_inferred for a live WebFetch/WebSearch, external_import for a corpus import. type and enum are inherited from the base MIF schema via allOf — this overlay only adds the requirement, never re-specifies (a duplicate enum here doubled the generated Literal)."
             }
           }
         },
