@@ -20,6 +20,7 @@ _exclude:
   - "node_modules"
   - "**/__pycache__"
   - "*.pyc"
+  - ".venv-codegen"          # dev/build-time codegen venv; generated models under lib/ are shipped
   - "PROGRESS.md"            # the template's build log, not the instance's
   - "COMPLETION-CRITERIA.md"
   - "IMPLEMENTATION-PLAN.md"

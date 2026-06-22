@@ -2,6 +2,12 @@
 __pycache__/
 *.pyc
 
+# Codegen virtualenv (dev/build-time only; generated models under lib/ are committed)
+.venv-codegen/
+
+# Transient finding-authoring scripts agents emit (normally written to a temp dir)
+author-finding*.py
+
 # Hook runtime state
 .claude/hooks/markdown/state/
 

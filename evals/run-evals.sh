@@ -116,6 +116,11 @@ run_neg "concordance-undeclared-type"    scripts/validate-concordance.sh evals/f
 run_neg "concordance-domain-violation"   scripts/validate-concordance.sh evals/fixtures/concordance/domain-violation.concordance.json $WC
 run     "concordance-idempotent"         bash -c "scripts/build-concordance.sh evals/fixtures/concordance/reports \"$TMP/w1.json\" >/dev/null && scripts/build-concordance.sh evals/fixtures/concordance/reports \"$TMP/w2.json\" >/dev/null && diff -q \"$TMP/w1.json\" \"$TMP/w2.json\""
 
+# 6. Model-authoring layer (lib/harness_models): every authored schema emits
+#    deterministic, schema-valid contract JSON from a typed dict — replacing the
+#    hand-composed shell JSON (`jq -n`) that broke under the Bash `eval` wrapper.
+run "models-authoring" python3 evals/test_models.py
+
 echo
 if [ "$FAIL" -gt 0 ]; then
   printf '%srun-evals: %d passed, %d FAILED%s\n' "$RED" "$PASS" "$FAIL" "$RST"

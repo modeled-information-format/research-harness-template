@@ -1,0 +1,12 @@
+{
+  "@type": "Artifact",
+  "title": "Model-authoring layer adoption",
+  "genre": "general",
+  "sections": [
+    { "heading": "Summary", "body": "The model layer eliminates the shell JSON-authoring footgun.", "supports": ["urn:mif:concept:example:model-layer"] }
+  ],
+  "sources": [
+    { "title": "Findings schema", "url": "https://research-harness.dev/schema/findings.schema.json", "citationType": "documentation", "citationRole": "supports" }
+  ],
+  "finding_refs": ["urn:mif:concept:example:model-layer"]
+}

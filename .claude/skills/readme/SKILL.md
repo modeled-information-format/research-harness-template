@@ -63,7 +63,9 @@ synthesis-grade Key Findings.**
    ```
 
 3. **Author synthesis-grade Key Findings and Purpose (the core of this skill).**
-   Read the actual findings (`reports/<topic>/findings/*.json` — title, summary,
+   First **`Read reports/<topic>/README.md`** — the file step 2 just generated;
+   the `Edit` tool refuses to write a file it has not read this session. Then read
+   the actual findings (`reports/<topic>/findings/*.json` — title, summary,
    `content`, citations, verdict) and **rewrite the `## Key Findings` section** so
    it reads like the corpus exemplar, then tighten `## Purpose` to 1–2 sentences.
    Edit only those two sections; the script preserves them on later rebuilds.

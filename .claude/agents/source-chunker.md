@@ -98,7 +98,12 @@ the truncation. For each chunk:
    `DIMENSION`**. Exactly
    like the dimension-analyst, emit only your half of the contract: do NOT write
    `extensions.harness.verification` — the falsification gate stamps the verdict
-   afterward. Validate the structure you are responsible for (it becomes fully
+   afterward. **Author it with the model layer, not hand-composed shell JSON**:
+   write a short Python script with the Write tool that builds the finding as a
+   typed dict and calls `harness_models.emit.write` (`lib/harness_models/` —
+   generated from the schemas), exactly as in dimension-analyst Step 5. `jq -n` /
+   heredocs break under the Bash `eval` wrapper on the quotes and parentheses in
+   real `content`. Validate the structure you are responsible for (it becomes fully
    `schemas/findings.schema.json`-valid once the gate adds the verdict). Do NOT
    carry any fixed domain-specific fields.
 4. Note any references to content likely held in another chunk.

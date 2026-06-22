@@ -1,0 +1,11 @@
+{
+  "$schema": "https://research-harness.dev/schema/goal.schema.json",
+  "goal_statement": "Enable the decision of whether to adopt the model-authoring layer for finding generation.",
+  "completion_condition": {
+    "summary": "All authored schemas emit deterministic, schema-valid JSON via the model layer.",
+    "checks": [
+      { "id": "emit-valid", "assertion": "Emitted JSON validates against its schema for every authored schema.", "verify": "python3 evals/test_models.py" }
+    ]
+  },
+  "dimensions": ["technical", "landscape"]
+}

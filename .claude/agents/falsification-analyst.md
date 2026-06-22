@@ -200,9 +200,14 @@ After verdicts are written, remediate each finding by its verdict:
 | `survived` | **Unchanged** — annotation only (the verification block records the basis and query count). |
 | `inconclusive` | **Unchanged** — annotation only. |
 
-These mutations follow the Structured Data Protocol: compose with `jq`, then
-re-validate against `schemas/findings.schema.json`. A `low` finding that is
-weakened further is quarantined rather than dropped to an invalid level.
+Apply these mutations with the model layer, not in-shell JSON composition: read the
+finding into Python (`json.load`), mutate the dict, and re-emit with
+`harness_models.emit.write` (`lib/harness_models/` — deterministic, canonical JSON),
+then re-validate against `schemas/findings.schema.json`. Composing the appended
+`citations[]`/`summary` qualifier with `jq -n` or heredocs breaks under the Bash
+`eval` wrapper on their quotes and parentheses — the same footgun the authoring
+agents avoid. A `low` finding that is weakened further is quarantined rather than
+dropped to an invalid level.
 
 ---
 

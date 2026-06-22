@@ -63,6 +63,9 @@ jobs:
           markdownlint-cli2 --version
           copier --version
 
+      - name: model codegen in sync (regenerate from schemas, fail if committed models drift)
+        run: CHECK=1 bash scripts/codegen/gen-models.sh  # self-provisions a pinned venv
+
       - name: verify.sh (build gate — schemas, citation gate, per-milestone gates, evals)
         run: bash scripts/verify.sh
 
