@@ -45,12 +45,15 @@ VERSION="${2:-$(bash "$HERE/goal-version.sh" "$GOAL")}"
 DIMS=$(jq -c '.dimensions // []' "$GOAL")
 FRESH=$(jq -c '.freshness // {}' "$CONFIG" 2>/dev/null || echo '{}')
 
-FILES=$(find "$FINDINGS_DIR" -maxdepth 1 -name '*.json' 2>/dev/null | sort)
+# Collect finding files space-safely (the harness is a template cloned into
+# arbitrary paths, which may contain spaces).
+FILES=()
+while IFS= read -r -d '' f; do FILES+=("$f"); done \
+  < <(find "$FINDINGS_DIR" -maxdepth 1 -name '*.json' -print0 2>/dev/null | sort -z)
 
-if [ -z "$FILES" ]; then
+if [ ${#FILES[@]} -eq 0 ]; then
   CLASSIFIED='{"member_objs":[],"stale":[]}'
 else
-  # shellcheck disable=SC2086
   CLASSIFIED=$(jq -s \
     --argjson dims "$DIMS" \
     --argjson fresh "$FRESH" '
@@ -61,19 +64,28 @@ else
         | (.extensions.harness.dimension // null) as $dim
         | ((.extensions.harness.verification.verdict // "none") != "falsified"
            and ($dims | index($dim)) != null) as $in
-        | ([ .citations[]?.citationType ] | map($byt[.] // $def) | (min // $def)) as $ttl
+        # TTL = MIN over the finding citations whose citationType has a window;
+        # select(. != null) guards an untyped citation ($byt[null] would throw).
+        | ([ .citations[]?.citationType | select(. != null) ]
+           | map($byt[.] // $def) | (min // $def)) as $ttl
         | (.extensions.harness.verification.attempted_at // null) as $att
         | { id: $id, dim: $dim, in_scope: $in,
             stale: (
               if ($in | not) then false
-              else (($att | fromdateiso8601?) // null) as $t
+              # Parse at DAY granularity from the date portion so every valid
+              # RFC3339 form (Z, numeric offset, fractional) and bare date works;
+              # freshness windows are measured in days, so time-of-day is moot.
+              else (if $att == null then null
+                    else (($att[0:10] + "T00:00:00Z") | fromdateiso8601?) end) as $t
                    | if $t == null then true else (now > ($t + $ttl*86400)) end
               end) }
       )
     | { member_objs: [ .[] | select(.in_scope) | {id, dim} ],
         stale:       [ .[] | select(.in_scope and .stale) | .id ] }' \
-    $FILES)
+    "${FILES[@]}")
 fi
+
+[ -n "$CLASSIFIED" ] || die "classification failed for $TOPIC (malformed finding?)"
 
 GENERATED=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 OUT_DIR="$TOPIC_DIR/goals"
@@ -82,10 +94,13 @@ mkdir -p "$OUT_DIR"
 
 # Preserve exclusions: ids the goal-writer's judgement removed as out-of-scope on a
 # prior resolve of THIS version. Re-resolving (e.g. after gap research) honors them
-# so a deterministic pass never re-adds what was deliberately excluded.
+# so a deterministic pass never re-adds what was deliberately excluded. The `// []`
+# already guarantees a value in every branch (missing/corrupt file -> []).
 EXCL=$(jq -c '.excluded // []' "$OUT" 2>/dev/null || echo '[]')
-[ -n "$EXCL" ] || EXCL='[]'
 
+# Write atomically: render to a temp and rename only on success, so a jq failure
+# never truncates an existing members file (which would lose the excluded[] record).
+TMP_OUT="$OUT.tmp.$$"
 jq -n \
   --arg version "$VERSION" \
   --arg generated "$GENERATED" \
@@ -100,7 +115,8 @@ jq -n \
       stale: ($c.stale - $excl),
       excluded: $excl,
       gap_dimensions: ($dims - ($kept | map(.dim) | unique))
-    }' > "$OUT" || die "failed to write $OUT"
+    }' > "$TMP_OUT" || { rm -f "$TMP_OUT"; die "failed to resolve membership for $TOPIC"; }
+mv "$TMP_OUT" "$OUT"
 
 echo "wrote $OUT"
-jq -r '"  members: \(.members|length) | stale: \(.stale|length) | excluded: \(.excluded|length) | gap_dimensions: \(.gap_dimensions|join(", ") // "none")"' "$OUT"
+jq -r '"  members: \(.members|length) | stale: \(.stale|length) | excluded: \(.excluded|length) | gap_dimensions: \(.gap_dimensions | if length==0 then "none" else join(", ") end)"' "$OUT"

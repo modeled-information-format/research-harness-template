@@ -21,23 +21,33 @@ DIR="${1:?usage: build-index.sh <findings-dir> [out.json]}"
 OUT="${2:-$DIR/../research-index.json}"
 [ -d "$DIR" ] || { echo "build-index: not a directory: $DIR" >&2; exit 2; }
 
-FILES=$(find "$DIR" -maxdepth 1 -name '*.json' | sort)
-[ -n "$FILES" ] || { echo "build-index: no finding JSON in $DIR" >&2; exit 2; }
-NFILES=$(printf '%s\n' "$FILES" | grep -c .)
+# Collect file lists space-safely (the harness is a template cloned into arbitrary
+# paths, which may contain spaces).
+FILES=()
+while IFS= read -r -d '' f; do FILES+=("$f"); done \
+  < <(find "$DIR" -maxdepth 1 -name '*.json' -print0 | sort -z)
+[ ${#FILES[@]} -gt 0 ] || { echo "build-index: no finding JSON in $DIR" >&2; exit 2; }
+NFILES=${#FILES[@]}
 
 # Membership map: finding-id -> { goal_versions[], stale_in[] }, folded over every
 # per-version members file. Empty {} when no goal versions have been resolved yet.
-MEMBERS=$(find "$DIR/../goals" -maxdepth 1 -name '*.members.json' 2>/dev/null | sort)
-if [ -n "$MEMBERS" ]; then
-  # shellcheck disable=SC2086
+# `// []` guards a foreign/legacy/partial members file missing a members/stale key
+# (raw `[]` iteration would throw "Cannot iterate over null").
+MEMBERS=()
+while IFS= read -r -d '' f; do MEMBERS+=("$f"); done \
+  < <(find "$DIR/../goals" -maxdepth 1 -name '*.members.json' -print0 2>/dev/null | sort -z)
+if [ ${#MEMBERS[@]} -gt 0 ]; then
   MEMBERSHIP=$(jq -s 'reduce .[] as $m ({};
-    reduce ($m.members[]) as $id (.; .[$id].goal_versions += [$m.version])
-    | reduce ($m.stale[])  as $id (.; .[$id].stale_in     += [$m.version]) )' $MEMBERS)
+    reduce (($m.members // [])[]) as $id (.; .[$id].goal_versions += [$m.version])
+    | reduce (($m.stale // [])[]) as $id (.; .[$id].stale_in     += [$m.version]) )' \
+    "${MEMBERS[@]}") || { echo "build-index: failed to fold membership files" >&2; exit 2; }
 else
   MEMBERSHIP='{}'
 fi
 
-# shellcheck disable=SC2086
+# Write atomically and fail loudly — a swallowed jq failure must not leave an empty
+# index behind a "success" message that downstream services then read as valid.
+TMP_OUT="$OUT.tmp.$$"
 jq -s --argjson membership "$MEMBERSHIP" '{
   "@type": "ResearchIndex",
   count: length,
@@ -49,9 +59,10 @@ jq -s --argjson membership "$MEMBERSHIP" '{
     tags: (.tags // []),
     verdict: (.extensions.harness.verification.verdict // null),
     citations: (.citations | length),
-    goal_versions: ($membership[.["@id"]].goal_versions // []),
-    stale_in: ($membership[.["@id"]].stale_in // [])
+    goal_versions: (($membership[.["@id"]].goal_versions // []) | unique),
+    stale_in: (($membership[.["@id"]].stale_in // []) | unique)
   })
-}' $FILES > "$OUT"
+}' "${FILES[@]}" > "$TMP_OUT" || { rm -f "$TMP_OUT"; echo "build-index: failed to build $OUT" >&2; exit 2; }
+mv "$TMP_OUT" "$OUT"
 
 echo "build-index: wrote $OUT ($(jq '.count' "$OUT") findings) from $NFILES MIF files"

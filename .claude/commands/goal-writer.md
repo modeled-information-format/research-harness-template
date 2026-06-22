@@ -78,18 +78,21 @@ Steps:
    This deterministic pass writes `reports/<topic>/goals/goal-$NEW.members.json`
    (`members` / `stale` / `excluded` / `gap_dimensions`). Then **refine it with
    judgment** the deterministic filter cannot apply: review each member against the
-   new `scope.out_of_scope` / `non_goals`, and for any finding now genuinely out of
-   scope, **move its id into `excluded[]`** (do not just delete it) so a later
-   re-resolve never re-adds it:
+   new `scope.out_of_scope` / `non_goals`. For any finding now genuinely out of
+   scope, append its id to `excluded[]` and **re-run `resolve-membership.sh`** — do
+   NOT hand-edit `members`/`gap_dimensions`, because the re-resolve honors
+   `excluded[]` and recomputes members, stale, and gap consistently (excluding the
+   last finding of a dimension correctly turns that dimension into a gap):
 
    ```bash
-   jq --arg id "<finding @id>" \
-     '.members -= [$id] | .excluded += [$id] | .gap_dimensions = (.gap_dimensions)' \
-     reports/<topic>/goals/goal-$NEW.members.json > tmp.$$ && mv tmp.$$ reports/<topic>/goals/goal-$NEW.members.json
+   jq --arg id "<finding @id>" '.excluded += [$id]' \
+     reports/<topic>/goals/goal-$NEW.members.json > tmp.$$ \
+     && mv tmp.$$ reports/<topic>/goals/goal-$NEW.members.json
+   bash scripts/resolve-membership.sh <topic> "$NEW"   # re-derives members/stale/gap, honoring excluded[]
    ```
 
-   The `gap_dimensions`, plus any check with no supporting member, are the research
-   gap. (The excluded finding stays in the corpus — it still serves earlier
+   The resulting `gap_dimensions`, plus any check with no supporting member, are the
+   research gap. (The excluded finding stays in the corpus — it still serves earlier
    versions; it is only out of *this* version's working set.)
 6. **Print the report**: new version id + `supersedes`, and the carry / gap / stale
    counts (`jq` over the members file). This is the transcript evidence.

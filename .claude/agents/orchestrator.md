@@ -212,6 +212,18 @@ gap dims=[$(echo $WORK_DIMS | tr '\n' ' ')]; stale to re-verify=$(jq '.stale|len
    - Bound: max_rounds={N}, min_dimensions_complete={N}
    ```
 
+4. **Snapshot the pre-run finding set + this run's goal version (SPEC §11).** This
+   is what lets Phase 4 stamp `gathered_under` on the findings THIS run produces
+   without mis-stamping carried/legacy ones:
+
+   ```bash
+   GV=$(bash scripts/goal-version.sh "$GOAL_FILE")
+   PRE_IDS=$(jq -r '.["@id"] // empty' "$REPORTS_DIR"/findings/*.json 2>/dev/null | sort -u)
+   ```
+
+   `PRE_IDS` is the set of finding ids that already existed before fan-out;
+   everything new after Phase 1/2 is what this run gathered.
+
 ---
 
 ## Phase 1: Fan out dimension-analysts (capped concurrency)
@@ -509,25 +521,29 @@ Append to the progress file:
 0. **Reconcile provenance + membership (SPEC §11) — close the goal-version loop.**
    Findings produced this run must record which version produced them, and the
    current version's membership must reflect them (so the gap closes and a *second*
-   `/start --update` does not re-research what this run just gathered). For every
-   finding under `$REPORTS_DIR/findings/` lacking `extensions.harness.gathered_under`,
-   stamp it with the current goal version; then re-resolve membership and refresh
-   the index projection:
+   `/start --update` does not re-research what this run just gathered). Stamp
+   `gathered_under` ONLY on findings new to this run — identified by the `PRE_IDS`
+   snapshot from Phase 0 step 4 — so a carried or legacy finding keeps its original
+   provenance (or stays honestly unstamped) and is never falsely re-attributed to
+   the current version:
 
    ```bash
-   GV=$(bash scripts/goal-version.sh "$GOAL_FILE")
    for f in "$REPORTS_DIR"/findings/*.json; do
      [ -f "$f" ] || continue
-     jq -e '.extensions.harness | has("gathered_under")' "$f" >/dev/null 2>&1 && continue
+     id=$(jq -r '.["@id"] // empty' "$f")
+     # skip findings that existed before this run, and any already stamped
+     printf '%s\n' "$PRE_IDS" | grep -qxF "$id" && continue
+     jq -e '.extensions.harness.gathered_under // empty | length > 0' "$f" >/dev/null 2>&1 && continue
      jq --arg v "$GV" '.extensions.harness.gathered_under = $v' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
    done
    bash scripts/resolve-membership.sh "$TOPIC_SLUG" "$GV"   # honors excluded[]; gap should now be empty
    bash scripts/build-index.sh "$REPORTS_DIR/findings"      # projects goal_versions[]/stale_in[]
    ```
 
-   `gathered_under` is stamped once and never overwritten (provenance). The
-   re-resolve preserves the `excluded[]` the goal-writer set, so newly gathered
-   findings join `members[]` while deliberately out-of-scope ones stay out.
+   `gathered_under` is stamped once and never overwritten (provenance — the version
+   that *first produced* the finding). The re-resolve preserves the `excluded[]` the
+   goal-writer set, so newly gathered findings join `members[]` while deliberately
+   out-of-scope ones stay out.
 
 1. **Synthesize.** First `scripts/run-lock.sh refresh "$REPORTS_DIR"` (synthesis can
    be long — keep the lock fresh so it is not stolen before you release it in step 4),
