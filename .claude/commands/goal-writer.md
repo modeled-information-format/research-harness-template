@@ -19,7 +19,7 @@ You produce TWO things, in this order:
 
 1. **A goal JSON file** — `reports/<topic>/goal.json`, valid against
    `schemas/goal.schema.json`. This is the `GOAL_FILE` the orchestrator loads in
-   its Phase 0 (`ajv validate -s schemas/goal.schema.json -d "$GOAL_FILE"`).
+   its Phase 0 (`ajv validate --spec=draft2020 --strict=false -c ajv-formats -s schemas/goal.schema.json -d "$GOAL_FILE"`).
 2. **The `/goal` prose** — a short paragraph the user can drop into Claude
    Code's `/goal`, describing the same measurable end state in plain language.
 
@@ -66,7 +66,7 @@ Steps:
    jq --arg n "$NEW" --arg o "$OLD" --arg d "$(date -u +%Y-%m-%d)" \
      '.version=$n | .supersedes=$o | .revision={rationale:"<why>",changed:["<delta>"],date:$d}' \
      reports/<topic>/goal.json > tmp.$$ && mv tmp.$$ reports/<topic>/goal.json
-   ajv validate --spec=draft2020 --strict=false -s schemas/goal.schema.json -d reports/<topic>/goal.json
+   ajv validate --spec=draft2020 --strict=false -c ajv-formats -s schemas/goal.schema.json -d reports/<topic>/goal.json
    ```
 
 5. **Classify existing findings** against the new version:
@@ -218,7 +218,7 @@ mkdir -p reports/<topic>
 cat > reports/<topic>/goal.json <<'JSON'
 { ...the goal object... }
 JSON
-ajv validate --spec=draft2020 --strict=false \
+ajv validate --spec=draft2020 --strict=false -c ajv-formats \
   -s schemas/goal.schema.json -d reports/<topic>/goal.json
 ```
 

@@ -105,7 +105,7 @@ You receive one mode in your spawn prompt:
 1. **Load and validate the goal, then resolve the working dimension set for this `MODE`.**
 
    ```bash
-   ajv validate --spec=draft2020 --strict=false \
+   ajv validate --spec=draft2020 --strict=false -c ajv-formats \
      -s schemas/goal.schema.json -d "$GOAL_FILE"
    DIMENSIONS=$(jq -r '.dimensions[]' "$GOAL_FILE")
    MAX_ROUNDS=$(jq -r '.bound.max_rounds // 3' "$GOAL_FILE")
