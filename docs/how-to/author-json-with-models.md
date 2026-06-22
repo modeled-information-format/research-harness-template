@@ -29,10 +29,13 @@ in Python sidesteps the shell entirely: the content lives in Python strings, and
 Write a short script with the **Write tool** (its body is Python, so no shell
 quoting applies), then run it:
 
+Write the script to a **unique temp path** (e.g. `mktemp -t author-finding.XXXXXX.py`)
+— analysts run concurrently from a shared cwd, so a fixed name would race — then
+`python3 <that path> <staging-path>` and remove it.
+
 ```python
-# author-finding.py — run: python3 author-finding.py <staging-path>
 import sys
-sys.path.insert(0, "lib")
+sys.path.insert(0, "lib")  # run from the repo root
 from harness_models import emit
 # from harness_models.findings import Mif  # the TypedDict shape (editor/type-check aid)
 
@@ -43,7 +46,9 @@ finding = {
     "conceptType": "...",
     "content": "...",          # arbitrary prose — a Python string, never shell-quoted
     "created": "...",
-    "citations": [{"@type": "Citation", "@id": "urn:mif:citation:...", "...": "..."}],
+    # Citation is a closed object: no @id; cite by live http(s) url (see finding.sample.json).
+    "citations": [{"@type": "Citation", "citationType": "documentation",
+                   "citationRole": "supports", "title": "...", "url": "https://..."}],
     "extensions": {"harness": {"dimension": "<dim>"}},
 }
 emit.write(finding, sys.argv[1])

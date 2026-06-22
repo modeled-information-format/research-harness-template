@@ -61,7 +61,10 @@ def ajv_valid(schema_rel: str, data_path: str) -> tuple[bool, str]:
         cmd += ["-r", r]
     cmd += ["-d", data_path]
     p = subprocess.run(cmd, capture_output=True, text=True)
-    return p.returncode == 0, (p.stderr or p.stdout).strip().splitlines()[-1] if p.returncode else ""
+    if p.returncode == 0:
+        return True, ""
+    lines = (p.stderr or p.stdout).strip().splitlines()
+    return False, lines[-1] if lines else f"ajv exited {p.returncode} with no output"
 
 
 def main() -> int:

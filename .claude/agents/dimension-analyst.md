@@ -224,9 +224,10 @@ builds the finding as a typed dict and emits canonical, schema-valid JSON via
 guarantees well-formed output):
 
 ```python
-# author-finding.py — then run: python3 author-finding.py "$REPORTS_DIR/findings/.finding-<slug>.json.staging"
+# Write this to a UNIQUE temp path (analysts run concurrently from a shared cwd —
+# a fixed name like author-finding.py would race), then run it. Pass the staging path.
 import sys
-sys.path.insert(0, "lib")
+sys.path.insert(0, "lib")  # run from the repo root
 from harness_models import emit
 # from harness_models.findings import Mif  # the TypedDict shape — editor/type-check aid
 
@@ -237,7 +238,9 @@ finding = {
     "conceptType": "...",
     "content": "...",          # arbitrary prose — a Python string, never shell-quoted
     "created": "...",
-    "citations": [{"@type": "Citation", "@id": "urn:mif:citation:...", "...": "..."}],
+    # Citation shape (closed): no @id; cite by live http(s) url. See finding.sample.json.
+    "citations": [{"@type": "Citation", "citationType": "documentation",
+                   "citationRole": "supports", "title": "...", "url": "https://..."}],
     "extensions": {"harness": {"dimension": "<dim>"}},
 }
 emit.write(finding, sys.argv[1])  # canonical: sorted keys, 2-space indent, valid JSON
@@ -246,7 +249,9 @@ emit.write(finding, sys.argv[1])  # canonical: sorted keys, 2-space indent, vali
 ```bash
 mkdir -p "$REPORTS_DIR/findings"
 S="$REPORTS_DIR/findings/.finding-<slug>.json.staging"
-python3 author-finding.py "$S"
+A="$(mktemp -t author-finding.XXXXXX.py)"   # unique per analyst — no shared-cwd race
+# (write the Python above to "$A" with the Write tool, then:)
+python3 "$A" "$S"; rm -f "$A"
 
 # Citation-integrity gate (must pass at write time):
 scripts/check-citation-integrity.sh "$S"

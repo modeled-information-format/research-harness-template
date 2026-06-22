@@ -28,8 +28,15 @@ from typing import Any
 
 
 def dump_json(obj: Any) -> str:
-    """Return the canonical contract JSON string for ``obj`` (with trailing newline)."""
-    return json.dumps(obj, indent=2, ensure_ascii=False, sort_keys=True) + "\n"
+    """Return the canonical contract JSON string for ``obj`` (with trailing newline).
+
+    ``allow_nan=False`` makes NaN/Infinity raise instead of emitting the bare
+    ``NaN``/``Infinity`` tokens that are not valid JSON — the emitter never
+    produces output it claims is valid.
+    """
+    return (
+        json.dumps(obj, indent=2, ensure_ascii=False, sort_keys=True, allow_nan=False) + "\n"
+    )
 
 
 def write(obj: Any, path: str) -> str:
@@ -39,6 +46,8 @@ def write(obj: Any, path: str) -> str:
     ``scripts/write-finding.sh <staging> <findings-dir> <name.json>`` which
     validates against the schema and atomically renames it into place.
     """
-    with open(path, "w", encoding="utf-8") as f:
+    # newline="" disables platform newline translation so the on-disk bytes match
+    # dump_json exactly (the canonical "\n" form) on every platform.
+    with open(path, "w", encoding="utf-8", newline="") as f:
         f.write(dump_json(obj))
     return path

@@ -24,17 +24,23 @@ def build_registry(schema_root):
                     by_id[s["$id"]] = p
     return by_id, by_path
 
-def resolve_ext(ref, cur_dir, by_id):
-    """Map an external (non-#) ref to an absolute local file path."""
+def resolve_ext(ref, cur_dir, by_id, by_path):
+    """Map an external (non-#) ref to (absolute local file path, fragment).
+
+    fragment is "" or a JSON pointer like "/$defs/Inner" (no leading #), preserved
+    so a sub-path ref resolves into the inlined sub instead of collapsing to the
+    whole file. Raises a clear error when the target cannot be resolved locally.
+    """
+    base, _, frag = ref.partition("#")
     if ref.startswith("http://") or ref.startswith("https://"):
-        base = ref.split("#", 1)[0]
         if base in by_id:
-            return by_id[base]
+            return by_id[base], frag
         raise KeyError(f"unresolvable URL $ref (no vendored $id): {ref}")
-    if ref.startswith("#"):
-        return None  # internal
     # relative file path
-    return os.path.abspath(os.path.join(cur_dir, ref.split("#", 1)[0]))
+    path = os.path.abspath(os.path.join(cur_dir, base))
+    if path not in by_path:
+        raise KeyError(f"unresolvable file $ref (not found under schema root): {ref} -> {path}")
+    return path, frag
 
 def bundle(target_path, schema_root):
     by_id, by_path = build_registry(schema_root)
@@ -72,10 +78,14 @@ def bundle(target_path, schema_root):
                     if internal_prefix != "#":
                         node["$ref"] = internal_prefix + ref[1:]
                 else:
-                    p = resolve_ext(ref, cur_dir, by_id)
+                    p, frag = resolve_ext(ref, cur_dir, by_id, by_path)
                     key = ensure(p)
-                    node["$ref"] = f"#/$defs/{key}"
-            for v in node.values():
+                    # Re-append the fragment, rebased into the inlined sub at
+                    # #/$defs/<key> (the sub's own defs were rebased the same way).
+                    node["$ref"] = f"#/$defs/{key}" + frag
+            # snapshot: ensure() inserts into root["$defs"] while we may be iterating
+            # it — list() avoids "dictionary changed size during iteration".
+            for v in list(node.values()):
                 rewrite(v, cur_dir, internal_prefix)
         elif isinstance(node, list):
             for v in node:
