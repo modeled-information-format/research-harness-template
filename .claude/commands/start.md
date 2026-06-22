@@ -38,10 +38,18 @@ backticks and angle brackets.
   named dimension is honored unconditionally — the harness does not second-guess
   which dimensions "need" it. Gates the new findings and merges. Requires an existing
   goal and prior findings; never authors a goal or overwrites progress.
-- `--update` — refresh the whole session: re-research EVERY dimension against the
-  existing goal (orchestrator `update` mode), then diff the new findings against the
-  prior set (Phase 4 delta). Requires an existing goal.
+- `--update` — refresh the session against the existing (possibly reshaped) goal
+  (orchestrator `update` mode). **Membership-aware** (SPEC §11): it reuses every
+  in-scope, still-fresh finding as-is, re-verifies only the stale ones, and fans out
+  only the gap dimensions — it does NOT re-research everything. Then it diffs the new
+  findings against the prior set (Phase 4 delta). Requires an existing goal. This is
+  the command to run after a `/goal-writer --reshape` mints a new goal version.
 - Remaining text is the raw research ask (full mode only).
+
+> Reshaping the goal itself (adding/removing dimensions, revising the decision or
+> scope) is **not** a `start` flag — it authors a new goal version, which is
+> `goal-writer`'s job: run `/goal-writer --reshape "<what changed>"`, then
+> `/start --update`. `start` never authors or mutates a goal.
 
 Resolve the **mode** from these flags: `--augment [<dimension>]` → `MODE=augment`
 with `DIMENSION=<dimension>` (empty when the dimension is omitted); `--update` →

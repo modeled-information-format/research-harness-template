@@ -13,7 +13,6 @@
 
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 2
-ROOT="$(pwd)"
 
 # Template vs instance. The distributable template carries copier.yml; an
 # instantiated harness has it stripped at generation. Template-only self-tests
@@ -428,6 +427,7 @@ gate_m6() {
   # 6a. blog is the first-class always-on channel skill (flat, in the core). book is now an
   #     OPTIONAL channel pack (packs/channels/book) — not a flat core skill.
   local s smiss=""
+  # shellcheck disable=SC2043  # intentionally a one-item list today; kept as a loop so more first-class skills can be appended.
   for s in publish-blog; do
     if [ -f ".claude/skills/$s/SKILL.md" ] && grep -q '^description:' ".claude/skills/$s/SKILL.md"; then :; else
       smiss="${smiss}${s} "
@@ -1335,9 +1335,124 @@ gate_m14() {
 }
 
 # ---------------------------------------------------------------------------
+# Milestone 15 — Living corpus: goal evolution (SPEC §11). Goal versions are
+# content-hashed (stable, lineage-invariant, content-sensitive); reshape reuses
+# in-scope findings across versions and computes the research gap; freshness
+# flips under source-type decay; the membership mirror projects into the index.
+# ---------------------------------------------------------------------------
+gate_m15() {
+  info "Milestone 15 — Living corpus: goal evolution + finding reuse"
+  local T; T="$(mktemp -d)"
+
+  # 15a. Content-hash identity: stable, lineage-invariant, content-sensitive.
+  cp reports/_meta/sample-session/goal.json "$T/g.json"
+  local h1 h2 hl hc
+  h1=$(scripts/goal-version.sh "$T/g.json")
+  h2=$(scripts/goal-version.sh "$T/g.json")
+  jq '. + {version:"gv-000000000000",supersedes:null,revision:{rationale:"x",changed:[],date:"2026-01-01"}}' "$T/g.json" > "$T/gl.json"
+  hl=$(scripts/goal-version.sh "$T/gl.json")
+  jq '.goal_statement = "an entirely different decision"' "$T/g.json" > "$T/gc.json"
+  hc=$(scripts/goal-version.sh "$T/gc.json")
+  if [ "$h1" = "$h2" ] && [ "$h1" = "$hl" ] && [ "$h1" != "$hc" ] && printf '%s' "$h1" | grep -qE '^gv-[0-9a-f]{12}$'; then
+    ok "goal-version: $h1 is stable, lineage-invariant, and content-sensitive"
+  else
+    bad "goal-version wrong (h1=$h1 h2=$h2 lineage=$hl content=$hc)"
+  fi
+
+  # 15b. A versioned goal validates against the schema (back-compat: lineage optional).
+  if ajv_plain schemas/goal.schema.json "$T/gl.json"; then
+    ok "a versioned goal (version/supersedes/revision) validates against goal.schema.json"
+  else
+    bad "versioned goal failed goal.schema.json"
+  fi
+
+  # 15b'. A real finding carrying the new gathered_under field still validates
+  #       against findings.schema.json with the MIF closure registered.
+  jq '.extensions.harness.gathered_under = "gv-000000000000"' \
+    reports/_meta/sample-session/findings/finding-copier.json > "$T/fgu.json"
+  if ajv_mif schemas/findings.schema.json "$T/fgu.json"; then
+    ok "a finding carrying extensions.harness.gathered_under validates against findings.schema.json"
+  else
+    bad "finding with gathered_under failed findings.schema.json"
+  fi
+
+  # 15c. Reshape reuse: stage a topic, classify v1, then reshape (drop a dimension,
+  #      add one) and confirm findings carry, the out-of-scope one drops, gap = added.
+  local P; P="$T/proj"; mkdir -p "$P/reports/tt/findings"
+  jq -n '{version:"1.0.0",
+          topics:[{id:"tt",title:"T",namespace:"harness/tt",status:"active"}],
+          dimensions:[{id:"technical"},{id:"landscape"},{id:"trajectory"}],
+          packs:[],
+          freshness:{default_days:180,by_citation_type:{documentation:365,website:90}}}' \
+    > "$P/harness.config.json"
+  cp reports/_meta/sample-session/findings/*.json "$P/reports/tt/findings/"
+  cp reports/_meta/sample-session/goal.json "$P/reports/tt/goal.json"
+  local V V2 mem stale mem2 gap2
+  V=$(scripts/goal-version.sh "$P/reports/tt/goal.json")
+  CLAUDE_PROJECT_DIR="$P" scripts/resolve-membership.sh tt "$V" >/dev/null 2>&1
+  mem=$(jq '.members | length' "$P/reports/tt/goals/goal-$V.members.json")
+  stale=$(jq '.stale | length' "$P/reports/tt/goals/goal-$V.members.json")
+  jq '.dimensions = ["technical","landscape","economic"]' "$P/reports/tt/goal.json" > "$P/g2.json"
+  V2=$(scripts/goal-version.sh "$P/g2.json"); cp "$P/g2.json" "$P/reports/tt/goal.json"
+  CLAUDE_PROJECT_DIR="$P" scripts/resolve-membership.sh tt "$V2" >/dev/null 2>&1
+  mem2=$(jq '.members | length' "$P/reports/tt/goals/goal-$V2.members.json")
+  gap2=$(jq -r '.gap_dimensions | join(",")' "$P/reports/tt/goals/goal-$V2.members.json")
+  if [ "$mem" = 3 ] && [ "$stale" = 3 ] && [ "$mem2" = 2 ] && [ "$gap2" = economic ] && [ "$V" != "$V2" ]; then
+    ok "reshape: v1 carries 3 (all stale, no attempted_at); v2 drops the out-of-scope dim to 2; gap=economic"
+  else
+    bad "reshape reuse wrong (v1 mem=$mem stale=$stale; v2 mem=$mem2 gap=$gap2; V=$V V2=$V2)"
+  fi
+
+  # 15d. Freshness flips on a recent attempted_at; the membership mirror projects.
+  local FR; FR="$P/reports/tt/findings/finding-copier.json"
+  jq --arg t "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+    '.extensions.harness.verification.attempted_at = $t' "$FR" > "$FR.tmp" && mv "$FR.tmp" "$FR"
+  CLAUDE_PROJECT_DIR="$P" scripts/resolve-membership.sh tt "$V2" >/dev/null 2>&1
+  local stale2 proj
+  stale2=$(jq '.stale | length' "$P/reports/tt/goals/goal-$V2.members.json")
+  CLAUDE_PROJECT_DIR="$P" scripts/build-index.sh "$P/reports/tt/findings" "$P/idx.json" >/dev/null 2>&1
+  proj=$(jq --arg v "$V2" '[.findings[] | select(.goal_versions | index($v))] | length' "$P/idx.json")
+  if [ "$stale2" -lt "$mem2" ] && [ "$proj" = "$mem2" ]; then
+    ok "freshness flips on a fresh attempted_at (stale $stale2 < members $mem2); mirror projects goal_versions[] ($proj)"
+  else
+    bad "freshness/mirror wrong (stale2=$stale2 mem2=$mem2 projected=$proj)"
+  fi
+
+  # 15e. The CORE LOOP (the reuse-and-stop guarantee): a new gap finding stamped
+  #      gathered_under=v2 joins members on re-resolve and CLOSES the gap; then
+  #      excluding it (as goal-writer does) PERSISTS — re-resolve does not re-add it
+  #      and its dimension returns to the gap. This is the path /start --update walks.
+  jq -n --arg v "$V2" '{"@id":"urn:mif:concept:harness:econ-1","title":"econ","namespace":"harness/tt",
+    citations:[{"@type":"Citation",citationType:"website",citationRole:"supports",title:"e",url:"https://e.example"}],
+    extensions:{harness:{dimension:"economic",
+      verification:{verdict:"survived",verdict_basis:"x",attempted_at:(now|todateiso8601)},
+      gathered_under:$v}}}' > "$P/reports/tt/findings/finding-econ.json"
+  CLAUDE_PROJECT_DIR="$P" scripts/resolve-membership.sh tt "$V2" >/dev/null 2>&1
+  local M="$P/reports/tt/goals/goal-$V2.members.json" gap_closed econ_in gu
+  gap_closed=$(jq -r '.gap_dimensions | join(",")' "$M")
+  econ_in=$(jq '[.members[] | select(. == "urn:mif:concept:harness:econ-1")] | length' "$M")
+  gu=$(jq -r '.extensions.harness.gathered_under' "$P/reports/tt/findings/finding-econ.json")
+  # Now exclude it as goal-writer would, and re-resolve — exclusion must persist.
+  jq '.members -= ["urn:mif:concept:harness:econ-1"] | .excluded += ["urn:mif:concept:harness:econ-1"]' \
+    "$M" > "$M.tmp" && mv "$M.tmp" "$M"
+  CLAUDE_PROJECT_DIR="$P" scripts/resolve-membership.sh tt "$V2" >/dev/null 2>&1
+  local econ_excluded gap_reopened
+  econ_excluded=$(jq '.excluded | index("urn:mif:concept:harness:econ-1") != null' "$M")
+  gap_reopened=$(jq -r '.gap_dimensions | join(",")' "$M")
+  if [ -z "$gap_closed" ] && [ "$econ_in" = 1 ] && [ "$gu" = "$V2" ] \
+     && [ "$econ_excluded" = true ] && [ "$gap_reopened" = economic ]; then
+    ok "core loop: gap finding joins members and closes the gap (gathered_under=$gu); exclusion persists on re-resolve"
+  else
+    bad "core loop wrong (gap_closed='$gap_closed' econ_in=$econ_in gu=$gu excluded=$econ_excluded reopened='$gap_reopened')"
+  fi
+
+  rm -rf "$T"
+}
+
+# ---------------------------------------------------------------------------
 # Gate registry — each milestone appends its function name here.
 # ---------------------------------------------------------------------------
-GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14)
+GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15)
 
 for g in "${GATES[@]}"; do "$g"; done
 

@@ -117,6 +117,23 @@
         }
       }
     },
+    "freshness": {
+      "type": "object",
+      "description": "Source-type decay for finding freshness (SPEC §11): how long a verified finding stays fresh before it is re-falsified on the next reshape/update. A finding's window is the MIN over its citations' MIF citationType values (the most volatile cited source governs); re_verify_by = verification.attempted_at + window. Absent = the harness default (default_days for all).",
+      "additionalProperties": false,
+      "properties": {
+        "default_days": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Staleness window (days) for any citationType not listed in by_citation_type."
+        },
+        "by_citation_type": {
+          "type": "object",
+          "description": "Per-MIF-citationType staleness windows in days. Keys are MIF citationType values (article, book, paper, website, documentation, repository, video, podcast, specification, dataset, tool, other).",
+          "additionalProperties": { "type": "integer", "minimum": 1 }
+        }
+      }
+    },
     "packs": {
       "type": "array",
       "description": "The pack control plane (SPEC §7b): each entry enables/disables a pack and declares its source. Materialized into Claude Code's enabledPlugins at instantiation.",

@@ -83,7 +83,7 @@ You receive one mode in your spawn prompt:
 | Mode | Spawned by | Behaviour |
 | --- | --- | --- |
 | `full` | `start` | New session: load goal → fan out all goal dimensions → gate → synthesize |
-| `update` | `update` | Load prior findings → re-run every dimension (refresh) → light delta diff → gate → synthesize |
+| `update` | `update` | Membership-aware (SPEC §11): reuse in-scope∧fresh findings → fan out only gap dimensions + re-verify stale → light delta diff → gate → synthesize |
 | `augment` | `augment` | Run a single additional dimension → gate the new findings → merge |
 
 ## Inputs (spawn prompt)
@@ -113,10 +113,13 @@ You receive one mode in your spawn prompt:
 
    # WORK_DIMS — the dimensions THIS run fans out (Phase 1 loops WORK_DIMS, not DIMENSIONS):
    #   full    -> every goal dimension
-   #   update  -> every goal dimension (a full refresh; Phase 4 diffs the delta)
+   #   update  -> MEMBERSHIP-AWARE (SPEC §11): only the gap dimensions (those with no
+   #              in-scope finding for the current goal version). In-scope∧fresh
+   #              findings are reused as-is; in-scope∧stale ones are re-verified (below).
    #   augment -> the named DIMENSION if given, else every goal dimension
    case "$MODE" in
      augment) WORK_DIMS="${DIMENSION:-$DIMENSIONS}" ;;
+     update)  WORK_DIMS="" ;;   # resolved from membership in step 1b
      *)       WORK_DIMS="$DIMENSIONS" ;;
    esac
    ```
@@ -126,7 +129,30 @@ You receive one mode in your spawn prompt:
    author one). In `augment` mode, if a named `DIMENSION` is **not** among the goal's
    `dimensions[]`, report it and stop rather than researching an unknown lens.
 
-2. **Create the directory and acquire the topic run lock.**
+1b. **Membership-aware update (SPEC §11).** In `update` mode, the goal may have
+   evolved (a `/goal-writer --reshape` minted a new version). Reuse what still holds
+   instead of re-gathering everything:
+
+   ```bash
+   if [ "$MODE" = "update" ]; then
+     GV=$(bash scripts/goal-version.sh "$GOAL_FILE")
+     MEM="$REPORTS_DIR/goals/goal-$GV.members.json"
+     # Resolve membership if reshape did not already (e.g. plain --update on an
+     # unversioned goal): deterministic carry/stale/gap classification.
+     [ -f "$MEM" ] || bash scripts/resolve-membership.sh "$TOPIC_SLUG" "$GV"
+     WORK_DIMS=$(jq -r '.gap_dimensions[]' "$MEM")          # fan out ONLY the gap
+     STALE_IDS=$(jq -r '.stale[]' "$MEM")                   # re-verify these in Phase 2
+     echo "update: reusing $(jq '.members|length' "$MEM") in-scope findings; \
+gap dims=[$(echo $WORK_DIMS | tr '\n' ' ')]; stale to re-verify=$(jq '.stale|length' "$MEM")"
+   fi
+   ```
+
+   `gap(vN) = goal dimensions − dimensions with an in-scope finding`. If `WORK_DIMS`
+   is empty AND no `STALE_IDS`, there is nothing to research — skip Phase 1, go
+   straight to re-synthesis (Phase 4) over the carried findings. Carried in-scope∧
+   fresh findings are reused untouched; never re-gather them.
+
+1. **Create the directory and acquire the topic run lock.**
 
    ```bash
    mkdir -p "$REPORTS_DIR"
@@ -163,7 +189,7 @@ You receive one mode in your spawn prompt:
      bound abort. Only an uncatchable crash skips it, and staleness covers that —
      never leave the lock held on a path you chose to stop on.
 
-3. **Create phase tasks** for your own progress tracking (no `owner` — there are
+2. **Create phase tasks** for your own progress tracking (no `owner` — there are
    no named teammates to assign), each blocked by the previous:
 
    ```text
@@ -173,7 +199,7 @@ You receive one mode in your spawn prompt:
    TaskCreate("Phase 4: Synthesize + cleanup")
    ```
 
-4. **Write the initial progress entry** to
+3. **Write the initial progress entry** to
    `$REPORTS_DIR/research-progress.md`:
 
    ```markdown
@@ -185,6 +211,21 @@ You receive one mode in your spawn prompt:
    - Dimensions: {goal.dimensions}
    - Bound: max_rounds={N}, min_dimensions_complete={N}
    ```
+
+4. **Snapshot the pre-run finding set + this run's goal version (SPEC §11).** This
+   is what lets Phase 4 stamp `gathered_under` on the findings THIS run produces
+   without mis-stamping carried/legacy ones:
+
+   ```bash
+   GV=$(bash scripts/goal-version.sh "$GOAL_FILE")
+   # find-based so an empty/absent findings dir yields an empty snapshot rather
+   # than a literal-glob error.
+   PRE_IDS=$(find "$REPORTS_DIR/findings" -maxdepth 1 -name '*.json' \
+     -exec jq -r '.["@id"] // empty' {} + 2>/dev/null | sort -u)
+   ```
+
+   `PRE_IDS` is the set of finding ids that already existed before fan-out;
+   everything new after Phase 1/2 is what this run gathered.
 
 ---
 
@@ -339,6 +380,14 @@ This is the **only** verification gate (SPEC §4 / §6b — the four codex revie
 gates are explicitly cut). Spawn ONE `falsification-analyst` as a **nameless
 subagent** over the full set of new findings.
 
+**Update mode also re-verifies the stale carried findings (SPEC §11).** In `update`
+mode, add the `STALE_IDS` from Phase 0 step 1b (in-scope findings whose
+verification decayed under source-type freshness) to this gate's input set. The
+one-round rule makes this idempotent; a re-verified finding gets a refreshed
+`verification` verdict and `attempted_at`, which clears it from `stale[]` on the
+next `resolve-membership.sh` / `build-index.sh` projection. Fresh carried findings
+are NOT re-gated — they are reused untouched.
+
 **The gate window stays open across the slice loop.** `scripts/falsify.sh` is blocked
 outside this pass by a PreToolUse hook (`.claude/hooks/guard-falsify-gate.sh`) — that is
 what stops a dimension-analyst from self-grading siblings. Open the orchestrator-owned
@@ -472,6 +521,33 @@ Append to the progress file:
 
 ## Phase 4: Synthesize, render progress, clean up
 
+0. **Reconcile provenance + membership (SPEC §11) — close the goal-version loop.**
+   Findings produced this run must record which version produced them, and the
+   current version's membership must reflect them (so the gap closes and a *second*
+   `/start --update` does not re-research what this run just gathered). Stamp
+   `gathered_under` ONLY on findings new to this run — identified by the `PRE_IDS`
+   snapshot from Phase 0 step 4 — so a carried or legacy finding keeps its original
+   provenance (or stays honestly unstamped) and is never falsely re-attributed to
+   the current version:
+
+   ```bash
+   for f in "$REPORTS_DIR"/findings/*.json; do
+     [ -f "$f" ] || continue
+     id=$(jq -r '.["@id"] // empty' "$f")
+     # skip findings that existed before this run, and any already stamped
+     printf '%s\n' "$PRE_IDS" | grep -qxF "$id" && continue
+     jq -e '.extensions.harness.gathered_under // empty | length > 0' "$f" >/dev/null 2>&1 && continue
+     jq --arg v "$GV" '.extensions.harness.gathered_under = $v' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+   done
+   bash scripts/resolve-membership.sh "$TOPIC_SLUG" "$GV"   # honors excluded[]; gap should now be empty
+   bash scripts/build-index.sh "$REPORTS_DIR/findings"      # projects goal_versions[]/stale_in[]
+   ```
+
+   `gathered_under` is stamped once and never overwritten (provenance — the version
+   that *first produced* the finding). The re-resolve preserves the `excluded[]` the
+   goal-writer set, so newly gathered findings join `members[]` while deliberately
+   out-of-scope ones stay out.
+
 1. **Synthesize.** First `scripts/run-lock.sh refresh "$REPORTS_DIR"` (synthesis can
    be long — keep the lock fresh so it is not stolen before you release it in step 4),
    then spawn the `report-synthesizer` as a **nameless subagent** over the active
@@ -567,13 +643,18 @@ Append the final progress entry:
 
 ## Update-mode delta (light)
 
-In `update` mode, before Phase 4: load the prior session's finding files, match
-new findings to prior ones by title similarity, and classify each as **new**,
-**updated**, **confirmed**, or **removed**. Replace updated findings in place,
-keep confirmed ones, archive removed ones under `$REPORTS_DIR/archive/`, and add
-new ones. Record the counts (new / updated / confirmed / removed) in a
-`{date}-delta.md` note and in the progress file. Keep this a one-pass diff — do
-not build a separate delta schema or newsworthiness machinery.
+`update` mode is **membership-aware** (Phase 0 step 1b, SPEC §11): it fans out only
+the gap dimensions and re-verifies the stale carried findings — it does NOT
+re-research every dimension. After the gap/stale work, before Phase 4: load the
+prior finding files, match new findings to prior ones by title similarity, and
+classify each as **new**, **updated**, **confirmed**, or **removed**. Replace
+updated findings in place, keep confirmed ones, archive removed ones under
+`$REPORTS_DIR/archive/`, and add new ones. A finding that is out of scope for the
+current goal version but still in scope for an earlier one is **kept in the
+corpus**, not archived — it simply isn't in this version's members. Record the
+counts (new / updated / confirmed / removed, plus reused / re-verified / gap) in a
+`{date}-delta.md` note and the progress file. Keep this a one-pass diff — no
+separate delta schema.
 
 ## What this orchestrator does NOT do
 

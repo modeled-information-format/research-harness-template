@@ -67,6 +67,29 @@
         "max_rounds": { "type": "integer", "minimum": 1 },
         "min_dimensions_complete": { "type": "integer", "minimum": 1 }
       }
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^gv-[0-9a-f]{12}$",
+      "description": "Content-hash identity of this goal version (SPEC §11): gv-<sha256(normalized goal)[:12]>, computed over the goal with the lineage fields (version/supersedes/revision) removed and keys sorted. Self-verifying and commit-independent. Absent = the implicit unversioned baseline; the first /goal-writer --reshape mints the first explicit version."
+    },
+    "supersedes": {
+      "type": ["string", "null"],
+      "pattern": "^gv-[0-9a-f]{12}$",
+      "description": "The version id this one supersedes in the append-only lineage, or null for the first version."
+    },
+    "revision": {
+      "type": "object",
+      "description": "What changed when this version was minted, and why. Provenance for the lineage; never part of the content hash.",
+      "additionalProperties": false,
+      "required": ["rationale", "changed", "date"],
+      "properties": {
+        "rationale": { "type": "string", "minLength": 1 },
+        "changed": { "type": "array", "items": { "type": "string" } },
+        "date": { "type": "string", "format": "date" },
+        "alias": { "type": "string", "description": "Optional human alias (e.g. v2)." },
+        "git_sha": { "type": "string", "description": "Optional git SHA where this version landed (provenance, not identity)." }
+      }
     }
   }
 }

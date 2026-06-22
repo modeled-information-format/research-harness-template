@@ -146,6 +146,29 @@ else
   note "FAIL: zero-findings README not produced/validated"; fail=1
 fi
 
+# Phase 8 — living-corpus goal evolution (SPEC §11): a goal version is content-
+# hashed and lineage-invariant; reshaping to drop a dimension reuses the still-in-
+# scope findings and computes the gap, rather than re-gathering.
+GP="$TMP/gproj"; mkdir -p "$GP/reports/tt/findings"
+jq -n '{version:"1.0.0",topics:[{id:"tt",title:"T",namespace:"harness/tt",status:"active"}],
+        dimensions:[{id:"technical"},{id:"landscape"},{id:"trajectory"}],packs:[],
+        freshness:{default_days:180,by_citation_type:{documentation:365}}}' > "$GP/harness.config.json"
+cp reports/_meta/sample-session/findings/*.json "$GP/reports/tt/findings/"
+cp reports/_meta/sample-session/goal.json "$GP/reports/tt/goal.json"
+V1=$(bash scripts/goal-version.sh "$GP/reports/tt/goal.json")
+V1b=$(bash scripts/goal-version.sh "$GP/reports/tt/goal.json")
+jq '.dimensions=["technical","landscape","economic"]' "$GP/reports/tt/goal.json" > "$GP/g2.json"
+V2=$(bash scripts/goal-version.sh "$GP/g2.json"); cp "$GP/g2.json" "$GP/reports/tt/goal.json"
+CLAUDE_PROJECT_DIR="$GP" bash scripts/resolve-membership.sh tt "$V2" >/dev/null 2>&1
+M2="$GP/reports/tt/goals/goal-$V2.members.json"
+if [ "$V1" = "$V1b" ] && [ "$V1" != "$V2" ] \
+   && [ "$(jq '.members|length' "$M2")" = 2 ] \
+   && [ "$(jq -r '.gap_dimensions|join(",")' "$M2")" = economic ]; then
+  note "goal evolution: version is stable hash; reshape reuses 2 in-scope findings, gap=economic"
+else
+  note "FAIL: goal evolution reshape/reuse"; fail=1
+fi
+
 if [ "$fail" -eq 0 ]; then
   echo "smoke-test: PASS"
   exit 0

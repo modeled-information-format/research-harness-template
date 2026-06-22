@@ -40,6 +40,23 @@
       "mifExemptReason": "Published blog prose is orthogonal to MIF: the citation-leak gate keeps it free of internal MIF identity, so the MIF source of truth lives in the report channel, not the post."
     }
   ],
+  "freshness": {
+    "default_days": 180,
+    "by_citation_type": {
+      "specification": 730,
+      "book": 1095,
+      "paper": 730,
+      "dataset": 365,
+      "documentation": 365,
+      "repository": 180,
+      "tool": 180,
+      "other": 180,
+      "website": 90,
+      "article": 90,
+      "video": 90,
+      "podcast": 90
+    }
+  },
   "packs": [
     {
       "name": "book",

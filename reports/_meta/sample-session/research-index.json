@@ -12,7 +12,9 @@
         "template-engine"
       ],
       "verdict": "survived",
-      "citations": 1
+      "citations": 1,
+      "goal_versions": [],
+      "stale_in": []
     },
     {
       "id": "urn:mif:concept:harness:kg-copier-0001",
@@ -24,7 +26,9 @@
         "template-engine"
       ],
       "verdict": "survived",
-      "citations": 1
+      "citations": 1,
+      "goal_versions": [],
+      "stale_in": []
     },
     {
       "id": "urn:mif:concept:harness:kg-distribution-0003",
@@ -36,7 +40,9 @@
         "decision"
       ],
       "verdict": "survived",
-      "citations": 1
+      "citations": 1,
+      "goal_versions": [],
+      "stale_in": []
     }
   ]
 }

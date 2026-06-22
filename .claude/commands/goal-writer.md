@@ -1,7 +1,7 @@
 ---
 name: goal-writer
-description: Turn a raw research ask into a measurable, transcript-verifiable session goal (schemas/goal.schema.json) that initiates and gates a research run
-argument-hint: "[your research ask]"
+description: Turn a raw research ask into a measurable, transcript-verifiable session goal (schemas/goal.schema.json) that initiates and gates a research run. With --reshape, evolve an existing goal into a new content-hashed version and classify existing findings (carry / gap / stale) without re-gathering.
+argument-hint: "[your research ask] | --reshape [<what changed>]"
 ---
 
 # Goal Writer
@@ -26,6 +26,82 @@ You produce TWO things, in this order:
 Author *one checkable end state*, not a plan of steps. Soundness is already
 enforced by the adversarial falsification gate; your job is to make
 **sufficiency** ("did we answer the question") a printable fact.
+
+## Reshape an existing goal (`--reshape`)
+
+If `$ARGUMENTS` begins with `--reshape`, you are **evolving** an existing goal into
+a new version of an append-only lineage (SPEC §11), **not** authoring fresh. The
+remaining text is the **delta** — what changed (e.g. `drop trajectory, add the
+economic dimension, revise the decision to weigh cost`). If no delta text is given,
+elicit it: ask what dimensions are added/removed, whether scope shifted, and which
+checks or the decision changed.
+
+The goal is **immutable per version** — never edit a version in place; you mint a
+new one. A finding is gathered once and **reused** across versions; reshape decides
+which existing findings carry forward, which are now out of scope, and which have
+gone stale — so `/start --update` re-researches only the gap and the stale.
+
+Steps:
+
+1. **Resolve topic + load the live goal** `reports/<topic>/goal.json`. If none
+   exists, stop and tell the user to author one first with plain `/goal-writer`.
+2. **Snapshot the prior version** before changing anything:
+
+   ```bash
+   OLD=$(bash scripts/goal-version.sh reports/<topic>/goal.json)
+   mkdir -p reports/<topic>/goals
+   cp reports/<topic>/goal.json reports/<topic>/goals/goal-$OLD.json
+   ```
+
+3. **Apply the delta** to produce the new goal *content* (dimensions, scope,
+   `completion_condition.checks`, and the decision as needed) — still one decision,
+   still valid against `schemas/goal.schema.json`. Use only config-declared
+   dimensions.
+4. **Mint the new version.** Write the new content to `reports/<topic>/goal.json`,
+   then compute its hash and stamp the lineage (the hash ignores the lineage
+   fields, so stamping them does not perturb it):
+
+   ```bash
+   NEW=$(bash scripts/goal-version.sh reports/<topic>/goal.json)
+   jq --arg n "$NEW" --arg o "$OLD" --arg d "$(date -u +%Y-%m-%d)" \
+     '.version=$n | .supersedes=$o | .revision={rationale:"<why>",changed:["<delta>"],date:$d}' \
+     reports/<topic>/goal.json > tmp.$$ && mv tmp.$$ reports/<topic>/goal.json
+   ajv validate --spec=draft2020 --strict=false -s schemas/goal.schema.json -d reports/<topic>/goal.json
+   ```
+
+5. **Classify existing findings** against the new version:
+
+   ```bash
+   bash scripts/resolve-membership.sh <topic> "$NEW"
+   ```
+
+   This deterministic pass writes `reports/<topic>/goals/goal-$NEW.members.json`
+   (`members` / `stale` / `excluded` / `gap_dimensions`). Then **refine it with
+   judgment** the deterministic filter cannot apply: review each member against the
+   new `scope.out_of_scope` / `non_goals`. For any finding now genuinely out of
+   scope, append its id to `excluded[]` and **re-run `resolve-membership.sh`** — do
+   NOT hand-edit `members`/`gap_dimensions`, because the re-resolve honors
+   `excluded[]` and recomputes members, stale, and gap consistently (excluding the
+   last finding of a dimension correctly turns that dimension into a gap):
+
+   ```bash
+   jq --arg id "<finding @id>" '.excluded += [$id]' \
+     reports/<topic>/goals/goal-$NEW.members.json > tmp.$$ \
+     && mv tmp.$$ reports/<topic>/goals/goal-$NEW.members.json
+   bash scripts/resolve-membership.sh <topic> "$NEW"   # re-derives members/stale/gap, honoring excluded[]
+   ```
+
+   The resulting `gap_dimensions`, plus any check with no supporting member, are the
+   research gap. (The excluded finding stays in the corpus — it still serves earlier
+   versions; it is only out of *this* version's working set.)
+6. **Print the report**: new version id + `supersedes`, and the carry / gap / stale
+   counts (`jq` over the members file). This is the transcript evidence.
+7. **STOP — do not spawn.** Tell the user to run `/start --update` (membership-aware)
+   to research only the gap and re-verify the stale, reusing every carried finding.
+   Do NOT hand-spawn the orchestrator or any research agent.
+
+The rest of this document (the goal contract, evidence surface, output discipline)
+applies to the new version exactly as to a first authoring.
 
 ## Original ask
 

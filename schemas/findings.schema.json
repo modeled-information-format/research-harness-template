@@ -43,6 +43,11 @@
                       "items": { "type": "string", "format": "uri" }
                     }
                   }
+                },
+                "gathered_under": {
+                  "type": "string",
+                  "pattern": "^gv-[0-9a-f]{12}$",
+                  "description": "Provenance (SPEC §11): the single goal version whose research first produced this finding, stamped by the orchestrator when the finding lands. Immutable; distinct from membership. Membership (which versions a finding is in scope for) is NOT a finding field — it is the re-derivable projection goal_versions[]/stale_in[] on the research-index, authored from the per-version goals/goal-<hash>.members.json files by build-index.sh."
                 }
               }
             }
