@@ -1,7 +1,7 @@
 ---
 name: md-fix
 description: "Remediate non-compliant Markdown — fix the markdownlint classes that `markdownlint-cli2 --fix` cannot auto-resolve (MD025 frontmatter-title, MD060 tables, MD033 placeholders, MD036 bold-as-heading, MD029 list-embedded blocks), repair broken intra-repo links, and triage cSpell/typos, escalating only genuine judgment calls. Use this skill when the user wants to fix Markdown lint errors, clean up markdown, make a doc compliant, fix broken doc links, resolve markdownlint/cSpell/typos diagnostics, or remediate documentation without suppressing warnings. Triggers on 'fix markdown', 'fix lint', 'markdownlint errors', 'fix the docs', 'clean up this markdown', 'fix broken links', 'md-fix', 'remediate markdown'. Never suppresses a diagnostic."
-version: 1.0.0
+version: 0.1.1
 argument-hint: "<path-or-glob> ... [--check] [--dry-run] [--apply-allowlist] [--no-spell]"
 allowed-tools: Read, Bash, Edit, Glob, Grep, Agent
 ---

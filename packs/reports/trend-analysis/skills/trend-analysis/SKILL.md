@@ -1,7 +1,7 @@
 ---
 name: trend-analysis
 description: Genre template for a trajectory report (trajectory, signals, scenarios over time). Use when the deliverable tracks how something is changing and projects forward under uncertainty.
-version: 1.0.0
+version: 0.1.1
 ---
 
 # Genre Template: Trend Analysis

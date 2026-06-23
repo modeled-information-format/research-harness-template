@@ -1,7 +1,7 @@
 ---
 name: trend-modeling
 description: Use when the user asks to "model trends with limited data", "three-valued logic analysis", "scenario generation", "transitional graphs", "qualitative trend analysis", "uncertain data analysis", "minimal-information modeling", or needs trend-based modeling with INC/DEC/CONST logic, scenario planning with little quantitative data, or transitional scenario graphs.
-version: 1.0.0
+version: 0.1.1
 ---
 
 # Trend Modeling with Three-Valued Logic

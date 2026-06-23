@@ -1,7 +1,7 @@
 ---
 name: github-issues
 description: "Convert a research topic's surviving findings into actionable GitHub issues — atomize each finding's implications into sprint-sized, well-structured issues with acceptance criteria and evidence-justified priority. Grounded in the SOURCES (the findings corpus and their primary-source citations) — NEVER a rendered report. Optional channel; depends on the `gh` CLI. Use when the user says 'create issues from the research', 'turn findings into issues', or 'file action items'."
-version: 1.0.0
+version: 0.1.1
 argument-hint: "<findings-dir> [--repo owner/repo] [--labels a,b] [--dry-run]"
 allowed-tools: Read, Write, Bash, Grep, Glob
 ---

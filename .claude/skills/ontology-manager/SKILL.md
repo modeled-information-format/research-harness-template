@@ -9,7 +9,7 @@ description: >-
   structure. Triggers on: "ontology", "create ontology", "validate
   ontology", "inspect ontology", "convert ontology", "ontology schema",
   "entity types", "traits", "discovery patterns", "namespace hierarchy".
-version: 1.0.0
+version: 0.1.1
 ---
 
 # MIF Ontology Manager

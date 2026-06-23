@@ -1,7 +1,7 @@
 ---
 name: academic
 description: Genre template for a formal research report (abstract, background, method, findings, discussion, references) with formal citations. Use when the deliverable is a scholarly write-up for a technical or research audience that demands traceable evidence and explicit method.
-version: 1.0.0
+version: 0.1.1
 ---
 
 # Genre Template: Academic Research Report

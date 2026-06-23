@@ -1,7 +1,7 @@
 ---
 name: pdf
 description: "Produce a styled, print-ready PDF directly FROM THE SOURCES — a research topic's surviving findings corpus and the primary materials its citations point to. Composes a comprehensive document grounded in the findings (one section per finding, with each finding's primary-source citations) and a complete References list, then renders it with pandoc + a title page + rasterized Mermaid diagrams. NEVER built from a rendered report (that would be a copy-of-a-copy). Optional channel; depends on pandoc + a PDF engine, and mermaid-cli for diagrams. Use when the user says 'render to PDF', 'export as PDF', or 'make a PDF'."
-version: 1.0.0
+version: 0.1.1
 argument-hint: "<findings-dir> [-o <output.pdf>] [<topic-name>]"
 allowed-tools: Read, Write, Bash, Grep, Glob
 ---

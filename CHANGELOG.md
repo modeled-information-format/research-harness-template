@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Nothing yet. Changes land here before the next tagged release.
 
-## [0.1.0] - 2026-06-23
+## [0.1.1] - 2026-06-23
 
 First release of the domain-general research harness template.
 
@@ -44,5 +44,5 @@ First release of the domain-general research harness template.
 - **Distribution** as a Copier living template and a Claude Code plugin
   marketplace.
 
-[Unreleased]: https://github.com/zircote/research-harness-template/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/zircote/research-harness-template/releases/tag/v0.1.0
+[Unreleased]: https://github.com/zircote/research-harness-template/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/zircote/research-harness-template/releases/tag/v0.1.1

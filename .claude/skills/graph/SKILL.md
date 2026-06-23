@@ -1,7 +1,7 @@
 ---
 name: graph
 description: "Build, refresh, and query the MIF-native knowledge graph — the typed substrate of concepts and entities (all urn:mif: ids) linked by MIF relationships and mentions. Use this skill when the user asks about relationships between findings, what connects two concepts or entities, entity overlap, or wants a visual map. Triggers on 'what connects', 'how are these related', 'show graph', 'knowledge graph', 'visualize research', 'rebuild the graph', 'entity overlap', 'shared between'. With --concordance, the same verbs operate on the corpus-wide ontological spine spanning ALL topics (build/validate/query reports/concordance.json) — triggers on 'concordance', 'across topics', 'whole corpus', 'cross-topic', 'ontological spine', 'world view of knowledge'. The graph is derived from MIF entities and relations, never from tags."
-version: 1.0.0
+version: 0.1.1
 argument-hint: "[--concordance] [--build] [--validate] [--viz] [--stats] [--node <urn:mif:id>] [--between <id1> <id2>] [--kind concept|entity]"
 allowed-tools: Read, Bash, Grep, Glob
 ---

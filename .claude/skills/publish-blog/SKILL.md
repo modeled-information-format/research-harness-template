@@ -1,7 +1,7 @@
 ---
 name: publish-blog
 description: "Render surviving research findings into a publishable blog post through the typed findings-to-artifact contract. A first-class harness output (not a pack). Use this skill when the user wants to turn research into a blog post, publish findings, draft an article from the corpus, or write up what the research found. Triggers on 'publish blog', 'blog post from research', 'write up these findings', 'draft an article', 'turn this into a post'."
-version: 1.0.0
+version: 0.1.1
 argument-hint: "[--topic <id>] [--genre <genre>] [--out <path.md>]"
 allowed-tools: Read, Bash, Edit, Glob, Grep
 ---

@@ -1,7 +1,7 @@
 ---
 name: competitive-analysis
 description: Use when the user asks to "analyze competitors", "map competitive landscape", "Porter's 5 Forces analysis", "competitor comparison", "competitive positioning", "identify competitors", "competitive intelligence", or needs competitor research methodology, market positioning analysis, or competitive strategy frameworks.
-version: 1.0.0
+version: 0.1.1
 ---
 
 # Competitive Analysis

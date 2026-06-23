@@ -1,6 +1,6 @@
 {
   "name": "academic",
-  "version": "1.0.0",
+  "version": "0.1.1",
   "kind": "genre",
   "description": "Genre template for a formal research report (abstract, background, method, findings, discussion, references) with formal citations",
   "license": "MIT",

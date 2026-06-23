@@ -1,6 +1,6 @@
 {
   "name": "exec-summary",
-  "version": "1.0.0",
+  "version": "0.1.1",
   "kind": "genre",
   "description": "Genre template for a 1-2 page decision-oriented executive summary (BLUF, key findings, recommendation, risks)",
   "license": "MIT",

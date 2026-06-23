@@ -1,7 +1,7 @@
 ---
 name: engineering
 description: Genre template for a design / evaluation report (problem, options, decision, trade-offs, implementation notes). Use when the deliverable documents a technical decision or evaluation for engineers who will build or maintain the result.
-version: 1.0.0
+version: 0.1.1
 ---
 
 # Genre Template: Engineering Report

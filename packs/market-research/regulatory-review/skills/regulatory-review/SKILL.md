@@ -1,7 +1,7 @@
 ---
 name: regulatory-review
 description: Use when the user asks to "analyze regulations", "regulatory landscape", "compliance requirements", "legal considerations", "regulatory risk", "industry regulations", "compliance analysis", "regulatory trends", or needs guidance on regulatory environments, compliance requirements, or legal market factors.
-version: 1.0.0
+version: 0.1.1
 ---
 
 # Regulatory Review

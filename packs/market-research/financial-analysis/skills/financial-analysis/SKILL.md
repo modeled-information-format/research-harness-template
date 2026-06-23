@@ -1,7 +1,7 @@
 ---
 name: financial-analysis
 description: Use when the user asks to "analyze financials", "revenue model", "unit economics", "pricing analysis", "cost structure", "profitability analysis", "financial projections", "business model economics", or needs financial-metric, revenue-analysis, or economic-viability guidance.
-version: 1.0.0
+version: 0.1.1
 ---
 
 # Financial Analysis
