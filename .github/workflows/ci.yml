@@ -89,7 +89,9 @@ jobs:
       - name: All actions are SHA-pinned
         run: |
           set -euo pipefail
-          unpinned=$(grep -rhoE 'uses:[[:space:]]+\S+@\S+' .github/workflows/ | grep -ivE '@[0-9a-f]{40}' || true)
+          # Match only real `uses:` step keys (optionally `- ` prefixed) at the
+          # start of a line, so commented examples never trip the gate.
+          unpinned=$(grep -rhoE '^[[:space:]]*-?[[:space:]]*uses:[[:space:]]+\S+@\S+' .github/workflows/ | grep -ivE '@[0-9a-f]{40}' || true)
           if [ -n "${unpinned}" ]; then
             echo "Unpinned actions found (pin to a 40-char commit SHA):" >&2
             echo "${unpinned}" >&2

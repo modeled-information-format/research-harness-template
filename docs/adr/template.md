@@ -92,12 +92,12 @@ Summarize what the decision achieves and how the negatives are mitigated.
 
 ## More Information
 
-- **Date:** 2026-06-23
+- **Date:** YYYY-MM-DD
 - **Source:** `path/to/grounding-file`
 
 ## Audit
 
-### 2026-06-23
+### YYYY-MM-DD
 
 **Status:** Pending
 
