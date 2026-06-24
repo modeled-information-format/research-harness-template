@@ -103,13 +103,29 @@ git/marketplace plugin).
 `sync-packs.sh` resolves each enabled plugin's directory from the marketplace
 `source` and writes the result into two places:
 
-1. Claude Code's native `enabledPlugins` in `.claude/settings.json` (the
-   mechanism the runtime reads — `<plugin>@research-harness: true`).
+1. Claude Code's native `enabledPlugins` in `.claude/settings.local.json` (the
+   mechanism the runtime reads — `<plugin>@research-harness: true`). This is
+   **instance-local** materialized state: it derives from this repo's
+   `harness.config.json` `packs[]`, so it is gitignored and never lives in the
+   template-managed, byte-identical `.claude/settings.json`. Claude Code
+   deep-merges `enabledPlugins` across `settings.json` and `settings.local.json`,
+   so the runtime sees these enablements alongside the shared hooks.
 2. A sidecar `.claude/enabled-packs.json` recording each enabled plugin's source
-   and resolved skills, for tooling and the conformance gate.
+   and resolved skills, for tooling and the conformance gate (also gitignored).
 
 Disabled plugins appear in neither, so their skills are not active. By default
 the five `reports` genres are enabled; every other plugin is disabled and opt-in.
+
+### Template-managed vs instance-local config
+
+`.claude/settings.json` is **template-managed**: it carries the harness hooks and
+is kept byte-identical template-and-instance so `copier update` never conflicts on
+it. Anything **instance-local** — the materialized `enabledPlugins`
+(`settings.local.json`), the `enabled-packs.json` sidecar, and personal overrides
+like `skillOverrides` — lives in `.claude/settings.local.json` (gitignored,
+deep-merged by the runtime) and is rebuilt by `sync-packs.sh`. The Copier answers
+file `.copier-answers.yml` is the one instance-specific file that **is** committed:
+it records the template commit `copier update` uses as its merge base.
 
 ## Marketplace registration
 

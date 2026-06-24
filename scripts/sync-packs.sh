@@ -2,8 +2,13 @@
 # sync-packs.sh — materialize the harness.config.json packs[] control plane into
 # Claude Code's NATIVE plugin enablement (SPEC §7b). For each ENABLED pack it
 # resolves the namespaced skills the pack contributes (pack:skill) and:
-#   1. writes Claude Code's native `enabledPlugins` into settings.json
-#      (the mechanism the runtime actually reads — "<pack>@<marketplace>": true);
+#   1. writes Claude Code's native `enabledPlugins` into settings.local.json
+#      (the mechanism the runtime actually reads — "<pack>@<marketplace>": true).
+#      This is INSTANCE-LOCAL materialized state (gitignored): it derives from
+#      this repo's harness.config.json packs[], so it differs per instance and
+#      must NOT live in the template-managed, byte-identical .claude/settings.json.
+#      Claude Code deep-merges enabledPlugins across settings.json + settings.local.json,
+#      so the runtime sees these enablements alongside settings.json's hooks.
 #   2. writes a detailed sidecar (.claude/enabled-packs.json) recording each
 #      enabled pack's source and resolved skills, for tooling and the gate.
 # Disabled packs are omitted from both, so their skills are not active. This is
@@ -14,15 +19,15 @@
 #   external pack -> recorded as an external enablement (git/marketplace source);
 #                    its skills resolve once the clone fetches the plugin.
 #
-# Usage: sync-packs.sh [<harness.config.json>] [<enabled-packs.json>] [<settings.json>]
-#        defaults: harness.config.json  .claude/enabled-packs.json  .claude/settings.json
+# Usage: sync-packs.sh [<harness.config.json>] [<enabled-packs.json>] [<settings.local.json>]
+#        defaults: harness.config.json  .claude/enabled-packs.json  .claude/settings.local.json
 
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 2
 
 CFG="${1:-harness.config.json}"
 OUT="${2:-.claude/enabled-packs.json}"
-SETTINGS="${3:-.claude/settings.json}"
+SETTINGS="${3:-.claude/settings.local.json}"
 [ -f "$CFG" ] || { echo "sync-packs: config not found: $CFG" >&2; exit 2; }
 
 MARKET=$(jq -r '.name // "research-harness"' .claude-plugin/marketplace.json 2>/dev/null)
@@ -71,7 +76,10 @@ sidecar = {"@type": "EnabledPacks", "generator": "sync-packs.sh (SPEC §7b)",
            "enabledPlugins": [p["name"] for p in packs], "packs": packs}
 json.dump(sidecar, open(out_path, "w"), indent=2); open(out_path, "a").write("\n")
 
-# 2. native enablement — merge into settings.json without disturbing hooks etc.
+# 2. native enablement — merge into the (instance-local) settings file without
+#    disturbing other local keys (e.g. skillOverrides). settings_path defaults to
+#    .claude/settings.local.json; the runtime deep-merges its enabledPlugins with
+#    the template-managed .claude/settings.json.
 try:
     settings = json.load(open(settings_path))
 except (OSError, ValueError):

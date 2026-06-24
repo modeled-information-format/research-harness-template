@@ -38,8 +38,9 @@ see [packs and plugins](../reference/packs-and-plugins.md).
    ```
 
    `pack-toggle.sh` calls `scripts/sync-packs.sh` for you, which writes Claude
-   Code's native `enabledPlugins` into `.claude/settings.json` and records the
-   resolved skills in `.claude/enabled-packs.json`.
+   Code's native `enabledPlugins` into the instance-local `.claude/settings.local.json`
+   (gitignored; deep-merged with the template-managed `.claude/settings.json`) and
+   records the resolved skills in `.claude/enabled-packs.json`.
 
 3. Verify the pack is active:
 
@@ -58,7 +59,7 @@ see [packs and plugins](../reference/packs-and-plugins.md).
 scripts/pack-toggle.sh <pack-name> off
 ```
 
-Disabled packs are omitted from both `.claude/settings.json` and
+Disabled packs are omitted from both `.claude/settings.local.json` and
 `.claude/enabled-packs.json`, so their skills are no longer active.
 
 ## Defaults

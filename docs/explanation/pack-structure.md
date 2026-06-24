@@ -58,8 +58,9 @@ extension surface is consistent everywhere.
 `enabled` flag and a `source` (`bundled`, or an external git/marketplace plugin).
 `scripts/sync-packs.sh` resolves each enabled plugin's directory from the
 marketplace `source` path and materializes the set into Claude Code's native
-`enabledPlugins` in `.claude/settings.json` (`<skill>@research-harness`).
-`scripts/pack-toggle.sh <skill> on|off` flips one plugin.
+`enabledPlugins` in the instance-local `.claude/settings.local.json`
+(`<skill>@research-harness`; gitignored, deep-merged with the template-managed
+`.claude/settings.json`). `scripts/pack-toggle.sh <skill> on|off` flips one plugin.
 
 By default the five `reports` genres are enabled; every other plugin is
 disabled and opt-in.

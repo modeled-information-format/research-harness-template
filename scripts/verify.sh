@@ -359,8 +359,9 @@ gate_m5() {
   fi
 
   # 5c. Enabling a plugin through the manifest adds its skill to Claude Code's
-  #     native enabledPlugins (settings.json); disabling removes it. Proven on a
-  #     currently-disabled plugin (competitive-analysis), on temp copies.
+  #     native enabledPlugins (materialized into settings.local.json; here proven on
+  #     a temp settings path); disabling removes it. Proven on a currently-disabled
+  #     plugin (competitive-analysis), on temp copies.
   local T; T=$(mktemp -d)
   cp .claude/settings.json "$T/settings-on.json"
   cp .claude/settings.json "$T/settings-off.json"
@@ -413,6 +414,18 @@ PY
     ok "every per-skill plugin is registered in marketplace.json with a resolving source"
   else
     bad "marketplace registration mismatch: $reg_ok"
+  fi
+
+  # 5f. settings.json is template-managed and byte-identical template-and-instance:
+  #     the materialized, per-instance `enabledPlugins` map must NOT live there — it
+  #     belongs in the gitignored, instance-local settings.local.json (sync-packs'
+  #     default target; the runtime deep-merges the two). Guards against pack
+  #     materialization leaking back into the shared settings.json.
+  if [ "$(jq -r 'has("enabledPlugins")' .claude/settings.json)" = "false" ] \
+     && grep -q 'SETTINGS="${3:-.claude/settings.local.json}"' scripts/sync-packs.sh; then
+    ok "settings.json carries no enabledPlugins; sync-packs materializes it into settings.local.json"
+  else
+    bad "enabledPlugins must live in settings.local.json (instance-local), not the template-managed settings.json"
   fi
 }
 

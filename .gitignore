@@ -11,8 +11,13 @@ author-finding*.py
 # Hook runtime state
 .claude/hooks/markdown/state/
 
-# Derived pack enablement (materialized from harness.config.json packs[])
+# Instance-local materialized config — NOT template-managed and NOT byte-identical
+# across instances. Rebuilt by scripts/sync-packs.sh from harness.config.json packs[],
+# plus any local overrides (e.g. skillOverrides). The native `enabledPlugins` map
+# lives in settings.local.json (the runtime deep-merges it with settings.json), so it
+# stays out of the template-managed, byte-identical .claude/settings.json.
 .claude/enabled-packs.json
+.claude/settings.local.json
 
-# Copier answers file exists only in an instantiated harness, not the template repo
-.copier-answers.yml
+# NOTE: .copier-answers.yml is intentionally NOT ignored — it records the template
+# commit (the merge base `copier update` needs) and must be committed in instances.

@@ -19,7 +19,9 @@ later pull template improvements with `copier update`.
 
 `copier copy` renders the template, asks the instantiation questions, and writes
 a `.copier-answers.yml` that records the template version and your answers. That
-answers file is what makes the instance *updatable*.
+answers file is what makes the instance *updatable* — **commit it** (it is not
+gitignored): `copier update` reads its `_commit` as the merge base, so an
+uncommitted or lost answers file breaks future updates.
 
 ```bash
 pipx install copier            # or: pipx install copier && pipx ensurepath

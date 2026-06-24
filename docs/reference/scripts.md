@@ -56,7 +56,7 @@ Scripts that manage capability packs, ontology resolution, and artifact synthesi
 
 | Script | Purpose | Key dependency |
 | --- | --- | --- |
-| `scripts/sync-packs.sh` | Materialises `harness.config.json` `packs[]` into `.claude/enabled-packs.json` and `.claude/settings.json` `enabledPlugins`. | `jq`, `python3` (embedded materialization), `yq` (ontology catalog) |
+| `scripts/sync-packs.sh` | Materialises `harness.config.json` `packs[]` into `.claude/enabled-packs.json` and the instance-local `.claude/settings.local.json` `enabledPlugins` (gitignored; deep-merged with the template-managed `settings.json`). | `jq`, `python3` (embedded materialization), `yq` (ontology catalog) |
 | `scripts/pack-toggle.sh` | Flips a pack's `enabled` flag in `harness.config.json` then re-materialises via `sync-packs.sh`. | `jq`; plus `python3` + `yq` via `sync-packs.sh` |
 | `scripts/resolve-ontology.sh` | Topical ontology resolution for one MIF finding. Fail-closed: an unresolvable type returns non-zero. Falls back to discovery-pattern classification. | `yq`, `jq`, `ajv` |
 | `scripts/ontology-review.sh` | Reviews and validates ontology coverage across topics; refreshes `reports/<topic>/ontology-map.json`. | `jq`, `yq`, `ajv` |

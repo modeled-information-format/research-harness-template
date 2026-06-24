@@ -61,8 +61,9 @@ validate with `ajv` too, so it is effectively a core dependency.
 
 The harness is a [Copier](https://copier.readthedocs.io/) template. The
 recommended way to adopt it is `copier copy`, which records a
-`.copier-answers.yml` so you can later pull template improvements with
-`copier update` — see [How to instantiate the harness](../how-to/instantiate-the-harness.md).
+`.copier-answers.yml` (commit it — it is the merge base for `copier update`) so you
+can later pull template improvements with `copier update` — see
+[How to instantiate the harness](../how-to/instantiate-the-harness.md).
 
 | Tool | Minimum | Required by | Install / Check |
 | --- | --- | --- | --- |
