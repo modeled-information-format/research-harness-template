@@ -142,7 +142,7 @@ scripts/pack-toggle.sh engineering on
 
 ## exec-summary
 
-**Version:** 1.0.1 | **Kind:** genre
+**Version:** 0.1.2 | **Kind:** genre
 
 ### Purpose
 
