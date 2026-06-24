@@ -35,7 +35,7 @@ you enable.
 | --- | --- | --- | --- |
 | `git` | any supported | Clone the template; `git grep` identity-leak gate in `verify.sh`; `git archive` release tarball (`release.yml`) | `git --version` |
 | `jq` | 1.7+ (1.8.2 verified) | The engine — index, graph, findings, render, falsify (most scripts) | `jq --version` |
-| `yq` (mikefarah) | `v4.53.3` — *repo-pinned in CI* (4.53.3 verified) | YAML frontmatter and ontology YAML in `verify.sh`, `mif-project.sh`, `resolve-ontology.sh`, `validate-concordance.sh` | `yq --version` |
+| `yq` (mikefarah) | `v4.53.3` — *repo-pinned in CI* (4.53.3 verified) | YAML frontmatter and ontology YAML in `verify.sh`, `mif-project.sh`, `resolve-ontology.sh`, `validate-concordance.sh`; ontology catalog materialization in `sync-packs.sh` | `yq --version` |
 | `node` | Active LTS — *repo-declared* `lts/*` (26.x verified) | `npm` to install the validation toolchain (`ajv-cli`, `ajv-formats`, `markdownlint-cli2`); `npx` for Mermaid | `node --version` |
 | `python3` | 3.12 — *repo-declared* (3.14 verified) | `codegen/gen-models.sh` + `bundle_schema.py` (self-provisioned pinned venv), `sync-packs.sh` (embedded materialization), `.claude/hooks/markdown/md_remediate.py` | `python3 --version` |
 
