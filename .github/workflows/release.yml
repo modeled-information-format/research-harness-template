@@ -6,9 +6,11 @@ name: release
 # from the tagged commit tree (no build toolchain, deterministic bytes). It is
 # attested with SLSA build provenance via actions/attest-build-provenance — the
 # attestation's signer identity is THIS workflow (sigstore/cosign under the
-# hood), so a consumer re-verifies with:
+# hood), so a consumer re-verifies with (pin the signer for the strict check):
 #
-#   gh attestation verify <artifact>.tar.gz --repo <owner>/<repo>
+#   gh attestation verify <artifact>.tar.gz \
+#     --repo <owner>/<repo> \
+#     --signer-workflow <owner>/<repo>/.github/workflows/release.yml
 #
 # `workflow_dispatch` exercises build -> attest as a dry-run without cutting a
 # version; the upload-to-release step runs ONLY on a published release. The
@@ -57,6 +59,20 @@ jobs:
         uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
         with:
           subject-path: ${{ steps.build.outputs.artifact }}
+
+      - name: Verify attestation (fail-closed, before publish)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # Re-verify the just-created provenance. --repo scopes trust to this
+          # repository; --signer-workflow additionally pins it to THIS release
+          # workflow (the certificate identity), so an attestation from any other
+          # workflow in the repo would not pass. A failure here fails the job, so
+          # the publish step below never runs unverified.
+          gh attestation verify "${{ steps.build.outputs.artifact }}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --signer-workflow "${GITHUB_REPOSITORY}/.github/workflows/release.yml"
 
       - name: Upload attested artifact to the release
         if: github.event_name == 'release'
