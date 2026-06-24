@@ -57,6 +57,16 @@ non-falsified `extensions.harness.verification` verdict before it ships.
    scripts/mif-project.sh reports/<topic>/<slug>.md
    ```
 
+6. **Reconcile the topic README.** Rendering the report wrote
+   `reports/<topic>/<slug>.md` through the shell, which the README PostToolUse
+   hook never observes — so the navigation README's Reports table and counts are
+   now stale. Deterministically rebuild it (build mode preserves authored
+   Purpose / Key Findings prose; idempotent):
+
+   ```bash
+   bash scripts/build-topic-readme.sh <topic>
+   ```
+
 ## Non-negotiables
 
 - **Never hand-author the verification verdict.** It must come from a real

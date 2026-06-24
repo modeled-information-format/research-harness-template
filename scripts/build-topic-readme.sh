@@ -136,8 +136,14 @@ PURPOSE=$(jq -rn --slurpfile goal_arr <(cat "$GOAL" 2>/dev/null || echo '{}') --
 # ----- preservation: keep authored prose + creation date on rebuild ------------
 
 extract_section() {
+  # Match the heading tolerantly: normalize a trailing CR (CRLF files) and any
+  # trailing whitespace before comparing, so a cosmetically-perturbed heading does
+  # not silently defeat prose preservation (this runs on every mutation now, so a
+  # missed match would clobber synthesis-grade Purpose/Key Findings with the draft).
+  # Body lines are still emitted verbatim ($0), not the normalized copy.
   awk -v hdr="$1" '
-    $0 == hdr { grab=1; next }
+    { h=$0; sub(/\r$/,"",h); sub(/[ \t]+$/,"",h) }
+    h == hdr { grab=1; next }
     grab && /^## / { grab=0 }
     grab { print }
   ' "$2" | awk '
@@ -323,5 +329,11 @@ if [ "$MODE" = "check" ]; then
 fi
 
 mkdir -p "$(dirname "$OUT")"
-build_readme > "$OUT" || die "failed to write $OUT"
+# Atomic write: render to a sibling temp then mv into place, so a crash or a
+# SIGKILL (e.g. the PostToolUse rebuild hook hitting its timeout) can never leave
+# a half-written README on disk — the live file is replaced only once it is
+# complete. Matches the repo's `tmp.$$ && mv` idiom.
+OUT_TMP="$OUT.tmp.$$"
+build_readme > "$OUT_TMP" || { rm -f "$OUT_TMP"; die "failed to write $OUT"; }
+mv "$OUT_TMP" "$OUT"
 echo "wrote $OUT ($COUNT findings, $SOURCES sources)"

@@ -126,7 +126,43 @@ Agent(
 )
 ```
 
-Wait for completion.
+Wait for completion (see **Monitoring a running session** below — a long, quiet
+Phase 1 is healthy, not stalled).
+
+## Monitoring a running session
+
+A resumed run re-enters the same phases, so the same caution applies as for
+`/start`: Phase 1 fan-out is **long-running and silent at the progress-log
+level** (`research-progress.md` is written only at phase boundaries). The live
+signal of progress is the **growing `reports/<topic>/findings/*.json` count** —
+watch it cheaply by file count / mtime, never by reading agent transcripts.
+
+- **An `idle_notification(reason: available)`, or an unchanged
+  `research-progress.md`, is NOT a stall** — a subagent that spawned background
+  analysts and yielded surfaces as idle while its children work.
+- Treat the session as stalled only if the findings count is **static AND** no
+  new phase entry appears for an extended window (default ~10 min) — then re-run
+  `/resume`. Do not send premature nudges before that threshold.
+
+## Reconcile the topic README
+
+The orchestrator's Phase 4 rebuilds the deterministic README from the substrate.
+But resume can stop partway (the run is idempotent), and a partial stop can leave
+`reports/<topic>/README.md` behind the finding set. Rebuild it deterministically
+so its counts/verdicts/tables match disk regardless of how far the run got, then
+refine the prose:
+
+```bash
+bash scripts/build-topic-readme.sh <topic>
+```
+
+```text
+Skill(readme, "--topic <topic>")
+```
+
+Build mode preserves authored Purpose / Key Findings; the `readme` skill refines
+them and re-runs the `--check` gate. Skip the skill step only if no findings
+changed this resume.
 
 ## Error handling
 

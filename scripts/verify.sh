@@ -1580,10 +1580,157 @@ gate_m16() {
   rm -rf "$T"
 }
 
+gate_m17() {
+  info "Milestone 17 — topic README freshness (deterministic metadata stays current vs substrate)"
+
+  # readme_fresh <project_dir> <topic>  -> 0 fresh, 1 stale/missing.
+  # `build` mode preserves authored prose by reading the OUTPUT path, so copy the
+  # live README to a temp path, rebuild ONTO that copy (Purpose / Key Findings /
+  # Created preserved), and diff ignoring the always-today metadata line
+  # ("**Created:** X | **Updated:** Y"). Empty diff modulo that line => the
+  # deterministic metadata already matches disk. Deliberately NOT `--check`: that
+  # also fails on un-synthesized Key Findings, a SEPARATE concern from staleness
+  # (and would red-flag every mid-research instance).
+  readme_fresh() {
+    local proj="$1" topic="$2" rd d rc
+    rd="$proj/reports/$topic/README.md"
+    [ -f "$rd" ] || return 1
+    d="$(mktemp -d)"
+    cp "$rd" "$d/README.md"
+    if ! CLAUDE_PROJECT_DIR="$proj" bash scripts/build-topic-readme.sh "$topic" \
+         --out "$d/README.md" >/dev/null 2>&1; then
+      rm -rf "$d"; return 1
+    fi
+    if diff <(grep -v '^\*\*Created:\*\* ' "$rd") \
+            <(grep -v '^\*\*Created:\*\* ' "$d/README.md") >/dev/null 2>&1; then
+      rc=0
+    else
+      rc=1
+    fi
+    rm -rf "$d"; return "$rc"
+  }
+
+  # 17a. Hermetic fixture: a freshly built README is fresh; mutating the substrate
+  #      (a new finding -> changed counts/tables) makes it stale. Proves the gate
+  #      detects drift in BOTH directions, independent of any real topic on disk.
+  local proj fok=1
+  proj="$(mktemp -d)"
+  mkdir -p "$proj/reports/t/findings"
+  cat > "$proj/harness.config.json" <<'JSON'
+{ "version": "1.0.0", "topics": [ { "id": "t", "title": "T", "namespace": "harness/t", "status": "active" } ] }
+JSON
+  _mk_finding() { # _mk_finding <path> <id> <dim> <verdict>
+    cat > "$1" <<JSON
+{ "@id": "urn:mif:concept:t:$2", "title": "$2", "summary": "Summary of $2.",
+  "created": "2026-06-01", "tags": ["t"],
+  "citations": [ { "url": "https://example.com/$2" } ],
+  "extensions": { "harness": { "dimension": "$3",
+    "verification": { "verdict": "$4" } } } }
+JSON
+  }
+  _mk_finding "$proj/reports/t/findings/f1.json" f1 technical survived
+  _mk_finding "$proj/reports/t/findings/f2.json" f2 technical weakened
+  CLAUDE_PROJECT_DIR="$proj" bash scripts/build-topic-readme.sh t >/dev/null 2>&1 || fok=0
+  readme_fresh "$proj" t || fok=0                 # built => fresh
+  _mk_finding "$proj/reports/t/findings/f3.json" f3 landscape survived
+  readme_fresh "$proj" t && fok=0                 # substrate drifted => must be stale
+  rm -rf "$proj"
+  if [ "$fok" = 1 ]; then
+    ok "README freshness gate detects drift (built README fresh; a new finding makes it stale)"
+  else
+    bad "README freshness gate logic wrong (fresh-when-built or stale-after-mutation not detected)"
+  fi
+
+  # 17b. Every registered topic that HAS a README on disk must be metadata-fresh
+  #      vs its substrate — the CI backstop for out-of-band edits the hook misses.
+  local topic any=0
+  while IFS= read -r topic; do
+    [ -n "$topic" ] || continue
+    [ -f "reports/$topic/README.md" ] || continue
+    any=1
+    if readme_fresh "$PWD" "$topic"; then
+      ok "topic README fresh vs substrate: $topic"
+    else
+      bad "topic README STALE vs substrate — rebuild: scripts/build-topic-readme.sh $topic"
+    fi
+  done < <(jq -r '.topics[].id' harness.config.json 2>/dev/null)
+  [ "$any" = 0 ] && ok "no topic READMEs on disk to freshness-check (none built yet)"
+
+  # 17c. The shell-write mutation paths the PostToolUse README hook never observes
+  #      (verdicts/quarantine via falsify, a report rendered via shell redirect)
+  #      must each carry the deterministic README rebuild, or the README drifts
+  #      stale after /falsify or publish-report exactly as issue #84 describes.
+  #      17b's real-topic loop is inert in the bare template, so assert the wiring
+  #      is documented where the fix lives.
+  if grep -qE 'build-topic-readme\.sh' .claude/commands/falsify.md \
+     && grep -qE 'build-topic-readme\.sh' .claude/skills/publish-report/SKILL.md; then
+    ok "shell-write mutation paths reconcile the README (falsify.md + publish-report rebuild it)"
+  else
+    bad "a shell-write mutation path is missing its README rebuild (falsify.md / publish-report)"
+  fi
+
+  # 17d. Prose preservation is robust to a cosmetically-perturbed heading. The
+  #      auto-rebuild hook now runs build mode on EVERY mutation, so if heading
+  #      matching were byte-exact a trailing space / CR on '## Key Findings' would
+  #      silently overwrite synthesis-grade prose with the deterministic draft.
+  #      Author a synthesis line under a trailing-space heading, rebuild, assert it
+  #      survives.
+  local pp pres=1 rd
+  pp="$(mktemp -d)"
+  mkdir -p "$pp/reports/t/findings"
+  cat > "$pp/harness.config.json" <<'JSON'
+{ "version": "1.0.0", "topics": [ { "id": "t", "title": "T", "namespace": "harness/t", "status": "active" } ] }
+JSON
+  _mk_finding "$pp/reports/t/findings/f1.json" f1 technical survived
+  CLAUDE_PROJECT_DIR="$pp" bash scripts/build-topic-readme.sh t >/dev/null 2>&1 || pres=0
+  rd="$pp/reports/t/README.md"
+  # Replace the canonical heading with a trailing-space variant + an authored line.
+  awk '
+    /^## Key Findings$/ { print "## Key Findings "; print ""; print "- SYNTH: cross-finding insight."; skip=1; next }
+    skip && /^## / { skip=0 }
+    skip { next }
+    { print }
+  ' "$rd" > "$rd.x" && mv "$rd.x" "$rd"
+  CLAUDE_PROJECT_DIR="$pp" bash scripts/build-topic-readme.sh t >/dev/null 2>&1 || pres=0
+  grep -q 'SYNTH: cross-finding insight' "$rd" || pres=0
+  rm -rf "$pp"
+  if [ "$pres" = 1 ]; then
+    ok "build preserves authored Key Findings across rebuild despite a trailing-space heading (no synthesis clobber)"
+  else
+    bad "build clobbered authored Key Findings on rebuild (heading-match preservation too strict)"
+  fi
+}
+
+gate_m18() {
+  info "Milestone 18 — supervising a running orchestrator (idle/stall guidance + Phase 1 heartbeat)"
+
+  # 18a. start.md and resume.md tell a supervisor how to wait: the live signal of
+  #      progress is the growing findings/*.json count, and an idle notification or
+  #      a quiet research-progress.md is NOT a stall.
+  local f
+  for f in .claude/commands/start.md .claude/commands/resume.md; do
+    if grep -qiE 'Monitoring a running session' "$f" \
+       && grep -qiE 'idle' "$f" \
+       && grep -qE 'findings/\*\.json' "$f"; then
+      ok "$(basename "$f"): documents monitoring a running session (findings-count signal, idle != stall)"
+    else
+      bad "$(basename "$f"): missing 'Monitoring a running session' guidance (findings-count signal + idle-is-not-stall)"
+    fi
+  done
+
+  # 18b. orchestrator.md emits a coarse Phase 1 heartbeat to research-progress.md
+  #      so a supervisor sees progress between Session Initialized and Dimensions Complete.
+  if grep -qE 'fan-out started' .claude/agents/orchestrator.md; then
+    ok "orchestrator.md: emits a Phase 1 fan-out heartbeat to research-progress.md"
+  else
+    bad "orchestrator.md: no Phase 1 fan-out heartbeat (supervisor has no marker during Phase 1)"
+  fi
+}
+
 # ---------------------------------------------------------------------------
 # Gate registry — each milestone appends its function name here.
 # ---------------------------------------------------------------------------
-GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16)
+GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18)
 
 for g in "${GATES[@]}"; do "$g"; done
 

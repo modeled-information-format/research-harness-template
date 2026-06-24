@@ -52,6 +52,12 @@ citation-integrity and citation-leak gates run uniformly across both.
   primary source; do not just delete the token.
 - The post is a projection of the artifact — to change the content, change the
   findings or the synthesis, not the rendered Markdown in place.
+- **No topic-README rebuild is needed here.** The post renders to `blog/<topic>.md`,
+  *outside* `reports/<topic>/`. The navigation README projects its Reports table
+  from `reports/<topic>/*.md` and its Artifacts from `reports/<topic>/_assets|slides`
+  — neither of which a blog write touches — so publishing a blog leaves the README
+  current. (Rendering the canonical `report` channel *does* write under the topic
+  dir and therefore reconciles the README; see `publish-report`.)
 - **`blog` is a MIF-exempt channel** (declared `mifExempt: true` in
   `harness.config.json` `outputs[]`): its public prose is orthogonal to MIF, so the
   MIF Level-3 source of truth lives in the generic `report` channel

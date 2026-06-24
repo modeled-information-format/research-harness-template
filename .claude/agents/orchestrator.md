@@ -281,10 +281,26 @@ dimension when none is named), running at most `MAX_CONCURRENCY` at a time:
    )
    ```
 
+   **Heartbeat — append a coarse Phase 1 marker to `research-progress.md`
+   immediately after spawning the first batch** (before waiting on returns), so a
+   supervising session has a progress signal between `Session Initialized` and
+   `Dimensions Complete` instead of a frozen-looking log. The progress log is
+   otherwise written only at phase boundaries; during fan-out the live signal is
+   the growing `reports/<topic>/findings/*.json` count, and a yielded/idle
+   orchestrator is **not** a stall (see `start.md` → "Monitoring a running
+   session"):
+
+   ```markdown
+   ## {ISO_DATE} — Phase 1 — fan-out started ({N} analysts: {dim1, dim2, …})
+   - Live signal: growing reports/{topic}/findings/*.json (the log stays quiet until "Dimensions Complete")
+   ```
+
    As each analyst returns, mark its task complete (`TaskUpdate(taskId, status:
    "completed")`), record the finding paths from its return, and
    `scripts/run-lock.sh refresh "$REPORTS_DIR"` — fan-out is the longest phase, so
    refresh on each return keeps the lock from aging out before the gate even starts.
+   Optionally append a one-line breadcrumb per analyst return (e.g. `- {dim}: {k}
+   findings`) so per-dimension progress is visible to a supervisor as well.
 
 3. **Source-chunker (only if needed).** For **each** entry in an analyst's
    returned `oversized_sources` list, spawn a `source-chunker` as a **nameless

@@ -200,6 +200,26 @@ Agent(
 Wait for the orchestrator to complete. It handles all user-facing progress
 updates and confirmations.
 
+## Monitoring a running session
+
+Phase 1 (dimension-analyst fan-out) is **long-running and silent at the
+progress-log level**: `research-progress.md` is written only at phase boundaries,
+so it stays at the `Session Initialized` entry for the entire fan-out — minutes,
+sometimes longer. The live signal of healthy progress is the **growing
+`reports/<topic>/findings/*.json` count**, not the progress log or the task list.
+
+- **Watch cheaply by file count / mtime** — e.g. a `Monitor` poll on
+  `reports/<topic>/findings/`. Do **not** read agent transcripts to check
+  liveness; that burns tokens and tells you nothing the file count doesn't.
+- **An `idle_notification(reason: available)` from the orchestrator is NOT a
+  stall.** A subagent that has spawned its background analysts and yielded its
+  turn surfaces as "available/idle" while its children do the real work. An idle
+  ping, or an unchanged `research-progress.md`, on its own means nothing.
+- **Do not send premature nudges.** Treat the session as stalled only if the
+  findings count is **static AND** no new `research-progress.md` phase entry
+  appears for an extended window (default ~10 min) — then `/resume`. Before that
+  threshold, a quiet session is a working session; leave it alone.
+
 ## Reconcile the topic README
 
 The orchestrator's Phase 4 already rebuilt the deterministic README

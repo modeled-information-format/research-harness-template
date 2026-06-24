@@ -203,7 +203,20 @@ steps:
 - Otherwise the active set is the surviving + downgraded findings; suggest
   `/status` or `/resume`.
 
-## Phase 4: Done
+## Phase 4: Reconcile the topic README, then done
+
+This gate applied verdicts, downgraded confidence, and moved falsified findings to
+`quarantine/` — all through the shell, which the README PostToolUse hook never sees.
+**Deterministically rebuild the topic README** so its verdict rollup and active/
+quarantined counts match disk (build mode preserves any authored Purpose / Key
+Findings prose; it is idempotent and cheap):
+
+```bash
+bash scripts/build-topic-readme.sh "$(basename "$REPORTS_DIR")"
+```
+
+If findings changed enough to warrant fresh synthesis prose, also run the `readme`
+skill (`readme --topic <topic>`); otherwise the deterministic rebuild is sufficient.
 
 There is no team to tear down — each slice's verdicts and remediation are persisted in the
 finding files on disk (the gate window is closed in Phase 2). **Release the topic run lock**
