@@ -56,12 +56,15 @@ while [ $# -gt 0 ]; do
 done
 
 # A caller MUST NOT override the verified ref through passthrough args — that would defeat
-# the verify-then-pin guarantee and could apply unverified content.
-for a in ${COPIER_ARGS[@]+"${COPIER_ARGS[@]}"}; do
-  case "$a" in
-    -r|--vcs-ref|--vcs-ref=*) echo "update.sh: --vcs-ref/-r cannot be passed through — it pins the verified commit" >&2; exit 2 ;;
-  esac
-done
+# the verify-then-pin guarantee and could apply unverified content. (Length-guarded,
+# fully-quoted expansion — safe under `set -u` on bash 3.2, no re-split/globbing.)
+if [ "${#COPIER_ARGS[@]}" -gt 0 ]; then
+  for a in "${COPIER_ARGS[@]}"; do
+    case "$a" in
+      -r|--vcs-ref|--vcs-ref=*) echo "update.sh: --vcs-ref/-r cannot be passed through — it pins the verified commit" >&2; exit 2 ;;
+    esac
+  done
+fi
 
 for t in git gh copier gzip yq awk; do command -v "$t" >/dev/null 2>&1 || { echo "update.sh: '$t' is required" >&2; exit 2; }; done
 [ -f "$ANSWERS" ] || { echo "update.sh: $ANSWERS not found — run from a clone instantiated by copier" >&2; exit 2; }
@@ -145,6 +148,11 @@ if [ "$src_path" != "$PINNED_SRC" ]; then
   echo "update.sh: pinned _src_path -> ${PINNED_SRC} (was '${src_path:-<none>}')"
 fi
 
-# Apply, pinned to the verified SHA (TOCTOU-closed). --trust is now earned.
-# (bash 3.2-safe expansion of a possibly-empty array under `set -u`.)
-copier update --vcs-ref "$SHA" --trust ${COPIER_ARGS[@]+"${COPIER_ARGS[@]}"}
+# Apply, pinned to the verified SHA (TOCTOU-closed). --trust is now earned. Pass the
+# extra args fully quoted (length-guarded for bash 3.2 + set -u) so an arg with spaces or
+# glob characters reaches Copier intact.
+if [ "${#COPIER_ARGS[@]}" -gt 0 ]; then
+  copier update --vcs-ref "$SHA" --trust "${COPIER_ARGS[@]}"
+else
+  copier update --vcs-ref "$SHA" --trust
+fi
