@@ -1,6 +1,6 @@
 {
   "name": "engineering",
-  "version": "0.1.2",
+  "version": "0.3.0",
   "kind": "genre",
   "description": "Genre template for a design / evaluation report (problem, options, decision, trade-offs, implementation notes)",
   "license": "MIT",

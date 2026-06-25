@@ -1,7 +1,7 @@
 ---
 name: engineering
-description: Genre template for a design / evaluation report (problem, options, decision, trade-offs, implementation notes). Use when the deliverable documents a technical decision or evaluation for engineers who will build or maintain the result.
-version: 0.1.2
+description: Genre template for a design / evaluation report (problem, options, decision, trade-offs, implementation notes), with optional ANSI/NISO Z39.18 technical-report front-matter (report documentation page, distribution/STINFO markings) and back-matter ordering. Use when the deliverable documents a technical decision or evaluation for engineers who will build or maintain the result.
+version: 0.3.0
 ---
 
 # Genre Template: Engineering Report
@@ -28,7 +28,9 @@ consequences for building and maintaining the system. Enough rationale to act, n
 2. **Options Considered** — the candidate approaches, each described neutrally.
 3. **Trade-offs** — options compared on the decision drivers; a comparison table is required.
 4. **Decision** — the chosen option, stated plainly, with the rationale that ties it to the
-   trade-offs and the supporting MIF finding `@id`s.
+   trade-offs and the supporting findings (cited by their resolved numeric reference). A
+   finding's internal MIF `@id` is traceability metadata only — resolve it to the human-readable
+   citation; never print the `@id` / `urn:mif:` in the rendered report.
 5. **Implementation Notes** — what it takes to build it: dependencies, migration, risks,
    rollout, and operational concerns.
 6. **Consequences** — what becomes easier, what becomes harder, and what to revisit later.
@@ -36,8 +38,9 @@ consequences for building and maintaining the system. Enough rationale to act, n
 ## Citation Style
 
 Inline numeric markers `[1]`, `[2]` resolving to a references list; benchmark or measurement
-claims cite the originating MIF finding's `@id` / `urn:mif:` citation. Link specs and source
-material directly.
+claims resolve their originating MIF finding to that finding's human-readable source citation.
+The internal `@id` / `urn:mif:` is traceability metadata only and is never rendered into the
+references, footnotes, or body. Link specs and source material directly.
 
 ## Required Figures & Matter
 
@@ -46,6 +49,22 @@ material directly.
   or sequence diagram (Mermaid) when structure or flow is load-bearing to the decision.
 - **Back matter**: references list; optional appendix for benchmark data or alternatives
   rejected early.
+
+### Optional ANSI/NISO Z39.18 conformance (additive — off by default; render when requested)
+
+When a formal technical-report format is requested, add the **Z39.18** elements:
+
+- **Report Documentation Page** — a structured front-matter page (report number, title,
+  author(s), performing organization, date, abstract, subject terms).
+- **Distribution / STINFO markings** — the distribution statement and any
+  scientific-and-technical-information handling markings, rendered as front-matter.
+- **Z39.18 back-matter ordering** — order the back matter (references, then appendices,
+  then any glossary/index) to Z39.18. **Verify live:** cross-check the current ISO/IEC
+  Directives Part 2 and the current Z39.18 revision at authoring time rather than baking a
+  revision in.
+
+These are opt-in; the default report (no Z39.18 front-matter) and existing behavior are
+unchanged when they are not requested.
 
 ## Rules
 

@@ -99,13 +99,19 @@ scripts/pack-toggle.sh briefing on
 
 ## engineering
 
-**Version:** 0.2.0 | **Kind:** genre
+**Version:** 0.3.0 | **Kind:** genre
 
 ### Purpose
 
 Produces a technical engineering report from the surviving findings corpus. A comparison
 table is required. Mermaid architecture diagrams are optional and included when the
 findings support a system or component structure worth visualizing.
+
+Optional **ANSI/NISO Z39.18** conformance can be rendered on request — a Report
+Documentation Page, a distribution statement / STINFO markings, and Z39.18 back-matter
+ordering (with ISO/IEC Directives Part 2 as an international cross-check, verified live).
+These are additive and off by default; the standard report is unchanged when they are not
+requested.
 
 ### When to use
 

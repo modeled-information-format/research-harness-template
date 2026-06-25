@@ -337,6 +337,80 @@
           "criteria": "The comparison table includes all four decision drivers as evaluation criteria: memory safety without GC pauses, compile-time correctness guarantees, team familiarity, and Kafka ecosystem maturity. A table omitting any of these four drivers is incomplete."
         }
       ]
+    },
+    {
+      "id": 5,
+      "prompt": "Write a technical engineering report from these survived findings about choosing a message queue. The audience requested formal ANSI/NISO Z39.18 conformance: include a Report Documentation Page, a distribution statement / STINFO markings, and Z39.18 back-matter ordering, in addition to the standard report. The back matter must include both a References list and an Appendix (e.g. benchmark detail), ordered to Z39.18 (References before Appendix). Write the report to engineering-report.md.\n\nFindings:\n- id: urn:mif:f_mq_1 | title: Kafka sustains higher throughput than RabbitMQ for high-volume streaming workloads | dimension: technical | verdict: survived | citation: https://example.com/kafka-throughput | author: Bench | year: 2025\n- id: urn:mif:f_mq_2 | title: RabbitMQ offers simpler operational model for low-volume task queues | dimension: technical | verdict: survived | citation: https://example.com/rabbitmq-ops | author: Ops | year: 2025",
+      "expected_output": "An engineering report that still contains the default sections (Problem/Context, Options, Trade-offs with a comparison table, Decision) AND the optional Z39.18 elements: a Report Documentation Page, a distribution statement / STINFO marking, and Z39.18-ordered back matter with a References list followed by an Appendix. No urn:mif: leakage.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "regex_match",
+          "file": "engineering-report.md",
+          "pattern": "(?i)trade.?offs?",
+          "description": "Default Trade-offs section still present (additive, non-breaking)"
+        },
+        {
+          "type": "regex_match",
+          "file": "engineering-report.md",
+          "pattern": "(?i)decision",
+          "description": "Default Decision section still present"
+        },
+        {
+          "type": "regex_match",
+          "file": "engineering-report.md",
+          "pattern": "\\|.*\\|.*\\n\\|[ :|-]+\\|",
+          "description": "Required comparison table (header separator row) still present"
+        },
+        {
+          "type": "regex_match",
+          "file": "engineering-report.md",
+          "pattern": "(?i)kafka",
+          "description": "Trade-off comparison content-anchored: the Kafka finding (f_mq_1) appears, distinguishing the trade-off table from the Z39.18 documentation page table"
+        },
+        {
+          "type": "regex_match",
+          "file": "engineering-report.md",
+          "pattern": "(?i)rabbitmq",
+          "description": "Trade-off comparison content-anchored: the RabbitMQ finding (f_mq_2) appears"
+        },
+        {
+          "type": "regex_match",
+          "file": "engineering-report.md",
+          "pattern": "(?i)report documentation page",
+          "description": "Optional Z39.18 Report Documentation Page rendered when requested"
+        },
+        {
+          "type": "regex_match",
+          "file": "engineering-report.md",
+          "pattern": "(?i)distribution (statement|stmt)|stinfo",
+          "description": "Optional Z39.18 distribution / STINFO marking rendered when requested"
+        },
+        {
+          "type": "regex_match",
+          "file": "engineering-report.md",
+          "pattern": "(?im)^#{1,6}\\s*references\\b[\\s\\S]{0,2500}?^#{1,6}\\s*appendix",
+          "description": "Z39.18 back-matter ordering: a References heading precedes an Appendix heading (matches the skill's stated references-then-appendices order)"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "engineering-report.md",
+          "literal": "urn:mif:",
+          "description": "No raw urn:mif: identifiers leak into the report"
+        }
+      ],
+      "expectations": [
+        {
+          "description": "Z39.18 elements are additive, not a replacement",
+          "check": "transcript",
+          "criteria": "The report retains its standard engineering structure (problem, options, trade-off table, decision) and ADDS the Z39.18 Report Documentation Page, distribution/STINFO marking, and Z39.18 back-matter ordering — it does not drop the default content."
+        },
+        {
+          "description": "Z39.18 revision is treated as verify-live",
+          "check": "transcript",
+          "criteria": "The report does not assert a specific Z39.18 or ISO/IEC Directives Part 2 revision as settled fact; conformance is structural."
+        }
+      ]
     }
   ]
 }
