@@ -24,9 +24,11 @@ git -C "$UP_SRC" init -q
 git -C "$UP_SRC" config user.email t@t.t; git -C "$UP_SRC" config user.name t
 echo "template content v9" > "$UP_SRC/file.txt"
 git -C "$UP_SRC" add -A; git -C "$UP_SRC" commit -q -m v9
-git -C "$UP_SRC" tag v9.9.9
+# ANNOTATED tag: `git ls-remote refs/tags/v9.9.9` returns the tag-OBJECT sha; update.sh
+# must peel it (^{}) to the COMMIT sha, which is what copier --vcs-ref needs.
+git -C "$UP_SRC" tag -a v9.9.9 -m "release v9.9.9"
 UP="$ROOT/upstream.git"; git clone -q --bare "$UP_SRC" "$UP"
-SHA=$(git -C "$UP" rev-parse v9.9.9)
+SHA=$(git -C "$UP" rev-parse 'v9.9.9^{commit}')   # the peeled COMMIT sha
 
 # --- stubs: git (redirect the github URL to the local bare repo), gh, copier ----
 BIN="$ROOT/bin"; mkdir -p "$BIN"

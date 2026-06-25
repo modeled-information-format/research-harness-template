@@ -45,13 +45,13 @@ TARGET_TAG=""        # explicit override; default = latest tag (Copier's default
 COPIER_ARGS=()
 while [ $# -gt 0 ]; do
   case "$1" in
-    --target) TARGET_TAG="$2"; shift 2 ;;
+    --target) [ $# -ge 2 ] || { echo "update.sh: --target requires a tag" >&2; exit 2; }; TARGET_TAG="$2"; shift 2 ;;
     --) shift; COPIER_ARGS=("$@"); break ;;
     *) echo "update.sh: unknown argument '$1'" >&2; exit 2 ;;
   esac
 done
 
-for t in git gh; do command -v "$t" >/dev/null 2>&1 || { echo "update.sh: '$t' is required" >&2; exit 2; }; done
+for t in git gh copier gzip yq; do command -v "$t" >/dev/null 2>&1 || { echo "update.sh: '$t' is required" >&2; exit 2; }; done
 [ -f "$ANSWERS" ] || { echo "update.sh: $ANSWERS not found — run from a clone instantiated by copier" >&2; exit 2; }
 
 # A copier update requires a clean work tree (it computes and re-applies a diff).
@@ -61,34 +61,38 @@ if ! git diff --quiet || ! git diff --cached --quiet; then
   exit 2
 fi
 
-# Read the source the clone was generated from.
-src_path=$(yq -r '._src_path // ""' "$ANSWERS" 2>/dev/null || sed -n 's/^_src_path:[[:space:]]*//p' "$ANSWERS" | head -1)
-[ -n "$src_path" ] && [ "$src_path" != "null" ] || { echo "update.sh: ._src_path missing from $ANSWERS" >&2; exit 2; }
+# Trust root — PINNED to the upstream template repo + its release-workflow identity.
+# It is NOT derived from .copier-answers.yml: `_src_path` is mutable, so deriving trust
+# from it would let an update (or a user) silently repoint the root to another repo and
+# still get a "verified" result. A fork that re-releases under its own org edits these
+# two constants (a visible, reviewed change); everyone else inherits the upstream root.
+PINNED_REPO="modeled-information-format/research-harness-template"
+SIGNER_WORKFLOW="${PINNED_REPO}/.github/workflows/release.yml"
+REMOTE="https://github.com/${PINNED_REPO}.git"
+NAME="${PINNED_REPO##*/}"
 
-# Normalize _src_path into (owner/repo) and a fetchable https remote.
-# Accepts gh:owner/repo, https://github.com/owner/repo[.git], git@github.com:owner/repo.git
-norm="${src_path#gh:}"
-norm="${norm#https://github.com/}"; norm="${norm#git@github.com:}"
-norm="${norm%.git}"
-OWNER_REPO="$norm"
-case "$OWNER_REPO" in
-  */*) : ;;
-  *) echo "update.sh: cannot derive owner/repo from _src_path '$src_path'" >&2; exit 2 ;;
+# Read _src_path only to sanity-check the clone's recorded origin against the pinned root
+# (informational — trust does not depend on it).
+src_path=$(yq -r '._src_path // ""' "$ANSWERS" 2>/dev/null | head -1)
+case "${src_path#gh:}" in
+  "$PINNED_REPO"|"$PINNED_REPO".git|https://github.com/"$PINNED_REPO"*|"") : ;;
+  *) echo "update.sh: WARNING: clone _src_path ('$src_path') differs from the pinned trust root '$PINNED_REPO'; verifying against the pinned root regardless." >&2 ;;
 esac
-REMOTE="https://github.com/${OWNER_REPO}.git"
-NAME="${OWNER_REPO##*/}"
-SIGNER_WORKFLOW="${OWNER_REPO}/.github/workflows/release.yml"
 
-# Resolve the target tag (default: latest by version) and pin it to a commit SHA.
+# Resolve the target tag (default: latest by version) and pin it to a COMMIT SHA.
 if [ -z "$TARGET_TAG" ]; then
   TARGET_TAG=$(git ls-remote --tags --refs "$REMOTE" 2>/dev/null \
     | sed -n 's#.*refs/tags/##p' | sort -V | tail -1)
   [ -n "$TARGET_TAG" ] || { echo "update.sh: no tags found at $REMOTE" >&2; exit 1; }
 fi
-SHA=$(git ls-remote "$REMOTE" "refs/tags/${TARGET_TAG}" | awk '{print $1}' | head -1)
+# Peel annotated tags to the underlying commit (^{}); fall back to the ref itself for a
+# lightweight tag (which already points at a commit). `--vcs-ref` needs a commit, not a
+# tag object.
+SHA=$(git ls-remote "$REMOTE" "refs/tags/${TARGET_TAG}^{}" | awk '{print $1}' | head -1)
+[ -n "$SHA" ] || SHA=$(git ls-remote "$REMOTE" "refs/tags/${TARGET_TAG}" | awk '{print $1}' | head -1)
 [ -n "$SHA" ] || { echo "update.sh: tag '$TARGET_TAG' not found at $REMOTE" >&2; exit 1; }
 
-echo "update.sh: target ${OWNER_REPO}@${TARGET_TAG} -> ${SHA}"
+echo "update.sh: target ${PINNED_REPO}@${TARGET_TAG} -> ${SHA}"
 
 # Fetch the target tree so we can reproduce the release artifact locally.
 WORK=$(mktemp -d); trap 'rm -rf "$WORK"' EXIT
@@ -102,9 +106,9 @@ git -C "$WORK" archive --format=tar --prefix="${NAME}-${TARGET_TAG}/" "$SHA" | g
 # THE GATE: verify SLSA provenance, pinned to this repo AND the release workflow.
 echo "update.sh: verifying build-provenance attestation (fail-closed)…"
 if ! gh attestation verify "$ARTIFACT" \
-      --repo "$OWNER_REPO" \
+      --repo "$PINNED_REPO" \
       --signer-workflow "$SIGNER_WORKFLOW"; then
-  echo "update.sh: provenance verification FAILED for ${OWNER_REPO}@${TARGET_TAG} — refusing to update (nothing applied)" >&2
+  echo "update.sh: provenance verification FAILED for ${PINNED_REPO}@${TARGET_TAG} — refusing to update (nothing applied)" >&2
   exit 1
 fi
 echo "update.sh: provenance verified — applying update pinned to ${SHA}"
