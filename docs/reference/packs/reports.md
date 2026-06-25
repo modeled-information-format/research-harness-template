@@ -198,6 +198,62 @@ scripts/pack-toggle.sh exec-summary on
 
 ---
 
+## nist-sp
+
+**Version:** 0.2.0 | **Kind:** genre
+
+### Purpose
+
+Produces a NIST Special Publication (SP 800-series) standards/guidance report — a
+standards document with front-matter authority, numbered normative sections, defined
+terms, references, and appendices. This is the standards-document genre, distinct from an
+engagement deliverable such as a penetration-test report: a NIST SP states normative
+requirements and control mappings that an engagement report would reference.
+
+Section order:
+
+1. **Authority** — the publication's mandate and the standing of its guidance
+2. **Purpose & Scope** — what the publication establishes and its boundary of applicability
+3. **Audience** — the intended readers and the roles expected to apply the guidance
+4. **Abstract** — a self-contained summary of the problem, guidance, and conclusions
+5. **Keywords** — a short controlled list of index terms (no more than ten)
+6. **Numbered normative sections** — the body, numbered sequentially (`1.`, `1.1.`,
+   `1.1.1.`), each requirement traced to a finding `@id` with explicit normative force
+7. **Definitions / Glossary** — every term of art defined once
+8. **References** — the numbered reference list
+9. **Appendices** — control mappings, control catalogs, and crosswalks
+
+### When to use
+
+Use `nist-sp` when the deliverable is a standards or guidance document that states normative
+requirements — a security control baseline, a guidance publication, or a framework
+crosswalk that downstream engagement reports will reference.
+
+### What it provides
+
+- NIST SP front matter (Authority, Purpose & Scope, Audience, Abstract, Keywords) in order
+- Numbered normative sections (up to four heading levels) with explicit normative force
+- A required Definitions/Glossary section for terms of art
+- Numbered bracketed `[N]` references carrying each source's MIF `@id` provenance floor
+- Appendices for control mappings and crosswalks to external control frameworks
+
+### Dependencies
+
+None beyond the core engine.
+
+### Benefits
+
+- Front-matter authority and scope make the publication's standing and applicability explicit
+- Numbered normative sections with consistent normative force (shall / should / may) keep
+  requirements unambiguous and individually traceable to evidence
+- A required Definitions/Glossary prevents undefined terms of art from carrying normative weight
+
+### Enable
+
+```sh
+scripts/pack-toggle.sh nist-sp on
+```
+
 ## trend-analysis
 
 **Version:** 0.2.0 | **Kind:** genre

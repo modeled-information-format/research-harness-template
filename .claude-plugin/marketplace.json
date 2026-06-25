@@ -89,6 +89,11 @@
       "description": "[reports/genre] Genre template for a trajectory report (trajectory, signals, scenarios over time)"
     },
     {
+      "name": "nist-sp",
+      "source": "./packs/reports/nist-sp",
+      "description": "[reports/genre] Genre template for a NIST Special Publication (SP 800-series) standards/guidance report (authority, abstract, keywords, numbered normative sections, definitions, references, appendices)"
+    },
+    {
       "name": "trend-modeling",
       "source": "./packs/trend-modeling/trend-modeling",
       "description": "[trend-modeling/methodology] Use when the user asks to \"model trends with limited data\", \"three-valued logic analysis\", \"scenario generation\", \"transitional graphs\", \"qualitative trend analysis\", \"uncertain data analysis\", \"minimal-information modeling\", or needs trend"

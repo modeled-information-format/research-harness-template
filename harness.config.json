@@ -142,6 +142,11 @@
       "source": "bundled"
     },
     {
+      "name": "nist-sp",
+      "enabled": false,
+      "source": "bundled"
+    },
+    {
       "name": "trend-analysis",
       "enabled": true,
       "source": "bundled"

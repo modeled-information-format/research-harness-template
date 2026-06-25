@@ -1,0 +1,347 @@
+{
+  "skill_name": "nist-sp",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Write a NIST Special Publication (SP 800-series) standards/guidance report from these survived findings. Topic: 'baseline controls for securing AI inference services'. Include all required NIST SP matter: front matter (Authority, Purpose & Scope, Audience, Abstract, Keywords), numbered normative sections, a Definitions/Glossary, a References list, and at least one appendix. Write the report to nist-sp.md.\n\nFindings:\n- id: urn:mif:f_nist_1 | title: Mutual TLS between inference gateway and model server reduces unauthorized model access in tested deployments | dimension: security | verdict: survived | citation: https://example.com/mtls-inference-baseline | author: Okafor | year: 2024\n- id: urn:mif:f_nist_2 | title: Rate limiting at the inference gateway mitigates model-extraction query floods | dimension: security | verdict: survived | citation: https://example.com/rate-limit-extraction | author: Velez and Tan | year: 2025\n- id: urn:mif:f_nist_3 | title: Per-tenant request logging is required to reconstruct an incident timeline for inference abuse | dimension: governance | verdict: survived | citation: https://example.com/per-tenant-logging | author: Bauer et al. | year: 2025",
+      "expected_output": "A NIST SP standards/guidance report with all front matter in order (Authority, Purpose & Scope, Audience, Abstract, Keywords), numbered normative sections using normative force (shall/should/may), a Definitions/Glossary section, a numbered References list with bracketed [N] markers, and at least one appendix (e.g. a control-mapping crosswalk). No raw urn:mif: identifiers in prose.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "nist-sp.md",
+          "description": "Output file was created"
+        },
+        {
+          "type": "regex_match",
+          "file": "nist-sp.md",
+          "pattern": "(?i)authority",
+          "description": "Front-matter Authority statement present"
+        },
+        {
+          "type": "regex_match",
+          "file": "nist-sp.md",
+          "pattern": "(?i)purpose|scope",
+          "description": "Front-matter Purpose & Scope present"
+        },
+        {
+          "type": "regex_match",
+          "file": "nist-sp.md",
+          "pattern": "(?i)audience",
+          "description": "Front-matter Audience present"
+        },
+        {
+          "type": "regex_match",
+          "file": "nist-sp.md",
+          "pattern": "(?i)abstract",
+          "description": "Front-matter Abstract present"
+        },
+        {
+          "type": "regex_match",
+          "file": "nist-sp.md",
+          "pattern": "(?i)keywords",
+          "description": "Front-matter Keywords present"
+        },
+        {
+          "type": "regex_match",
+          "file": "nist-sp.md",
+          "pattern": "(?m)^(?:#+\\s*1[.\\s]|\\s*1\\.\\s+\\S)",
+          "description": "At least one numbered normative section (e.g. '1.' or heading '1 ...') present"
+        },
+        {
+          "type": "regex_match",
+          "file": "nist-sp.md",
+          "pattern": "(?i)definitions|glossary",
+          "description": "Definitions/Glossary section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "nist-sp.md",
+          "pattern": "(?i)references|bibliography",
+          "description": "References section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "nist-sp.md",
+          "pattern": "(?i)appendix",
+          "description": "At least one appendix present"
+        },
+        {
+          "type": "regex_match",
+          "file": "nist-sp.md",
+          "pattern": "\\[1\\]|\\[2\\]|\\[3\\]",
+          "description": "Numbered bracketed reference markers used"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "nist-sp.md",
+          "literal": "urn:mif:",
+          "description": "No raw urn:mif: identifiers appear in the prose or body text"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "nist-sp.md",
+          "literal": "f_nist_",
+          "description": "No internal MIF finding IDs appear in the prose"
+        }
+      ],
+      "expectations": [
+        {
+          "description": "No raw urn:mif: identifiers or internal finding IDs appear in reader-facing prose",
+          "check": "transcript",
+          "criteria": "The strings 'urn:mif:' and 'f_nist_' must not appear as visible body text. Internal MIF IDs are resolved to numbered [N] references — never exposed to the reader."
+        },
+        {
+          "description": "Normative sections state requirements with explicit normative force",
+          "check": "transcript",
+          "criteria": "The numbered normative sections express requirements using consistent normative verbs (shall / should / may) rather than narrative prose, and each requirement traces to a cited finding."
+        },
+        {
+          "description": "Front matter appears in NIST SP order before the first numbered section",
+          "check": "transcript",
+          "criteria": "Authority, Purpose & Scope, Audience, Abstract, and Keywords all appear, in that order, ahead of the first numbered normative section. Keywords is a short list (no more than ten)."
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Produce a NIST Special Publication (SP 800-series) standards/guidance report on 'event logging requirements for incident response'. The finding set includes one falsified finding and one weakened finding — handle each according to the NIST SP genre rules. Include the required front matter (Authority, Purpose & Scope, Audience, Abstract, Keywords), numbered normative sections, a Definitions/Glossary, References, and an appendix. Write the report to nist-sp.md.\n\nFindings:\n- id: urn:mif:f_nist_4 | title: Centralized log aggregation reduces mean time to detect cross-service incidents in evaluated SOCs | dimension: operations | verdict: survived | citation: https://example.com/log-aggregation-mttd | author: Renner | year: 2024\n- id: urn:mif:f_nist_5 | title: Ninety days of log retention is sufficient to investigate every class of incident with no exceptions | dimension: governance | verdict: falsified | citation: https://example.com/retention-claim | author: Sole et al. | year: 2025\n- id: urn:mif:f_nist_6 | title: Cryptographic log signing deters tampering by insider threats in pilot deployments | dimension: security | verdict: weakened | citation: https://example.com/log-signing-pilot | author: Adeyemi and Cho | year: 2025",
+      "expected_output": "A NIST SP report that: (1) excludes the falsified ninety-day-retention universal claim from the normative sections, (2) includes the weakened log-signing finding but annotates it as weakened/preliminary, (3) includes the survived log-aggregation finding as settled guidance, (4) keeps all required front matter and matter (Authority, Purpose & Scope, Audience, Abstract, Keywords, numbered normative sections, Definitions/Glossary, References, appendix), (5) uses bracketed [N] references.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "nist-sp.md",
+          "description": "Output file was created"
+        },
+        {
+          "type": "regex_match",
+          "file": "nist-sp.md",
+          "pattern": "(?i)authority",
+          "description": "Front-matter Authority statement present"
+        },
+        {
+          "type": "regex_match",
+          "file": "nist-sp.md",
+          "pattern": "(?i)purpose|scope",
+          "description": "Front-matter Purpose & Scope present"
+        },
+        {
+          "type": "regex_match",
+          "file": "nist-sp.md",
+          "pattern": "(?i)audience",
+          "description": "Front-matter Audience present"
+        },
+        {
+          "type": "regex_match",
+          "file": "nist-sp.md",
+          "pattern": "(?i)abstract",
+          "description": "Front-matter Abstract present"
+        },
+        {
+          "type": "regex_match",
+          "file": "nist-sp.md",
+          "pattern": "(?i)keywords",
+          "description": "Front-matter Keywords present"
+        },
+        {
+          "type": "regex_match",
+          "file": "nist-sp.md",
+          "pattern": "(?m)^(?:#+\\s*1[.\\s]|\\s*1\\.\\s+\\S)",
+          "description": "At least one numbered normative section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "nist-sp.md",
+          "pattern": "(?i)definitions|glossary",
+          "description": "Definitions/Glossary section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "nist-sp.md",
+          "pattern": "(?i)references|bibliography",
+          "description": "References section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "nist-sp.md",
+          "pattern": "(?i)appendix",
+          "description": "At least one appendix present"
+        },
+        {
+          "type": "regex_match",
+          "file": "nist-sp.md",
+          "pattern": "(?i)renner|log aggregation|mean time to detect|mttd",
+          "description": "Survived finding (log aggregation) appears in the report"
+        },
+        {
+          "type": "regex_match",
+          "file": "nist-sp.md",
+          "pattern": "(?i)adeyemi|log signing|cryptographic log|tamper",
+          "description": "Weakened finding (log signing) appears in the report (weakened = include with annotation, not exclude)"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "nist-sp.md",
+          "literal": "urn:mif:",
+          "description": "No raw urn:mif: identifiers appear in the prose"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "nist-sp.md",
+          "literal": "f_nist_",
+          "description": "No internal MIF finding IDs appear in the prose"
+        }
+      ],
+      "expectations": [
+        {
+          "description": "The falsified ninety-day-retention universal claim does NOT appear as normative guidance",
+          "check": "transcript",
+          "criteria": "The claim that ninety days of retention suffices for every class of incident with no exceptions must not appear as a normative requirement. The Sole et al. 2025 finding may only be referenced in the methodology/verification note describing exclusion — never as settled guidance."
+        },
+        {
+          "description": "The weakened log-signing finding carries an explicit uncertainty qualifier",
+          "check": "transcript",
+          "criteria": "The Adeyemi and Cho log-signing finding must carry an inline qualifier such as 'weakened evidence', 'preliminary', 'pilot-stage', or 'contested', and must not be stated with the same normative force as the survived log-aggregation finding."
+        },
+        {
+          "description": "The report states the verification policy for falsified and weakened findings",
+          "check": "transcript",
+          "criteria": "The report explains that falsified findings are excluded from normative guidance and weakened/inconclusive findings are retained with explicit annotation, stated as methodology rather than implied."
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Write a NIST Special Publication (SP 800-series) standards/guidance report from these findings. Topic: 'access control requirements for multi-tenant data platforms'. All four findings survived falsification. Every normative requirement must trace to a finding. Include front matter (Authority, Purpose & Scope, Audience, Abstract, Keywords), numbered normative sections, a Definitions/Glossary, a References list, and an appendix containing a control-mapping crosswalk. Write the report to nist-sp.md.\n\nFindings:\n- id: urn:mif:f_nist_7 | title: Attribute-based access control scales tenant isolation better than role-based access control on tested platforms | dimension: architecture | verdict: survived | citation: https://example.com/abac-tenant-isolation | author: Marsh et al. | year: 2023\n- id: urn:mif:f_nist_8 | title: Just-in-time privilege elevation reduces standing administrative access in evaluated environments | dimension: security | verdict: survived | citation: https://example.com/jit-elevation | author: Iqbal and Fournier | year: 2025\n- id: urn:mif:f_nist_9 | title: Per-tenant encryption keys prevent cross-tenant data recovery after key compromise | dimension: security | verdict: survived | citation: https://example.com/per-tenant-keys | author: Nguyen | year: 2024\n- id: urn:mif:f_nist_10 | title: Continuous access reviews detect privilege creep that periodic annual reviews miss | dimension: governance | verdict: survived | citation: https://example.com/continuous-access-review | author: Delgado et al. | year: 2026",
+      "expected_output": "A complete NIST SP report with all required front matter and matter. Every normative requirement traces to one of the four findings with a bracketed reference. No uncited normative claims. No urn:mif: leakage in prose. The appendix contains a control-mapping crosswalk and the References list carries all four sources.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "nist-sp.md",
+          "description": "Output file was created"
+        },
+        {
+          "type": "regex_match",
+          "file": "nist-sp.md",
+          "pattern": "(?i)authority",
+          "description": "Front-matter Authority statement present"
+        },
+        {
+          "type": "regex_match",
+          "file": "nist-sp.md",
+          "pattern": "(?i)purpose|scope",
+          "description": "Front-matter Purpose & Scope present"
+        },
+        {
+          "type": "regex_match",
+          "file": "nist-sp.md",
+          "pattern": "(?i)audience",
+          "description": "Front-matter Audience present"
+        },
+        {
+          "type": "regex_match",
+          "file": "nist-sp.md",
+          "pattern": "(?i)abstract",
+          "description": "Front-matter Abstract present"
+        },
+        {
+          "type": "regex_match",
+          "file": "nist-sp.md",
+          "pattern": "(?i)keywords",
+          "description": "Front-matter Keywords present"
+        },
+        {
+          "type": "regex_match",
+          "file": "nist-sp.md",
+          "pattern": "(?m)^(?:#+\\s*1[.\\s]|\\s*1\\.\\s+\\S)",
+          "description": "At least one numbered normative section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "nist-sp.md",
+          "pattern": "(?i)definitions|glossary",
+          "description": "Definitions/Glossary section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "nist-sp.md",
+          "pattern": "(?i)references|bibliography",
+          "description": "References section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "nist-sp.md",
+          "pattern": "(?i)appendix",
+          "description": "At least one appendix present"
+        },
+        {
+          "type": "regex_match",
+          "file": "nist-sp.md",
+          "pattern": "(?i)mapping|crosswalk|control catalog",
+          "description": "Appendix control-mapping crosswalk present"
+        },
+        {
+          "type": "regex_match",
+          "file": "nist-sp.md",
+          "pattern": "(?i)attribute.based|abac|tenant isolation",
+          "description": "Finding f_nist_7 (ABAC tenant isolation) referenced"
+        },
+        {
+          "type": "regex_match",
+          "file": "nist-sp.md",
+          "pattern": "(?i)just.in.time|jit|privilege elevation|standing.*access",
+          "description": "Finding f_nist_8 (JIT elevation) referenced"
+        },
+        {
+          "type": "regex_match",
+          "file": "nist-sp.md",
+          "pattern": "(?i)per.tenant.*key|encryption key|key compromise",
+          "description": "Finding f_nist_9 (per-tenant keys) referenced"
+        },
+        {
+          "type": "regex_match",
+          "file": "nist-sp.md",
+          "pattern": "(?i)continuous.*review|privilege creep|access review",
+          "description": "Finding f_nist_10 (continuous access reviews) referenced"
+        },
+        {
+          "type": "regex_match",
+          "file": "nist-sp.md",
+          "pattern": "\\[1\\]|\\[2\\]|\\[3\\]|\\[4\\]",
+          "description": "Numbered bracketed reference markers used"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "nist-sp.md",
+          "literal": "urn:mif:",
+          "description": "No raw urn:mif: identifiers appear in the body text"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "nist-sp.md",
+          "literal": "f_nist_",
+          "description": "No internal MIF finding ID handles leak into the output body"
+        }
+      ],
+      "expectations": [
+        {
+          "description": "No raw urn:mif: identifiers or internal finding IDs appear in the body text",
+          "check": "transcript",
+          "criteria": "The strings 'urn:mif:' and 'f_nist_' must not appear as visible prose. All references are bracketed [N] markers resolving to the References list."
+        },
+        {
+          "description": "The References list carries all four sources with their URLs",
+          "check": "transcript",
+          "criteria": "The References section contains numbered entries for Marsh et al. 2023, Iqbal and Fournier 2025, Nguyen 2024, and Delgado et al. 2026, each with the citation URL from the supplied finding."
+        },
+        {
+          "description": "Every normative requirement traces to a cited finding",
+          "check": "transcript",
+          "criteria": "Each normative requirement in the body carries a bracketed reference to one of the four findings. There are no uncited normative claims."
+        }
+      ]
+    }
+  ]
+}
