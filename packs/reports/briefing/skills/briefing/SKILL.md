@@ -1,7 +1,7 @@
 ---
 name: briefing
-description: Genre template for a one-page briefing or standup update (what's new, why it matters, what's next). Use when the deliverable is a terse status or situational update for a recurring audience.
-version: 0.1.2
+description: Genre template for a one-page briefing or standup update (what's new, why it matters, what's next). Use when the deliverable is a terse status or situational update for a recurring audience. Harness-native — no named domain standard prescribes a briefing format.
+version: 0.2.1
 ---
 
 # Genre Template: Briefing
@@ -10,6 +10,14 @@ A deliverable-genre template (SPEC §6d). It declares the document's structure, 
 altitude, citation style, and required matter. `report-synthesizer` consumes this template,
 binds the surviving findings (MIF units validated by `schemas/findings.schema.json`, drawn
 from `reports/<topic>/`), and the result renders through any channel.
+
+> **Harness-native genre (no domain standard to conform to).** Unlike the standards-anchored
+> report genres, `briefing` is a cross-domain short form native to this harness — no named
+> body (ISO/NISO/ANSI/APA/etc.) prescribes a "briefing" format, so there is no external
+> standard to align to and "alignment" does not apply. If a named anchor were ever desired,
+> the nearest candidates are the executive-summary conventions of NIST SP or ESOMAR reports —
+> but adopting either would convert `briefing` into a variant of `exec-summary`. That is the
+> trade-off, and the reason this genre stays deliberately harness-native.
 
 ## Target Audience
 

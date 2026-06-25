@@ -60,13 +60,20 @@ scripts/pack-toggle.sh academic on
 
 ## briefing
 
-**Version:** 0.2.0 | **Kind:** genre
+**Version:** 0.2.1 | **Kind:** genre
 
 ### Purpose
 
 Produces a one-page decision brief from the surviving findings corpus. The genre enforces
 a hard one-page ceiling: if the content exceeds that limit, it is cut rather than
 continued.
+
+`briefing` is **harness-native**: no named domain standard (ISO/NISO/ANSI/APA/etc.)
+prescribes a "briefing" format, so unlike the standards-anchored report genres it has no
+external standard to conform to and "alignment" does not apply. The nearest named anchors
+would be the executive-summary conventions of NIST SP or ESOMAR reports, but adopting
+either would turn `briefing` into a variant of `exec-summary` — so it stays deliberately
+harness-native.
 
 ### When to use
 

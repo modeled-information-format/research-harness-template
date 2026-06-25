@@ -1,6 +1,6 @@
 {
   "name": "briefing",
-  "version": "0.1.2",
+  "version": "0.2.1",
   "kind": "genre",
   "description": "Genre template for a one-page briefing or standup update (what's new, why it matters, what's next)",
   "license": "MIT",
