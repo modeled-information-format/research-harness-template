@@ -1,0 +1,18 @@
+{
+  "name": "legal-memo",
+  "version": "0.2.0",
+  "kind": "genre",
+  "description": "Genre template for a predictive legal memorandum (Question Presented, Brief Answer, Statement of Facts, IRAC Discussion, Conclusion) with Bluebook practitioner citations",
+  "license": "MIT",
+  "author": {
+    "name": "zircote"
+  },
+  "provides": {
+    "skills": [
+      "legal-memo"
+    ],
+    "genres": [
+      "legal-memo"
+    ]
+  }
+}

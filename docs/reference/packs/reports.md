@@ -198,6 +198,59 @@ scripts/pack-toggle.sh exec-summary on
 
 ---
 
+## legal-memo
+
+**Version:** 0.2.0 | **Kind:** genre
+
+### Purpose
+
+Produces a predictive legal memorandum from the surviving findings corpus. The genre
+follows the conventional memo structure — Question Presented, Brief Answer, Statement of
+Facts, an IRAC Discussion, and a Conclusion — with Bluebook practitioner citations to
+authority. It reproduces the *structure and reasoning form* of a legal memo; it is not
+legal advice and asserts no legal sufficiency.
+
+### When to use
+
+Use `legal-memo` when the deliverable is an internal analysis that predicts how a question
+of law resolves on a set of facts and must show its reasoning issue by issue — the
+audience is a supervising attorney or decision-maker who will scrutinize the chain from
+facts to governing rule to application.
+
+### What it provides
+
+- Five-section structure in order: Question Presented, Brief Answer, Statement of Facts,
+  Discussion, Conclusion
+- IRAC sub-structure (Issue, Rule, Application, Conclusion) per issue in the Discussion —
+  the genre's distinguishing feature
+- Bluebook practitioner citations to authority, each resolving to a MIF finding `@id` + URL
+- Verdict-aware handling: weakened/inconclusive authorities annotated, falsified excluded
+
+### Dependencies
+
+None beyond the core engine.
+
+### Benefits
+
+- The IRAC sub-structure forces each issue through rule-then-application reasoning rather
+  than a flat narrative, so the prediction is auditable
+- Question Presented / Brief Answer up front gives the reader the disposition before the
+  analysis, matching how memos are actually read
+- Citations to named authority keep every rule statement traceable to its source
+
+### Edition currency
+
+Bluebook citation conventions evolve across editions. The genre instructs the author to
+verify the current edition live rather than baking an edition number into output.
+
+### Enable
+
+```sh
+scripts/pack-toggle.sh legal-memo on
+```
+
+---
+
 ## trend-analysis
 
 **Version:** 0.2.0 | **Kind:** genre

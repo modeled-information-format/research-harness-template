@@ -1,0 +1,277 @@
+{
+  "skill_name": "legal-memo",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Write a predictive legal memorandum from these survived findings. Re: 'whether a former employee's use of a customer list compiled from public directories breaches the non-compete'. Include all required sections in order and use IRAC in the Discussion. Write the memo to legal-memo.md.\n\nFindings:\n- id: urn:mif:f_nc_1 | title: Trade-secret protection requires the information derive independent economic value from not being generally known | dimension: doctrine | verdict: survived | citation: https://example.com/uniform-trade-secrets-act | author: UTSA | year: 1985\n- id: urn:mif:f_nc_2 | title: Courts decline to enforce non-competes broader than necessary to protect a legitimate business interest | dimension: doctrine | verdict: survived | citation: https://example.com/reasonableness-noncompete | author: Reed v. Acme | year: 2019\n- id: urn:mif:f_nc_3 | title: Customer information assembled from public directories is generally not a protectable trade secret | dimension: application | verdict: survived | citation: https://example.com/public-compilation-rule | author: Doyle v. Vance | year: 2021",
+      "expected_output": "A predictive legal memorandum with all five sections in order: Question Presented, Brief Answer, Statement of Facts, Discussion (IRAC per issue), Conclusion. Question Presented and Brief Answer precede the Statement of Facts. The Discussion exhibits explicit Issue / Rule / Application / Conclusion sub-structure. Bluebook-style citations to authority; every claim traces to a supplied finding. No raw urn:mif: identifiers in prose.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "legal-memo.md",
+          "description": "Output file was created"
+        },
+        {
+          "type": "regex_match",
+          "file": "legal-memo.md",
+          "pattern": "(?i)question presented",
+          "description": "Required Question Presented section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "legal-memo.md",
+          "pattern": "(?i)brief answer",
+          "description": "Required Brief Answer section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "legal-memo.md",
+          "pattern": "(?i)statement of facts|facts",
+          "description": "Required Statement of Facts section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "legal-memo.md",
+          "pattern": "(?i)statement of facts",
+          "description": "Dedicated 'Statement of Facts' heading present (not merely the word 'facts')"
+        },
+        {
+          "type": "regex_match",
+          "file": "legal-memo.md",
+          "pattern": "(?i)discussion|analysis",
+          "description": "Required Discussion section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "legal-memo.md",
+          "pattern": "(?i)conclusion",
+          "description": "Required Conclusion section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "legal-memo.md",
+          "pattern": "(?si)question presented.*brief answer.*statement of facts",
+          "description": "Question Presented and Brief Answer precede the Statement of Facts (ordering)"
+        },
+        {
+          "type": "regex_match",
+          "file": "legal-memo.md",
+          "pattern": "(?si)(issue).{0,2500}(rule).{0,2500}(application|analysis).{0,2500}(conclusion)",
+          "description": "IRAC sub-structure (Issue -> Rule -> Application -> Conclusion) appears within the Discussion"
+        },
+        {
+          "type": "regex_match",
+          "file": "legal-memo.md",
+          "pattern": "(?si)(discussion|analysis)[\\s\\S]{0,800}issue[\\s\\S]{0,2500}rule[\\s\\S]{0,2500}(application|analysis)[\\s\\S]{0,2500}conclusion",
+          "description": "IRAC sub-structure is anchored after the Discussion/Analysis heading, not satisfied by I/R/A/C words elsewhere (e.g. Brief Answer)"
+        },
+        {
+          "type": "regex_match",
+          "file": "legal-memo.md",
+          "pattern": "example\\.com/(uniform-trade-secrets-act|reasonableness-noncompete|public-compilation-rule)",
+          "description": "At least one citation URL from the MIF findings appears as authority"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "legal-memo.md",
+          "literal": "urn:mif:",
+          "description": "No raw urn:mif: identifiers appear in the prose or body text"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "legal-memo.md",
+          "literal": "f_nc_",
+          "description": "No internal MIF finding IDs appear in the prose"
+        }
+      ],
+      "expectations": [
+        {
+          "description": "The Discussion uses IRAC per issue, not a flat narrative",
+          "check": "transcript",
+          "criteria": "Within the Discussion, each discrete issue is analyzed as Issue (the sub-question), Rule (the governing authority, cited), Application (the rule applied to the facts, including counter-arguments), and Conclusion (the predicted sub-outcome). The four moves are identifiable, in order, for at least one issue."
+        },
+        {
+          "description": "Question Presented frames a single yes/no legal question joining rule to facts",
+          "check": "transcript",
+          "criteria": "The Question Presented states one answerable yes/no question that ties the governing legal rule to the determinative facts of the matter, rather than an open-ended topic."
+        },
+        {
+          "description": "No raw urn:mif: identifiers or f_nc_ internal IDs appear as visible prose",
+          "check": "transcript",
+          "criteria": "The strings 'urn:mif:' and 'f_nc_' must not appear as visible body text. Internal MIF IDs are resolved to Bluebook-style citations to the named authority, never exposed to the reader."
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Produce a predictive legal memorandum on 'whether an arbitration clause in an online click-wrap agreement is enforceable against a consumer'. The finding set includes one falsified finding and one weakened finding — handle each according to the genre rules. Write the memo to legal-memo.md.\n\nFindings:\n- id: urn:mif:f_arb_1 | title: Clear and conspicuous notice plus manifestation of assent is required to bind a consumer to online terms | dimension: doctrine | verdict: survived | citation: https://example.com/clickwrap-assent | author: Nguyen v. Barnes | year: 2014\n- id: urn:mif:f_arb_2 | title: All click-wrap arbitration clauses are categorically unenforceable against consumers in every jurisdiction | dimension: doctrine | verdict: falsified | citation: https://example.com/categorical-claim | author: Blog Post | year: 2025\n- id: urn:mif:f_arb_3 | title: Unconscionability review of arbitration clauses applies with greater scrutiny in consumer adhesion contracts | dimension: doctrine | verdict: weakened | citation: https://example.com/unconscionability-scrutiny | author: Sanchez v. Valley | year: 2022",
+      "expected_output": "A predictive legal memo that (1) excludes the falsified categorical claim (f_arb_2) from the analysis, (2) includes the weakened unconscionability finding (f_arb_3) with an explicit uncertainty qualifier, (3) relies on the survived assent finding (f_arb_1), (4) keeps all five sections in order with IRAC in the Discussion.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "legal-memo.md",
+          "description": "Output file was created"
+        },
+        {
+          "type": "regex_match",
+          "file": "legal-memo.md",
+          "pattern": "(?i)question presented",
+          "description": "Question Presented section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "legal-memo.md",
+          "pattern": "(?i)discussion|analysis",
+          "description": "Discussion section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "legal-memo.md",
+          "pattern": "(?i)conclusion",
+          "description": "Conclusion section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "legal-memo.md",
+          "pattern": "(?i)nguyen|conspicuous notice|manifestation of assent",
+          "description": "Survived finding f_arb_1 (assent requirement) appears in the memo"
+        },
+        {
+          "type": "regex_match",
+          "file": "legal-memo.md",
+          "pattern": "(?i)unconscionab|sanchez|adhesion",
+          "description": "Weakened finding f_arb_3 (unconscionability scrutiny) appears in the memo (weakened = include with annotation)"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "legal-memo.md",
+          "literal": "urn:mif:",
+          "description": "No raw urn:mif: identifiers appear in the prose"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "legal-memo.md",
+          "literal": "f_arb_",
+          "description": "No internal MIF finding IDs appear in the prose"
+        }
+      ],
+      "expectations": [
+        {
+          "description": "The falsified categorical claim does NOT appear as supporting authority",
+          "check": "transcript",
+          "criteria": "The claim that all click-wrap arbitration clauses are categorically unenforceable (Blog Post 2025) must not appear as a relied-upon rule. It may be mentioned only when describing the verification/exclusion policy, never as authority."
+        },
+        {
+          "description": "The weakened finding carries an explicit uncertainty qualifier",
+          "check": "transcript",
+          "criteria": "The unconscionability finding (Sanchez v. Valley) is presented with a qualifier such as 'weakened authority suggests', 'contested', or 'less firmly established' — not asserted with the same confidence as the survived assent rule."
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Write a predictive legal memorandum from these findings. Re: 'whether a landlord's retention of a security deposit for ordinary wear and tear is permitted'. All three findings survived. Citations are mandatory; every claim must trace to a finding. Write the memo to legal-memo.md.\n\nFindings:\n- id: urn:mif:f_dep_1 | title: Statutes commonly prohibit withholding a security deposit for ordinary wear and tear as distinct from tenant-caused damage | dimension: doctrine | verdict: survived | citation: https://example.com/wear-and-tear-rule | author: State Landlord-Tenant Act | year: 2018\n- id: urn:mif:f_dep_2 | title: The landlord bears the burden of itemizing deductions within the statutory notice period | dimension: doctrine | verdict: survived | citation: https://example.com/itemization-burden | author: Marsh v. Keller | year: 2020\n- id: urn:mif:f_dep_3 | title: Failure to provide a timely itemized statement can forfeit the right to retain any portion of the deposit | dimension: application | verdict: survived | citation: https://example.com/forfeiture-rule | author: Park v. Lin | year: 2023",
+      "expected_output": "A complete predictive legal memo with all five sections in order and IRAC in the Discussion. Every claim traces to one of the three findings with a Bluebook-style citation to the named authority. No uncited assertions. No urn:mif: leakage in prose.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "legal-memo.md",
+          "description": "Output file was created"
+        },
+        {
+          "type": "regex_match",
+          "file": "legal-memo.md",
+          "pattern": "(?i)question presented",
+          "description": "Question Presented section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "legal-memo.md",
+          "pattern": "(?i)brief answer",
+          "description": "Brief Answer section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "legal-memo.md",
+          "pattern": "(?i)statement of facts|facts",
+          "description": "Statement of Facts section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "legal-memo.md",
+          "pattern": "(?i)statement of facts",
+          "description": "Dedicated 'Statement of Facts' heading present (not merely the word 'facts')"
+        },
+        {
+          "type": "regex_match",
+          "file": "legal-memo.md",
+          "pattern": "(?i)discussion|analysis",
+          "description": "Discussion section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "legal-memo.md",
+          "pattern": "(?i)conclusion",
+          "description": "Conclusion section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "legal-memo.md",
+          "pattern": "(?si)(issue).{0,2500}(rule).{0,2500}(application|analysis).{0,2500}(conclusion)",
+          "description": "IRAC sub-structure present in the Discussion"
+        },
+        {
+          "type": "regex_match",
+          "file": "legal-memo.md",
+          "pattern": "(?si)(discussion|analysis)[\\s\\S]{0,800}issue[\\s\\S]{0,2500}rule[\\s\\S]{0,2500}(application|analysis)[\\s\\S]{0,2500}conclusion",
+          "description": "IRAC sub-structure is anchored after the Discussion/Analysis heading, not satisfied by I/R/A/C words elsewhere"
+        },
+        {
+          "type": "regex_match",
+          "file": "legal-memo.md",
+          "pattern": "(?i)wear and tear|ordinary wear",
+          "description": "Finding f_dep_1 (wear-and-tear rule) referenced"
+        },
+        {
+          "type": "regex_match",
+          "file": "legal-memo.md",
+          "pattern": "(?i)itemiz|marsh|notice period",
+          "description": "Finding f_dep_2 (itemization burden) referenced"
+        },
+        {
+          "type": "regex_match",
+          "file": "legal-memo.md",
+          "pattern": "(?i)forfeit|park v|timely",
+          "description": "Finding f_dep_3 (forfeiture rule) referenced"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "legal-memo.md",
+          "literal": "urn:mif:",
+          "description": "No raw urn:mif: identifiers appear in the body text"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "legal-memo.md",
+          "literal": "f_dep_",
+          "description": "No internal MIF finding ID handles leak into the output body"
+        }
+      ],
+      "expectations": [
+        {
+          "description": "Every factual/legal claim traces to a supplied finding with a citation to authority",
+          "check": "transcript",
+          "criteria": "Each rule statement in the Discussion cites the named authority from the findings (State Landlord-Tenant Act, Marsh v. Keller, Park v. Lin) with its URL resolving in a table of authorities or footnotes. No uncited legal assertions."
+        },
+        {
+          "description": "The Conclusion gives an overall predicted disposition and a recommendation",
+          "check": "transcript",
+          "criteria": "The Conclusion states the overall predicted outcome on the security-deposit question and a concrete recommendation or next step, rather than merely restating the Brief Answer."
+        }
+      ]
+    }
+  ]
+}

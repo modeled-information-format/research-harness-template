@@ -147,6 +147,11 @@
       "source": "bundled"
     },
     {
+      "name": "legal-memo",
+      "enabled": false,
+      "source": "bundled"
+    },
+    {
       "name": "trend-modeling",
       "enabled": false,
       "source": "bundled"
