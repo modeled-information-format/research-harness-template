@@ -124,6 +124,6 @@ First release of the domain-general research harness template.
 - **Distribution** as a Copier living template and a Claude Code plugin
   marketplace.
 
-[Unreleased]: https://github.com/zircote/research-harness-template/compare/v0.1.2...HEAD
-[0.1.2]: https://github.com/zircote/research-harness-template/releases/tag/v0.1.2
-[0.1.1]: https://github.com/zircote/research-harness-template/releases/tag/v0.1.1
+[Unreleased]: https://github.com/modeled-information-format/research-harness-template/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/modeled-information-format/research-harness-template/releases/tag/v0.1.2
+[0.1.1]: https://github.com/modeled-information-format/research-harness-template/releases/tag/v0.1.1

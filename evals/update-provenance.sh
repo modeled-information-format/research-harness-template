@@ -62,16 +62,14 @@ cat > "$BIN/copier" <<SH
 #!/usr/bin/env bash
 echo "copier \$*" > "$ROOT/copier_invoked"
 SH
-cat > "$BIN/yq" <<SH
-#!/usr/bin/env bash
-exec $(command -v yq) "\$@"
-SH
+# Note: we do NOT stub yq/sort/awk — update.sh uses the real ones (found on PATH after
+# $BIN). Only git/gh/copier are stubbed.
 chmod +x "$BIN"/*
 
 mk_clone() { # -> a clean clone dir with .copier-answers.yml
   local c="$ROOT/clone"; rm -rf "$c"; mkdir -p "$c"
   git -C "$c" init -q; git -C "$c" config user.email t@t.t; git -C "$c" config user.name t
-  printf '_src_path: gh:zircote/research-harness-template\n_commit: v0.1.0\n' > "$c/.copier-answers.yml"
+  printf '_src_path: gh:modeled-information-format/research-harness-template\n_commit: v0.1.0\n' > "$c/.copier-answers.yml"
   git -C "$c" add -A; git -C "$c" commit -q -m init
   echo "$c"
 }

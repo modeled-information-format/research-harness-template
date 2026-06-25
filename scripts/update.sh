@@ -81,8 +81,12 @@ esac
 
 # Resolve the target tag (default: latest by version) and pin it to a COMMIT SHA.
 if [ -z "$TARGET_TAG" ]; then
-  TARGET_TAG=$(git ls-remote --tags --refs "$REMOTE" 2>/dev/null \
-    | sed -n 's#.*refs/tags/##p' | sort -V | tail -1)
+  # Latest tag by version. `sort -V` is GNU-only (absent on macOS/BSD), so fall back to a
+  # zero-padded decorate-sort-undecorate on v<major>.<minor>.<patch> tags.
+  TARGET_TAG=$(git ls-remote --tags --refs "$REMOTE" 2>/dev/null | sed -n 's#.*refs/tags/##p' \
+    | { if printf '%s\n' 1.0.0 1.0.10 | sort -V >/dev/null 2>&1; then sort -V
+        else awk '{v=$0; sub(/^v/,"",v); split(v,a,"."); printf "%010d.%010d.%010d\t%s\n", a[1]+0,a[2]+0,a[3]+0,$0}' | sort | cut -f2
+        fi; } | tail -1)
   [ -n "$TARGET_TAG" ] || { echo "update.sh: no tags found at $REMOTE" >&2; exit 1; }
 fi
 # Peel annotated tags to the underlying commit (^{}); fall back to the ref itself for a
@@ -97,7 +101,9 @@ echo "update.sh: target ${PINNED_REPO}@${TARGET_TAG} -> ${SHA}"
 # Fetch the target tree so we can reproduce the release artifact locally.
 WORK=$(mktemp -d); trap 'rm -rf "$WORK"' EXIT
 git -C "$WORK" init -q
-git -C "$WORK" fetch -q --depth 1 "$REMOTE" "$SHA"
+# Fetch by TAG REF (not the raw SHA): SHA1-in-want / fetching unadvertised objects is
+# disabled on many remotes. The tag ref brings its commit; we then archive the peeled SHA.
+git -C "$WORK" fetch -q --depth 1 "$REMOTE" "refs/tags/${TARGET_TAG}"
 
 # Reproduce the artifact EXACTLY as .github/workflows/release.yml does.
 ARTIFACT="${WORK}/${NAME}-${TARGET_TAG}.tar.gz"

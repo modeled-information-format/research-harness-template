@@ -25,7 +25,7 @@ uncommitted or lost answers file breaks future updates.
 
 ```bash
 pipx install copier            # or: pipx install copier && pipx ensurepath
-copier copy gh:zircote/research-harness-template my-harness
+copier copy gh:modeled-information-format/research-harness-template my-harness
 cd my-harness
 ```
 
@@ -78,7 +78,7 @@ propagation, adopt copier retroactively:
 
 ```bash
 copier copy --answers-file .copier-answers.yml \
-  gh:zircote/research-harness-template .
+  gh:modeled-information-format/research-harness-template .
 ```
 
 This writes the `.copier-answers.yml` your instance was missing; subsequent
