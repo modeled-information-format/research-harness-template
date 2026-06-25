@@ -14,10 +14,22 @@
 
 set -uo pipefail
 G="${1:?usage: build-graph-viz.sh <knowledge-graph.json> [out.html]}"
-OUT="${2:-$(mktemp -t mif-graph-XXXXXX).html}"
 [ -f "$G" ] || { echo "build-graph-viz: not found: $G" >&2; exit 2; }
 
-DATA=$(cat "$G")
+# No explicit out path -> a fresh mktemp dir OUTSIDE the tree (a dir, not a
+# suffixed temp file, so no orphan empty temp is left behind). Guard the failure.
+if [ -n "${2:-}" ]; then
+  OUT="$2"
+else
+  TMPD=$(mktemp -d) || { echo "build-graph-viz: mktemp failed" >&2; exit 3; }
+  OUT="$TMPD/knowledge-graph.html"
+fi
+
+# Embed the graph JSON verbatim inside a <script> tag below; escape any "</"
+# so a label/id containing "</script>" can't terminate the tag early (injection
+# when the file is opened locally). "\/" is a valid JSON string escape, so the
+# embedded payload still parses identically.
+DATA=$(sed 's#</#<\\/#g' "$G")
 NODES=$(jq '.nodes|length' "$G")
 EDGES=$(jq '.edges|length' "$G")
 

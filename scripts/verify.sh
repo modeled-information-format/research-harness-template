@@ -288,14 +288,15 @@ gate_m4() {
   # 4c. The graph viz renders. Render the probe HTML into a temp dir outside the
   #     tree (the gate only asserts the renderer produces non-empty output) so it
   #     never dirties the working tree or clobbers the committed sample fixture.
-  local vhtml; vhtml="$(mktemp -d)/kg.html"
-  if scripts/build-graph-viz.sh "$KG" "$vhtml" >/dev/null 2>&1 \
-     && [ -s "$vhtml" ]; then
+  local vdir; vdir="$(mktemp -d)" || vdir=""
+  if [ -n "$vdir" ] \
+     && scripts/build-graph-viz.sh "$KG" "$vdir/kg.html" >/dev/null 2>&1 \
+     && [ -s "$vdir/kg.html" ]; then
     ok "graph visualization renders to HTML"
   else
     bad "graph visualization failed"
   fi
-  rm -rf "$(dirname "$vhtml")"
+  [ -n "$vdir" ] && rm -rf "$vdir"
 
   # 4d. The five services exist as flat skills with descriptions (#21-25).
   local s smiss=""

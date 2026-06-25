@@ -41,7 +41,7 @@ path to the user. Never write it into `reports/`, which dirties the tree and
 blocks `copier update`.
 
 ```bash
-bash scripts/build-graph-viz.sh <knowledge-graph.json>   # -> /tmp/mif-graph-XXXXXX.html (reported)
+bash scripts/build-graph-viz.sh <knowledge-graph.json>   # -> <mktemp-dir>/knowledge-graph.html (reported)
 ```
 
 Only when the user **explicitly asks to persist** the viz, pass an in-repo
