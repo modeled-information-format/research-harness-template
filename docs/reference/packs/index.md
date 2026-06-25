@@ -30,6 +30,7 @@ For control-plane mechanics — enabling, disabling, and listing packs — see
 | briefing | reports | genre | One-page decision brief | none |
 | engineering | reports | genre | Technical engineering report with comparison tables | @mermaid-js/mermaid-cli (optional) |
 | exec-summary | reports | genre | 1-2 page BLUF executive summary | none |
+| humanities-mla | reports | genre | Argumentative humanities essay (MLA author-page, Works Cited) | none |
 | trend-analysis | reports | genre | Trajectory report with scenario diagrams | @mermaid-js/mermaid-cli (optional) |
 | trend-modeling | trend-modeling | methodology | Three-valued logic (INC/DEC/CONST) scenario modeling | @mermaid-js/mermaid-cli (optional) |
 | biology-research-lab | ontologies | ontology | Full research lab lifecycle entity vocabulary | none |

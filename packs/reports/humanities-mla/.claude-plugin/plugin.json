@@ -1,0 +1,18 @@
+{
+  "name": "humanities-mla",
+  "version": "0.2.0",
+  "kind": "genre",
+  "description": "Genre template for an argumentative humanities essay in MLA style (introduction with thesis, body argument sections, conclusion, MLA author-page in-text citations, and a Works Cited list)",
+  "license": "MIT",
+  "author": {
+    "name": "zircote"
+  },
+  "provides": {
+    "skills": [
+      "humanities-mla"
+    ],
+    "genres": [
+      "humanities-mla"
+    ]
+  }
+}

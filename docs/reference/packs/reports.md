@@ -198,6 +198,54 @@ scripts/pack-toggle.sh exec-summary on
 
 ---
 
+## humanities-mla
+
+**Version:** 0.2.0 | **Kind:** genre
+
+### Purpose
+
+Produces an argumentative humanities essay from the surviving findings corpus in MLA style:
+an Introduction stating a thesis, body argument sections, a Conclusion, MLA author-page
+in-text citations, and a Works Cited list. There is no Method or Results section.
+
+### When to use
+
+Use `humanities-mla` when the deliverable is a humanities argument that follows MLA
+conventions — common in literature and the modern languages — rather than an empirical
+IMRaD paper. The author-page in-text form and Works Cited list distinguish it from the
+author-date `academic` genre and from footnote-based (Chicago Notes-Bibliography) styles.
+
+### What it provides
+
+- Argumentative structure (thesis introduction, body sections, conclusion)
+- MLA author-page in-text citations, e.g. `(Hass 31)`, resolving to a Works Cited list
+- Each citation resolves to a MIF finding `@id` + URL
+- Verdict-aware handling (weakened annotated, falsified excluded)
+
+### Dependencies
+
+None beyond the core engine.
+
+### Benefits
+
+- Author-page citations and Works Cited match the convention humanities readers in the
+  modern languages expect
+- The argumentative structure suits interpretive reasoning rather than empirical reporting
+- The genre carries the scope caveat so citation conventions are not over-attributed
+
+### Edition currency
+
+MLA Handbook editions evolve (the 9th Edition is current). The genre instructs the author
+to verify the current edition live rather than baking an edition number into output.
+
+### Enable
+
+```sh
+scripts/pack-toggle.sh humanities-mla on
+```
+
+---
+
 ## trend-analysis
 
 **Version:** 0.2.0 | **Kind:** genre
