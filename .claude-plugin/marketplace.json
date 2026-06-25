@@ -84,6 +84,11 @@
       "description": "[reports/genre] Genre template for a 1-2 page decision-oriented executive summary (BLUF, key findings, recommendation, risks)"
     },
     {
+      "name": "competitive-quadrant",
+      "source": "./packs/reports/competitive-quadrant",
+      "description": "[reports/genre] Genre template for a two-axis competitive-quadrant report (Completeness of Vision x Ability to Execute, four quadrants, per-vendor strengths/cautions)"
+    },
+    {
       "name": "trend-analysis",
       "source": "./packs/reports/trend-analysis",
       "description": "[reports/genre] Genre template for a trajectory report (trajectory, signals, scenarios over time)"

@@ -198,6 +198,67 @@ scripts/pack-toggle.sh exec-summary on
 
 ---
 
+## competitive-quadrant
+
+**Version:** 0.2.0 | **Kind:** genre
+
+### Purpose
+
+Produces a two-axis competitive-quadrant report that ranks vendors in a defined market on
+**Completeness of Vision** (x-axis) against **Ability to Execute** (y-axis) and places each
+into one of four quadrants. A two-axis quadrant figure is required; every axis score,
+strength, and caution must trace to a cited finding.
+
+This genre reproduces a **generic** two-axis competitive-analysis structure. It is **not** a
+Gartner Magic Quadrant: "Magic Quadrant" is a Gartner trademark and proprietary methodology,
+and the genre is deliberately named `competitive-quadrant`, never `magic-quadrant`.
+
+Section order:
+
+1. **Market Definition / Inclusion Criteria** — the market and the explicit criteria a vendor
+   must meet to be included
+2. **Two-axis evaluation** — Completeness of Vision against Ability to Execute, with the
+   sub-criteria rolled into each axis, every score tied to a finding `@id`
+3. **Vendor profiles** — one per vendor, each with an explicit Strengths list and a Cautions
+   list, source-attributed
+4. **Quadrant placement** — Leaders / Challengers / Visionaries / Niche Players, each vendor
+   in exactly one, justified by its two-axis position
+5. **Context & Market Overview** — market forces framing the placements
+6. **Methodology** — scoring, evidence gathering and verification, limits, and as-of date
+
+### When to use
+
+Use `competitive-quadrant` when the deliverable ranks vendors or offerings in a market on two
+evaluation axes and must place them into Leaders / Challengers / Visionaries / Niche Players —
+vendor landscape comparisons, buyer shortlists, or platform selection assessments.
+
+### What it provides
+
+- Six-section structure with a required two-axis quadrant figure
+- Two named axes (Completeness of Vision, Ability to Execute) with per-vendor scoring
+- Per-vendor Strengths / Cautions profiles, each point cited
+- Four-quadrant placement (Leaders / Challengers / Visionaries / Niche Players)
+- An explicit not-a-Gartner-Magic-Quadrant trademark caveat baked into the genre rules
+
+### Dependencies
+
+None beyond the core engine. Mermaid rendering is optional.
+
+### Benefits
+
+- The required two-axis figure forces a defensible visual placement rather than prose ranking
+- Per-vendor Strengths / Cautions pairs make each placement auditable against cited evidence
+- The trademark caveat keeps the generic structure clearly distinct from Gartner's proprietary
+  Magic Quadrant methodology
+
+### Enable
+
+```sh
+scripts/pack-toggle.sh competitive-quadrant on
+```
+
+---
+
 ## trend-analysis
 
 **Version:** 0.2.0 | **Kind:** genre

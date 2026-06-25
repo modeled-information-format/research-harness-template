@@ -1,0 +1,281 @@
+{
+  "skill_name": "competitive-quadrant",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Write a competitive-quadrant report from these survived findings. Market: 'enterprise vector database platforms'. Include all required sections: Market Definition / Inclusion Criteria, the two-axis evaluation (Completeness of Vision x Ability to Execute), Vendor profiles with Strengths and Cautions per vendor, Quadrant placement (Leaders / Challengers / Visionaries / Niche Players), Context & Market Overview, and Methodology. This is NOT a Gartner Magic Quadrant — state that caveat in the report. Write the report to competitive-quadrant.md.\n\nFindings:\n- id: urn:mif:f_vdb_1 | title: Pinecone offers a fully managed serverless tier with sub-100ms p99 query latency at 1B vectors | dimension: technical | verdict: survived | citation: https://example.com/pinecone-bench | vendor: Pinecone | year: 2025\n- id: urn:mif:f_vdb_2 | title: Weaviate ships an open-source core with hybrid search but requires self-managed scaling for large clusters | dimension: technical | verdict: survived | citation: https://example.com/weaviate-arch | vendor: Weaviate | year: 2025\n- id: urn:mif:f_vdb_3 | title: Milvus demonstrates the broadest index-type support but trails on managed-cloud maturity | dimension: landscape | verdict: survived | citation: https://example.com/milvus-survey | vendor: Milvus | year: 2026",
+      "expected_output": "A competitive-quadrant report with all six required sections in order. Two-axis evaluation explicitly names Completeness of Vision and Ability to Execute. Each vendor has an explicit Strengths and Cautions pair. The four quadrants (Leaders, Challengers, Visionaries, Niche Players) appear in the placement section. A caveat states this is not a Gartner Magic Quadrant. No raw urn:mif: identifiers or internal finding IDs in prose.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "competitive-quadrant.md",
+          "description": "Output file was created"
+        },
+        {
+          "type": "regex_match",
+          "file": "competitive-quadrant.md",
+          "pattern": "(?i)market definition|inclusion criteria",
+          "description": "Required Market Definition / Inclusion Criteria section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "competitive-quadrant.md",
+          "pattern": "(?is)completeness of vision.{0,1200}ability to execute|ability to execute.{0,1200}completeness of vision",
+          "description": "Two-axis evaluation names both Completeness of Vision and Ability to Execute"
+        },
+        {
+          "type": "regex_match",
+          "file": "competitive-quadrant.md",
+          "pattern": "(?is)strengths.{0,1500}cautions",
+          "description": "Per-vendor Strengths and Cautions pair present"
+        },
+        {
+          "type": "regex_match",
+          "file": "competitive-quadrant.md",
+          "pattern": "(?is)leaders.{0,800}challengers.{0,800}visionaries.{0,800}niche players",
+          "description": "All four quadrant labels (Leaders, Challengers, Visionaries, Niche Players) appear in order"
+        },
+        {
+          "type": "regex_match",
+          "file": "competitive-quadrant.md",
+          "pattern": "(?is)not\\b.{0,80}(gartner|magic quadrant)|(gartner|magic quadrant).{0,80}\\btrademark",
+          "description": "Not-Gartner / Magic Quadrant trademark caveat present"
+        },
+        {
+          "type": "regex_match",
+          "file": "competitive-quadrant.md",
+          "pattern": "(?i)methodology",
+          "description": "Required Methodology section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "competitive-quadrant.md",
+          "pattern": "example\\.com",
+          "description": "At least one citation URL from the MIF findings appears in the report"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "competitive-quadrant.md",
+          "literal": "urn:mif:",
+          "description": "No raw urn:mif: identifiers appear in the prose"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "competitive-quadrant.md",
+          "literal": "f_vdb_",
+          "description": "No internal MIF finding IDs appear in the prose"
+        }
+      ],
+      "expectations": [
+        {
+          "description": "The two-axis evaluation explicitly frames the comparison as Completeness of Vision against Ability to Execute",
+          "check": "transcript",
+          "criteria": "The evaluation section names both axes — Completeness of Vision (vision) and Ability to Execute (execution) — and ties each vendor's score on each axis to a cited finding."
+        },
+        {
+          "description": "Every vendor profile carries an explicit Strengths list and Cautions list",
+          "check": "transcript",
+          "criteria": "Each of the three vendors (Pinecone, Weaviate, Milvus) has a profile with a Strengths section and a Cautions section, each point attributed to cited evidence."
+        },
+        {
+          "description": "The report explicitly disclaims being a Gartner Magic Quadrant",
+          "check": "transcript",
+          "criteria": "The report states that 'Magic Quadrant' is a Gartner trademark / proprietary methodology and that this report is a generic two-axis competitive analysis, not a Gartner Magic Quadrant."
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Produce a competitive-quadrant report on 'managed Kubernetes platforms'. The finding set includes one falsified finding and one weakened finding — handle each according to the genre rules. Place each surviving vendor into one of the four quadrants (Leaders / Challengers / Visionaries / Niche Players) using the two-axis evaluation (Completeness of Vision x Ability to Execute), with Strengths and Cautions per vendor. State the not-a-Gartner-Magic-Quadrant caveat. Write the report to competitive-quadrant.md.\n\nFindings:\n- id: urn:mif:f_k8s_1 | title: AKS provides the deepest first-party integration with enterprise identity and policy tooling | dimension: technical | verdict: survived | citation: https://example.com/aks-identity | vendor: AKS | year: 2025\n- id: urn:mif:f_k8s_2 | title: Every managed Kubernetes platform achieves identical 99.99% control-plane uptime in production | dimension: reliability | verdict: falsified | citation: https://example.com/uptime-claim | vendor: generic | year: 2025\n- id: urn:mif:f_k8s_3 | title: GKE Autopilot reduces node-management toil but raises per-pod cost by roughly 20% versus standard | dimension: economic | verdict: weakened | citation: https://example.com/autopilot-cost | vendor: GKE | year: 2026",
+      "expected_output": "Competitive-quadrant report that excludes the falsified uptime finding from evidence, includes the weakened GKE finding with an explicit uncertainty qualifier, includes the survived AKS finding as settled evidence, names both axes, lists the four quadrants, gives each vendor a Strengths/Cautions pair, and carries the not-Gartner caveat. No urn:mif: leakage.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "competitive-quadrant.md",
+          "description": "Output file was created"
+        },
+        {
+          "type": "regex_match",
+          "file": "competitive-quadrant.md",
+          "pattern": "(?i)inclusion criteria|market definition",
+          "description": "Market Definition / Inclusion Criteria section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "competitive-quadrant.md",
+          "pattern": "(?is)completeness of vision.{0,1200}ability to execute|ability to execute.{0,1200}completeness of vision",
+          "description": "Two-axis evaluation names both Completeness of Vision and Ability to Execute"
+        },
+        {
+          "type": "regex_match",
+          "file": "competitive-quadrant.md",
+          "pattern": "(?is)strengths.{0,1500}cautions",
+          "description": "Per-vendor Strengths and Cautions pair present"
+        },
+        {
+          "type": "regex_match",
+          "file": "competitive-quadrant.md",
+          "pattern": "(?is)leaders.{0,800}challengers.{0,800}visionaries.{0,800}niche players",
+          "description": "All four quadrant labels appear in order"
+        },
+        {
+          "type": "regex_match",
+          "file": "competitive-quadrant.md",
+          "pattern": "(?is)not\\b.{0,80}(gartner|magic quadrant)|(gartner|magic quadrant).{0,80}\\btrademark",
+          "description": "Not-Gartner / Magic Quadrant trademark caveat present"
+        },
+        {
+          "type": "regex_match",
+          "file": "competitive-quadrant.md",
+          "pattern": "(?i)aks|first.party integration",
+          "description": "Survived finding f_k8s_1 (AKS identity integration) appears in the report"
+        },
+        {
+          "type": "regex_match",
+          "file": "competitive-quadrant.md",
+          "pattern": "(?i)gke|autopilot|per.pod cost|20%",
+          "description": "Weakened finding f_k8s_3 (GKE Autopilot cost) appears in the report"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "competitive-quadrant.md",
+          "literal": "urn:mif:",
+          "description": "No raw urn:mif: identifiers appear in the prose"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "competitive-quadrant.md",
+          "literal": "f_k8s_",
+          "description": "No internal MIF finding IDs appear in the prose"
+        }
+      ],
+      "expectations": [
+        {
+          "description": "The falsified uptime finding does NOT appear as supported evidence",
+          "check": "transcript",
+          "criteria": "The claim that every managed Kubernetes platform achieves identical 99.99% control-plane uptime must not appear as a placement-supporting fact. It may only be mentioned in Methodology as an excluded finding."
+        },
+        {
+          "description": "The weakened GKE Autopilot cost finding carries an explicit uncertainty qualifier",
+          "check": "transcript",
+          "criteria": "The GKE Autopilot per-pod cost finding is annotated as weakened / contested / preliminary, not stated with the same confidence as the survived AKS finding."
+        },
+        {
+          "description": "The report disclaims being a Gartner Magic Quadrant",
+          "check": "transcript",
+          "criteria": "The report states 'Magic Quadrant' is a Gartner trademark and that this is a generic two-axis competitive analysis, not a Gartner Magic Quadrant."
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Write a competitive-quadrant report from these findings. Market: 'observability SaaS platforms'. All four findings survived falsification. Citations are mandatory — every axis score, strength, and caution must trace to a finding. Place each vendor into exactly one quadrant. Include the two-axis evaluation (Completeness of Vision x Ability to Execute), per-vendor Strengths and Cautions, the four quadrant labels, a Context & Market Overview, a Methodology section, and the not-a-Gartner-Magic-Quadrant caveat. Write the report to competitive-quadrant.md.\n\nFindings:\n- id: urn:mif:f_obs_1 | title: Datadog offers the widest first-party integration catalog at over 700 integrations | dimension: technical | verdict: survived | citation: https://example.com/datadog-integrations | vendor: Datadog | year: 2025\n- id: urn:mif:f_obs_2 | title: Grafana Cloud leads on open-standard adoption (OpenTelemetry, Prometheus) but has a steeper setup curve | dimension: landscape | verdict: survived | citation: https://example.com/grafana-otel | vendor: Grafana | year: 2025\n- id: urn:mif:f_obs_3 | title: Honeycomb's event-based model excels at high-cardinality debugging but targets a narrower buyer | dimension: technical | verdict: survived | citation: https://example.com/honeycomb-cardinality | vendor: Honeycomb | year: 2024\n- id: urn:mif:f_obs_4 | title: New Relic's consumption-based pricing lowers entry cost but complicates cost forecasting at scale | dimension: economic | verdict: survived | citation: https://example.com/newrelic-pricing | vendor: New Relic | year: 2026",
+      "expected_output": "A complete competitive-quadrant report with all six sections. Two-axis evaluation names both axes. Each of the four vendors has a Strengths/Cautions profile traced to its finding. The four quadrant labels appear. Context & Market Overview and Methodology sections present. Not-Gartner caveat present. References list the four sources with URLs. No urn:mif: or internal-ID leakage.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "competitive-quadrant.md",
+          "description": "Output file was created"
+        },
+        {
+          "type": "regex_match",
+          "file": "competitive-quadrant.md",
+          "pattern": "(?i)inclusion criteria|market definition",
+          "description": "Market Definition / Inclusion Criteria section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "competitive-quadrant.md",
+          "pattern": "(?is)completeness of vision.{0,1200}ability to execute|ability to execute.{0,1200}completeness of vision",
+          "description": "Two-axis evaluation names both Completeness of Vision and Ability to Execute"
+        },
+        {
+          "type": "regex_match",
+          "file": "competitive-quadrant.md",
+          "pattern": "(?is)strengths.{0,1500}cautions",
+          "description": "Per-vendor Strengths and Cautions pair present"
+        },
+        {
+          "type": "regex_match",
+          "file": "competitive-quadrant.md",
+          "pattern": "(?is)leaders.{0,800}challengers.{0,800}visionaries.{0,800}niche players",
+          "description": "All four quadrant labels appear in order"
+        },
+        {
+          "type": "regex_match",
+          "file": "competitive-quadrant.md",
+          "pattern": "(?is)not\\b.{0,80}(gartner|magic quadrant)|(gartner|magic quadrant).{0,80}\\btrademark",
+          "description": "Not-Gartner / Magic Quadrant trademark caveat present"
+        },
+        {
+          "type": "regex_match",
+          "file": "competitive-quadrant.md",
+          "pattern": "(?i)context.{0,40}market overview|market overview",
+          "description": "Context & Market Overview section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "competitive-quadrant.md",
+          "pattern": "(?i)methodology",
+          "description": "Methodology section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "competitive-quadrant.md",
+          "pattern": "(?i)datadog|700 integrations",
+          "description": "Finding f_obs_1 (Datadog integrations) referenced"
+        },
+        {
+          "type": "regex_match",
+          "file": "competitive-quadrant.md",
+          "pattern": "(?i)grafana|opentelemetry|prometheus",
+          "description": "Finding f_obs_2 (Grafana open standards) referenced"
+        },
+        {
+          "type": "regex_match",
+          "file": "competitive-quadrant.md",
+          "pattern": "(?i)honeycomb|high.cardinality",
+          "description": "Finding f_obs_3 (Honeycomb cardinality) referenced"
+        },
+        {
+          "type": "regex_match",
+          "file": "competitive-quadrant.md",
+          "pattern": "(?i)new relic|consumption.based|cost forecasting",
+          "description": "Finding f_obs_4 (New Relic pricing) referenced"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "competitive-quadrant.md",
+          "literal": "urn:mif:",
+          "description": "No raw urn:mif: identifiers appear in the prose"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "competitive-quadrant.md",
+          "literal": "f_obs_",
+          "description": "No internal MIF finding IDs appear in the prose"
+        }
+      ],
+      "expectations": [
+        {
+          "description": "Every axis score, strength, and caution traces to a cited finding",
+          "check": "transcript",
+          "criteria": "Each vendor's placement on Completeness of Vision and Ability to Execute, and each Strength and Caution, is attributed to one of the four supplied findings with a source citation."
+        },
+        {
+          "description": "The References section lists all four sources with URLs",
+          "check": "transcript",
+          "criteria": "The References section contains entries for the Datadog, Grafana, Honeycomb, and New Relic findings, each with its example.com citation URL."
+        },
+        {
+          "description": "The report disclaims being a Gartner Magic Quadrant",
+          "check": "transcript",
+          "criteria": "The report states 'Magic Quadrant' is a Gartner trademark and that this is a generic two-axis competitive analysis, not a Gartner Magic Quadrant."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "name": "competitive-quadrant",
+  "version": "0.2.0",
+  "kind": "genre",
+  "description": "Genre template for a two-axis competitive-quadrant report (Completeness of Vision x Ability to Execute, four quadrants, per-vendor strengths/cautions)",
+  "license": "MIT",
+  "author": {
+    "name": "zircote"
+  },
+  "provides": {
+    "skills": [
+      "competitive-quadrant"
+    ],
+    "genres": [
+      "competitive-quadrant"
+    ]
+  }
+}
