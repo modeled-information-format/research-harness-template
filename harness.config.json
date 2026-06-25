@@ -97,6 +97,11 @@
       "source": "bundled"
     },
     {
+      "name": "xbrl",
+      "enabled": false,
+      "source": "bundled"
+    },
+    {
       "name": "competitive-analysis",
       "enabled": false,
       "source": "bundled"

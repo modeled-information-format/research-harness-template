@@ -1,0 +1,190 @@
+{
+  "skill_name": "xbrl",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Render the surviving findings in ./findings into an inline XBRL document at ./disclosure.xhtml. Build it from the findings and their cited primary sources — never from a rendered report. Tag each quantified claim as an iXBRL fact bound to a declared xbrli:context and (for numeric facts) an xbrli:unit, and include a References list of the primary sources. Anchor concepts to the current SEC inline-XBRL taxonomy. Also write a one-line outcome to result.txt.",
+      "expected_output": "The skill loads the surviving findings, plans contexts/units/facts from them + their primary-source citations (NOT a rendered report), and writes a well-formed XHTML inline-XBRL document: an ix:header with ix:resources declaring xbrli:context and xbrli:unit, and tagged facts (ix:nonFraction / ix:nonNumeric) carrying name + contextRef (+ unitRef for numerics) in the visible body, plus a References list. The MIF L1 identity rides in the XHTML head, not the visible body.",
+      "files": [
+        {
+          "path": "findings/finding-revenue.json",
+          "content": "{\"@context\":\"https://mif-spec.dev/schema/context.jsonld\",\"@type\":\"Concept\",\"@id\":\"urn:mif:concept:harness:f_technical_1\",\"conceptType\":\"semantic\",\"title\":\"Net income for fiscal 2025 was 5.2 million USD\",\"content\":\"The registrant reported net income of 5,200,000 USD for the fiscal year ended 2025-12-31.\",\"created\":\"2026-06-22T00:00:00Z\",\"namespace\":\"harness/eval\",\"citations\":[{\"@type\":\"Citation\",\"citationType\":\"documentation\",\"citationRole\":\"supports\",\"title\":\"SEC EDGAR filing\",\"url\":\"https://www.sec.gov/edgar\"}],\"extensions\":{\"harness\":{\"dimension\":\"technical\",\"verification\":{\"verdict\":\"survived\",\"verdict_basis\":\"Disconfirming search found no credible refutation.\"}}}}\n"
+        },
+        {
+          "path": "findings/finding-entity.json",
+          "content": "{\"@context\":\"https://mif-spec.dev/schema/context.jsonld\",\"@type\":\"Concept\",\"@id\":\"urn:mif:concept:harness:f_landscape_2\",\"conceptType\":\"semantic\",\"title\":\"Registrant is Example Corp\",\"content\":\"The reporting entity is Example Corp, CIK 0000320193.\",\"created\":\"2026-06-22T00:00:00Z\",\"namespace\":\"harness/eval\",\"citations\":[{\"@type\":\"Citation\",\"citationType\":\"documentation\",\"citationRole\":\"supports\",\"title\":\"Inline XBRL 1.1 specification\",\"url\":\"https://specifications.xbrl.org/work-product-index-inline-xbrl-inline-xbrl-1.1.html\"}],\"extensions\":{\"harness\":{\"dimension\":\"landscape\",\"verification\":{\"verdict\":\"survived\",\"verdict_basis\":\"Disconfirming search found no credible refutation.\"}}}}\n"
+        }
+      ],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "disclosure.xhtml",
+          "description": "The inline XBRL document was written"
+        },
+        {
+          "type": "regex_match",
+          "file": "disclosure.xhtml",
+          "pattern": "xmlns:ix=\"http://www\\.xbrl\\.org/2013/inlineXBRL\"",
+          "description": "The inline-XBRL namespace is declared on the document root"
+        },
+        {
+          "type": "regex_match",
+          "file": "disclosure.xhtml",
+          "pattern": "<xbrli:context\\b[^>]*\\bid=",
+          "description": "At least one xbrli:context is declared"
+        },
+        {
+          "type": "regex_match",
+          "file": "disclosure.xhtml",
+          "pattern": "<xbrli:unit\\b[^>]*\\bid=",
+          "description": "At least one xbrli:unit is declared"
+        },
+        {
+          "type": "regex_match",
+          "file": "disclosure.xhtml",
+          "pattern": "<ix:nonFraction\\b[^>]*\\bcontextRef=",
+          "description": "At least one numeric fact is tagged with ix:nonFraction bound to a context"
+        },
+        {
+          "type": "regex_match",
+          "file": "disclosure.xhtml",
+          "pattern": "www\\.sec\\.gov",
+          "description": "The disclosure cites the findings' primary sources"
+        },
+        {
+          "type": "regex_not_match",
+          "file": "disclosure.xhtml",
+          "pattern": "urn:mif:(concept|report):",
+          "description": "No internal finding/concept identity leaks into the inline XBRL document"
+        },
+        {
+          "type": "regex_not_match",
+          "file": "disclosure.xhtml",
+          "pattern": "\\bf_[a-z]+_[0-9]+\\b",
+          "description": "No internal f_<dimension>_<n> finding handles leak into the inline XBRL document"
+        }
+      ],
+      "expectations": [
+        {
+          "description": "The inline XBRL is built from the findings and their primary sources, not from a rendered report",
+          "check": "transcript",
+          "criteria": "The response/transcript shows the skill reading the findings JSON and composing the tagged document from them + their citation URLs — it does not read or render a pre-rendered report.md"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Render the findings in ./findings to inline XBRL at ./disclosure.xhtml. One finding reports a textual disclosure (the registrant name) with no numeric figure. Tag it appropriately and keep the document well-formed.",
+      "expected_output": "The skill tags the textual disclosure as an ix:nonNumeric fact bound to a context (rather than fabricating a number) and emits a well-formed XHTML inline-XBRL document with the ix namespace on the root and an ix:header. No internal research identity appears in the visible body.",
+      "files": [
+        {
+          "path": "findings/finding-name.json",
+          "content": "{\"@context\":\"https://mif-spec.dev/schema/context.jsonld\",\"@type\":\"Concept\",\"@id\":\"urn:mif:concept:harness:f_technical_3\",\"conceptType\":\"semantic\",\"title\":\"Registrant name is Example Corp\",\"content\":\"The reporting entity name disclosed for the period is Example Corp.\",\"created\":\"2026-06-22T00:00:00Z\",\"namespace\":\"harness/eval\",\"citations\":[{\"@type\":\"Citation\",\"citationType\":\"website\",\"citationRole\":\"supports\",\"title\":\"Source\",\"url\":\"https://www.sec.gov/edgar\"}],\"extensions\":{\"harness\":{\"dimension\":\"technical\",\"verification\":{\"verdict\":\"survived\",\"verdict_basis\":\"Disconfirming search found no credible refutation.\"}}}}\n"
+        }
+      ],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "disclosure.xhtml",
+          "description": "The inline XBRL document was written"
+        },
+        {
+          "type": "regex_match",
+          "file": "disclosure.xhtml",
+          "pattern": "<ix:header\\b",
+          "description": "The document carries an ix:header"
+        },
+        {
+          "type": "regex_match",
+          "file": "disclosure.xhtml",
+          "pattern": "<ix:nonNumeric\\b[^>]*\\bcontextRef=",
+          "description": "The textual disclosure is tagged as an ix:nonNumeric fact bound to a context"
+        },
+        {
+          "type": "regex_match",
+          "file": "disclosure.xhtml",
+          "pattern": "xmlns:ix=\"http://www\\.xbrl\\.org/2013/inlineXBRL\"",
+          "description": "The inline-XBRL namespace is declared on the document root"
+        },
+        {
+          "type": "regex_not_match",
+          "file": "disclosure.xhtml",
+          "pattern": "urn:mif:(concept|report):",
+          "description": "No internal finding/concept identity leaks into the inline XBRL document"
+        },
+        {
+          "type": "regex_not_match",
+          "file": "disclosure.xhtml",
+          "pattern": "\\bf_[a-z]+_[0-9]+\\b",
+          "description": "No internal f_<dimension>_<n> finding handles leak into the inline XBRL document"
+        }
+      ],
+      "expectations": [
+        {
+          "description": "A textual disclosure is tagged as ix:nonNumeric rather than fabricated as a number",
+          "check": "transcript",
+          "criteria": "The response/transcript shows the skill tagging the registrant name with ix:nonNumeric and not inventing a numeric value for it"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Render the surviving findings in ./findings to inline XBRL at ./disclosure.xhtml. The falsified finding must NOT be emitted. Stamp the topic's MIF Level-1 identity into the XHTML head, not the visible body, and verify the document is well-formed.",
+      "expected_output": "The skill skips the falsified finding, tags the surviving numeric finding as an ix:nonFraction fact with a contextRef and unitRef bound to declared context/unit, and places the urn:mif:xbrl: identity in the XHTML head metadata only — the visible body carries no urn:mif:concept/report id or f_<dim>_<n> handle.",
+      "files": [
+        {
+          "path": "findings/finding-assets.json",
+          "content": "{\"@context\":\"https://mif-spec.dev/schema/context.jsonld\",\"@type\":\"Concept\",\"@id\":\"urn:mif:concept:harness:f_technical_4\",\"conceptType\":\"semantic\",\"title\":\"Total assets were 12.4 million USD\",\"content\":\"Total assets at period end were 12,400,000 USD.\",\"created\":\"2026-06-22T00:00:00Z\",\"namespace\":\"harness/eval\",\"citations\":[{\"@type\":\"Citation\",\"citationType\":\"documentation\",\"citationRole\":\"supports\",\"title\":\"SEC EDGAR filing\",\"url\":\"https://www.sec.gov/edgar\"}],\"extensions\":{\"harness\":{\"dimension\":\"technical\",\"verification\":{\"verdict\":\"survived\",\"verdict_basis\":\"Disconfirming search found no credible refutation.\"}}}}\n"
+        },
+        {
+          "path": "findings/finding-falsified.json",
+          "content": "{\"@context\":\"https://mif-spec.dev/schema/context.jsonld\",\"@type\":\"Concept\",\"@id\":\"urn:mif:concept:harness:f_landscape_5\",\"conceptType\":\"semantic\",\"title\":\"A refuted figure\",\"content\":\"A claim that did not survive adversarial verification.\",\"created\":\"2026-06-22T00:00:00Z\",\"namespace\":\"harness/eval\",\"citations\":[{\"@type\":\"Citation\",\"citationType\":\"website\",\"citationRole\":\"supports\",\"title\":\"Source\",\"url\":\"https://example.com/refuted\"}],\"extensions\":{\"harness\":{\"dimension\":\"landscape\",\"verification\":{\"verdict\":\"falsified\",\"verdict_basis\":\"A credible primary source refuted the claim.\"}}}}\n"
+        }
+      ],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "disclosure.xhtml",
+          "description": "The inline XBRL document was written"
+        },
+        {
+          "type": "regex_match",
+          "file": "disclosure.xhtml",
+          "pattern": "<ix:nonFraction\\b[^>]*\\bunitRef=",
+          "description": "The surviving numeric fact is tagged with ix:nonFraction bound to a unit"
+        },
+        {
+          "type": "regex_match",
+          "file": "disclosure.xhtml",
+          "pattern": "urn:mif:xbrl:",
+          "description": "The MIF L1 identity is stamped in the document head"
+        },
+        {
+          "type": "regex_not_match",
+          "file": "disclosure.xhtml",
+          "pattern": "example\\.com/refuted",
+          "description": "The falsified finding is not emitted into the disclosure"
+        },
+        {
+          "type": "regex_not_match",
+          "file": "disclosure.xhtml",
+          "pattern": "urn:mif:(concept|report):",
+          "description": "No internal finding/concept identity leaks into the inline XBRL document"
+        },
+        {
+          "type": "regex_not_match",
+          "file": "disclosure.xhtml",
+          "pattern": "\\bf_[a-z]+_[0-9]+\\b",
+          "description": "No internal f_<dimension>_<n> finding handles leak into the inline XBRL document"
+        }
+      ],
+      "expectations": [
+        {
+          "description": "Only surviving findings are tagged; the MIF identity rides in the head",
+          "check": "transcript",
+          "criteria": "The response/transcript shows the skill filtering verdict==falsified and placing the urn:mif:xbrl: identity in the XHTML head metadata, not the visible body"
+        }
+      ]
+    }
+  ]
+}

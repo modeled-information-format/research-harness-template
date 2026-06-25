@@ -39,6 +39,11 @@
       "description": "[channels/channel] Produce a styled, print-ready PDF directly from the SOURCES \u2014 a topic's surviving findings and their primary-source citations, composed into a comprehensive document and rendered with pandoc, a title page, and Mermaid diagrams; never built from a rendered report"
     },
     {
+      "name": "xbrl",
+      "source": "./packs/channels/xbrl",
+      "description": "[channels/channel] Render surviving findings (typically a regulatory-disclosure artifact) into an inline XBRL (iXBRL) document directly from the SOURCES \u2014 facts tagged with xbrli:context / xbrli:unit and current-taxonomy concepts inside a human-readable XHTML shell; never built from a rendered report"
+    },
+    {
       "name": "competitive-analysis",
       "source": "./packs/market-research/competitive-analysis",
       "description": "[market-research/methodology] Use when the user asks to \"analyze competitors\", \"map competitive landscape\", \"Porter's 5 Forces analysis\", \"competitor comparison\", \"competitive positioning\", \"identify competitors\", \"competitive intelligence\", or needs competitor research"

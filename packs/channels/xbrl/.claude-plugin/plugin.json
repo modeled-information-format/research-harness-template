@@ -1,0 +1,22 @@
+{
+  "name": "xbrl",
+  "version": "0.2.0",
+  "kind": "channel",
+  "mif": {
+    "exempt": true,
+    "reason": "Inline XBRL (iXBRL) is a machine-readable regulatory serialization orthogonal to MIF Level-3 markdown structure. It is rendered directly from the SOURCES — the surviving findings (typically a regulatory-disclosure artifact) and their primary-source citations — never from a rendered report, and carries the topic's MIF Level-1 identity in the document's XHTML head metadata. The citation-leak gate still applies; the MIF Level-3 source of truth lives in the generic report channel."
+  },
+  "description": "Render surviving findings (typically a regulatory-disclosure artifact) into an inline XBRL (iXBRL) document directly from the SOURCES. Tags facts with xbrli:context / xbrli:unit and taxonomy concepts inside a human-readable XHTML shell, anchored to the current SEC inline-XBRL taxonomy. Never built from a rendered report.",
+  "license": "MIT",
+  "author": {
+    "name": "zircote"
+  },
+  "provides": {
+    "skills": [
+      "xbrl"
+    ],
+    "channels": [
+      "xbrl"
+    ]
+  }
+}

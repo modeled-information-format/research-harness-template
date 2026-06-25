@@ -21,6 +21,7 @@ For control-plane mechanics — enabling, disabling, and listing packs — see
 | github-issues | channels | channel | Files categorized GitHub Issues from findings | gh, jq |
 | notebooklm | channels | channel | Adds findings to a NotebookLM notebook and exports assets | nlm, jq, python3 |
 | pdf | channels | channel | Produces a self-contained PDF report via pandoc | pandoc + PDF engine, @mermaid-js/mermaid-cli (optional), jq |
+| xbrl | channels | channel | Renders surviving findings into an inline XBRL (iXBRL) regulatory disclosure | jq |
 | competitive-analysis | market-research | methodology | Porter's 5 Forces, competitor matrix, and positioning map | @mermaid-js/mermaid-cli (optional) |
 | customer-research | market-research | methodology | Persona, JTBD, journey mapping, and segmentation | none |
 | financial-analysis | market-research | methodology | Unit economics, SaaS benchmarks, and revenue-model analysis | none |
@@ -45,7 +46,7 @@ For control-plane mechanics — enabling, disabling, and listing packs — see
 
 ## Family pages
 
-- [Channel packs](channels.md) — output delivery channels (book, diataxis, github-discuss, github-issues, notebooklm, pdf)
+- [Channel packs](channels.md) — output delivery channels (book, diataxis, github-discuss, github-issues, notebooklm, pdf, xbrl)
 - [Market-research packs](market-research.md) — research methodology dimensions
 - [Report packs](reports.md) — deliverable genre templates
 - [Trend-modeling pack](trend-modeling.md) — three-valued logic scenario framework

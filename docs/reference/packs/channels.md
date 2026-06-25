@@ -304,3 +304,48 @@ archival.
 ```sh
 scripts/pack-toggle.sh pdf on
 ```
+
+---
+
+## xbrl
+
+**Version:** 0.2.0 | **Kind:** channel | **MIF level:** L1 in XHTML head metadata (exempt)
+
+### Purpose
+
+Renders surviving findings — typically a `regulatory-disclosure` artifact — into an
+inline XBRL (iXBRL) document. Inline XBRL embeds machine-readable XBRL facts inside a
+human-readable XHTML shell: a regulator's parser reads the tagged facts while a person
+reads the rendered page. Quantified claims are tagged as `ix:nonFraction` / `ix:nonNumeric`
+facts bound to declared `xbrli:context` and `xbrli:unit` elements and current-taxonomy
+concepts. Like `pdf`, iXBRL is a serialization orthogonal to the MIF Level-3 report, so the
+channel is `mif.exempt`; the topic's MIF Level-1 identity rides in the XHTML head metadata.
+
+### When to use
+
+Use `xbrl` when the deliverable must be a machine-readable regulatory disclosure — for SEC
+inline-XBRL filings, structured financial reporting hand-offs, or any consumer that parses
+tagged facts rather than prose.
+
+### What it provides
+
+- A well-formed XHTML inline-XBRL document built directly from the findings + their citations
+- Facts tagged with `ix:nonFraction` / `ix:nonNumeric`, bound to `xbrli:context` / `xbrli:unit`
+- Concepts anchored to the current SEC inline-XBRL taxonomy (verified live)
+- MIF L1 typed identity in the XHTML head metadata, never in the visible body
+
+### Dependencies
+
+- `jq`
+
+### Benefits
+
+- Produces a machine-readable regulatory artifact a regulator's parser can consume directly
+- Human-readable and machine-readable in one document — no separate rendering step
+- Source-grounded: every tagged fact traces to a surviving finding and its primary source
+
+### Enable
+
+```sh
+scripts/pack-toggle.sh xbrl on
+```
