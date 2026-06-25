@@ -41,6 +41,11 @@ run "engine-smoke" bash evals/smoke-test.sh
 #     (prevents the shared-findings/ corruption vector).
 run "run-lock-mutual-exclusion" bash evals/run-lock-test.sh
 
+# 1c. Update-channel provenance gate: scripts/update.sh refuses to invoke copier on a
+#     verification miss (fail-closed), pins copier to the verified SHA on a pass, and
+#     refuses a dirty tree (issue #94).
+run "update-provenance-gate" bash evals/update-provenance.sh
+
 # 2. Citation-integrity: a clean finding passes; a bad one is flagged.
 run     "citation-integrity-good" scripts/check-citation-integrity.sh schemas/samples/citation-good.sample.json
 run_neg "citation-integrity-bad"  scripts/check-citation-integrity.sh schemas/samples/citation-bad.sample.json
