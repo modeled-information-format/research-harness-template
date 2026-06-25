@@ -138,7 +138,7 @@ is first-class and evolves in-repo on its way back to MIF). An ontology declares
 `relationships`. A type may declare `subtype_of` (parent types it specializes); a
 subtype is substitutable for its supertype at a relationship endpoint. The **registry** is the set of
 vendored ontology YAMLs — core under `schemas/ontologies/` (`mif-generic` built-in
-generic types + `mif-base` scaffolding, always enabled for every topic) and the six
+generic types + `mif-base` scaffolding, always enabled for every topic) and the
 example **data packs** under `packs/ontologies/<id>/` (disabled by default). JSON is
 projected from the yaml on the fly (`yq -o=json | ajv`); none is committed, so there
 is no drift. `scripts/sync-packs.sh` writes the **catalog** (`.claude/enabled-packs.json`

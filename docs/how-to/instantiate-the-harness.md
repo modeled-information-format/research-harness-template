@@ -7,9 +7,10 @@ diataxis_type: how-to
 The harness is distributed as a **living, update-propagating template** (design
 spec §7). There are three ways to stand up your own instance from
 `research-harness-template`; they differ in one decisive way — whether you can
-later pull template improvements with `copier update`.
+later pull template improvements with `bash scripts/update.sh` (the provenance-verified
+wrapper around `copier update`).
 
-| Path | Gets the files | `copier update` works after? |
+| Path | Gets the files | `scripts/update.sh` works after? |
 | --- | --- | --- |
 | `copier copy` (recommended) | yes | **yes** — records `.copier-answers.yml` |
 | GitHub "Use this template" | yes | no (until you adopt copier — see below) |
@@ -25,7 +26,7 @@ uncommitted or lost answers file breaks future updates.
 
 ```bash
 pipx install copier            # or: pipx install copier && pipx ensurepath
-copier copy gh:zircote/research-harness-template my-harness
+copier copy gh:modeled-information-format/research-harness-template my-harness
 cd my-harness
 ```
 
@@ -42,12 +43,16 @@ or addition (for example the sigint→MIF converter), re-apply it to your instan
 
 ```bash
 cd my-harness
-copier update            # re-applies template changes, preserving your answers
+bash scripts/update.sh   # verifies release provenance, then runs copier update
 ```
 
-`copier update` uses the recorded `.copier-answers.yml` to merge template
-changes into your instance without clobbering your edits (it conflict-marks the
-one file you hand-edit, `harness.config.json`).
+`scripts/update.sh` is the only supported update path: it verifies the target release's
+build-provenance attestation (fail-closed — nothing is applied on a miss), then runs
+`copier update` pinned to the verified commit. `copier update` uses the recorded
+`.copier-answers.yml` to merge template changes into your instance without clobbering your
+edits (it conflict-marks the one file you hand-edit, `harness.config.json`). See
+[update your harness safely](update-your-harness.md). Do not run `copier update` directly
+— that bypasses the provenance gate.
 
 ## Option B — GitHub "Create repo from template"
 
@@ -78,11 +83,11 @@ propagation, adopt copier retroactively:
 
 ```bash
 copier copy --answers-file .copier-answers.yml \
-  gh:zircote/research-harness-template .
+  gh:modeled-information-format/research-harness-template .
 ```
 
 This writes the `.copier-answers.yml` your instance was missing; subsequent
-`copier update` runs then propagate template changes.
+`bash scripts/update.sh` runs then propagate template changes (provenance-verified).
 
 ## Option C — Plain git clone
 

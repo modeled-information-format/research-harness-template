@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Fail-closed provenance gate before `copier update` (issue #94). `scripts/update.sh`
+  is the only supported update path: it resolves the target release tag, pins it to a
+  commit SHA, reproduces the release artifact, and verifies its SLSA build-provenance
+  attestation with the same primitive as `release.yml`/CI/`SECURITY.md`
+  (`gh attestation verify --repo … --signer-workflow …/release.yml`). Any miss exits
+  non-zero and never invokes Copier; on success it runs `copier update --vcs-ref
+  <verified-sha>` (TOCTOU-closed). The trust root is the signer-workflow identity baked
+  into the wrapper, established once at clone and verify-before-apply protected.
+  `evals/update-provenance.sh` (run in CI via `run-evals.sh`) asserts the gate fails
+  closed; docs: a how-to ("update your harness safely") and an explanation
+  ("update-channel provenance model").
 - A layered ontology spine. New MIF-compliant intermediate layer
   `engineering-base` (`schemas/ontologies/engineering-base/0.1.0.yaml`, cataloged
   `core=false`) declares the engineering supertypes shared across domains —
@@ -113,6 +124,6 @@ First release of the domain-general research harness template.
 - **Distribution** as a Copier living template and a Claude Code plugin
   marketplace.
 
-[Unreleased]: https://github.com/zircote/research-harness-template/compare/v0.1.2...HEAD
-[0.1.2]: https://github.com/zircote/research-harness-template/releases/tag/v0.1.2
-[0.1.1]: https://github.com/zircote/research-harness-template/releases/tag/v0.1.1
+[Unreleased]: https://github.com/modeled-information-format/research-harness-template/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/modeled-information-format/research-harness-template/releases/tag/v0.1.2
+[0.1.1]: https://github.com/modeled-information-format/research-harness-template/releases/tag/v0.1.1

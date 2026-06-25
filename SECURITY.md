@@ -14,8 +14,8 @@ signing workflow:
 
 ```sh
 gh attestation verify research-harness-template-<version>.tar.gz \
-  --repo zircote/research-harness-template \
-  --signer-workflow zircote/research-harness-template/.github/workflows/release.yml
+  --repo modeled-information-format/research-harness-template \
+  --signer-workflow modeled-information-format/research-harness-template/.github/workflows/release.yml
 ```
 
 `--repo` scopes trust to this repository; `--signer-workflow` additionally pins
@@ -29,5 +29,5 @@ verification failed — do not trust the artifact.
 ## Reporting a Vulnerability
 
 Report security issues privately via
-[GitHub Security Advisories](https://github.com/zircote/research-harness-template/security/advisories/new).
+[GitHub Security Advisories](https://github.com/modeled-information-format/research-harness-template/security/advisories/new).
 Please do not open a public issue for an undisclosed vulnerability.

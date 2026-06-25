@@ -53,8 +53,8 @@ the trusted build step cannot be swapped by a moved tag.
 
    ```sh
    gh attestation verify research-harness-template-<version>.tar.gz \
-     --repo zircote/research-harness-template \
-     --signer-workflow zircote/research-harness-template/.github/workflows/release.yml
+     --repo modeled-information-format/research-harness-template \
+     --signer-workflow modeled-information-format/research-harness-template/.github/workflows/release.yml
    ```
 
 3. Read the result:
@@ -76,6 +76,6 @@ workflow in the repository. Always pass both flags.
 ## Reporting a vulnerability
 
 Report security issues privately via
-[GitHub Security Advisories](https://github.com/zircote/research-harness-template/security/advisories/new),
+[GitHub Security Advisories](https://github.com/modeled-information-format/research-harness-template/security/advisories/new),
 as stated in [`SECURITY.md`](../../SECURITY.md). Do not open a public issue for
 an undisclosed vulnerability.
