@@ -42,6 +42,12 @@ markdownlint-cli2 --config .markdownlint-cli2.jsonc "**/*.md"   # must be 0 erro
   `verify.sh: N passed, 0 failed` on success and is the authoritative gate.
 - A single eval: `python3 evals/test_models.py`, `bash evals/smoke-test.sh`, etc.
   (see the `run "<name>" <cmd>` lines in `evals/run-evals.sh`).
+- **`verify.sh` gates fixtures, not an instance's imported `reports/` corpus** — in
+  a clone it can pass green while real findings fail to resolve. The corpus-level
+  gate is `scripts/ontology-review.sh [--strict]` (per-finding `ajv`, so slow — run
+  it in the background). Never run `ontology-review`/`verify` **concurrently**: they
+  race on shared temp/catalog state and produce spurious failures. After any
+  ontology, pack-binding, or `copier update` change, run **both**.
 - Toolchain: `jq`, `yq`, `ajv-cli` + `ajv-formats`, `markdownlint-cli2`, `copier`,
   `python3`. No `make`/`npm`/`pyproject` build — scripts are invoked directly.
 
@@ -124,6 +130,16 @@ must merge cleanly.
   Only tracked data artifacts (findings, `knowledge-graph.json`,
   `concordance.json`, maps) belong in `reports/`. Writing derived output in-repo
   dirties the tree and blocks `copier update`. See `docs/reference/scripts.md`.
+- **The ontology catalog `.claude/enabled-packs.json` is derived and gitignored.**
+  `sync-packs.sh` rebuilds it from `schemas/ontologies/*` plus the *enabled* packs.
+  Run it after any pack enable/binding or `copier update`: a stale catalog missing
+  an `extends` target makes the fail-closed resolver mark the *entire* bound corpus
+  invalid (it aborts resolution, it does not skip).
+- **Relocating an entity type between ontologies is a migration.** A finding pins
+  its type in a top-level `ontology.id` + `entity.entity_type` block, enforced
+  strictly: a type that resolves under a *different* ontology than its pin names is a
+  hard fail, not a fallback. Re-pin or drop the pin on every affected finding
+  (`/ontology-review --enrich` is that pass).
 - **Supply chain is fail-closed.** Every downloaded tool is verified
   (build-provenance attestation → pinned-SHA-256 checksum waterfall); every GitHub
   Action `uses:` is pinned to a 40-char SHA (the `pin-check` CI job enforces it).
