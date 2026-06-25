@@ -89,6 +89,8 @@ NAME="${PINNED_REPO##*/}"
 # Read the clone's recorded source (to detect/heal drift from the pinned root).
 src_path=$(yq -r '._src_path // ""' "$ANSWERS" 2>/dev/null) \
   || { echo "update.sh: could not parse $ANSWERS (invalid YAML?) — fix the answers file before updating" >&2; exit 2; }
+{ [ -n "$src_path" ] && [ "$src_path" != "null" ]; } \
+  || { echo "update.sh: $ANSWERS has no top-level _src_path — not a copier-generated clone" >&2; exit 2; }
 PINNED_SRC="gh:${PINNED_REPO}"
 
 # Resolve the target tag (default: latest by version) and pin it to a COMMIT SHA.
@@ -145,7 +147,11 @@ if [ "$src_path" != "$PINNED_SRC" ]; then
   awk -v s="_src_path: ${PINNED_SRC}" '/^_src_path:/{print s; next} {print}' "$ANSWERS" > "$ANSWERS.tmp" \
     && mv "$ANSWERS.tmp" "$ANSWERS" \
     || { echo "update.sh: failed to normalize _src_path in $ANSWERS" >&2; rm -f "$ANSWERS.tmp"; exit 2; }
-  echo "update.sh: pinned _src_path -> ${PINNED_SRC} (was '${src_path:-<none>}')"
+  # Confirm the rewrite actually landed — never claim a pin we didn't make (e.g. if there
+  # was no top-level `_src_path:` line for awk to replace).
+  grep -qx "_src_path: ${PINNED_SRC}" "$ANSWERS" \
+    || { echo "update.sh: could not pin _src_path in $ANSWERS (no top-level _src_path line) — refusing to update" >&2; exit 2; }
+  echo "update.sh: pinned _src_path -> ${PINNED_SRC} (was '${src_path}')"
 fi
 
 # Apply, pinned to the verified SHA (TOCTOU-closed). --trust is now earned. Pass the
