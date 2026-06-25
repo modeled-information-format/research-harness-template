@@ -61,6 +61,12 @@ ALLOWED='{}'; all_acc="$core_ids"
 for tp in $(jq -r '.topics[].id' "$CONFIG" 2>/dev/null); do
   tids="$core_ids"
   for b in $(jq -r --arg t "$tp" '.topics[]? | select(.id==$t) | .ontologies[]?' "$CONFIG" 2>/dev/null | sed 's/@.*//' | sed '/^$/d'); do
+    # A bound id MUST be cataloged — fail closed on a binding/config mistake rather than
+    # silently dropping it and surfacing a confusing type/relationship violation later.
+    if [ -z "$(src_of "$b")" ]; then
+      echo "validate-concordance: topic '$tp' binds '$b' which is not cataloged — fail (run sync-packs.sh)" >&2
+      exit 4
+    fi
     anc=$(ancestors_of "$b") || exit 4
     tids="$tids $b $anc"
   done

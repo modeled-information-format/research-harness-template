@@ -1026,11 +1026,17 @@ gate_m12() {
   #      file would freeze the contract and block that evolution. Assert the verbatim set
   #      is EMPTY. (VENDOR.lock is retained for provenance: source/commit + seed checksums.)
   local verbatim_set
-  verbatim_set=$(jq -r '[.files[] | select(.verbatim) | .path] | sort | join(",")' schemas/mif/VENDOR.lock 2>/dev/null)
-  if [ -z "$verbatim_set" ]; then
-    ok "VENDOR.lock: nothing is verbatim-locked — the contract is first-class editable"
+  if ! jq -e . schemas/mif/VENDOR.lock >/dev/null 2>&1; then
+    # A missing/unreadable/invalid lock must NOT read as an empty (== "nothing locked")
+    # set and pass vacuously — the provenance file is broken; fail closed.
+    bad "VENDOR.lock missing or not valid JSON — provenance broken (cannot assert the verbatim set)"
   else
-    bad "VENDOR.lock: file(s) verbatim-locked but nothing should be: [$verbatim_set]"
+    verbatim_set=$(jq -r '[.files[] | select(.verbatim) | .path] | sort | join(",")' schemas/mif/VENDOR.lock)
+    if [ -z "$verbatim_set" ]; then
+      ok "VENDOR.lock: nothing is verbatim-locked — the contract is first-class editable"
+    else
+      bad "VENDOR.lock: file(s) verbatim-locked but nothing should be: [$verbatim_set]"
+    fi
   fi
 
   # Build a catalog (core + the dedicated edu-fixture TEST ontology) to drive the
