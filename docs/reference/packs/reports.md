@@ -518,6 +518,57 @@ scripts/pack-toggle.sh humanities-mla on
 
 ---
 
+## security-pentest
+
+**Version:** 0.2.0 | **Kind:** genre
+
+### Purpose
+
+Produces a dual-audience penetration-test report following the Penetration Testing
+Execution Standard (PTES). One document serves two audiences from a single evidence base:
+a leadership-facing **Executive Summary** (Background, Posture, Risk Profile, General
+Findings, Recommendation Summary, Strategic Roadmap) and an engineer-facing **Technical
+Report** (Information Gathering, Vulnerability Assessment, Exploitation, Post-Exploitation,
+and a per-finding Risk / Remediation section with severity ratings). The genre is for
+authorized engagements only; an authorization and scope statement is required matter.
+
+### When to use
+
+Use `security-pentest` when the deliverable is an authorized penetration-test engagement
+report that must brief executives on business risk and equip remediation engineers from the
+same findings — an external web-app assessment, an internal network test, or a cloud
+infrastructure review.
+
+### What it provides
+
+- Dual-audience structure: a strategic Executive Summary and an operational Technical Report
+- Required authorization & scope statement as front matter
+- Per-finding severity ratings scored against a current rubric (verify the live CVSS version
+  at synthesis time; NIST SP is a separate standards-overlay pack)
+- A severity-distribution figure and a per-finding risk/remediation table
+
+### Dependencies
+
+None beyond the core engine.
+
+### Benefits
+
+- One source of truth serves both leadership and remediation engineers, keeping the
+  business-risk narrative and the technical evidence consistent
+- Audience separation keeps exploit primitives out of the Executive Summary while preserving
+  reproducible detail in the Technical Report
+- Edition-currency rule on severity scoring avoids baking a stale CVSS edition into the report
+
+### Enable
+
+Disabled by default (opt-in).
+
+```sh
+scripts/pack-toggle.sh security-pentest on
+```
+
+---
+
 ## trend-analysis
 
 **Version:** 0.3.0 | **Kind:** genre

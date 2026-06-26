@@ -122,6 +122,11 @@
       "name": "humanities-mla",
       "source": "./packs/reports/humanities-mla",
       "description": "[reports/genre] Genre template for an argumentative humanities essay in MLA style (thesis introduction, body argument sections, conclusion, author-page in-text citations, Works Cited)"
+    },
+    {
+      "name": "security-pentest",
+      "source": "./packs/reports/security-pentest",
+      "description": "[reports/genre] Genre template for a dual-audience PTES penetration-test report: an Executive Summary (posture, risk profile, recommendations, strategic roadmap) plus a Technical Report (information gathering, vulnerability assessment, exploitation, post-exploitation, risk/remediation per finding)"
     }
   ]
 }
