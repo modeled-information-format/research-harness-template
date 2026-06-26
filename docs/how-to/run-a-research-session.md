@@ -1,4 +1,5 @@
 ---
+title: "How to run a research session"
 diataxis_type: how-to
 ---
 

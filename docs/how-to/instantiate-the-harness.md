@@ -1,4 +1,5 @@
 ---
+title: "How to instantiate the harness"
 diataxis_type: how-to
 ---
 

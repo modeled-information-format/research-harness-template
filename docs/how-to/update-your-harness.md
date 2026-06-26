@@ -1,4 +1,5 @@
 ---
+title: "How to update your harness safely"
 diataxis_type: how-to
 ---
 

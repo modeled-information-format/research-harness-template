@@ -1,4 +1,5 @@
 ---
+title: "How to adopt a pack"
 diataxis_type: how-to
 ---
 

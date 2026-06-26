@@ -1,4 +1,5 @@
 ---
+title: "Explanation: pack structure — one plugin per skill"
 diataxis_type: explanation
 ---
 

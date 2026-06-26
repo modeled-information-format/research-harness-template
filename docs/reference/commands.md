@@ -1,4 +1,5 @@
 ---
+title: "Reference: commands"
 diataxis_type: reference
 ---
 

@@ -1,4 +1,5 @@
 ---
+title: "Explanation: architecture"
 diataxis_type: explanation
 ---
 

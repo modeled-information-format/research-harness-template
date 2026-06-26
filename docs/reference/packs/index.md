@@ -1,4 +1,5 @@
 ---
+title: "Packs Reference"
 diataxis_type: reference
 ---
 
@@ -55,7 +56,7 @@ For control-plane mechanics — enabling, disabling, and listing packs — see
 | regenerative-agriculture-research | ontologies | ontology | Regenerative agriculture research entity vocabulary | none |
 | regulatory-legal | ontologies | ontology | Regulatory and legal domain entity vocabulary | none |
 | scientific | ontologies | ontology | Scientific research and data-provenance entity vocabulary | none |
-| security | ontologies | ontology | Security threat-intelligence and compliance entity vocabulary | none |
+| software-security | ontologies | ontology | Software-security entity vocabulary (threats, vulnerabilities, controls; MITRE ATT&CK/CWE/STIX); extends engineering-base | none |
 | software-engineering | ontologies | ontology | Software engineering entity vocabulary | none |
 | trend-analysis | ontologies | ontology | Strategic foresight and trend-analysis entity vocabulary | none |
 

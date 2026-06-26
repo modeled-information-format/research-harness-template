@@ -1,4 +1,5 @@
 ---
+title: "Report packs"
 diataxis_type: reference
 ---
 
@@ -22,6 +23,8 @@ For control-plane mechanics see [Packs and Plugins](../packs-and-plugins.md).
 ## academic
 
 **Version:** 0.3.0 | **Kind:** genre
+
+**Source:** [`packs/reports/academic/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/academic)
 
 ### Purpose
 
@@ -58,6 +61,20 @@ None beyond the core engine.
 - Method-visible altitude means the reader can assess the research basis, not just
   accept conclusions
 
+### Constraints
+
+- Enabled by default; disable with `scripts/pack-toggle.sh academic off`
+- No external dependencies beyond the core engine
+- Citation mode selectable (APA 7th author-date or Vancouver/ICMJE numbered); the IMRaD/ICMJE landscape anchor is a weakened verdict — verify the live edition before authoring and do not over-attribute strict standard conformance
+- Falsified findings excluded; weakened and inconclusive findings annotated and retained in the report
+
+### Goals
+
+- Produce a peer-review-style paper with structured abstract, methodology, findings, discussion, and formal bibliography
+- Enforce academic prose altitude: method-visible, hedged claims, and limitations disclosed
+- Support selectable citation style (APA author-date default or Vancouver/ICMJE numbered) applied consistently throughout
+- Every claim traceable to a cited MIF finding `@id`; no uncited assertions
+
 ### Enable
 
 ```sh
@@ -69,6 +86,8 @@ scripts/pack-toggle.sh academic on
 ## briefing
 
 **Version:** 0.2.1 | **Kind:** genre
+
+**Source:** [`packs/reports/briefing/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/briefing)
 
 ### Purpose
 
@@ -104,6 +123,20 @@ None beyond the core engine.
   time-constrained contexts
 - Forced compression surfaces only the most load-bearing findings
 
+### Constraints
+
+- Enabled by default; disable with `scripts/pack-toggle.sh briefing off`
+- Hard one-page ceiling enforced; content that exceeds it is cut, not continued
+- Harness-native genre: no named domain standard (ISO/NISO/ANSI/APA) prescribes a briefing format; does not claim conformance to any external standard
+- Falsified findings excluded; weakened and inconclusive findings flagged inline
+- No external dependencies beyond the core engine
+
+### Goals
+
+- Produce a one-page structured brief: Headline, What's New (delta findings), Why It Matters, and What's Next/Asks
+- Enforce maximum signal density; forced compression surfaces only the most decision-relevant findings from the corpus
+- Every "what's new" bullet carries a cited MIF finding `@id` and a "why it matters" implication
+
 ### Enable
 
 ```sh
@@ -115,6 +148,8 @@ scripts/pack-toggle.sh briefing on
 ## computing-paper
 
 **Version:** 0.2.0 | **Kind:** genre | **Disabled by default (opt-in).**
+
+**Source:** [`packs/reports/computing-paper/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/computing-paper)
 
 ### Purpose
 
@@ -149,6 +184,21 @@ None beyond the core engine.
 - IEEE numbered citations resolve every claim to a traceable, URL-bearing reference
 - Explicit Evaluation section keeps experimental setup and results legible to reviewers
 
+### Constraints
+
+- Disabled by default (opt-in); enable with `scripts/pack-toggle.sh computing-paper on`
+- IEEE numbered citations required; CCS Concepts (ACM Computing Classification System) and keywords/index terms front matter required
+- Verify the current ACM `acmart` and IEEE `IEEEtran` templates live at authoring time — they revise without fanfare
+- Distinct from the `academic` genre (APA/IMRaD); do not overload `academic` for ACM/IEEE computing work
+- No external dependencies beyond the core engine
+
+### Goals
+
+- Produce an ACM/IEEE conference or journal paper: Abstract, Introduction, Related Work, Approach/System Design, Evaluation, Discussion, Conclusion & Future Work, References
+- Enforce IEEE numbered bracket citations `[N]` ordered by first appearance and resolving to a numbered reference list
+- Explicit Evaluation section with experimental setup, baselines, metrics, and results kept distinct from Discussion
+- CCS Concepts and keywords/index terms in front matter; every claim traceable to a cited MIF finding `@id`
+
 ### Enable
 
 ```sh
@@ -160,6 +210,8 @@ scripts/pack-toggle.sh computing-paper on
 ## engineering
 
 **Version:** 0.3.0 | **Kind:** genre
+
+**Source:** [`packs/reports/engineering/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/engineering)
 
 ### Purpose
 
@@ -198,6 +250,21 @@ None beyond the core engine. Mermaid rendering is optional.
 - Practitioner altitude means the report assumes engineering context and does not
   re-explain fundamentals
 
+### Constraints
+
+- Enabled by default; disable with `scripts/pack-toggle.sh engineering off`
+- A comparison table is required
+- Optional ANSI/NISO Z39.18 elements (Report Documentation Page, distribution/STINFO markings, Z39.18 back-matter ordering) are additive and off by default; verify Z39.18 and ISO/IEC Directives Part 2 editions live at authoring time
+- Mermaid architecture diagrams optional; rendered when findings support a system or component structure worth visualizing
+- No external dependencies beyond the core engine
+
+### Goals
+
+- Produce a technical engineering report: Problem/Context, Options Considered, Trade-offs, Decision, Implementation Notes, and Consequences
+- Mandatory comparison table ensures quantitative or feature-level trade-offs are always present rather than buried in prose
+- Practitioner-altitude prose: concrete, operational, enough rationale to act
+- Decision is grounded in the trade-offs table; implementation notes are actionable
+
 ### Enable
 
 ```sh
@@ -209,6 +276,8 @@ scripts/pack-toggle.sh engineering on
 ## exec-summary
 
 **Version:** 0.3.0 | **Kind:** genre
+
+**Source:** [`packs/reports/exec-summary/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/exec-summary)
 
 ### Purpose
 
@@ -264,6 +333,21 @@ None beyond the core engine.
 - Automated BLUF heading check (literal "BLUF" in heading) makes structural compliance
   verifiable without human review
 
+### Constraints
+
+- Enabled by default; disable with `scripts/pack-toggle.sh exec-summary off`
+- Hard 1-2 page ceiling on the summary section, standalone or embedded; content cannot be extended
+- BLUF heading must literally contain the acronym "BLUF" for automated structural checks to locate it
+- Falsified findings leave zero trace; internal MIF `@id` handles and `urn:mif:` URNs never appear in rendered output
+- Composable modes (ESOMAR management summary; PTES Executive/Leadership Summary with Posture/Risk Profile/Roadmap) are additive and off by default; ESOMAR is an ethics code, not a report format — do not claim ESOMAR format conformance
+
+### Goals
+
+- Produce a 1-2 page decision brief: BLUF first, 3-5 Key Findings bullets (each with a "so what"), one actionable Recommendation (What/Why/How/Risk), and Risks & Caveats
+- Enforce BLUF-first ordering so the reader gets the answer immediately regardless of whether they read further
+- Every Key Findings bullet traces to at least one MIF finding `@id`; inline numeric footnotes resolve to primary-source URLs only
+- Support optional composable modes: ESOMAR management summary section or PTES Executive/Leadership Summary with Posture/Risk Profile/Roadmap sub-elements
+
 ### Enable
 
 ```sh
@@ -275,6 +359,8 @@ scripts/pack-toggle.sh exec-summary on
 ## legal-memo
 
 **Version:** 0.2.0 | **Kind:** genre | **Disabled by default (opt-in).**
+
+**Source:** [`packs/reports/legal-memo/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/legal-memo)
 
 ### Purpose
 
@@ -317,6 +403,21 @@ None beyond the core engine.
 Bluebook citation conventions evolve across editions. The genre instructs the author to
 verify the current edition live rather than baking an edition number into output.
 
+### Constraints
+
+- Disabled by default (opt-in); enable with `scripts/pack-toggle.sh legal-memo on`
+- Reproduces the structure and reasoning form only; not legal advice and asserts no legal sufficiency
+- Bluebook edition must be verified live at authoring time; do not bake an edition number into output as settled fact
+- Falsified findings excluded; weakened findings annotated; adverse authority and counter-arguments must be addressed, not omitted
+- No external dependencies beyond the core engine
+
+### Goals
+
+- Produce a predictive legal memorandum: Question Presented, Brief Answer, Statement of Facts, IRAC Discussion (one Issue/Rule/Application/Conclusion cycle per discrete issue), and Conclusion
+- Enforce IRAC sub-structure in the Discussion so every issue is resolved through rule-then-application reasoning rather than flat narrative
+- Bluebook practitioner citations to authority, each resolving to a MIF finding `@id` and source URL
+- Question Presented and Brief Answer placed up front; prediction stated and earned before the analysis
+
 ### Enable
 
 ```sh
@@ -328,6 +429,8 @@ scripts/pack-toggle.sh legal-memo on
 ## regulatory-disclosure
 
 **Version:** 0.2.0 | **Kind:** genre | **Disabled by default (opt-in).**
+
+**Source:** [`packs/reports/regulatory-disclosure/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/regulatory-disclosure)
 
 ### Purpose
 
@@ -368,6 +471,21 @@ None beyond the core engine.
 - Inline XBRL tagging is deliberately out of scope — it is an orthogonal serialization that
   ships as a separate `xbrl` channel pack, keeping this genre focused on narrative structure
 
+### Constraints
+
+- Disabled by default (opt-in); enable with `scripts/pack-toggle.sh regulatory-disclosure on`
+- Reproduces disclosure structure only; does not assert legal or financial sufficiency, regulatory conformance, or audit assurance — output is a disclosure-structured narrative, not a "10-K compliant" filing
+- Reg S-K item requirements evolve; verify the currently effective item set live at authoring time; the Selected Financial Data heading is always emitted, marked N/A when current rules no longer require it
+- Inline XBRL machine-readable tagging is out of scope — it ships as a separate `xbrl` channel pack
+- No external dependencies beyond the core engine
+
+### Goals
+
+- Produce a seven-section disclosure report in Reg S-K item order: Business → Risk Factors → Properties & Legal → Selected Financial Data → MD&A → Financial Statements → Controls & Procedures
+- MD&A as the analytical core; Risk Factors surfaced early; all seven headings always emitted
+- Disclosure references each resolve to a MIF finding `@id` and URL; forward-looking statements flagged; falsified findings excluded, weakened findings annotated
+- Narrative structure only; XBRL serialization is a separate, orthogonal concern
+
 ### Enable
 
 ```sh
@@ -379,6 +497,8 @@ scripts/pack-toggle.sh regulatory-disclosure on
 ## clinical-submission
 
 **Version:** 0.2.0 | **Kind:** genre | **Disabled by default (opt-in).**
+
+**Source:** [`packs/reports/clinical-submission/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/clinical-submission)
 
 ### Purpose
 
@@ -413,6 +533,21 @@ None beyond the core engine.
   serialization that ships as a separate `ectd` channel pack, keeping this genre focused on
   narrative structure
 
+### Constraints
+
+- Disabled by default (opt-in); enable with `scripts/pack-toggle.sh clinical-submission on`
+- Reproduces the ICH E3 CSR structure only; does not assert clinical validity, statistical adequacy, or regulatory acceptance
+- Verify the current ICH E3 guidance live before authoring; do not bake a guidance revision into output as settled fact
+- FDA eCTD v4.0 electronic packaging is out of scope — it ships as a separate `ectd` channel pack
+- No external dependencies beyond the core engine
+
+### Goals
+
+- Produce a nine-section ICH E3 clinical study report: Synopsis, Ethics, Investigators/Structure, Objectives, Investigational Plan, Methods (efficacy and safety kept distinct), Results, Discussion & Conclusions, and Tables/Figures/Appendices
+- Situate the report in the CTD five-module frame, placing the E3 CSR in Module 5
+- Every result stated with its measure of uncertainty; efficacy and safety claims never merged
+- Scientific/regulatory references resolve to MIF finding `@id` and URL; falsified findings excluded, weakened findings annotated
+
 ### Enable
 
 ```sh
@@ -424,6 +559,8 @@ scripts/pack-toggle.sh clinical-submission on
 ## sustainability-report
 
 **Version:** 0.2.0 | **Kind:** genre | **Disabled by default (opt-in).**
+
+**Source:** [`packs/reports/sustainability-report/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/sustainability-report)
 
 ### Purpose
 
@@ -458,6 +595,21 @@ None beyond the core engine.
   than an arbitrary list
 - The explicit scope caveat prevents over-claiming assurance the evidence does not support
 
+### Constraints
+
+- Disabled by default (opt-in); enable with `scripts/pack-toggle.sh sustainability-report on`
+- Reproduces the GRI reporting structure only; does not assert assurance, third-party verification, or full "in accordance with GRI" conformance
+- Verify the current GRI Standards (Universal and applicable topic standards) live; do not bake a standard year into output as settled fact
+- Reporting boundary must be stated for every quantified disclosure
+- No external dependencies beyond the core engine
+
+### Goals
+
+- Produce a five-part GRI sustainability report: GRI 1 Foundation, GRI 2 General Disclosures, GRI 3 Material Topics, topic-standard disclosures across the GRI 200/300/400 series, and a required GRI content index table
+- GRI 3 materiality determination forces an explicit, defensible topic selection rather than an arbitrary list
+- GRI content index maps every disclosure to its location in the report and the evidence behind it
+- Disclosure-indexed references each resolve to a MIF finding `@id` and URL; weakened findings annotated, falsified findings excluded
+
 ### Enable
 
 ```sh
@@ -469,6 +621,8 @@ scripts/pack-toggle.sh sustainability-report on
 ## humanities-chicago
 
 **Version:** 0.2.0 | **Kind:** genre | **Disabled by default (opt-in).**
+
+**Source:** [`packs/reports/humanities-chicago/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/humanities-chicago)
 
 ### Purpose
 
@@ -510,6 +664,21 @@ Chicago Manual of Style editions evolve (the 18th Edition supersedes the 17th). 
 instructs the author to verify the current edition live rather than baking an edition
 number into output.
 
+### Constraints
+
+- Disabled by default (opt-in); enable with `scripts/pack-toggle.sh humanities-chicago on`
+- No Method or Results section; the essay argues through close reading and interpretation — this is the distinguishing feature versus the `academic` genre
+- Chicago Notes-Bibliography is a presentation/citation convention (weakened verdict); do not over-attribute conformance to a codified standard
+- Verify the current Chicago Manual of Style edition live before authoring; do not bake an edition number into output as settled fact
+- No external dependencies beyond the core engine
+
+### Goals
+
+- Produce an argumentative humanities essay: thesis Introduction, thematic argument sections (claim/evidence/interpretation), Conclusion, numbered footnotes, and a full alphabetized Bibliography
+- Enforce Chicago Notes-Bibliography citation form: numbered footnotes carry human-readable source citations; the Bibliography lists every source alphabetically
+- Humanities argumentative altitude: advance a thesis, engage counter-readings, qualify claims the evidence cannot fully bear
+- Every claim carries a numbered footnote resolving to a human-readable source citation; the footnote traces internally to a MIF finding `@id` but that `@id` is never printed
+
 ### Enable
 
 ```sh
@@ -521,6 +690,8 @@ scripts/pack-toggle.sh humanities-chicago on
 ## humanities-mla
 
 **Version:** 0.2.0 | **Kind:** genre | **Disabled by default (opt-in).**
+
+**Source:** [`packs/reports/humanities-mla/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/humanities-mla)
 
 ### Purpose
 
@@ -558,6 +729,21 @@ None beyond the core engine.
 MLA Handbook editions evolve (the 9th Edition is current). The genre instructs the author
 to verify the current edition live rather than baking an edition number into output.
 
+### Constraints
+
+- Disabled by default (opt-in); enable with `scripts/pack-toggle.sh humanities-mla on`
+- No Method or Results section; the essay argues through interpretation, not empirical reporting
+- MLA author-page is a presentation/citation convention; does not certify scholarly sufficiency
+- Verify the current MLA Handbook edition live before authoring; do not bake an edition number into output as settled fact
+- No external dependencies beyond the core engine
+
+### Goals
+
+- Produce an argumentative humanities essay: thesis Introduction, body argument sections, Conclusion, MLA author-page in-text citations, and an alphabetized Works Cited list
+- Enforce MLA `(Author page)` citation form resolving to a Works Cited list
+- Humanities argumentative altitude: advance a thesis through interpretation, engage counter-readings, qualify uncertain claims
+- Every claim traces to a MIF finding `@id` via its author-page citation; no uncited assertions
+
 ### Enable
 
 ```sh
@@ -569,6 +755,8 @@ scripts/pack-toggle.sh humanities-mla on
 ## security-pentest
 
 **Version:** 0.2.0 | **Kind:** genre | **Disabled by default (opt-in).**
+
+**Source:** [`packs/reports/security-pentest/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/security-pentest)
 
 ### Purpose
 
@@ -607,6 +795,21 @@ None beyond the core engine.
   reproducible detail in the Technical Report
 - Edition-currency rule on severity scoring avoids baking a stale CVSS edition into the report
 
+### Constraints
+
+- Disabled by default (opt-in); enable with `scripts/pack-toggle.sh security-pentest on`
+- Authorized engagements only; authorization and scope statement is required front matter — the genre is not for unauthorized assessments
+- Severity ratings use a current industry-standard scoring system (e.g. CVSS); verify the live version at synthesis time and cite the rubric used — do not bake a fixed edition into the report
+- No exploit primitives or raw command output in the Executive Summary; no business-only hand-waving in the Technical Report
+- No external dependencies beyond the core engine
+
+### Goals
+
+- Produce a dual-audience PTES penetration-test report: a leadership-facing Executive Summary (Background, Posture, Risk Profile, General Findings, Recommendation Summary, Strategic Roadmap) and an engineer-facing Technical Report (Information Gathering, Vulnerability Assessment, Exploitation, Post-Exploitation, per-finding Risk/Remediation)
+- One source of truth serves both leadership and remediation engineers from the same findings corpus with audience-separated sections
+- Required severity-distribution figure and per-finding risk/remediation table in the Technical Report
+- Every claim traces to a cited MIF finding `@id`; unconfirmed exploits are never asserted as confirmed
+
 ### Enable
 
 ```sh
@@ -618,6 +821,8 @@ scripts/pack-toggle.sh security-pentest on
 ## market-research-report
 
 **Version:** 0.2.0 | **Kind:** genre | **Disabled by default (opt-in).**
+
+**Source:** [`packs/reports/market-research-report/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/market-research-report)
 
 ### Purpose
 
@@ -673,6 +878,21 @@ None beyond the core engine.
   to a codified ESOMAR standard, and the live-edition anchor keeps ISO 20252 references
   from decaying
 
+### Constraints
+
+- Disabled by default (opt-in); enable with `scripts/pack-toggle.sh market-research-report on`
+- ESOMAR/ICC is an ethics/conduct code, not a format mandate; the structure is conventional practice, not a codified report standard — the report must carry this caveat and must not claim to "conform to the ESOMAR standard"
+- ISO 20252 is under active revision (AI integration, 2024–2026); anchor any ISO 20252 reference to "verify the current edition live"; do not bake an edition in as fact
+- Falsified findings excluded; internal MIF `@id` handles and `urn:mif:` URNs never appear in rendered output
+- No external dependencies beyond the core engine
+
+### Goals
+
+- Produce a five-section market research report in enforced order: Background & Objectives → Methodology → Findings → Conclusions & Recommendations → Technical Appendix
+- Explicit sampling and fieldwork disclosure required in the Methodology section (frame, method, size, mode, dates, response/completion rate)
+- Technical Appendix carries full methodology detail, data-quality and limitations notes, and ISO 20252 quality notes
+- Every claim traces to a MIF finding `@id`; numbered or author-date citations resolve to a source list; the convention-not-standard caveat required in every rendered report
+
 ### Enable
 
 ```sh
@@ -684,6 +904,8 @@ scripts/pack-toggle.sh market-research-report on
 ## systematic-review
 
 **Version:** 0.2.0 | **Kind:** genre | **Disabled by default (opt-in).**
+
+**Source:** [`packs/reports/systematic-review/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/systematic-review)
 
 ### Purpose
 
@@ -737,6 +959,21 @@ None beyond the core engine. Mermaid rendering of the flow diagram is optional.
 - The reproducible Methods protocol forces the eligibility and search to be stated precisely
   enough to repeat
 
+### Constraints
+
+- Disabled by default (opt-in); enable with `scripts/pack-toggle.sh systematic-review on`
+- PRISMA flow diagram is required; stage counts must reconcile — identified minus excluded must equal included
+- Verify the current PRISMA guidance live before authoring; the statement in force and item count are not fixed
+- Mermaid rendering of the flow diagram is optional
+- No external dependencies beyond the core engine
+
+### Goals
+
+- Produce a seven-section PRISMA 2020 systematic review: structured abstract, Introduction (rationale and objectives), Methods (reproducible protocol), Results (with required PRISMA flow diagram), Discussion (limitations and conclusions), Registration & Protocol, and References
+- Required PRISMA flow diagram maps the harness pipeline onto PRISMA stages: dimension fan-out → identification, candidate gathering → screening, falsification gate → eligibility, corpus synthesis → inclusion; falsified findings recorded as excluded records with their exclusion reasons
+- Reproducible Methods protocol (eligibility, sources, search strategy, selection, data items, risk-of-bias) stated precisely enough for another reviewer to repeat
+- Numbered (Vancouver-style) citations; every included study and claim resolves to a MIF finding `@id` and URL
+
 ### Enable
 
 ```sh
@@ -748,6 +985,8 @@ scripts/pack-toggle.sh systematic-review on
 ## compliance-audit
 
 **Version:** 0.2.0 | **Kind:** genre | **Disabled by default (opt-in).**
+
+**Source:** [`packs/reports/compliance-audit/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/compliance-audit)
 
 ### Purpose
 
@@ -796,6 +1035,21 @@ None beyond the core engine.
 - The no-attestation caveat is load-bearing — it prevents the draft from being mistaken
   for an issued, CPA-attested SOC 2 report
 
+### Constraints
+
+- Disabled by default (opt-in); enable with `scripts/pack-toggle.sh compliance-audit on`
+- Not an attestation, assurance, certification, or audit opinion; a genuine SOC 2 report requires a licensed CPA firm under AICPA attestation standards (SSAE 18) — this genre produces a draft/model for internal readiness only
+- Verify the current AICPA Trust Services Criteria and SSAE 18 editions live; do not bake a year into the report as settled fact
+- Security (common criteria) is always in scope; Availability, Processing Integrity, Confidentiality, and Privacy are included only when the findings cover them
+- No external dependencies beyond the core engine
+
+### Goals
+
+- Produce a six-section SOC 2 Type II-shaped controls report: draft Auditor's Report placeholder, Management's Assertion, System Description, Trust Services Criteria, Tests of Controls & Results matrix, and Other Information
+- Required controls/test-results matrix (Control · Test Performed · Result/Exception) with every row tracing to a MIF finding `@id`; exceptions surfaced, never suppressed
+- Explicit in-scope/excluded Trust Services Criteria declared; strongly-stated no-attestation/no-assurance/no-opinion caveat throughout
+- Built from the surviving findings corpus to support internal readiness and self-assessment ahead of a formal audit
+
 ### Enable
 
 ```sh
@@ -805,6 +1059,8 @@ scripts/pack-toggle.sh compliance-audit on
 ## competitive-quadrant
 
 **Version:** 0.2.0 | **Kind:** genre | **Disabled by default (opt-in).**
+
+**Source:** [`packs/reports/competitive-quadrant/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/competitive-quadrant)
 
 ### Purpose
 
@@ -855,6 +1111,21 @@ None beyond the core engine. Mermaid rendering is optional.
 - The trademark caveat keeps the generic structure clearly distinct from Gartner's proprietary
   Magic Quadrant methodology
 
+### Constraints
+
+- Disabled by default (opt-in); enable with `scripts/pack-toggle.sh competitive-quadrant on`
+- "Magic Quadrant" is a Gartner trademark and proprietary methodology; this genre reproduces a generic two-axis competitive-analysis structure only — it must never claim to be a Gartner Magic Quadrant or imply Gartner endorsement
+- A two-axis quadrant figure is required; every axis score, strength, and caution must trace to a cited finding
+- Mermaid rendering is optional
+- No external dependencies beyond the core engine
+
+### Goals
+
+- Produce a six-section competitive-quadrant report: Market Definition/Inclusion Criteria, two-axis evaluation (Completeness of Vision × Ability to Execute), per-vendor Strengths/Cautions profiles, quadrant placement (Leaders/Challengers/Visionaries/Niche Players), Context & Market Overview, and Methodology
+- Required two-axis quadrant figure plots every vendor against the two axes with quadrant labels
+- Per-vendor Strengths/Cautions profiles make each placement auditable against cited evidence
+- Each vendor assigned to exactly one quadrant, justified by its two-axis position; every placement traceable to a MIF finding `@id`
+
 ### Enable
 
 ```sh
@@ -866,6 +1137,8 @@ scripts/pack-toggle.sh competitive-quadrant on
 ## nist-sp
 
 **Version:** 0.2.0 | **Kind:** genre | **Disabled by default (opt-in).**
+
+**Source:** [`packs/reports/nist-sp/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/nist-sp)
 
 ### Purpose
 
@@ -913,6 +1186,21 @@ None beyond the core engine.
   requirements unambiguous and individually traceable to evidence
 - A required Definitions/Glossary prevents undefined terms of art from carrying normative weight
 
+### Constraints
+
+- Disabled by default (opt-in); enable with `scripts/pack-toggle.sh nist-sp on`
+- Numbered normative sections (up to four heading levels) with explicit normative force (shall/should/may) required throughout
+- Do not bake a standard's edition or version number into normative text as settled fact; verify currency at authoring time
+- Internal MIF `@id` handles resolve to numbered `[N]` references; `urn:mif:` identifiers never appear in reader-facing prose
+- No external dependencies beyond the core engine
+
+### Goals
+
+- Produce a NIST Special Publication with ordered front matter (Authority, Purpose & Scope, Audience, Abstract, Keywords ≤10), numbered normative body, required Definitions/Glossary, numbered References, and lettered Appendices for control mappings and crosswalks
+- Enforce authoritative altitude: normative precision, consistent normative force (shall/should/may), no hedging in normative text
+- Required Definitions/Glossary ensures every term of art used normatively is defined once, preventing undefined terms from carrying normative weight
+- Appendices carry control mappings, control catalogs, and crosswalks to external control frameworks; control-mapping table required when findings support a framework mapping
+
 ### Enable
 
 ```sh
@@ -922,6 +1210,8 @@ scripts/pack-toggle.sh nist-sp on
 ## trend-analysis
 
 **Version:** 0.3.0 | **Kind:** genre
+
+**Source:** [`packs/reports/trend-analysis/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/trend-analysis)
 
 ### Purpose
 
@@ -971,6 +1261,21 @@ None beyond the core engine. Mermaid rendering is optional.
 - Signal classification (leading vs. lagging) makes it clear which indicators predict
   versus confirm the trend
 - Time-anchoring requirement prevents undated assertions from passing through as facts
+
+### Constraints
+
+- Enabled by default; disable with `scripts/pack-toggle.sh trend-analysis off`
+- A trajectory or scenario diagram is required; every trajectory claim must be anchored in time — undated trend assertions are not admissible
+- Anchored to a foresight convention (IFTF/WEF/APF practice), not a codified standard; no standards body (ISO/NISO/ANSI) has codified a foresight report format — do not claim conformance to any named standard
+- Optional STEEP/PESTLE environmental scan and Methodology Appendix are additive and off by default
+- Mermaid rendering is optional; no external dependencies beyond the core engine
+
+### Goals
+
+- Produce a five-section trajectory report: Trajectory (time-anchored direction), Signals (leading/lagging, strong/weak, each cited), Drivers & Inhibitors, 2-4 forward Scenarios (conditions/triggers/confidence/unknowns stated), and Implications & Watch-list
+- Required trajectory or scenario diagram enforces visual representation of directional change rather than leaving it to prose
+- Signal classification (leading vs. lagging) makes clear which indicators predict versus confirm the trend
+- Every trajectory claim time-anchored with observation date; forward scenarios separated from observed signal and not presented as fact
 
 ### Enable
 

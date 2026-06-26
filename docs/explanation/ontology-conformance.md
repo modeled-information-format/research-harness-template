@@ -1,4 +1,5 @@
 ---
+title: "Ontology conformance"
 diataxis_type: explanation
 ---
 

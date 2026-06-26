@@ -1,4 +1,5 @@
 ---
+title: "Reference: contracts"
 diataxis_type: reference
 ---
 
@@ -65,7 +66,7 @@ plugin; the plugins are its `<skill>/` subdirectories.
 
 ## Structured Data Protocol
 
-See [STRUCTURED-DATA.md](../../schemas/STRUCTURED-DATA.md): write JSON with `jq`,
+See [STRUCTURED-DATA.md](https://github.com/modeled-information-format/research-harness-template/blob/main/schemas/STRUCTURED-DATA.md): write JSON with `jq`,
 then validate immediately. A write is not complete until the artifact validates.
 
 ## Citation-integrity gate

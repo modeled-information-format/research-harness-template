@@ -1,4 +1,5 @@
 ---
+title: "Reference: scripts"
 diataxis_type: reference
 ---
 

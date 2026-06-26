@@ -1,3 +1,7 @@
+---
+title: "Investigation: MIF Level-1 frontmatter for the Diátaxis channel"
+---
+
 # Investigation: MIF Level-1 frontmatter for the Diátaxis channel
 
 ## Question

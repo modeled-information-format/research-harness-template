@@ -1,4 +1,5 @@
 ---
+title: "How to author finding JSON with the model layer"
 diataxis_type: how-to
 ---
 

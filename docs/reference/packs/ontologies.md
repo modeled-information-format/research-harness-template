@@ -1,4 +1,5 @@
 ---
+title: "Ontology packs"
 diataxis_type: reference
 ---
 
@@ -41,6 +42,8 @@ apply to them. Enabling an ontology is two steps:
 ## biology-research-lab
 
 **Version:** 0.1.0 | **Kind:** ontology
+
+**Source:** [`packs/ontologies/biology-research-lab/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/ontologies/biology-research-lab)
 
 ### Purpose
 
@@ -87,11 +90,27 @@ jq '(.ontologies[] | select(.id=="biology-research-lab") | .enabled) |= true' \
   harness.config.json > harness.config.tmp && mv harness.config.tmp harness.config.json
 ```
 
+### Constraints
+
+- Opt-in only; cataloged `core=false` — topics must explicitly enable and bind; never auto-applied to non-biology-lab topics.
+- Extends `mif-base v0.1.0` and `shared-traits v0.1.0`; binding is fail-closed — `resolve-ontology.sh` and `validate-concordance.sh` abort the entire corpus if either `extends` target is missing or mistyped.
+- Scoped to academic biology research labs; entity types do not apply to engineering, legal, or market-research topics.
+- Compliance sub-types (IRB / IACUC / IBC) are domain-specific and resolve only within bound biology-lab topics.
+
+### Goals
+
+- Supplies entity vocabulary covering the full biology-lab lifecycle: personnel (PI, postdoc, graduate-student, technician, lab-manager), grants, experiments, samples, reagents, equipment, publications, and compliance protocols.
+- Enables recognition of NIH grant mechanism codes (R01, R21, K99, F31, T32, U01), ORCID identifiers, assay keywords, compliance identifiers (IRB, IACUC, IBC, BSL), and publication identifiers (DOI, PMID) in research sources.
+- Typed findings validate fail-closed against the MIF schema on binding, providing provenance and completeness guarantees.
+- Supports compliance lifecycle tracking and research data management (FAIR principles, CRediT contributor roles) within bound topics.
+
 ---
 
 ## data-engineering
 
 **Version:** 0.2.0 | **Kind:** ontology
+
+**Source:** [`packs/ontologies/data-engineering/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/ontologies/data-engineering)
 
 ### Purpose
 
@@ -132,11 +151,26 @@ jq '(.ontologies[] | select(.id=="data-engineering") | .enabled) |= true' \
   harness.config.json > harness.config.tmp && mv harness.config.tmp harness.config.json
 ```
 
+### Constraints
+
+- Opt-in only; cataloged `core=false` — never auto-applied to non-data-engineering topics.
+- Extends `engineering-base`, which itself extends `mif-base` and `shared-traits`; `resolve-ontology.sh` walks the full chain fail-closed — a missing `engineering-base` target aborts corpus resolution.
+- Scoped strictly to data-specific entity types; version 0.2.0 is a clean break with no back-compat aliases; `technology` is inherited from `mif-generic`, security types from `software-security`, and regulation from `regulatory-legal`.
+
+### Goals
+
+- Provides vocabulary for data engineering: data contracts, data products, governance policies, data quality rules, storage architectures, pipeline patterns, and data platforms.
+- Resolves shared engineering supertypes (component, architectural-decision, design-pattern, delivery-metric, engineering-practice, process-discipline) transitively via `engineering-base` without re-declaration.
+- Enables recognition of data contract definitions, governance terminology, and pipeline/storage architecture patterns in research sources.
+- Typed findings validate fail-closed against MIF schema on binding.
+
 ---
 
 ## engineering-base
 
 **Version:** 0.1.0 | **Kind:** ontology (shared layer — not directly bindable)
+
+**Source:** [`schemas/ontologies/engineering-base/`](https://github.com/modeled-information-format/research-harness-template/tree/main/schemas/ontologies/engineering-base)
 
 ### Purpose
 
@@ -171,6 +205,19 @@ component/artifact), `attests` (provenance → artifact), `derived_from` (artifa
 **Discovery patterns:** recognizes named design / architectural patterns (Factory,
 Singleton, Observer, Repository, Strategy, Decorator, CQRS, Event Sourcing, Saga).
 
+### Constraints
+
+- Not directly bindable; cataloged `core=false` — topics bind a descendant pack (`software-engineering`, `data-engineering`, or `software-security`), never this layer directly.
+- Resolved transitively only: `resolve-ontology.sh` walks the `extends` chain from a bound descendant; this layer is never itself the binding target.
+- Extends `mif-base` and `shared-traits`; the full chain is fail-closed — a missing or mistyped `extends` target in any descendant pack aborts corpus resolution.
+
+### Goals
+
+- Provides the shared engineering supertypes inherited by all engineering domain packs: component, architectural-decision, design-pattern, delivery-metric, engineering-practice, process-discipline, and the cross-cutting universals control, artifact, policy, and provenance.
+- Eliminates redundant supertype declarations across engineering domain packs; descendant packs declare only their domain-specific types and resolve supertypes via the `extends` chain.
+- Enables cross-pack subtype substitution: domain subtypes (e.g. `security-control` in `software-security`) are `subtype_of` these supertypes and substitutable at relationship endpoints, enforced by the concordance validator and `gate_m22`.
+- Recognizes named design and architectural patterns (Factory, Singleton, CQRS, Event Sourcing, Saga) in research sources via its discovery patterns.
+
 ### Resolution
 
 `engineering-base` is cataloged present-but-NOT-core (`core=false`): it is never
@@ -185,6 +232,8 @@ layer; enable and bind one of its descendant domain packs instead.
 ## market-research
 
 **Version:** 0.1.0 | **Kind:** ontology
+
+**Source:** [`packs/ontologies/market-research/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/ontologies/market-research)
 
 ### Purpose
 
@@ -228,11 +277,26 @@ jq '(.ontologies[] | select(.id=="market-research") | .enabled) |= true' \
   harness.config.json > harness.config.tmp && mv harness.config.tmp harness.config.json
 ```
 
+### Constraints
+
+- Opt-in only; cataloged `core=false` — never auto-applied to non-market-research topics.
+- Extends `mif-base v0.1.0` (compatible with `shared-traits v0.1.0`); binding is fail-closed — `resolve-ontology.sh` aborts the corpus if the `extends` target is missing or mistyped.
+- Scoped to market and competitive research; entity types do not apply to scientific, legal, or engineering topics.
+
+### Goals
+
+- Provides vocabulary for market and competitive research: market segments, competitors, brands, buyer personas, market sizing (TAM/SAM/SOM), competitive forces, service offerings, value propositions, market-intelligence reports, survey instruments, and win-loss analyses.
+- Enables recognition of segment/vertical, competitor, TAM/SAM/SOM, Porter five-forces, NPS/conjoint survey, win-loss, and data-source terminology in research sources.
+- Grounded in schema.org/GoodRelations, Porter Five Forces, Strategyzer Value Proposition Canvas, and Umbrex market-mapping; every entity type traces to a named source class.
+- Typed findings validate fail-closed against MIF schema on binding.
+
 ---
 
 ## regenerative-agriculture
 
 **Version:** 0.1.0 | **Kind:** ontology
+
+**Source:** [`packs/ontologies/regenerative-agriculture/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/ontologies/regenerative-agriculture)
 
 ### Purpose
 
@@ -272,11 +336,26 @@ jq '(.ontologies[] | select(.id=="regenerative-agriculture") | .enabled) |= true
   harness.config.json > harness.config.tmp && mv harness.config.tmp harness.config.json
 ```
 
+### Constraints
+
+- Opt-in only; cataloged `core=false` — never auto-applied to non-agriculture topics.
+- Extends `mif-base v0.1.0` and `shared-traits v0.1.0`; binding is fail-closed — `resolve-ontology.sh` and `validate-concordance.sh` abort the corpus if either `extends` target is missing or mistyped.
+- Scoped strictly to farm business records, supply chain, carbon credits, and certification tracking — not research observations; for research-oriented findings use `regenerative-agriculture-research` instead.
+
+### Goals
+
+- Provides vocabulary for regenerative farm business operations: land parcels and soil profiles, livestock, supply chain, carbon market activities, certifications, and farm financials.
+- Enables recognition of farm operation terminology, soil health references, certification body names (ROC, Rainforest Alliance), and carbon market identifiers in research sources.
+- Grounded in Rodale Institute ROC Standards, Soil & Climate Initiative Verification Framework v3.0 (2025), USDA NRCS Soil Health Principles, and FAO Agroecology Knowledge Hub.
+- Typed findings validate fail-closed against MIF schema on binding.
+
 ---
 
 ## regenerative-agriculture-research
 
 **Version:** 0.1.0 | **Kind:** ontology
+
+**Source:** [`packs/ontologies/regenerative-agriculture-research/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/ontologies/regenerative-agriculture-research)
 
 ### Purpose
 
@@ -319,11 +398,26 @@ jq '(.ontologies[] | select(.id=="regenerative-agriculture-research") | .enabled
   harness.config.json > harness.config.tmp && mv harness.config.tmp harness.config.json
 ```
 
+### Constraints
+
+- Opt-in only; cataloged `core=false` — never auto-applied to non-agriculture topics.
+- Extends `mif-base v0.1.0`; binding is fail-closed — `resolve-ontology.sh` aborts the corpus if the `extends` target is missing or mistyped.
+- Scoped to research observations about farming practices — not farm business records or supply chain tracking; for farm records use `regenerative-agriculture` instead.
+
+### Goals
+
+- Provides research-oriented vocabulary for regenerative agriculture findings: husbandry practices, agronomy (grazing, soil, crop, pasture), farm infrastructure (fencing, irrigation, IoT), funding programs, and cross-cutting technology and security research types.
+- Enables recognition of husbandry and agronomy terminology, farm infrastructure keywords, grant and funding program identifiers, and IoT/technology references in a farm research context.
+- Cross-cutting technology and security research types are included so topics spanning farm technology and infrastructure resolve without a separate pack.
+- Typed findings validate fail-closed against MIF schema on binding.
+
 ---
 
 ## regulatory-legal
 
 **Version:** 0.1.0 | **Kind:** ontology
+
+**Source:** [`packs/ontologies/regulatory-legal/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/ontologies/regulatory-legal)
 
 ### Purpose
 
@@ -366,11 +460,26 @@ jq '(.ontologies[] | select(.id=="regulatory-legal") | .enabled) |= true' \
   harness.config.json > harness.config.tmp && mv harness.config.tmp harness.config.json
 ```
 
+### Constraints
+
+- Opt-in only; cataloged `core=false` — never auto-applied to non-legal topics.
+- Extends `mif-base v0.1.0` and `shared-traits v0.1.0`; binding is fail-closed — `resolve-ontology.sh` and `validate-concordance.sh` abort the corpus if either `extends` target is missing or mistyped.
+- Scoped to law, regulation, compliance, and governance; `control-mapping.control_ref` bridges cross-pack to `software-security`'s `security-control` type but the types are not interchangeable across packs.
+
+### Goals
+
+- Provides vocabulary for regulatory and legal research: legislative acts, treaties, obligations, rights, jurisdictions, authorities, contracts, licenses, court decisions, sanctions, compliance reports, and control mappings.
+- Enables recognition of regulation citations (Regulation (EU), U.S.C., GDPR, HIPAA), deontic language (shall / must / prohibited), ELI/Akoma Ntoso URIs, ECLI case citations, and OLIR control crosswalks in research sources.
+- Grounded in LKIF-Core, FIBO (FBC/FND), ELI v1.5, Akoma Ntoso, and NIST OSCAL; every entity type traces to a named source vocabulary class.
+- Typed findings validate fail-closed against MIF schema on binding; `control-mapping.control_ref` provides a cross-pack bridge to `software-security`'s `security-control` type.
+
 ---
 
 ## scientific
 
 **Version:** 0.1.0 | **Kind:** ontology
+
+**Source:** [`packs/ontologies/scientific/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/ontologies/scientific)
 
 ### Purpose
 
@@ -414,11 +523,27 @@ jq '(.ontologies[] | select(.id=="scientific") | .enabled) |= true' \
   harness.config.json > harness.config.tmp && mv harness.config.tmp harness.config.json
 ```
 
+### Constraints
+
+- Opt-in only; cataloged `core=false` — never auto-applied to non-scientific topics.
+- Extends `mif-base v0.1.0` and `shared-traits v0.1.0`; binding is fail-closed — `resolve-ontology.sh` and `validate-concordance.sh` abort the corpus if either `extends` target is missing or mistyped.
+- Scoped to scientific studies, research data management, and data provenance; entity types do not apply to engineering operational, legal, or market-research topics.
+- OBO IRIs are OLS4/Ontobee-confirmed gate-corrected values; a finding whose `ontology.id` and resolved type do not align is a hard fail, not a fallback.
+
+### Goals
+
+- Provides vocabulary for scientific research: studies, investigations, cohorts, methods, protocol applications, samples, measurements, hypotheses, instruments, publications, funding, datasets, data distributions, data services, dataset series, catalogs, and data provenance.
+- Enables recognition of study/trial/cohort, assay/protocol/method, sample/organism/tissue, measurement, hypothesis, instrument, DOI/preprint, grant, DCAT dataset, and PROV-O provenance terminology in research sources.
+- Grounded in OBO Foundry/OBI, IAO, COB, W3C DCAT 3, W3C PROV-O, and schema.org; every entity type traces to a named source vocabulary.
+- Typed findings validate fail-closed against MIF schema on binding.
+
 ---
 
 ## software-engineering
 
 **Version:** 0.5.0 | **Kind:** ontology
+
+**Source:** [`packs/ontologies/software-engineering/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/ontologies/software-engineering)
 
 ### Purpose
 
@@ -465,11 +590,26 @@ jq '(.ontologies[] | select(.id=="software-engineering") | .enabled) |= true' \
   harness.config.json > harness.config.tmp && mv harness.config.tmp harness.config.json
 ```
 
+### Constraints
+
+- Opt-in only; cataloged `core=false` — never auto-applied to non-software-engineering topics.
+- Extends `engineering-base`, which extends `mif-base` and `shared-traits`; `resolve-ontology.sh` walks the full chain fail-closed — a missing target in the chain aborts corpus resolution.
+- Scoped strictly to SDLC-operational types; version 0.5.0 is a clean break with no back-compat aliases; security types belong to `software-security`, regulation to `regulatory-legal`, and trend to `trend-analysis`.
+
+### Goals
+
+- Provides vocabulary for software engineering operations: incident reports, runbooks, deployment procedures, and migration guides.
+- Resolves shared engineering supertypes (component, architectural-decision, design-pattern, delivery-metric, engineering-practice, process-discipline) transitively via `engineering-base` without re-declaration.
+- Enables recognition of incident/outage/postmortem/RCA, runbook/playbook/SOP, deployment/release, and migration/upgrade terminology in research sources.
+- Typed findings validate fail-closed against MIF schema on binding.
+
 ---
 
 ## software-security
 
 **Version:** 0.2.0 | **Kind:** ontology
+
+**Source:** [`packs/ontologies/software-security/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/ontologies/software-security)
 
 ### Purpose
 
@@ -518,11 +658,26 @@ jq '(.ontologies[] | select(.id=="software-security") | .enabled) |= true' \
   harness.config.json > harness.config.tmp && mv harness.config.tmp harness.config.json
 ```
 
+### Constraints
+
+- Opt-in only; cataloged `core=false` — never auto-applied to non-security topics.
+- Extends `engineering-base` (which extends `mif-base` and `shared-traits`); `resolve-ontology.sh` walks the full chain fail-closed — a missing target in the chain aborts corpus resolution.
+- `security-threat`, `security-framework`, and `security-incident` are defined here as SDLC-facing supertypes; finer ATT&CK/CWE types refine them. A finding whose resolved type belongs to a different ontology than its pin names is a hard fail.
+
+### Goals
+
+- Provides vocabulary for cybersecurity research: attack tactics, mitigations, malware, vulnerabilities, weaknesses, security controls, threat actors, attack campaigns, indicators of compromise, security infrastructure, tools, threat-intelligence reports, supply-chain risk, policies, assessments, and POA&Ms.
+- Resolves shared engineering supertypes transitively via `engineering-base`; `security-control` is `subtype_of: [control]` and substitutable at relationship endpoints, enforced by the concordance validator and `gate_m22`.
+- Enables recognition of ATT&CK technique/CAPEC IDs, CVE/CWE IDs, NIST control IDs, breach/ransomware terms, IOC/YARA/STIX/TLP markers, and SBOM/supply-chain terminology in research sources.
+- Typed findings validate fail-closed; `control-mapping.control_ref` in `regulatory-legal` bridges to this pack's `security-control` type.
+
 ---
 
 ## trend-analysis
 
 **Version:** 0.1.0 | **Kind:** ontology
+
+**Source:** [`packs/ontologies/trend-analysis/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/ontologies/trend-analysis)
 
 ### Purpose
 
@@ -565,3 +720,17 @@ megatrends, technology adoption and hype cycles, or scenario and roadmap plannin
 jq '(.ontologies[] | select(.id=="trend-analysis") | .enabled) |= true' \
   harness.config.json > harness.config.tmp && mv harness.config.tmp harness.config.json
 ```
+
+### Constraints
+
+- Opt-in only; cataloged `core=false` — never auto-applied to non-foresight topics.
+- Extends `mif-base v0.1.0` (compatible with `shared-traits v0.1.0`); binding is fail-closed — `resolve-ontology.sh` aborts the corpus if the `extends` target is missing or mistyped.
+- `trend` is the canonical generic trend type here; the former `adoption-trend` from `software-engineering` is removed and replaced by this pack's `trend` (no back-compat alias).
+- Six entity types (adoption-curve, forecast, horizon, implication, scenario, vision) are remapped to the `semantic` base under the `_semantic/foresight` namespace tree; the mif-base cognitive triad has no `_analytical` root.
+
+### Goals
+
+- Provides vocabulary for strategic foresight and trend analysis: signals, drivers, trends, megatrends, emerging issues, wild cards, critical uncertainties, adoption curves, forecasts, scenarios, horizons, implications, visions, and roadmaps.
+- Enables recognition of weak-signal, STEEP driver-of-change, trend, hype-cycle/S-curve, forecast, megatrend, scenario, and wild-card/black-swan terminology in research sources.
+- Grounded in IFTF, EU JRC/K4P, Sitra, Shell/GBN scenario planning, Rogers Diffusion of Innovations, Gartner Hype Cycle, Three Horizons, Futures Wheel, and OECD-OPSI.
+- Typed findings validate fail-closed against MIF schema on binding.

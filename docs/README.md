@@ -1,3 +1,7 @@
+---
+title: "Documentation"
+---
+
 # Documentation
 
 The harness ships one merged [Diátaxis](https://diataxis.fr/) documentation set,

@@ -1,4 +1,5 @@
 ---
+title: "Explanation: the living corpus — goal evolution and finding reuse"
 diataxis_type: explanation
 ---
 

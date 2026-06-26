@@ -1,4 +1,5 @@
 ---
+title: "Reference: documentation coverage"
 diataxis_type: reference
 ---
 

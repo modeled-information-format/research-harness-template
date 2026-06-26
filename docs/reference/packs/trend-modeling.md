@@ -1,4 +1,5 @@
 ---
+title: "Trend-modeling pack"
 diataxis_type: reference
 ---
 
@@ -16,6 +17,8 @@ For control-plane mechanics see [Packs and Plugins](../packs-and-plugins.md).
 ## trend-modeling
 
 **Version:** 0.2.0 | **Kind:** methodology | **Dimension:** trend
+
+**Source:** [`packs/trend-modeling/trend-modeling/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/trend-modeling/trend-modeling)
 
 ### Purpose
 
@@ -81,6 +84,29 @@ Mermaid tooling is optional and only needed to *render* that block into an image
 Alert conditions: a scenario with >50% probability of adverse outcome, a bifurcation
 point within the planning horizon, or a terminal scenario that invalidates core
 business assumptions.
+
+### Constraints
+
+- Ships disabled; enable with `scripts/pack-toggle.sh trend-modeling on`.
+- Formal notation is limited to three values (INC / DEC / CONST) plus optional
+  acceleration modifiers — no numerical parameters are accepted.
+- Mermaid CLI is optional; the `stateDiagram-v2` block is emitted as plain text
+  and only needs Mermaid tooling to render it into an image.
+- All input variables and declared relationships must be grounded in the findings
+  corpus; speculative relationships must be documented explicitly.
+
+### Goals
+
+- Produce a complete, enumerated list of all internally consistent scenarios from
+  qualitative variable assignments.
+- Identify and flag terminal scenarios — equilibrium states where the system
+  converges — automatically.
+- Emit a `stateDiagram-v2` transitional graph that makes scenario paths and
+  branching points explicit.
+- Deliver multi-objective trade-off analysis at each terminal scenario with a
+  priority-aligned recommendation.
+- Assign a confidence tier (High / Medium / Low) scaled to the number of
+  independent dimension findings supplying the input variables.
 
 ### Enable
 

@@ -1,4 +1,5 @@
 ---
+title: "Channel packs"
 diataxis_type: reference
 ---
 
@@ -20,6 +21,8 @@ For control-plane mechanics see [Packs and Plugins](../packs-and-plugins.md).
 ## book
 
 **Version:** 0.2.0 | **Kind:** channel | **MIF level:** exempt (output only) | **Skill:** `book:book-author`
+
+**Source:** [`packs/channels/book/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/channels/book)
 
 ### Purpose
 
@@ -52,6 +55,19 @@ None beyond the core engine.
 - Enforces the citation-leak gate so manuscript prose never leaks internal identifiers
 - Supports five genre modes from a single skill invocation
 
+### Constraints
+
+- Opt-in: disabled by default; enable with `scripts/pack-toggle.sh book on`
+- MIF-exempt from L3 conformance gate: published prose is orthogonal to MIF L3; canonical L3 source of truth stays in the `report` channel
+- Built from the surviving findings corpus (SOURCES); never from a rendered report
+- Citation-leak gate enforced: manuscript prose may not contain finding IDs, `urn:mif:` URNs, or `reports/<slug>/` paths
+
+### Goals
+
+- Produce genre-appropriate manuscript prose across five genres (technical, children's, fiction, history, non-fiction) from the full surviving findings corpus
+- Outline assembled before prose generation via `synthesize-artifact.sh`; chapter rendered via `render-artifact.sh`
+- Manuscript verified citation-leak gate clean; falsified and quarantined findings excluded
+
 ### Enable
 
 ```sh
@@ -63,6 +79,8 @@ scripts/pack-toggle.sh book on
 ## diataxis
 
 **Version:** 0.2.0 | **Kind:** channel | **MIF level:** L1 only (output) | **Skill:** `diataxis:diataxis-docs`
+
+**Source:** [`packs/channels/diataxis/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/channels/diataxis)
 
 ### Purpose
 
@@ -108,6 +126,20 @@ methodology research into a how-to guide set.
   content stays structurally distinct
 - jq-only pipeline means no build toolchain required beyond what the core engine provides
 
+### Constraints
+
+- Opt-in: disabled by default; enable with `scripts/pack-toggle.sh diataxis on`
+- Requires `jq`; no additional runtime dependencies beyond the core engine
+- MIF-exempt from L3 conformance gate: pages carry MIF L1 identity only; canonical L3 source of truth stays in the `report` channel
+- Body prose must carry no internal-research identity (no `urn:mif:concept:`, corpus paths, or finding handles); each page's own `urn:mif:doc:` frontmatter is its sole L1 identity
+- Every quadrant page must stay mode-pure; tutorial, reference, how-to, and explanation content must not be mixed
+
+### Goals
+
+- Produce a complete four-quadrant Diátaxis documentation set (reference, explanation, how-to, tutorials) from the surviving findings corpus
+- Every emitted page carries MIF L1 frontmatter and a `diataxis_type` quadrant marker, validated by `schemas/diataxis-doc.schema.json`
+- Falsified findings excluded; output scales with the corpus (one reference page per surviving finding)
+
 ### Enable
 
 ```sh
@@ -119,6 +151,8 @@ scripts/pack-toggle.sh diataxis on
 ## github-discuss
 
 **Version:** 0.2.0 | **Kind:** channel
+
+**Source:** [`packs/channels/github-discuss/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/channels/github-discuss)
 
 ### Purpose
 
@@ -152,6 +186,20 @@ input, or sharing an anecdotal data point for collective validation.
 - Three post types keep discussion intent explicit and searchable
 - Degrades gracefully so the workflow completes even without GitHub access
 
+### Constraints
+
+- Opt-in: disabled by default; enable with `scripts/pack-toggle.sh github-discuss on`
+- Requires `gh` CLI authenticated via `gh auth login`; `jq`
+- MIF-exempt: discussion bodies use GitHub's markdown dialect, orthogonal to MIF; canonical L3 source of truth stays in the `report` channel
+- Built from the findings corpus and primary-source citations (SOURCES) only; never from a rendered report
+- Degrades gracefully when `gh` is unavailable: reports the missing dependency and stops cleanly
+
+### Goals
+
+- Produce Discussion posts typed as `announce`, `question`, or `anecdotal` from the surviving findings corpus
+- Post body derived from findings and primary-source citations; no internal-research identity in the post body
+- Duplicate detection for `announce` posts; `--update` mode appends a delta comment to an existing thread
+
 ### Enable
 
 ```sh
@@ -163,6 +211,8 @@ scripts/pack-toggle.sh github-discuss on
 ## github-issues
 
 **Version:** 0.2.0 | **Kind:** channel
+
+**Source:** [`packs/channels/github-issues/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/channels/github-issues)
 
 ### Purpose
 
@@ -202,6 +252,20 @@ into a compliance action item, or flagging a follow-up research question.
 - Priority tiers keep issue triage grounded in evidence rather than subjective judgment
 - Degrades gracefully so no work is lost when GitHub access is absent
 
+### Constraints
+
+- Opt-in: disabled by default; enable with `scripts/pack-toggle.sh github-issues on`
+- Requires `gh` CLI authenticated via `gh auth login`; `jq`
+- MIF-exempt: issue bodies use GitHub's markdown dialect, orthogonal to MIF; canonical L3 source of truth stays in the `report` channel
+- Built from the findings corpus and primary-source citations (SOURCES) only; never from a rendered report
+- Degrades gracefully when `gh` is unavailable: issue set written to `issues.json` instead of filed
+
+### Goals
+
+- Produce issues categorized as `feature`, `enhancement`, `follow-up`, or `action-item` from the surviving findings
+- Four-tier priority (P0–P3) justified by finding evidence strength and impact; each issue includes ≥2 measurable acceptance criteria
+- Issue context cites primary sources only; no internal-research identity in the body; graceful degradation to `issues.json` when GitHub is unavailable
+
 ### Enable
 
 ```sh
@@ -213,6 +277,8 @@ scripts/pack-toggle.sh github-issues on
 ## notebooklm
 
 **Version:** 0.2.0 | **Kind:** channel
+
+**Source:** [`packs/channels/notebooklm/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/channels/notebooklm)
 
 ### Purpose
 
@@ -254,6 +320,20 @@ for stakeholder communication.
 - Polling via Monitor means the workflow waits for assets without blocking other work
 - `manifest.json` gives downstream consumers a stable index of generated assets
 
+### Constraints
+
+- Opt-in: disabled by default; enable with `scripts/pack-toggle.sh notebooklm on`
+- Requires `nlm` CLI authenticated via `nlm login`; `jq`; `python3`
+- MIF-exempt: audio/video/slide/infographic outputs are non-text formats orthogonal to MIF; canonical L3 source of truth stays in the `report` channel
+- Primary citation URLs (not a rendered report) are added as notebook sources; a findings digest is added as a structured text source
+- Degrades gracefully when `nlm` is unavailable: reports the missing dependency and stops cleanly
+
+### Goals
+
+- Add all primary citation URLs and a findings digest to the notebook so NotebookLM synthesizes assets from the actual source documents
+- Asset set covers all surviving findings and dimensions (audio deep-dive, slide deck, infographic, video, mind map)
+- `manifest.json` records provenance: notebook ID, primary sources added, per-asset metadata, and generation timestamps
+
 ### Enable
 
 ```sh
@@ -265,6 +345,8 @@ scripts/pack-toggle.sh notebooklm on
 ## pdf
 
 **Version:** 0.2.0 | **Kind:** channel | **MIF level:** L1 in PDF metadata
+
+**Source:** [`packs/channels/pdf/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/channels/pdf)
 
 ### Purpose
 
@@ -302,6 +384,20 @@ archival.
   from the PDF
 - MIF L1 metadata embeds research identity in the document itself, not just the filename
 
+### Constraints
+
+- Opt-in: disabled by default; enable with `scripts/pack-toggle.sh pdf on`
+- Requires `pandoc` and one of: `xelatex`, `weasyprint`, or `wkhtmltopdf`; `jq`; `@mermaid-js/mermaid-cli` via `npx` (optional for diagram rendering)
+- MIF-exempt from L3 conformance gate: PDF is a binary render format orthogonal to MIF L3; canonical L3 source of truth stays in the `report` channel
+- Built from the findings corpus and primary-source citations (SOURCES) only; never from a rendered report
+- No internal-research identity in the body: finding IDs, `urn:mif:` URNs, corpus paths, and finding handles excluded from PDF prose
+
+### Goals
+
+- Produce an exhaustive PDF: one section per surviving finding, numbered References list of every unique primary source
+- MIF L1 typed identity embedded in the PDF `subject` metadata field
+- Mermaid diagrams rendered to PNG via `@mermaid-js/mermaid-cli` when available; graceful degradation to raw text blocks when absent
+
 ### Enable
 
 ```sh
@@ -313,6 +409,8 @@ scripts/pack-toggle.sh pdf on
 ## jats
 
 **Version:** 0.2.0 | **Kind:** channel | **MIF level:** L1 in JATS article metadata
+
+**Source:** [`packs/channels/jats/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/channels/jats)
 
 ### Purpose
 
@@ -351,6 +449,20 @@ that ingest NISO Z39.96 JATS.
 - MIF L1 metadata embeds research identity in the article itself, while the
   citation-leak gate keeps internal identity out of the rendered body
 
+### Constraints
+
+- Opt-in: disabled by default; enable with `scripts/pack-toggle.sh jats on`
+- Requires `jq`; `xmllint` used for well-formedness checking when available (optional)
+- MIF-exempt from L3 conformance gate: JATS XML is a serialization orthogonal to MIF L3; canonical L3 source of truth stays in the `report` channel
+- Built from the findings corpus and primary-source citations (SOURCES) only; never from a rendered report
+- Current NISO Z39.96 edition must be verified live before tagging (anchor: JATS v1.4, October 2024; never asserted from memory)
+
+### Goals
+
+- Produce an exhaustive JATS XML article: one `<sec>` per surviving finding linked via `<xref>`, one `<ref>` per unique primary source in the `<ref-list>`
+- Well-formedness verified with `xmllint --noout` when available; citation-leak gate clean (no `urn:mif:` string anywhere in the serialization)
+- MIF L1 identity in a public, scheme-free `<article-id>` element; internal `urn:mif:` URNs excluded from the article
+
 ### Enable
 
 ```sh
@@ -362,6 +474,8 @@ scripts/pack-toggle.sh jats on
 ## xbrl
 
 **Version:** 0.2.0 | **Kind:** channel | **MIF level:** L1 in XHTML head metadata (exempt)
+
+**Source:** [`packs/channels/xbrl/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/channels/xbrl)
 
 ### Purpose
 
@@ -396,6 +510,20 @@ tagged facts rather than prose.
 - Human-readable and machine-readable in one document — no separate rendering step
 - Source-grounded: every tagged fact traces to a surviving finding and its primary source
 
+### Constraints
+
+- Opt-in: disabled by default; enable with `scripts/pack-toggle.sh xbrl on`
+- Requires `jq`; writes XHTML directly with no external render engine
+- MIF-exempt from L3 conformance gate: inline XBRL is a regulatory serialization orthogonal to MIF L3; canonical L3 source of truth stays in the `report` channel
+- Built from the findings corpus and primary-source citations (SOURCES) only; never from a rendered report
+- Current SEC inline-XBRL taxonomy edition must be verified live before tagging; never asserted from memory
+
+### Goals
+
+- Produce a well-formed XHTML5 inline-XBRL document with quantified claims tagged as `ix:nonFraction`/`ix:nonNumeric` facts bound to current-taxonomy concepts
+- MIF L1 identity in the XHTML `<head>` metadata only; citation-leak gate clean (no internal identity in the visible body)
+- Every unique primary source cited in the document's References section; every `contextRef`/`unitRef` resolved to a declared context/unit
+
 ### Enable
 
 ```sh
@@ -407,6 +535,8 @@ scripts/pack-toggle.sh xbrl on
 ## ectd
 
 **Version:** 0.2.0 | **Kind:** channel | **MIF level:** L1 in backbone metadata (exempt)
+
+**Source:** [`packs/channels/ectd/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/channels/ectd)
 
 ### Purpose
 
@@ -442,6 +572,20 @@ single prose document.
 - Produces the regulatory module/backbone container expected by FDA eCTD tooling
 - Complete M1-M5 tree ensures no module is silently omitted from the submission
 - Backbone metadata embeds research identity and the resolved eCTD version
+
+### Constraints
+
+- Opt-in: disabled by default; enable with `scripts/pack-toggle.sh ectd on`
+- Requires `jq`; no external toolchain (module tree is `mkdir` and backbone is XML written directly)
+- MIF-exempt from L3 conformance gate: eCTD is a packaging/transport format orthogonal to MIF L3; canonical L3 source of truth stays in the `report` channel
+- Built from the findings corpus and primary-source citations (SOURCES) only; never from a rendered report
+- Current eCTD version must be resolved live before packaging (anchor: v4.0; never asserted from memory)
+
+### Goals
+
+- Produce a complete five-module eCTD tree (m1–m5) plus an XML backbone indexing every leaf
+- Live-resolved eCTD version stamped into the backbone's `ectd-version` attribute; MIF L1 identity in backbone metadata
+- Every surviving finding reflected in at least one module summary; every primary source cited; no internal identity in module leaf bodies
 
 ### Enable
 

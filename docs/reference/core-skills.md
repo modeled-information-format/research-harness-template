@@ -1,4 +1,5 @@
 ---
+title: "Reference: core skills"
 diataxis_type: reference
 ---
 

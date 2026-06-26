@@ -1,4 +1,5 @@
 ---
+title: "How to verify a release artifact"
 diataxis_type: how-to
 ---
 
@@ -7,7 +8,7 @@ diataxis_type: how-to
 This guide shows an adopter how to confirm that a downloaded release artifact
 genuinely came from this repository's release workflow and was not tampered
 with. It is the consumer side of the harness's attested-delivery policy. The
-authoritative policy is [`SECURITY.md`](../../SECURITY.md); this guide does not
+authoritative policy is [`SECURITY.md`](https://github.com/modeled-information-format/research-harness-template/blob/main/SECURITY.md); this guide does not
 restate it, it walks the procedure.
 
 ## What guarantees the artifact
@@ -49,7 +50,7 @@ the trusted build step cannot be swapped by a moved tag.
 
 2. Run the strict verification, pinning trust to both the repository **and** the
    signing workflow. This is the exact command from
-   [`SECURITY.md`](../../SECURITY.md):
+   [`SECURITY.md`](https://github.com/modeled-information-format/research-harness-template/blob/main/SECURITY.md):
 
    ```sh
    gh attestation verify research-harness-template-<version>.tar.gz \
@@ -77,5 +78,5 @@ workflow in the repository. Always pass both flags.
 
 Report security issues privately via
 [GitHub Security Advisories](https://github.com/modeled-information-format/research-harness-template/security/advisories/new),
-as stated in [`SECURITY.md`](../../SECURITY.md). Do not open a public issue for
+as stated in [`SECURITY.md`](https://github.com/modeled-information-format/research-harness-template/blob/main/SECURITY.md). Do not open a public issue for
 an undisclosed vulnerability.

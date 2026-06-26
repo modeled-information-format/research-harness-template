@@ -1,4 +1,5 @@
 ---
+title: "How to evolve a research goal"
 diataxis_type: how-to
 ---
 

@@ -1,4 +1,5 @@
 ---
+title: "The ontological spine — a cross-topic concordance"
 diataxis_type: explanation
 ---
 

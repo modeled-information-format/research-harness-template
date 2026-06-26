@@ -1,4 +1,5 @@
 ---
+title: "Reference: packs and plugins"
 diataxis_type: reference
 ---
 
@@ -19,30 +20,33 @@ exactly the skills it wants without adopting a whole family.
 
 ```text
 packs/
-├── reports/            # family: deliverable genres
+├── reports/            # family: deliverable genres (18 plugins)
 │   ├── exec-summary/   #   a plugin (one skill)
 │   ├── academic/
-│   ├── engineering/
-│   ├── trend-analysis/
-│   └── briefing/
-├── market-research/    # family: methodologies
+│   ├── briefing/
+│   └── …               #   15 more — see the Bundled inventory below
+├── market-research/    # family: methodologies (5 plugins)
 │   ├── competitive-analysis/
 │   ├── customer-research/
 │   ├── financial-analysis/
 │   ├── market-sizing/
 │   └── regulatory-review/
-├── channels/           # family: render adapters
+├── channels/           # family: render adapters (9 plugins)
 │   ├── book/
 │   ├── diataxis/
-│   ├── notebooklm/
 │   ├── pdf/
-│   ├── github-discuss/
-│   └── github-issues/
-├── trend-modeling/
+│   └── …               #   6 more — see the Bundled inventory below
+├── trend-modeling/     # family: scenario methodology (1 plugin)
 │   └── trend-modeling/
-└── ontologies/         # family: MIF entity/relationship extensions
-    └── <ontology>/
+└── ontologies/         # family: MIF entity/relationship extensions (10 plugins)
+    ├── scientific/
+    └── …               #   9 more — see the Bundled inventory below
 ```
+
+The harness bundles **43 pack plugins** across five families: 9 channels,
+5 market-research methodologies, 10 ontologies, 18 report genres, and
+1 trend-modeling methodology. The [Packs reference](packs/index.md) and the
+per-family pages document every one — its use, constraints, and goals.
 
 Each `packs/<family>/<plugin>/` is self-contained: a `.claude-plugin/plugin.json`
 (validated against `schemas/pack.schema.json`), a flat `skills/<skill>/SKILL.md`,
@@ -136,30 +140,37 @@ before `harness.config.json` can reference it by name.
 
 ## Bundled inventory
 
-Channels (`packs/channels/`):
+The harness bundles **43 pack plugins** across five families. Each family has a
+dedicated reference page documenting every component's purpose, constraints, and
+goals; the counts below match `ls packs/<family>/` exactly.
 
-| Plugin | Purpose |
-| --- | --- |
-| `book` | Long-form multi-chapter book from surviving findings |
-| `diataxis` | Full Diátaxis documentation set from a findings corpus |
-| `notebooklm` | NotebookLM assets (audio, slides, video, mind map) from sources |
-| `pdf` | Print-ready PDF rendered with pandoc from sources |
-| `github-discuss` | Publish a topic to GitHub Discussions from sources |
-| `github-issues` | Convert surviving findings into actionable GitHub issues |
+**Channels** — render adapters ([`packs/channels/`](packs/channels.md), 9 plugins):
+`book`, `diataxis`, `ectd`, `github-discuss`, `github-issues`, `jats`,
+`notebooklm`, `pdf`, `xbrl`.
 
-Report genres (`packs/reports/`, enabled by default):
+**Report genres** — deliverable templates ([`packs/reports/`](packs/reports.md),
+18 plugins; `academic`, `briefing`, `engineering`, `exec-summary`, and
+`trend-analysis` are enabled by default, the rest are opt-in):
+`academic`, `briefing`, `clinical-submission`, `competitive-quadrant`,
+`compliance-audit`, `computing-paper`, `engineering`, `exec-summary`,
+`humanities-chicago`, `humanities-mla`, `legal-memo`, `market-research-report`,
+`nist-sp`, `regulatory-disclosure`, `security-pentest`, `sustainability-report`,
+`systematic-review`, `trend-analysis`.
 
-| Plugin | Purpose |
-| --- | --- |
-| `exec-summary` | 1–2 page decision-oriented executive summary (BLUF) |
-| `academic` | Formal research report with formal citations |
-| `engineering` | Design / evaluation report (problem, options, decision) |
-| `trend-analysis` | Trajectory report (signals, scenarios over time) |
-| `briefing` | One-page briefing or standup update |
-
-Methodologies (`packs/market-research/`, `packs/trend-modeling/`):
+**Market-research methodologies** — research dimensions
+([`packs/market-research/`](packs/market-research.md), 5 plugins):
 `competitive-analysis`, `customer-research`, `financial-analysis`,
-`market-sizing`, `regulatory-review`, `trend-modeling`.
+`market-sizing`, `regulatory-review`.
+
+**Trend-modeling** — three-valued scenario methodology
+([`packs/trend-modeling/`](packs/trend-modeling.md), 1 plugin): `trend-modeling`.
+
+**Ontologies** — MIF entity/relationship/trait vocabularies
+([`packs/ontologies/`](packs/ontologies.md), 10 plugins):
+`biology-research-lab`, `data-engineering`, `market-research`,
+`regenerative-agriculture`, `regenerative-agriculture-research`,
+`regulatory-legal`, `scientific`, `software-engineering`, `software-security`,
+`trend-analysis`.
 
 The blog channel is a first-class, always-on harness output (not a pack). The
 report channel is the canonical MIF Level-3 source of truth.

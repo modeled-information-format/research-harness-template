@@ -1,4 +1,5 @@
 ---
+title: "The update-channel provenance model"
 diataxis_type: explanation
 ---
 

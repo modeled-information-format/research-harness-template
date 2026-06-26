@@ -1,4 +1,5 @@
 ---
+title: "How to import an existing corpus"
 diataxis_type: how-to
 ---
 

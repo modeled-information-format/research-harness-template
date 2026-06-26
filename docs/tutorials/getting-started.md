@@ -1,4 +1,5 @@
 ---
+title: "Getting started"
 diataxis_type: tutorial
 ---
 

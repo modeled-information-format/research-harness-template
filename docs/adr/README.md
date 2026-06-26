@@ -1,3 +1,7 @@
+---
+title: "Architectural Decision Records"
+---
+
 # Architectural Decision Records
 
 This directory records the architectural decisions behind the research-harness
