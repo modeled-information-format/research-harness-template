@@ -1165,7 +1165,7 @@ JSON
   $RO "$T/dis.json" --topic col --catalog "$T/coll.cat" --config "$T/coll.cfg" --map "$T/d.map" >/dev/null 2>&1; local dis=$?
   if [ "$gen" = 0 ] && [ "$genro" = "mif-generic@1.0.0" ] && [ "$tech" = 0 ] && [ "$techro" = "mif-generic@1.0.0" ] \
      && [ "$amb" != 0 ] && [ "$dis" = 0 ]; then
-    ok "generic core types every topic; deduped `technology` resolves unambiguously to mif-generic; a real collision is ambiguous without ontology.id"
+    ok 'generic core types every topic; deduped technology resolves unambiguously to mif-generic; a real collision is ambiguous without ontology.id'
   else
     bad "generic/dedup/ambiguity wrong (generic=$gen ro=$genro tech=$tech techro=$techro ambiguous=$amb disambiguated=$dis)"
   fi
