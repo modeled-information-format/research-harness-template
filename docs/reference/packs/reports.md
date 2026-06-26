@@ -569,6 +569,72 @@ scripts/pack-toggle.sh security-pentest on
 
 ---
 
+## market-research-report
+
+**Version:** 0.2.0 | **Kind:** genre
+
+### Purpose
+
+Produces a full market research report following the conventional ESOMAR/ISO 20252
+structure. Section order is fixed and enforced:
+
+1. **Background & Objectives** — commissioning context, business problem, research
+   objectives, and the scope and definitions of the market under study.
+2. **Methodology** — research design, sampling (frame, method, size), the instrument,
+   and fieldwork (mode, dates, response/completion). The verification gate is stated.
+3. **Findings** — the evidence, organized by objective, each claim tracing to a
+   finding's MIF `@id` and reporting its verification verdict.
+4. **Conclusions & Recommendations** — what the findings mean and the specific,
+   traceable recommendations that follow.
+5. **Technical Appendix** — full methodology detail (sampling, weighting, instrument,
+   fieldwork log), data-quality and limitations notes, and ISO 20252 quality notes.
+
+The report must carry the convention-not-standard caveat: **ESOMAR/ICC is an
+ethics/conduct code, not a format mandate.** The structure is conventional practice,
+not a codified report standard, and the report must not claim to "conform to the ESOMAR
+standard." ISO 20252 is under active revision (AI integration, 2024–2026); any ISO
+reference is anchored to "verify the current edition live." Falsified findings are
+excluded from the evidence and claims; weakened and inconclusive findings are retained
+with annotation, and the Methodology section states this verification policy. Internal
+MIF `@id` handles and `urn:mif:` URNs never appear in the rendered output.
+
+### When to use
+
+Use `market-research-report` when the deliverable is a complete market-research study
+write-up for clients or insights stakeholders who need a disclosed sampling and
+fieldwork basis, a traceable methodology, and actionable recommendations — not a short
+summary.
+
+### What it provides
+
+- Five-section structure (Background → Methodology → Findings → Conclusions &
+  Recommendations → Technical Appendix) with enforced order
+- Explicit sampling and fieldwork disclosure in the Methodology section
+- Technical appendix with methodology detail, data-quality notes, and ISO 20252 notes
+- Numbered or author-date citations resolving to a source list
+- The convention-not-standard caveat required in every rendered report
+
+### Dependencies
+
+None beyond the core engine.
+
+### Benefits
+
+- Enforced section order and required appendix make a complete, defensible study
+  structure verifiable without human review
+- Mandatory sampling and fieldwork disclosure keeps the evidence basis transparent
+- The convention-not-standard caveat prevents the report being mis-sold as conforming
+  to a codified ESOMAR standard, and the live-edition anchor keeps ISO 20252 references
+  from decaying
+
+### Enable
+
+```sh
+scripts/pack-toggle.sh market-research-report on
+```
+
+---
+
 ## trend-analysis
 
 **Version:** 0.3.0 | **Kind:** genre

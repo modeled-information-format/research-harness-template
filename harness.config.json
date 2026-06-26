@@ -185,6 +185,11 @@
       "name": "security-pentest",
       "enabled": false,
       "source": "bundled"
+    },
+    {
+      "name": "market-research-report",
+      "enabled": false,
+      "source": "bundled"
     }
   ],
   "ontologies": [

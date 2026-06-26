@@ -1,0 +1,329 @@
+{
+  "skill_name": "market-research-report",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Write a full ESOMAR/ISO 20252-style market research report from these survived findings. Topic: 'SMB adoption of AI bookkeeping tools'. Include all required sections in order and a technical appendix. The report must state the convention-not-standard caveat (ESOMAR/ICC is an ethics/conduct code, not a codified format standard). Write the report to market-research-report.md.\n\nFindings:\n- id: urn:mif:f_market_1 | title: Cost was the leading adoption driver, cited by 58% of adopters | dimension: landscape | verdict: survived | citation: https://example.com/smb-ai-bookkeeping-adoption | author: Acme Insights | year: 2026\n- id: urn:mif:f_market_2 | title: Trust in automated ledgers remained the dominant barrier among non-adopters | dimension: landscape | verdict: survived | citation: https://example.com/smb-trust-barrier-survey | author: Acme Insights | year: 2026\n- id: urn:mif:f_market_3 | title: Stratified random sample of n=620 SMB finance owners, fieldwork online 2026-04-02 to 2026-04-19 | dimension: technical | verdict: survived | citation: https://example.com/methodology-note | author: Acme Insights | year: 2026",
+      "expected_output": "A full market research report with all five sections in order: Background & Objectives, Methodology, Findings, Conclusions & Recommendations, Technical Appendix. The Methodology section discloses sampling and fieldwork. The report states that the ESOMAR/ICC structure is conventional practice and an ethics/conduct code, not a codified format standard, and does not claim ESOMAR conformance. No raw urn:mif: identifiers in prose. Numbered or author-date citations resolving to a source list.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "market-research-report.md",
+          "description": "Output file was created"
+        },
+        {
+          "type": "regex_match",
+          "file": "market-research-report.md",
+          "pattern": "(?i)background\\s*&?\\s*objectives|background",
+          "description": "Required Background & Objectives section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "market-research-report.md",
+          "pattern": "(?i)methodology|method",
+          "description": "Required Methodology section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "market-research-report.md",
+          "pattern": "(?i)findings|results",
+          "description": "Required Findings section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "market-research-report.md",
+          "pattern": "(?i)conclusions?\\s*&?\\s*recommendations?|conclusions?|recommendations?",
+          "description": "Required Conclusions & Recommendations section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "market-research-report.md",
+          "pattern": "(?i)technical appendix|appendix",
+          "description": "Required Technical Appendix section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "market-research-report.md",
+          "pattern": "(?is)background.{0,2500}methodology",
+          "description": "Section order: Background precedes Methodology"
+        },
+        {
+          "type": "regex_match",
+          "file": "market-research-report.md",
+          "pattern": "(?is)methodology.{0,2500}findings",
+          "description": "Section order: Methodology precedes Findings"
+        },
+        {
+          "type": "regex_match",
+          "file": "market-research-report.md",
+          "pattern": "(?is)findings.{0,2500}conclusions?",
+          "description": "Section order: Findings precedes Conclusions"
+        },
+        {
+          "type": "regex_match",
+          "file": "market-research-report.md",
+          "pattern": "(?is)conclusions?.{0,2500}appendix",
+          "description": "Section order: Conclusions precedes Technical Appendix"
+        },
+        {
+          "type": "regex_match",
+          "file": "market-research-report.md",
+          "pattern": "(?is)esomar.{0,400}(ethics|conduct|not a (codified )?(format )?standard|conventional practice)",
+          "description": "ESOMAR convention-not-standard caveat present in the report"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "market-research-report.md",
+          "literal": "urn:mif:",
+          "description": "No raw urn:mif: identifiers appear in the prose or body text"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "market-research-report.md",
+          "literal": "f_market_",
+          "description": "No internal MIF finding IDs appear in the prose"
+        }
+      ],
+      "expectations": [
+        {
+          "description": "The report states the ESOMAR convention-not-standard caveat and does not claim ESOMAR conformance",
+          "check": "transcript",
+          "criteria": "The report explicitly states that the ESOMAR/ICC structure is conventional practice and that ESOMAR/ICC is an ethics/conduct code rather than a codified format standard. It must NOT claim the report 'conforms to the ESOMAR standard'."
+        },
+        {
+          "description": "The Methodology section discloses sampling and fieldwork",
+          "check": "transcript",
+          "criteria": "The Methodology section discloses the sample (frame, method, size — e.g. stratified random sample, n=620) and the fieldwork basis (mode and dates). It does not gloss over how the data was gathered."
+        },
+        {
+          "description": "No raw urn:mif: identifiers or f_market_ internal IDs appear in the prose",
+          "check": "transcript",
+          "criteria": "The strings 'urn:mif:' and 'f_market_' must not appear as visible body text. Internal MIF IDs are resolved to numbered or author-date citations, never exposed to the reader."
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Produce a full market research report on 'consumer demand for plant-based dairy'. The finding set includes one falsified finding and one weakened finding — handle each according to the genre rules. Include the technical appendix and the convention-not-standard caveat. Write the report to market-research-report.md.\n\nFindings:\n- id: urn:mif:f_market_4 | title: 41% of surveyed consumers purchased a plant-based dairy product in the last 30 days | dimension: landscape | verdict: survived | citation: https://example.com/plant-dairy-purchase-incidence | author: Beta Research | year: 2025\n- id: urn:mif:f_market_5 | title: Plant-based dairy will reach 100% household penetration within three years | dimension: trajectory | verdict: falsified | citation: https://example.com/penetration-claim | author: Gamma Forecasts | year: 2025\n- id: urn:mif:f_market_6 | title: Price parity with conventional dairy is the single decisive switching factor | dimension: landscape | verdict: weakened | citation: https://example.com/price-parity-study | author: Delta Insights | year: 2025",
+      "expected_output": "A market research report that: (1) excludes the falsified finding (f_market_5 / 100% penetration claim — must not appear in Findings), (2) includes the weakened finding (f_market_6) but annotates it as weakened/uncertain, (3) includes the survived finding (f_market_4) as settled evidence, (4) maintains all five required sections in order plus the technical appendix, (5) states the convention-not-standard caveat.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "market-research-report.md",
+          "description": "Output file was created"
+        },
+        {
+          "type": "regex_match",
+          "file": "market-research-report.md",
+          "pattern": "(?i)methodology|method",
+          "description": "Methodology section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "market-research-report.md",
+          "pattern": "(?i)conclusions?|recommendations?",
+          "description": "Conclusions & Recommendations section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "market-research-report.md",
+          "pattern": "(?i)technical appendix|appendix",
+          "description": "Technical Appendix section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "market-research-report.md",
+          "pattern": "(?is)methodology.{0,2500}findings",
+          "description": "Section order: Methodology precedes Findings"
+        },
+        {
+          "type": "regex_match",
+          "file": "market-research-report.md",
+          "pattern": "(?is)findings.{0,2500}conclusions?",
+          "description": "Section order: Findings precedes Conclusions"
+        },
+        {
+          "type": "regex_match",
+          "file": "market-research-report.md",
+          "pattern": "(?is)conclusions?.{0,2500}appendix",
+          "description": "Section order: Conclusions precedes Technical Appendix"
+        },
+        {
+          "type": "regex_match",
+          "file": "market-research-report.md",
+          "pattern": "(?i)41%|plant.based|purchase",
+          "description": "Survived finding f_market_4 (purchase incidence) appears in the report"
+        },
+        {
+          "type": "regex_match",
+          "file": "market-research-report.md",
+          "pattern": "(?i)price parity|switching|delta",
+          "description": "Weakened finding f_market_6 (price parity) appears in the report (weakened = include with annotation, not exclude)"
+        },
+        {
+          "type": "regex_match",
+          "file": "market-research-report.md",
+          "pattern": "(?is)esomar.{0,400}(ethics|conduct|not a (codified )?(format )?standard|conventional practice)",
+          "description": "ESOMAR convention-not-standard caveat present in the report"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "market-research-report.md",
+          "literal": "urn:mif:",
+          "description": "No raw urn:mif: identifiers appear in the prose"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "market-research-report.md",
+          "literal": "f_market_",
+          "description": "No internal MIF finding IDs appear in the prose"
+        }
+      ],
+      "expectations": [
+        {
+          "description": "The falsified finding (Gamma Forecasts, 100% household penetration in three years) does NOT appear in the Findings section as evidence",
+          "check": "transcript",
+          "criteria": "The claim that plant-based dairy reaches 100% household penetration within three years must not appear as a supported finding. The Gamma Forecasts claim and the '100% penetration' figure must be absent from the Findings section. The falsified finding may only be mentioned in Methodology (describing exclusion policy) — never as evidence."
+        },
+        {
+          "description": "The weakened finding (Delta Insights, price parity decisive) is presented with an explicit uncertainty qualifier, not as settled fact",
+          "check": "transcript",
+          "criteria": "The price-parity finding must carry an inline qualifier such as 'weakened evidence suggests', 'preliminary', 'contested', or 'weakened verdict'. It must not be stated with the same confidence as the survived purchase-incidence finding."
+        },
+        {
+          "description": "The Methodology section states that falsified findings are excluded and weakened findings are annotated rather than dropped",
+          "check": "transcript",
+          "criteria": "The Methodology section describes the verification policy: falsified findings are excluded from evidence; weakened/inconclusive findings are retained with explicit annotation. This must be stated as methodology, not implied."
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Write a full market research report from these findings. Topic: 'B2B software buyer journey for mid-market CRM'. All four findings survived falsification. Citations are mandatory — every claim must trace to a finding. Include the technical appendix with ISO 20252 quality notes (verify current edition live) and the convention-not-standard caveat. Write the report to market-research-report.md.\n\nFindings:\n- id: urn:mif:f_market_7 | title: Median mid-market CRM evaluation cycle is 14 weeks across 320 surveyed buyers | dimension: landscape | verdict: survived | citation: https://example.com/crm-evaluation-cycle | author: Omega Analytics | year: 2026\n- id: urn:mif:f_market_8 | title: Reference checks are the most influential late-stage trust signal, cited by 62% of decision-makers | dimension: landscape | verdict: survived | citation: https://example.com/crm-trust-signals | author: Omega Analytics | year: 2026\n- id: urn:mif:f_market_9 | title: Integration breadth outranks price for buyers with more than 200 employees | dimension: landscape | verdict: survived | citation: https://example.com/crm-integration-vs-price | author: Omega Analytics | year: 2026\n- id: urn:mif:f_market_10 | title: Sampling was a stratified random draw of n=320 from a verified buyer panel, fieldwork 2026-03 | dimension: technical | verdict: survived | citation: https://example.com/crm-methodology | author: Omega Analytics | year: 2026",
+      "expected_output": "A complete market research report with all five sections in order plus the technical appendix. Every factual claim in Findings traces to one of the four supplied findings with a citation. The Methodology and Technical Appendix disclose the sampling and fieldwork and include ISO 20252 quality notes anchored to 'verify current edition live'. The convention-not-standard caveat is stated. No urn:mif: leakage in prose.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "market-research-report.md",
+          "description": "Output file was created"
+        },
+        {
+          "type": "regex_match",
+          "file": "market-research-report.md",
+          "pattern": "(?i)background\\s*&?\\s*objectives|background",
+          "description": "Background section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "market-research-report.md",
+          "pattern": "(?i)methodology|method",
+          "description": "Methodology section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "market-research-report.md",
+          "pattern": "(?i)findings|results",
+          "description": "Findings section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "market-research-report.md",
+          "pattern": "(?i)conclusions?|recommendations?",
+          "description": "Conclusions & Recommendations section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "market-research-report.md",
+          "pattern": "(?i)technical appendix|appendix",
+          "description": "Technical Appendix section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "market-research-report.md",
+          "pattern": "(?is)background.{0,2500}methodology",
+          "description": "Section order: Background precedes Methodology"
+        },
+        {
+          "type": "regex_match",
+          "file": "market-research-report.md",
+          "pattern": "(?is)methodology.{0,2500}findings",
+          "description": "Section order: Methodology precedes Findings"
+        },
+        {
+          "type": "regex_match",
+          "file": "market-research-report.md",
+          "pattern": "(?is)findings.{0,2500}conclusions?",
+          "description": "Section order: Findings precedes Conclusions"
+        },
+        {
+          "type": "regex_match",
+          "file": "market-research-report.md",
+          "pattern": "(?is)conclusions?.{0,2500}appendix",
+          "description": "Section order: Conclusions precedes Technical Appendix"
+        },
+        {
+          "type": "regex_match",
+          "file": "market-research-report.md",
+          "pattern": "(?i)14.week|evaluation cycle|320",
+          "description": "Finding f_market_7 (evaluation cycle) referenced in the report"
+        },
+        {
+          "type": "regex_match",
+          "file": "market-research-report.md",
+          "pattern": "(?i)reference check|62%|trust signal",
+          "description": "Finding f_market_8 (reference checks) referenced in the report"
+        },
+        {
+          "type": "regex_match",
+          "file": "market-research-report.md",
+          "pattern": "(?i)integration breadth|integration.*price|200 employees",
+          "description": "Finding f_market_9 (integration vs price) referenced in the report"
+        },
+        {
+          "type": "regex_match",
+          "file": "market-research-report.md",
+          "pattern": "(?i)iso\\s*20252",
+          "description": "ISO 20252 quality notes referenced in the Technical Appendix"
+        },
+        {
+          "type": "regex_match",
+          "file": "market-research-report.md",
+          "pattern": "(?is)esomar.{0,400}(ethics|conduct|not a (codified )?(format )?standard|conventional practice)",
+          "description": "ESOMAR convention-not-standard caveat present in the report"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "market-research-report.md",
+          "literal": "urn:mif:",
+          "description": "No raw urn:mif: identifiers appear in the body text or Findings section"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "market-research-report.md",
+          "literal": "f_market_",
+          "description": "No internal MIF finding ID handles leak into the output body"
+        }
+      ],
+      "expectations": [
+        {
+          "description": "No raw urn:mif: identifiers or f_market_N internal IDs appear in the body text",
+          "check": "transcript",
+          "criteria": "The strings 'urn:mif:', 'f_market_7', 'f_market_8', 'f_market_9', 'f_market_10' must not appear as visible prose. All references are numbered or author-date citations resolving to the source list."
+        },
+        {
+          "description": "The ISO 20252 reference is anchored to 'verify current edition live' rather than baking an edition in as fact",
+          "check": "transcript",
+          "criteria": "Any ISO 20252 reference in the Technical Appendix is qualified with a 'verify the current edition live' instruction, acknowledging the standard is under active revision (2024–2026). It does not assert a specific edition as settled fact."
+        },
+        {
+          "description": "The Technical Appendix discloses sampling and fieldwork and names at least one genuine limitation",
+          "check": "transcript",
+          "criteria": "The Technical Appendix states the sampling (stratified random, n=320) and fieldwork (2026-03) and names an honest limitation — e.g. single-panel scope, recall bias, or generalizability. It does not merely restate the Findings."
+        }
+      ]
+    }
+  ]
+}

@@ -127,6 +127,11 @@
       "name": "security-pentest",
       "source": "./packs/reports/security-pentest",
       "description": "[reports/genre] Genre template for a dual-audience PTES penetration-test report: an Executive Summary (posture, risk profile, recommendations, strategic roadmap) plus a Technical Report (information gathering, vulnerability assessment, exploitation, post-exploitation, risk/remediation per finding)"
+    },
+    {
+      "name": "market-research-report",
+      "source": "./packs/reports/market-research-report",
+      "description": "[reports/genre] Genre template for a full ESOMAR/ISO 20252-style market research report (background, methodology, findings, conclusions/recommendations, technical appendix); the ESOMAR/ICC structure is conventional practice, not a codified format standard"
     }
   ]
 }

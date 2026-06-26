@@ -38,6 +38,7 @@ For control-plane mechanics — enabling, disabling, and listing packs — see
 | humanities-chicago | reports | genre | Argumentative humanities essay (Chicago Notes-Bibliography) | none |
 | humanities-mla | reports | genre | Argumentative humanities essay (MLA author-page, Works Cited) | none |
 | security-pentest | reports | genre | Dual-audience PTES penetration-test report (executive summary + technical report) | none |
+| market-research-report | reports | genre | Full ESOMAR/ISO 20252-style market research report (convention, not a codified standard) | none |
 | trend-modeling | trend-modeling | methodology | Three-valued logic (INC/DEC/CONST) scenario modeling | @mermaid-js/mermaid-cli (optional) |
 | biology-research-lab | ontologies | ontology | Full research lab lifecycle entity vocabulary | none |
 | data-engineering | ontologies | ontology | Data engineering domain entity vocabulary | none |
