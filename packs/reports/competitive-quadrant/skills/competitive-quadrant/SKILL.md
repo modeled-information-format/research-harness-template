@@ -1,7 +1,7 @@
 ---
 name: competitive-quadrant
 description: Genre template for a two-axis competitive-quadrant report (Completeness of Vision x Ability to Execute, four quadrants, per-vendor strengths/cautions). Use when the deliverable ranks vendors in a market on two evaluation axes and places them into Leaders / Challengers / Visionaries / Niche Players.
-version: 0.2.0
+version: 0.3.0
 ---
 
 # Genre Template: Competitive Quadrant

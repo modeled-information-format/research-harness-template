@@ -122,10 +122,27 @@ must merge cleanly.
 ## Conventions that bite if missed
 
 - **Version bumps are manual and lockstep.** A release version is stamped in
-  `harness.config.json`, every core + pack `SKILL.md` frontmatter, every
-  `plugin.json`, `marketplace.json`, and the rendered `docs/reference/packs/*.md`.
+  `harness.config.json`, every core + pack `SKILL.md` frontmatter, every pack
+  `plugin.json`, `marketplace.json`, and the rendered
+  `docs/reference/packs/{channels,market-research,reports,trend-modeling}.md`.
   There is no bump script — change all of them together and re-run `verify.sh`
-  (the SKILL.md frontmatter gate). Releases are git-tag-driven (`release.yml`).
+  (the SKILL.md frontmatter gate fails if any stamp drifts from `harness.config`).
+  **The authoritative way to get the set right is to mirror the previous bump
+  commit** (`git show <prev-release-commit> --name-only`), expanded to packs added
+  since. **Do NOT touch these — they version independently of the template
+  release:** `packs/ontologies/**` (`ontology.pack.json` + `*.ontology.yaml` carry
+  their own `version`), `docs/reference/packs/ontologies.md`, and the
+  `software-security`/ontology version fixtures inside `scripts/verify.sh`. Also
+  leave CHANGELOG **history** lines, the `ontology-manager` `yq` example, and
+  ontology changelog comments alone — they reference past versions, not the stamp.
+  CHANGELOG follows Keep a Changelog: **insert a new `## [X.Y.Z] - YYYY-MM-DD`
+  header directly under `## [Unreleased]`** (do not overwrite the prior dated
+  section); the existing Unreleased items roll into it.
+- **Releases are GitHub-Release-driven, not bare-tag.** `release.yml` triggers on
+  `release: published` (+ `workflow_dispatch`), so a published Release named
+  `vX.Y.Z` is what fires SLSA attestation — `git push --tags` alone does not.
+  Land the lockstep bump on `main` first, then publish the `vX.Y.Z` Release at
+  that commit.
 - **Ephemeral artifacts go to `mktemp` outside the tree**, never into `reports/`.
   Only tracked data artifacts (findings, `knowledge-graph.json`,
   `concordance.json`, maps) belong in `reports/`. Writing derived output in-repo

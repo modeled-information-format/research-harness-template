@@ -16,7 +16,7 @@ For control-plane mechanics see [Packs and Plugins](../packs-and-plugins.md).
 
 ## competitive-analysis
 
-**Version:** 0.2.0 | **Kind:** methodology | **Dimension:** competitive
+**Version:** 0.3.0 | **Kind:** methodology | **Dimension:** competitive
 
 **Source:** [`packs/market-research/competitive-analysis/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/market-research/competitive-analysis)
 
@@ -76,7 +76,7 @@ scripts/pack-toggle.sh competitive-analysis on
 
 ## customer-research
 
-**Version:** 0.2.0 | **Kind:** methodology | **Dimension:** customer
+**Version:** 0.3.0 | **Kind:** methodology | **Dimension:** customer
 
 **Source:** [`packs/market-research/customer-research/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/market-research/customer-research)
 
@@ -136,7 +136,7 @@ scripts/pack-toggle.sh customer-research on
 
 ## financial-analysis
 
-**Version:** 0.2.0 | **Kind:** methodology | **Dimension:** financial
+**Version:** 0.3.0 | **Kind:** methodology | **Dimension:** financial
 
 **Source:** [`packs/market-research/financial-analysis/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/market-research/financial-analysis)
 
@@ -199,7 +199,7 @@ scripts/pack-toggle.sh financial-analysis on
 
 ## market-sizing
 
-**Version:** 0.2.0 | **Kind:** methodology | **Dimension:** sizing
+**Version:** 0.3.0 | **Kind:** methodology | **Dimension:** sizing
 
 **Source:** [`packs/market-research/market-sizing/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/market-research/market-sizing)
 
@@ -264,7 +264,7 @@ scripts/pack-toggle.sh market-sizing on
 
 ## regulatory-review
 
-**Version:** 0.2.0 | **Kind:** methodology | **Dimension:** regulatory
+**Version:** 0.3.0 | **Kind:** methodology | **Dimension:** regulatory
 
 **Source:** [`packs/market-research/regulatory-review/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/market-research/regulatory-review)
 

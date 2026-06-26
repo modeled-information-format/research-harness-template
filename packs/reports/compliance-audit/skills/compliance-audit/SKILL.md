@@ -1,7 +1,7 @@
 ---
 name: compliance-audit
 description: Genre template for DRAFTING/MODELING a SOC 2 Type II-shaped controls report (auditor's report, management's assertion, system description, Trust Services Criteria, tests of controls & results). Use when the deliverable models a service organization's controls against the Trust Services Criteria. This template reproduces the report STRUCTURE only — it never issues, implies, or substitutes for an attestation, assurance, or audit opinion.
-version: 0.2.0
+version: 0.3.0
 ---
 
 # Genre Template: Compliance Audit (SOC 2 Type II shape)

@@ -1,7 +1,7 @@
 ---
 name: diataxis-docs
 description: "Render a research topic's entire surviving findings corpus into a COMPLETE Diátaxis documentation set — a reference page per finding, a per-dimension explanation, how-to, and guided tutorial, plus landing/index pages — every page carrying MIF Level-1 frontmatter and a diataxis_type marker. An OPTIONAL channel pack (enable the `diataxis` pack). Use this skill when the user wants documentation for a research topic, a full docs set from the findings, or to publish the corpus as Diátaxis docs. Triggers on 'diataxis docs', 'documentation channel', 'render docs from research', 'document the findings', 'reference and explanation docs', 'generate the docs site'."
-version: 0.2.0
+version: 0.3.0
 argument-hint: "<findings-dir> <out-dir> [<topic-name>]"
 allowed-tools: Read, Bash, Glob, Grep
 ---

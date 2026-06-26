@@ -1,6 +1,6 @@
 {
   "name": "sustainability-report",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "kind": "genre",
   "description": "Genre template for a GRI-Standards sustainability/ESG report (GRI 1 Foundation, GRI 2 General Disclosures, GRI 3 Material Topics, topic standards across GRI 200/300/400, and a GRI content index)",
   "license": "MIT",

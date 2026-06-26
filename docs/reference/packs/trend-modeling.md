@@ -16,7 +16,7 @@ For control-plane mechanics see [Packs and Plugins](../packs-and-plugins.md).
 
 ## trend-modeling
 
-**Version:** 0.2.0 | **Kind:** methodology | **Dimension:** trend
+**Version:** 0.3.0 | **Kind:** methodology | **Dimension:** trend
 
 **Source:** [`packs/trend-modeling/trend-modeling/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/trend-modeling/trend-modeling)
 

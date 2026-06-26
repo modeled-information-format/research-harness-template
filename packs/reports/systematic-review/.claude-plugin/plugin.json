@@ -1,6 +1,6 @@
 {
   "name": "systematic-review",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "kind": "genre",
   "description": "Genre template for a PRISMA 2020 systematic review (structured abstract, methods, results with PRISMA flow diagram, discussion, registration)",
   "license": "MIT",

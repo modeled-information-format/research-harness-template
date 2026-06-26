@@ -1,7 +1,7 @@
 ---
 name: clinical-submission
 description: Genre template for a clinical study report on the ICH E3 skeleton — Synopsis, Ethics, Investigators/Structure, Objectives, Investigational Plan, Methods (efficacy & safety), Results, Discussion & Conclusions, Tables/Figures/Appendices — situated in the CTD five-module frame (M1–M5). Use when the deliverable must reproduce the clinical-study-report structure of a regulatory submission. Reproduces the submission structure only — not clinical validity or regulatory acceptance.
-version: 0.2.0
+version: 0.3.0
 ---
 
 # Genre Template: Clinical Study Report (ICH E3 / CTD)

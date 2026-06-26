@@ -1,7 +1,7 @@
 ---
 name: github-discuss
 description: "Publish a research topic to GitHub Discussions — an announcement of completed research, a Q&A thread about methodology, or a non-canonical observation. Grounded in the SOURCES (the findings corpus and their primary-source citations) — NEVER a rendered report. Optional channel; depends on the `gh` CLI. Use when the user says 'post to discussions', 'announce the research', 'create a discussion', or 'share the findings'."
-version: 0.2.0
+version: 0.3.0
 argument-hint: "<findings-dir> [--type announce|question|anecdotal] [--title \"...\"] [--repo owner/repo] [--dry-run] [--update]"
 allowed-tools: Read, Bash, Grep, Glob
 ---

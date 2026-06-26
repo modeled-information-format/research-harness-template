@@ -1,6 +1,6 @@
 {
   "name": "market-sizing",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "kind": "methodology",
   "description": "Use when the user asks to \"calculate market size\", \"TAM SAM SOM analysis\", \"estimate market opportunity\", \"market sizing\", \"total addressable market\", \"serviceable market\", \"market potential\", or needs market-size estimation methodologies,",
   "license": "MIT",

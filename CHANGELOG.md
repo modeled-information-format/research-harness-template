@@ -7,9 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-06-26
+
 ### Added
 
 - MIT `LICENSE` at the repo root (the template is now explicitly MIT-licensed).
+
+### Security
+
+- Remediated GHSA-h67p-54hq-rp68 / CVE-2026-53550 (quadratic-complexity DoS in
+  `js-yaml` YAML merge-key handling). `js-yaml` is forced to `>= 4.2.0` via an npm
+  `overrides` entry, and `gray-matter` — which hard-pins the unmaintained 3.x line
+  and pulled it transitively into the docs build — is patched with `patch-package`
+  (`yaml.safeLoad`/`safeDump` → `yaml.load`/`dump`, a faithful rename since those
+  are 4.x's safe variants). No upstream fix exists, so the committed lockfile is
+  pinned forward to keep instantiated harnesses clean.
 
 ## [0.2.0] - 2026-06-25
 

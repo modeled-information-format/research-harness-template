@@ -1,7 +1,7 @@
 ---
 name: discover
 description: "Discover gaps, clusters, and stale findings across the research corpus — dimensions with thin coverage, concepts and entities that co-occur through graph edges, and findings that are aging or carry a weakened/quarantined verdict. Use this skill when the user asks 'where are my gaps', 'what's stale', 'what clusters exist', 'research coverage', 'what am I missing', 'audit the corpus', 'what needs updating', 'coverage matrix', 'stale findings'."
-version: 0.2.0
+version: 0.3.0
 argument-hint: "[--gaps] [--clusters] [--stale] [--all]"
 allowed-tools: Read, Bash, Grep, Glob
 ---
