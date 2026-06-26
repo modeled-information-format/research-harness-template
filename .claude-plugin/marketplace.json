@@ -39,6 +39,11 @@
       "description": "[channels/channel] Produce a styled, print-ready PDF directly from the SOURCES — a topic's surviving findings and their primary-source citations, composed into a comprehensive document and rendered with pandoc, a title page, and Mermaid diagrams; never built from a rendered report"
     },
     {
+      "name": "jats",
+      "source": "./packs/channels/jats",
+      "description": "[channels/channel] Render a topic's surviving findings into well-formed JATS (NISO Z39.96) XML directly from the SOURCES \u2014 a scholarly article with article metadata, a body of one section per finding, and a back-matter reference list of the primary-source citations; never built from a rendered report"
+    },
+    {
       "name": "competitive-analysis",
       "source": "./packs/market-research/competitive-analysis",
       "description": "[market-research/methodology] Use when the user asks to \"analyze competitors\", \"map competitive landscape\", \"Porter's 5 Forces analysis\", \"competitor comparison\", \"competitive positioning\", \"identify competitors\", \"competitive intelligence\", or needs competitor research"

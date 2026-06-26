@@ -304,3 +304,52 @@ archival.
 ```sh
 scripts/pack-toggle.sh pdf on
 ```
+
+---
+
+## jats
+
+**Version:** 0.2.0 | **Kind:** channel | **MIF level:** L1 in JATS article metadata
+
+### Purpose
+
+Renders the surviving findings corpus into a well-formed JATS (NISO Z39.96) XML
+scholarly article. JATS is a machine-readable XML *serialization* of an article — a
+render target, the orthogonal analog of the `pdf` channel, not a `reports/` genre. The
+article is exhaustive: a `<front>`/`<article-meta>` block, a `<body>` of one `<sec>`
+per surviving finding (each linked to its primary source via `<xref ref-type="bibr">`),
+and a `<back>`/`<ref-list>` of the primary-source citations. Identity rides in a public,
+scheme-free `<article-id>` element — never the `urn:mif:` URN. The serialization is built from the SOURCES —
+the findings and their citations — never from a rendered report.
+
+### When to use
+
+Use `jats` when the deliverable must be a machine-readable scholarly-article XML
+suitable for journal submission, preprint servers, or archival interchange systems
+that ingest NISO Z39.96 JATS.
+
+### What it provides
+
+- One `<body>` `<sec>` per surviving finding with `<xref>` links to a `<ref-list>`
+- A `<back>`/`<ref-list>` of every unique primary-source citation
+- Identity in a public, scheme-free `<article-id>` element — never the `urn:mif:` URN, never in the rendered body
+- Live-verified JATS version anchoring (v1.4, Oct 2024 at this writing)
+
+### Dependencies
+
+- `jq`
+- `xmllint` for well-formedness checking (optional)
+
+### Benefits
+
+- Produces a standard, interchange-ready XML serialization without requiring the
+  recipient to have the harness installed
+- Exhaustive one-section-per-finding structure ensures no finding is silently omitted
+- MIF L1 metadata embeds research identity in the article itself, while the
+  citation-leak gate keeps internal identity out of the rendered body
+
+### Enable
+
+```sh
+scripts/pack-toggle.sh jats on
+```

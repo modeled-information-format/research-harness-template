@@ -1,0 +1,22 @@
+{
+  "name": "jats",
+  "version": "0.2.0",
+  "kind": "channel",
+  "mif": {
+    "exempt": true,
+    "reason": "JATS (NISO Z39.96) is a machine-readable XML serialization of a scholarly article — a render target orthogonal to MIF Level-3 markdown structure, exactly like the pdf/book channels. It is composed directly from the SOURCES — the findings corpus and its primary-source citations — never from a rendered report, and carries the topic's MIF Level-1 identity in its article metadata. The MIF Level-3 source of truth lives in the generic report channel; the citation-leak gate still applies to the rendered body."
+  },
+  "description": "Render a topic's surviving findings into well-formed JATS (NISO Z39.96) XML directly from the SOURCES — the findings corpus and the primary materials its citations point to. Composes a scholarly article (article metadata, body, and a back-matter reference list) and serializes it as JATS XML. Never built from a rendered report.",
+  "license": "MIT",
+  "author": {
+    "name": "zircote"
+  },
+  "provides": {
+    "skills": [
+      "jats"
+    ],
+    "channels": [
+      "jats"
+    ]
+  }
+}

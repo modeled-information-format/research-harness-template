@@ -1,0 +1,196 @@
+{
+  "skill_name": "jats",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Render the research findings in ./findings into a JATS (NISO Z39.96) XML article and save it to ./article.xml. Build it from the findings and their cited primary sources — never from a rendered report. Compose a scholarly article with article metadata, a body of one section per surviving finding, and a back-matter reference list of the primary sources.",
+      "expected_output": "The skill loads the surviving findings, composes well-formed JATS XML grounded in the findings + their primary-source citations (NOT a rendered report): a root <article> with <front>/<article-meta>, a <body> of one <sec> per finding, and <back>/<ref-list> of the primary sources. No internal-research identity leaks into the body.",
+      "files": [
+        {
+          "path": "findings/finding-copier.json",
+          "content": "{\"@context\":\"https://mif-spec.dev/schema/context.jsonld\",\"@type\":\"Concept\",\"@id\":\"urn:mif:concept:harness:f_technical_1\",\"conceptType\":\"semantic\",\"title\":\"Copier provides update propagation to instantiated projects\",\"content\":\"Copier re-applies later template changes to an already-instantiated project via a three-way merge.\",\"created\":\"2026-06-22T00:00:00Z\",\"namespace\":\"harness/eval\",\"citations\":[{\"@type\":\"Citation\",\"citationType\":\"documentation\",\"citationRole\":\"supports\",\"title\":\"Copier — Updating a project\",\"url\":\"https://copier.readthedocs.io/en/stable/updating/\"}],\"extensions\":{\"harness\":{\"dimension\":\"technical\",\"verification\":{\"verdict\":\"survived\",\"verdict_basis\":\"Disconfirming search found no credible refutation.\"}}}}\n"
+        },
+        {
+          "path": "findings/finding-cookiecutter.json",
+          "content": "{\"@context\":\"https://mif-spec.dev/schema/context.jsonld\",\"@type\":\"Concept\",\"@id\":\"urn:mif:concept:harness:f_landscape_2\",\"conceptType\":\"semantic\",\"title\":\"Cookiecutter is a one-time snapshot with no upstream path\",\"content\":\"Cookiecutter generates a project once; there is no supported mechanism to re-apply later template changes.\",\"created\":\"2026-06-22T00:00:00Z\",\"namespace\":\"harness/eval\",\"citations\":[{\"@type\":\"Citation\",\"citationType\":\"documentation\",\"citationRole\":\"supports\",\"title\":\"Cookiecutter docs\",\"url\":\"https://cookiecutter.readthedocs.io/\"}],\"extensions\":{\"harness\":{\"dimension\":\"landscape\",\"verification\":{\"verdict\":\"survived\",\"verdict_basis\":\"Disconfirming search found no credible refutation.\"}}}}\n"
+        }
+      ],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "article.xml",
+          "description": "A JATS XML article was written"
+        },
+        {
+          "type": "regex_match",
+          "file": "article.xml",
+          "pattern": "<article[\\s>]",
+          "description": "The output has a root <article> element"
+        },
+        {
+          "type": "regex_match",
+          "file": "article.xml",
+          "pattern": "<front>[\\s\\S]*<article-meta>",
+          "description": "The article carries <front>/<article-meta> metadata"
+        },
+        {
+          "type": "regex_match",
+          "file": "article.xml",
+          "pattern": "<body>",
+          "description": "The article has a <body>"
+        },
+        {
+          "type": "regex_match",
+          "file": "article.xml",
+          "pattern": "<back>[\\s\\S]*<ref-list>",
+          "description": "The article has a <back>/<ref-list> reference list"
+        },
+        {
+          "type": "regex_match",
+          "file": "article.xml",
+          "pattern": "copier\\.readthedocs\\.io",
+          "description": "The reference list cites the findings' primary sources"
+        },
+        {
+          "type": "regex_not_match",
+          "file": "article.xml",
+          "pattern": "urn:mif:",
+          "description": "No internal MIF identity (any urn:mif: string) leaks into the rendered JATS file"
+        },
+        {
+          "type": "regex_not_match",
+          "file": "article.xml",
+          "pattern": "\\bf_[a-z]+_[0-9]+\\b",
+          "description": "No internal f_<dimension>_<n> finding handles leak into the rendered body"
+        }
+      ],
+      "expectations": [
+        {
+          "description": "The JATS article is built from the findings and their primary sources, not from a rendered report",
+          "check": "transcript",
+          "criteria": "The response/transcript shows the skill reading the findings JSON and composing the JATS XML from them + their citation URLs — it does not read or serialize a pre-rendered report.md"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Render the findings in ./findings to JATS XML at ./article.xml. Every surviving finding must appear as a <sec> in the <body>, each linked to its primary source via an <xref ref-type=\"bibr\"> into a <back>/<ref-list> <ref> entry. Verify the current NISO Z39.96 (JATS) version before tagging and record the chosen dtd-version on the root element.",
+      "expected_output": "Well-formed JATS XML: a <body> with one <sec> per surviving finding, each <sec> with a <title> claim and <p> content, an <xref ref-type=\"bibr\"> linking to a <ref> in <back>/<ref-list>, and a dtd-version attribute on <article>. The skill confirms the live JATS version (v1.4, Oct 2024).",
+      "files": [
+        {
+          "path": "findings/finding-1.json",
+          "content": "{\"@context\":\"https://mif-spec.dev/schema/context.jsonld\",\"@type\":\"Concept\",\"@id\":\"urn:mif:concept:harness:f-1\",\"conceptType\":\"semantic\",\"title\":\"Finding one\",\"content\":\"A verified claim grounded in a primary source.\",\"created\":\"2026-06-22T00:00:00Z\",\"namespace\":\"harness/eval\",\"citations\":[{\"@type\":\"Citation\",\"citationType\":\"website\",\"citationRole\":\"supports\",\"title\":\"Source\",\"url\":\"https://example.com/source\"}],\"extensions\":{\"harness\":{\"dimension\":\"technical\",\"verification\":{\"verdict\":\"survived\",\"verdict_basis\":\"Disconfirming search found no credible refutation.\"}}}}\n"
+        }
+      ],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "article.xml",
+          "description": "A JATS XML article was written"
+        },
+        {
+          "type": "regex_match",
+          "file": "article.xml",
+          "pattern": "dtd-version=",
+          "description": "The root <article> records a JATS dtd-version"
+        },
+        {
+          "type": "regex_match",
+          "file": "article.xml",
+          "pattern": "<sec>[\\s\\S]*<title>",
+          "description": "The body has a <sec> with a <title> for the finding"
+        },
+        {
+          "type": "regex_match",
+          "file": "article.xml",
+          "pattern": "<xref[^>]*ref-type=\"bibr\"",
+          "description": "Each claim links to its citation via an <xref ref-type=\"bibr\">"
+        },
+        {
+          "type": "regex_match",
+          "file": "article.xml",
+          "pattern": "example\\.com/source",
+          "description": "The reference list cites the finding's primary source"
+        },
+        {
+          "type": "regex_not_match",
+          "file": "article.xml",
+          "pattern": "urn:mif:",
+          "description": "No internal MIF identity (any urn:mif: string) leaks into the rendered JATS file"
+        },
+        {
+          "type": "regex_not_match",
+          "file": "article.xml",
+          "pattern": "\\bf_[a-z]+_[0-9]+\\b",
+          "description": "No internal f_<dimension>_<n> finding handles leak into the rendered body"
+        }
+      ],
+      "expectations": [
+        {
+          "description": "The skill verifies the live JATS version before tagging",
+          "check": "transcript",
+          "criteria": "The transcript shows the skill confirming the current NISO Z39.96 / JATS version (v1.4, Oct 2024) rather than trusting a cached version string"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Render the findings in ./findings to JATS XML at ./article.xml. One finding is falsified and must be excluded. The article body must contain only the surviving finding, and the back-matter <ref-list> must list only its primary source.",
+      "expected_output": "The skill excludes the falsified finding, emitting a JATS article whose <body> contains only the surviving finding's <sec> and whose <back>/<ref-list> cites only its primary source. The falsified finding's claim text and citation do not appear.",
+      "files": [
+        {
+          "path": "findings/finding-survived.json",
+          "content": "{\"@context\":\"https://mif-spec.dev/schema/context.jsonld\",\"@type\":\"Concept\",\"@id\":\"urn:mif:concept:harness:f_technical_3\",\"conceptType\":\"semantic\",\"title\":\"Surviving claim about XML interchange\",\"content\":\"JATS provides a common XML format for exchanging journal content.\",\"created\":\"2026-06-22T00:00:00Z\",\"namespace\":\"harness/eval\",\"citations\":[{\"@type\":\"Citation\",\"citationType\":\"documentation\",\"citationRole\":\"supports\",\"title\":\"NISO Z39.96 JATS\",\"url\":\"https://www.niso.org/publications/z3996-2024-jats\"}],\"extensions\":{\"harness\":{\"dimension\":\"technical\",\"verification\":{\"verdict\":\"survived\",\"verdict_basis\":\"Disconfirming search found no credible refutation.\"}}}}\n"
+        },
+        {
+          "path": "findings/finding-falsified.json",
+          "content": "{\"@context\":\"https://mif-spec.dev/schema/context.jsonld\",\"@type\":\"Concept\",\"@id\":\"urn:mif:concept:harness:f_technical_4\",\"conceptType\":\"semantic\",\"title\":\"Refuted claim about a proprietary lock\",\"content\":\"JATS requires a proprietary license to read.\",\"created\":\"2026-06-22T00:00:00Z\",\"namespace\":\"harness/eval\",\"citations\":[{\"@type\":\"Citation\",\"citationType\":\"website\",\"citationRole\":\"supports\",\"title\":\"Refuted source\",\"url\":\"https://refuted.example.org/wrong\"}],\"extensions\":{\"harness\":{\"dimension\":\"technical\",\"verification\":{\"verdict\":\"falsified\",\"verdict_basis\":\"Disconfirming search found the claim is false.\"}}}}\n"
+        }
+      ],
+      "deterministic_checks": [
+        {
+          "type": "file_exists",
+          "file": "article.xml",
+          "description": "A JATS XML article was written"
+        },
+        {
+          "type": "regex_match",
+          "file": "article.xml",
+          "pattern": "<body>[\\s\\S]*<sec>",
+          "description": "The body contains the surviving finding section"
+        },
+        {
+          "type": "regex_match",
+          "file": "article.xml",
+          "pattern": "niso\\.org/publications/z3996",
+          "description": "The reference list cites the surviving finding's primary source"
+        },
+        {
+          "type": "regex_not_match",
+          "file": "article.xml",
+          "pattern": "refuted\\.example\\.org",
+          "description": "The falsified finding's primary source is excluded"
+        },
+        {
+          "type": "regex_not_match",
+          "file": "article.xml",
+          "pattern": "urn:mif:",
+          "description": "No internal MIF identity (any urn:mif: string) leaks into the rendered JATS file"
+        },
+        {
+          "type": "regex_not_match",
+          "file": "article.xml",
+          "pattern": "\\bf_[a-z]+_[0-9]+\\b",
+          "description": "No internal f_<dimension>_<n> finding handles leak into the rendered body"
+        }
+      ],
+      "expectations": [
+        {
+          "description": "The skill excludes falsified findings from the rendered article",
+          "check": "transcript",
+          "criteria": "The transcript shows the skill filtering on verification.verdict so the falsified finding is omitted from both the body and the reference list"
+        }
+      ]
+    }
+  ]
+}
