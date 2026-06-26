@@ -21,6 +21,7 @@ ok()  { echo "PASS: $1"; pass=$((pass+1)); }
 no()  { echo "FAIL: $1"; fail=$((fail+1)); }
 
 ROOT=$(mktemp -d "${TMPDIR:-/tmp}/update-eval.XXXXXX"); trap 'rm -rf "$ROOT"' EXIT
+DRIFTED_SRC="gh:zircote/research-harness-template"
 
 # --- hermetic upstream: a repo with a tagged commit, served from a bare clone ---
 UP_SRC="$ROOT/upstream"; mkdir -p "$UP_SRC"
@@ -110,10 +111,10 @@ if ! git diff --quiet || ! git diff --cached --quiet; then
 fi
 echo "copier \$*" > "$ROOT/copier_invoked"
 # Simulate real copier update: it rewrites .copier-answers.yml itself, including the
-# current _src_path line. This plus the clean-tree refusal makes the eval sensitive to
-# update.sh moving the _src_path heal before copier update.
+# current drifted _src_path line. This plus the clean-tree refusal makes the eval
+# sensitive to update.sh moving the _src_path heal before copier update.
 if [ -f .copier-answers.yml ]; then
-  awk '/^_src_path:/{print "_src_path: gh:zircote/research-harness-template"; next}
+  awk -v drifted_src="$DRIFTED_SRC" '/^_src_path:/{print "_src_path: " drifted_src; next}
        /^_commit:/{print "_commit: v9.9.9"; next}
        {print}' .copier-answers.yml > .copier-answers.yml.t \
     && mv .copier-answers.yml.t .copier-answers.yml
@@ -128,7 +129,7 @@ mk_clone() { # -> a clean clone dir with .copier-answers.yml and update.sh copie
   cp "$UPDATE_SH" "$c/scripts/update.sh"   # update.sh runs from within the clone (it cd's to its own ../)
   git -C "$c" init -q; git -C "$c" config user.email t@t.t; git -C "$c" config user.name t
   # Drifted origin (pre-org-move): a successful update must heal _src_path to the pinned root.
-  printf '_src_path: gh:zircote/research-harness-template\n_commit: v0.1.0\n' > "$c/.copier-answers.yml"
+  printf '_src_path: %s\n_commit: v0.1.0\n' "$DRIFTED_SRC" > "$c/.copier-answers.yml"
   git -C "$c" add -A; git -C "$c" commit -q -m init
   echo "$c"
 }
@@ -174,12 +175,14 @@ fi
 # 4. local MISS + release PASS + metadata mismatch -> refused
 C=$(mk_clone); rm -f "$ROOT/copier_invoked"
 MISMATCH="$ROOT/mismatch"; rm -rf "$MISMATCH"; mkdir -p "$MISMATCH/research-harness-template-v9.9.9"
-printf "template content v9\n" > "$MISMATCH/research-harness-template-v9.9.9/file.txt"
+cp "$UP_SRC/file.txt" "$MISMATCH/research-harness-template-v9.9.9/file.txt"
+# Intentionally flip the exec bit while keeping the file content/path the same so the
+# fallback's mode/type guard (not the content diff) is what refuses the artifact.
 chmod 755 "$MISMATCH/research-harness-template-v9.9.9/file.txt"
 tar -C "$MISMATCH" -cf - research-harness-template-v9.9.9 | gzip > "$ROOT/release/$ASSET"
 ERR="$ROOT/test4.err"
 run "$C" fail pass >/dev/null 2>"$ERR"; rc=$?
-{ [ "$rc" != 0 ] && [ ! -f "$ROOT/copier_invoked" ] && grep -q "release asset metadata does not match pinned commit" "$ERR"; } \
+{ [ "$rc" != 0 ] && [ ! -f "$ROOT/copier_invoked" ] && grep -q "release asset mode string does not match pinned commit" "$ERR"; } \
   && ok "fallback metadata mismatch refused (exit $rc, copier NOT invoked)" \
   || no "fallback metadata mismatch not refused (rc=$rc, copier_invoked=$( [ -f "$ROOT/copier_invoked" ] && echo yes || echo no ), err='$(cat "$ERR" 2>/dev/null)')"
 

@@ -104,7 +104,7 @@ verify_attestation() {
     --signer-workflow "$SIGNER_WORKFLOW"
 }
 
-path_mode() {
+ls_mode_string() {
   LC_ALL=C ls -ld "$1" | awk '{print $1}'
 }
 
@@ -181,12 +181,14 @@ if ! verify_attestation "$LOCAL_ARTIFACT"; then
       find . -mindepth 1 -print | LC_ALL=C sort
   ) > "$PINNED_PATHS"
   diff -u "$RELEASE_PATHS" "$PINNED_PATHS" >/dev/null \
-    || { echo "update.sh: release asset metadata does not match pinned commit ${SHA} — refusing to update (nothing applied)" >&2; exit 1; }
+    || { echo "update.sh: release asset paths do not match pinned commit ${SHA} — refusing to update (nothing applied)" >&2; exit 1; }
   while IFS= read -r rel; do
     release_path="${RELEASE_TREE}/${NAME}-${TARGET_TAG}/${rel#./}"
     pinned_path="${PINNED_TREE}/${NAME}-${TARGET_TAG}/${rel#./}"
-    [ "$(path_mode "$release_path")" = "$(path_mode "$pinned_path")" ] \
-      || { echo "update.sh: release asset metadata does not match pinned commit ${SHA} — refusing to update (nothing applied)" >&2; exit 1; }
+    [ -e "$release_path" ] && [ -e "$pinned_path" ] \
+      || { echo "update.sh: release asset paths do not match pinned commit ${SHA} — refusing to update (nothing applied)" >&2; exit 1; }
+    [ "$(ls_mode_string "$release_path")" = "$(ls_mode_string "$pinned_path")" ] \
+      || { echo "update.sh: release asset mode string does not match pinned commit ${SHA} — refusing to update (nothing applied)" >&2; exit 1; }
   done < "$RELEASE_PATHS"
   diff -qr "${RELEASE_TREE}/${NAME}-${TARGET_TAG}" "${PINNED_TREE}/${NAME}-${TARGET_TAG}" >/dev/null \
     || { echo "update.sh: release asset content does not match pinned commit ${SHA} — refusing to update (nothing applied)" >&2; exit 1; }
