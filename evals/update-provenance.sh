@@ -21,7 +21,7 @@ ok()  { echo "PASS: $1"; pass=$((pass+1)); }
 no()  { echo "FAIL: $1"; fail=$((fail+1)); }
 
 ROOT=$(mktemp -d "${TMPDIR:-/tmp}/update-eval.XXXXXX"); trap 'rm -rf "$ROOT"' EXIT
-DRIFTED_SRC="gh:zircote/research-harness-template"
+DRIFTED_SRC="gh:modeled-information-format/research-harness-template"
 
 # --- hermetic upstream: a repo with a tagged commit, served from a bare clone ---
 UP_SRC="$ROOT/upstream"; mkdir -p "$UP_SRC"

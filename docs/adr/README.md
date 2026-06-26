@@ -5,7 +5,7 @@ title: "Architectural Decision Records"
 # Architectural Decision Records
 
 This directory records the architectural decisions behind the research-harness
-template, using the [Structured MADR (SMADR)](https://github.com/zircote/structured-madr)
+template, using the [Structured MADR (SMADR)](https://github.com/modeled-information-format/structured-madr)
 format — MADR enriched with structured YAML frontmatter, per-option risk
 assessment, and an audit trail. Each record captures one decision: its context,
 the options weighed, the outcome, the consequences, and an audit of how the

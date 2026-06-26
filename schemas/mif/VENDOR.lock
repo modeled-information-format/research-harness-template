@@ -1,5 +1,5 @@
 {
-  "source": "github.com/zircote/MIF",
+  "source": "github.com/modeled-information-format/MIF",
   "commit": "031ad2a",
   "note": "MIF ontology contract + definitions are vendored-as-seed and FULLY UNLOCKED (verbatim:false, nothing checksum-gated): the contract is first-class and evolves in-repo (e.g. subtype_of) on its way back to MIF. gate_m12 re-validates every ontology against the contract; checksums here are provenance seeds, not a lock.",
   "files": [

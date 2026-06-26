@@ -20,7 +20,7 @@ on clone.
 ## MIF is the spine
 
 There is one authoritative interchange format for findings *and* the knowledge
-graph: [MIF](https://github.com/zircote/MIF) (§6c). A finding is a MIF memory
+graph: [MIF](https://github.com/modeled-information-format/MIF) (§6c). A finding is a MIF memory
 unit; the knowledge graph is MIF EntityReferences and typed relationships;
 citations are MIF Citation objects; provenance is the MIF W3C-PROV block. This
 collapses the prior schema drift into one machine-validated contract and makes

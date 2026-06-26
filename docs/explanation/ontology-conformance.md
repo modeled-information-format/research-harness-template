@@ -22,7 +22,7 @@ binding/catalog link, or broken (missing/invalid) `VENDOR.lock` provenance.
 ## Vendored from MIF, not invented
 
 The **contract** (`schemas/mif/ontology.schema.json` + context) was seeded from
-`github.com/zircote/MIF`, with provenance (source, commit, seed SHA-256) recorded in
+`github.com/modeled-information-format/MIF`, with provenance (source, commit, seed SHA-256) recorded in
 `schemas/mif/VENDOR.lock`. **Nothing is locked** — the contract is first-class and
 evolves in-repo (e.g. the `subtype_of` entity-type subsumption field) on its way back
 to MIF; `gate_m12` asserts no file is verbatim-locked. The base ontologies (`mif-base`,
