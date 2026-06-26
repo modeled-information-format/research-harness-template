@@ -84,6 +84,11 @@
       "description": "[reports/genre] Genre template for a 1-2 page decision-oriented executive summary (BLUF, key findings, recommendation, risks)"
     },
     {
+      "name": "sustainability-report",
+      "source": "./packs/reports/sustainability-report",
+      "description": "[reports/genre] Genre template for a GRI-Standards sustainability/ESG report (GRI 1 Foundation, GRI 2 General Disclosures, GRI 3 Material Topics, GRI 200/300/400 topic standards, GRI content index)"
+    },
+    {
       "name": "trend-analysis",
       "source": "./packs/reports/trend-analysis",
       "description": "[reports/genre] Genre template for a trajectory report (trajectory, signals, scenarios over time)"

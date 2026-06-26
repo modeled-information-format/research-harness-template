@@ -142,6 +142,11 @@
       "source": "bundled"
     },
     {
+      "name": "sustainability-report",
+      "enabled": false,
+      "source": "bundled"
+    },
+    {
       "name": "trend-analysis",
       "enabled": true,
       "source": "bundled"

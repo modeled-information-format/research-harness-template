@@ -347,6 +347,51 @@ scripts/pack-toggle.sh clinical-submission on
 
 ---
 
+## sustainability-report
+
+**Version:** 0.2.0 | **Kind:** genre
+
+### Purpose
+
+Produces a GRI-Standards sustainability/ESG report from the surviving findings corpus:
+GRI 1 Foundation, GRI 2 General Disclosures, GRI 3 Material Topics, topic-standard
+disclosures across the GRI 200 (economic) / 300 (environmental) / 400 (social) series, and
+a GRI content index mapping every disclosure to its location.
+
+### When to use
+
+Use `sustainability-report` when the deliverable must present sustainability information in
+the GRI structure for ESG analysts, investors, regulators, or stakeholders. It does not
+assert assurance, third-party verification, or full "in accordance with GRI" conformance —
+the genre reproduces the GRI structure, not GRI-assured reporting.
+
+### What it provides
+
+- Five-part GRI structure ending in the distinguishing GRI content-index table
+- Materiality determination in GRI 3 (how material topics were identified and prioritized)
+- Disclosure-indexed references, each resolving to a MIF finding `@id` + URL
+- Verdict-aware handling (weakened annotated, falsified excluded); reporting boundary stated
+
+### Dependencies
+
+None beyond the core engine.
+
+### Benefits
+
+- The GRI content index gives readers a single map from every disclosure to its location
+  and the evidence behind it
+- GRI 3 materiality determination forces an explicit, defensible topic selection rather
+  than an arbitrary list
+- The explicit scope caveat prevents over-claiming assurance the evidence does not support
+
+### Enable
+
+```sh
+scripts/pack-toggle.sh sustainability-report on
+```
+
+---
+
 ## trend-analysis
 
 **Version:** 0.2.0 | **Kind:** genre

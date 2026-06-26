@@ -34,6 +34,7 @@ For control-plane mechanics — enabling, disabling, and listing packs — see
 | legal-memo | reports | genre | Predictive legal memorandum (IRAC, Bluebook citations) | none |
 | trend-analysis | reports | genre | Trajectory report with scenario diagrams | @mermaid-js/mermaid-cli (optional) |
 | regulatory-disclosure | reports | genre | SEC-style annual disclosure report (Reg S-K / Form 10-K item order) | none |
+| sustainability-report | reports | genre | GRI-Standards sustainability/ESG report with content index | none |
 | trend-modeling | trend-modeling | methodology | Three-valued logic (INC/DEC/CONST) scenario modeling | @mermaid-js/mermaid-cli (optional) |
 | biology-research-lab | ontologies | ontology | Full research lab lifecycle entity vocabulary | none |
 | data-engineering | ontologies | ontology | Data engineering domain entity vocabulary | none |
