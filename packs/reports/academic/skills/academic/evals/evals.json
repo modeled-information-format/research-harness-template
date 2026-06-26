@@ -275,6 +275,104 @@
           "criteria": "The Discussion section includes an honest limitation: e.g., benchmark generalizability, dataset scope (HotpotQA is a single benchmark), hardware or corpus dependencies of chunk-size findings, or open questions about real-world vs. benchmark performance. It does not merely recount what the Findings section established."
         }
       ]
+    },
+    {
+      "id": 4,
+      "prompt": "Write a formal academic research report from these survived findings in IMRaD/Vancouver mode — use NUMBERED in-text citations [1], [2] resolving to a numerically ordered reference list, NOT author-date. Topic: \"sleep duration and cognitive performance\". Include all required sections. Write the report to academic-report.md.\n\nFindings:\n- id: urn:mif:f_sleep_1 | title: Sleep restriction below 6 hours impairs working memory in controlled trials | dimension: clinical | verdict: survived | citation: https://example.com/sleep-wm | author: Walker | year: 2023\n- id: urn:mif:f_sleep_2 | title: Recovery sleep only partially restores attention after chronic restriction | dimension: clinical | verdict: survived | citation: https://example.com/recovery-sleep | author: Van Dongen | year: 2024\n- id: urn:mif:f_sleep_3 | title: Individual differences moderate vulnerability to sleep loss | dimension: clinical | verdict: survived | citation: https://example.com/individual-diff | author: Patanaik | year: 2025",
+      "expected_output": "An academic report with all six sections in order, using NUMBERED Vancouver citations ([1], [2], [3]) in text resolving to a numerically ordered References list — NOT author-date parentheticals. No urn:mif: leakage.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "regex_match",
+          "file": "academic-report.md",
+          "pattern": "(?i)abstract",
+          "description": "Abstract section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "academic-report.md",
+          "pattern": "(?i)method|methodology",
+          "description": "Method section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "academic-report.md",
+          "pattern": "(?i)background|related context|related work",
+          "description": "Background/Related Context section present (full six-section coverage, parity with evals 1/3)"
+        },
+        {
+          "type": "regex_match",
+          "file": "academic-report.md",
+          "pattern": "(?i)findings|results",
+          "description": "Findings/Results section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "academic-report.md",
+          "pattern": "(?i)discussion",
+          "description": "Discussion section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "academic-report.md",
+          "pattern": "(?i)references|bibliography",
+          "description": "References section present"
+        },
+        {
+          "type": "regex_match",
+          "file": "academic-report.md",
+          "pattern": "\\[[0-9]+\\]",
+          "description": "Numbered (Vancouver/IMRaD) in-text citation markers like [1] are produced in numbered mode"
+        },
+        {
+          "type": "regex_match",
+          "file": "academic-report.md",
+          "pattern": "example\\.com/(sleep-wm|recovery-sleep|individual-diff)",
+          "description": "At least one citation URL from the MIF findings appears in the References"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "academic-report.md",
+          "literal": "urn:mif:",
+          "description": "No raw urn:mif: identifiers appear in the prose"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "academic-report.md",
+          "literal": "f_sleep_",
+          "description": "No internal MIF finding IDs appear in the prose"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "academic-report.md",
+          "literal": "(Walker, 2023)",
+          "description": "Numbered mode is pure: no author-date parenthetical for f_sleep_1 leaks in (would indicate mixed-mode citations)"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "academic-report.md",
+          "literal": "(Van Dongen, 2024)",
+          "description": "Numbered mode is pure: no author-date parenthetical for f_sleep_2 leaks in (would indicate mixed-mode citations)"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "academic-report.md",
+          "literal": "(Patanaik, 2025)",
+          "description": "Numbered mode is pure: no author-date parenthetical for f_sleep_3 leaks in (would indicate mixed-mode citations)"
+        }
+      ],
+      "expectations": [
+        {
+          "description": "Numbered Vancouver citations used, not author-date",
+          "check": "transcript",
+          "criteria": "In-text citations are numbered markers ([1], [2], [3]) resolving to a numerically ordered References list, consistent with IMRaD/Vancouver/ICMJE. Author-date parentheticals like (Walker, 2023) are NOT used in this mode."
+        },
+        {
+          "description": "Citation edition treated as verify-live",
+          "check": "transcript",
+          "criteria": "The report does not assert a specific ICMJE Recommendations revision as settled fact; the numbered style is applied structurally."
+        }
+      ]
     }
   ]
 }

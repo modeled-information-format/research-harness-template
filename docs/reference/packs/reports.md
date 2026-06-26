@@ -18,13 +18,18 @@ For control-plane mechanics see [Packs and Plugins](../packs-and-plugins.md).
 
 ## academic
 
-**Version:** 0.2.0 | **Kind:** genre
+**Version:** 0.3.0 | **Kind:** genre
 
 ### Purpose
 
 Produces a peer-review-style academic paper from the surviving findings corpus. The
 genre follows academic conventions: structured abstract, methodology section, results
 section with citations, discussion, and a formal bibliography.
+
+The citation style is **selectable** — author-date (APA 7th, default) or numbered
+(Vancouver/IMRaD/ICMJE) — and an optional APA Method sub-section taxonomy
+(Participants / Materials / Procedure / Analysis) can be rendered in APA mode. Editions are
+verified live; the IMRaD anchor is a weakened verdict, so conformance is not over-claimed.
 
 ### When to use
 

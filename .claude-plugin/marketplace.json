@@ -66,7 +66,7 @@
     {
       "name": "academic",
       "source": "./packs/reports/academic",
-      "description": "[reports/genre] Genre template for a formal research report (abstract, background, method, findings, discussion, references) with formal citations"
+      "description": "[reports/genre] Genre template for a formal research report (abstract, background, method, findings, discussion, references) with a selectable citation style — author-date (APA) or numbered (Vancouver/IMRaD) — and optional APA Method sub-sections"
     },
     {
       "name": "briefing",

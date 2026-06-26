@@ -1,7 +1,7 @@
 ---
 name: academic
-description: Genre template for a formal research report (abstract, background, method, findings, discussion, references) with formal citations. Use when the deliverable is a scholarly write-up for a technical or research audience that demands traceable evidence and explicit method.
-version: 0.1.2
+description: Genre template for a formal research report (abstract, background, method, findings, discussion, references) with a selectable citation style — author-date (APA) or numbered (Vancouver/IMRaD) — and optional APA Method sub-sections. Use when the deliverable is a scholarly write-up for a technical or research audience that demands traceable evidence and explicit method.
+version: 0.3.0
 ---
 
 # Genre Template: Academic Research Report
@@ -26,7 +26,9 @@ Conclusions are earned from evidence presented in-line, not asserted up front.
 1. **Abstract** — 150-250 words: question, method, principal findings, conclusion.
 2. **Background / Related Context** — what is already established and the gap this addresses.
 3. **Method** — how findings were gathered and adversarially verified; state the verification
-   gate and how `falsified` / `weakened` units were handled.
+   gate and how `falsified` / `weakened` units were handled. *In APA mode (optional), expand
+   Method into the APA sub-sections* — **Participants**, **Materials**, **Procedure**,
+   **Analysis** — when the work warrants them.
 4. **Findings** — the evidence, organized by theme or dimension. Each claim cites its
    MIF finding `@id` and reports the verification verdict.
 5. **Discussion** — interpretation, limitations, threats to validity, and open questions.
@@ -34,9 +36,19 @@ Conclusions are earned from evidence presented in-line, not asserted up front.
 
 ## Citation Style
 
-Author-date in text, e.g. `(Source, 2026)`, resolving to a full alphabetized reference list.
+**Selectable** — pick one mode and apply it consistently:
+
+- **Author-date (APA, default)** — in text, e.g. `(Source, 2026)`, resolving to a full
+  alphabetized reference list. Anchor APA to the **7th Edition** (verify the current edition
+  live).
+- **Numbered (Vancouver / IMRaD / ICMJE)** — numbered in-text markers, e.g. `[1]`, `[2]`,
+  resolving to a numerically ordered reference list. Use this for IMRaD/ICMJE-style work,
+  which expects numbered (Vancouver) citations rather than author-date. Anchor to the
+  **current ICMJE Recommendations** (updated roughly annually — verify the current revision
+  live; do not bake a dated revision in).
+
 Each reference derives from a MIF finding's `@id` / `urn:mif:` citation; the citation URL is
-mandatory (MIF Level 3). No uncited claims.
+mandatory (MIF Level 3). No uncited claims, regardless of mode.
 
 ## Required Figures & Matter
 
@@ -49,6 +61,11 @@ mandatory (MIF Level 3). No uncited claims.
 
 ## Rules
 
+- **Citation mode is selectable, not standard-certified.** The IMRaD/ICMJE landscape anchor
+  is a *weakened* verdict — pick author-date (APA 7th) or numbered (Vancouver/ICMJE) and apply
+  it consistently, but do not over-attribute strict standard conformance; verify the live
+  edition of whichever you choose. APA Method sub-sections (Participants/Materials/Procedure/
+  Analysis) are an optional APA-mode expansion, not a default requirement.
 - Every claim is traceable to a cited MIF finding; no orphan facts.
 - State limitations honestly — an undiscussed weakness is a defect, not an omission.
 - Report verification verdicts; do not silently drop `weakened` or `inconclusive` findings,
