@@ -9,8 +9,11 @@ target audience, altitude, citation style, and required matter. The `report-synt
 skill consumes a genre template, binds surviving findings from the corpus, and the result
 renders through any channel.
 
-Report packs are enabled by default in the harness. They do not require an enable command
-unless they have been explicitly disabled.
+The core report packs — `academic`, `briefing`, `engineering`, `exec-summary`, and
+`trend-analysis` — are enabled by default and require no enable command unless explicitly
+disabled. The additional domain and specialized genres below are **opt-in**: disabled by
+default and enabled per pack with `scripts/pack-toggle.sh <name> on`. Each pack's header
+states its default.
 
 For control-plane mechanics see [Packs and Plugins](../packs-and-plugins.md).
 
@@ -111,7 +114,7 @@ scripts/pack-toggle.sh briefing on
 
 ## computing-paper
 
-**Version:** 0.2.0 | **Kind:** genre
+**Version:** 0.2.0 | **Kind:** genre | **Disabled by default (opt-in).**
 
 ### Purpose
 
@@ -125,8 +128,7 @@ discussion, conclusion & future work, and a numbered reference list.
 Use `computing-paper` when the deliverable is a computing or engineering systems paper
 targeting an ACM or IEEE venue. This is distinct from `academic` (APA/IMRaD): choose
 `computing-paper` when the work calls for Related Work, a System Design / Approach
-section, an explicit Evaluation, and IEEE numbered citations. Disabled by default —
-opt in per project.
+section, an explicit Evaluation, and IEEE numbered citations.
 
 ### What it provides
 
@@ -272,7 +274,7 @@ scripts/pack-toggle.sh exec-summary on
 
 ## legal-memo
 
-**Version:** 0.2.0 | **Kind:** genre
+**Version:** 0.2.0 | **Kind:** genre | **Disabled by default (opt-in).**
 
 ### Purpose
 
@@ -325,7 +327,7 @@ scripts/pack-toggle.sh legal-memo on
 
 ## regulatory-disclosure
 
-**Version:** 0.2.0 | **Kind:** genre
+**Version:** 0.2.0 | **Kind:** genre | **Disabled by default (opt-in).**
 
 ### Purpose
 
@@ -376,7 +378,7 @@ scripts/pack-toggle.sh regulatory-disclosure on
 
 ## clinical-submission
 
-**Version:** 0.2.0 | **Kind:** genre
+**Version:** 0.2.0 | **Kind:** genre | **Disabled by default (opt-in).**
 
 ### Purpose
 
@@ -421,7 +423,7 @@ scripts/pack-toggle.sh clinical-submission on
 
 ## sustainability-report
 
-**Version:** 0.2.0 | **Kind:** genre
+**Version:** 0.2.0 | **Kind:** genre | **Disabled by default (opt-in).**
 
 ### Purpose
 
@@ -466,7 +468,7 @@ scripts/pack-toggle.sh sustainability-report on
 
 ## humanities-chicago
 
-**Version:** 0.2.0 | **Kind:** genre
+**Version:** 0.2.0 | **Kind:** genre | **Disabled by default (opt-in).**
 
 ### Purpose
 
@@ -518,7 +520,7 @@ scripts/pack-toggle.sh humanities-chicago on
 
 ## humanities-mla
 
-**Version:** 0.2.0 | **Kind:** genre
+**Version:** 0.2.0 | **Kind:** genre | **Disabled by default (opt-in).**
 
 ### Purpose
 
@@ -566,7 +568,7 @@ scripts/pack-toggle.sh humanities-mla on
 
 ## security-pentest
 
-**Version:** 0.2.0 | **Kind:** genre
+**Version:** 0.2.0 | **Kind:** genre | **Disabled by default (opt-in).**
 
 ### Purpose
 
@@ -607,8 +609,6 @@ None beyond the core engine.
 
 ### Enable
 
-Disabled by default (opt-in).
-
 ```sh
 scripts/pack-toggle.sh security-pentest on
 ```
@@ -617,7 +617,7 @@ scripts/pack-toggle.sh security-pentest on
 
 ## market-research-report
 
-**Version:** 0.2.0 | **Kind:** genre
+**Version:** 0.2.0 | **Kind:** genre | **Disabled by default (opt-in).**
 
 ### Purpose
 
@@ -683,7 +683,7 @@ scripts/pack-toggle.sh market-research-report on
 
 ## systematic-review
 
-**Version:** 0.2.0 | **Kind:** genre
+**Version:** 0.2.0 | **Kind:** genre | **Disabled by default (opt-in).**
 
 ### Purpose
 
@@ -804,7 +804,7 @@ scripts/pack-toggle.sh compliance-audit on
 
 ## competitive-quadrant
 
-**Version:** 0.2.0 | **Kind:** genre
+**Version:** 0.2.0 | **Kind:** genre | **Disabled by default (opt-in).**
 
 ### Purpose
 
@@ -865,7 +865,7 @@ scripts/pack-toggle.sh competitive-quadrant on
 
 ## nist-sp
 
-**Version:** 0.2.0 | **Kind:** genre
+**Version:** 0.2.0 | **Kind:** genre | **Disabled by default (opt-in).**
 
 ### Purpose
 

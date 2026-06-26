@@ -10,6 +10,9 @@ requirements unless otherwise noted — they consume MIF-annotated findings but 
 output prose carries no internal research identity (no `urn:mif:` URNs, no finding `@id`
 handles, no corpus paths).
 
+Channel packs are **opt-in**: each is disabled by default and enabled with
+`scripts/pack-toggle.sh <name> on`.
+
 For control-plane mechanics see [Packs and Plugins](../packs-and-plugins.md).
 
 ---
