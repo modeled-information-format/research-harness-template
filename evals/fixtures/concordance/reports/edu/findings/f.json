@@ -30,7 +30,7 @@
         "@id": "urn:mif:entity:prog:math"
       },
       "strength": 1,
-      "relationshipType": "belongs_to",
+      "relationshipType": "PartOf",
       "@type": "Relationship"
     }
   ]
