@@ -6,7 +6,7 @@
 # infrastructure, funding, and technology — not farm records.
 #
 # Compatible with: engineering-base v0.1.0 + mif-generic v1.0.0
-# Version: 0.3.0
+# Version: 0.3.1
 # Last Updated: 2026-06-26
 #
 # 0.3.0: Added 14 leaf subtypes across husbandry-practice (5), farm-infrastructure (6),
@@ -20,10 +20,10 @@
 # (mif-generic) — now inherited, not redeclared. The findings that used them were migrated:
 # `technology` stamps -> the domain leaf `equipment-or-input`; `delivery-metric` and
 # `process-discipline` stamps were re-pinned (ontology.id) to `engineering-base`, their
-# declaring layer. The cross-cutting `adoption-trend`, `compliance-regulation`,
-# `security-framework`, and `security-threat` are retained locally (their canonical homes —
-# trend-analysis / regulatory-legal / software-security — are not in this extends chain)
-# but are now subtyped under inherited supertypes. No same-name shadowing remains.
+# declaring layer. The cross-cutting `adoption-trend` and `compliance-regulation` are
+# retained locally (their canonical homes — trend-analysis / regulatory-legal — are not
+# in this extends chain) but are now subtyped under inherited supertypes. No same-name
+# shadowing remains.
 
 ontology:
   id: regenerative-agriculture-research

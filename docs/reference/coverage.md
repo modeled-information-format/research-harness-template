@@ -90,19 +90,19 @@ All documented in [commands.md](commands.md): `/falsify`, `/goal-writer`,
 All documented in [agents.md](agents.md): `orchestrator`, `dimension-analyst`,
 `falsification-analyst`, `report-synthesizer`, `source-chunker`.
 
-## Scripts (26)
+## Scripts (28)
 
 All documented in [scripts.md](scripts.md): `assert-graph-mif`,
 `build-concordance`, `build-graph-viz`, `build-graph`, `build-index`,
-`build-topic-readme`, `check-citation-integrity`, `codegen/bundle_schema.py`,
-`codegen/gen-models`, `falsify`, `goal-version`,
+`build-topic-readme`, `check-citation-integrity`, `check-pack-docs.py`,
+`codegen/bundle_schema.py`, `codegen/gen-models`, `falsify`, `goal-version`,
 `import-corpus`, `mif-project`, `ontology-review`, `pack-toggle`,
 `reconcile-session`, `render-artifact`, `resolve-membership`,
 `resolve-ontology`, `run-lock`, `sync-packs`,
-`synthesize-artifact`, `validate-concordance`, `verify`, `wrap-source`,
-`write-finding`.
+`synthesize-artifact`, `update`, `validate-concordance`, `verify`,
+`wrap-source`, `write-finding`.
 
 ## Assertion
 
-Discovered (77) equals documented (77) across all five categories. No pack,
+Discovered (79) equals documented (79) across all five categories. No pack,
 skill, command, agent, or script is omitted.

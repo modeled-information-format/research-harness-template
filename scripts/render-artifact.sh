@@ -162,7 +162,7 @@ case "$CHANNEL" in
           ("> Genre: " + (.genre // "general") + " · audience: " + (.audience // "general")) ]
         + ( reduce (.sections|dedupe_sections)[] as $s ([]; . + secblock($s; false; false)) )
         + [ "", "## Endnotes", "" ]
-        + [ .sources | to_entries[] | "[" + ((.key + 1) | tostring) + "] " + .value.title + " — <" + .value.url + ">" ]
+        + [ .sources | to_entries[] | "[" + ((.key + 1) | tostring) + "] " + (.value.title|gsub("^[ \\t]+|[ \\t]+$";"")) + " — <" + .value.url + ">" ]
       ) | .[]
     ' --arg ns "$NS" --arg slug "$SLUG" --arg created "$CREATED" "$ART" > "$OUT"
     ;;

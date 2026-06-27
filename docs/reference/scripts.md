@@ -68,6 +68,7 @@ Scripts that manage capability packs, ontology resolution, and artifact synthesi
 | `scripts/pack-toggle.sh` | Flips a pack's `enabled` flag in `harness.config.json` then re-materialises via `sync-packs.sh`. | `jq`; plus `python3` + `yq` via `sync-packs.sh` |
 | `scripts/resolve-ontology.sh` | Topical ontology resolution for one MIF finding. Fail-closed: an unresolvable type returns non-zero. Falls back to discovery-pattern classification. | `yq`, `jq`, `ajv` |
 | `scripts/ontology-review.sh` | Reviews and validates ontology coverage across topics; refreshes `reports/<topic>/ontology-map.json`. | `jq`, `yq`, `ajv` |
+| `scripts/check-pack-docs.py` | Verifies pack documentation is complete and bidirectionally cross-linked: every pack-family component is documented and every doc links back. Run as a CI gate (`.github/workflows/docs.yml`). | Python stdlib only |
 | `scripts/synthesize-artifact.sh` | Deterministic substrate for the report-synthesizer: consumes surviving findings (verdict ≠ `falsified`) and produces a typed `Artifact` (`schemas/artifact.schema.json`). Genre-neutral. | `jq` |
 | `scripts/render-artifact.sh` | Renders a typed `Artifact` to an output channel (`report`, `blog`, `book`). The `report` channel calls `mif-project.sh` for L3 validation; `blog`/`book` carry MIF L1 frontmatter. | `jq`, `scripts/mif-project.sh` |
 | `scripts/mif-project.sh` | Projects a MIF L3 markdown report (YAML frontmatter + body) into a JSON-LD finding projection and validates at MIF L3. Used by `render-artifact.sh` and the `gate_m10` harness gate. | `jq`, `yq`, `ajv` |
@@ -93,3 +94,4 @@ Scripts that verify harness integrity and attestation.
 | Script | Purpose | Key dependency |
 | --- | --- | --- |
 | `scripts/verify.sh` | Harness build gate. Runs accretive gate functions (`gate_mN`) in sequence. Detects template vs instance context. Exits 0 only when all gates pass. | `jq`, `yq`, `ajv`, `ajv-formats` |
+| `scripts/update.sh` | The only supported way a clone updates from the template: a fail-closed provenance gate in front of `copier update` that pins the update to a verified release commit and reproduces the release artifact before applying. | `git`, `gh`, `copier` |
