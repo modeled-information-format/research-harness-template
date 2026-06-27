@@ -45,7 +45,7 @@ DEF='
   # "](...)" or an existing <...> autolink via lookbehind, so links are not double-wrapped.
   def autolink:
     gsub("(?<![\\w.<])(?<e>[\\w.%+-]+@[\\w.-]+\\.[A-Za-z]{2,})(?![\\w>])"; "<\(.e)>")
-    | gsub("(?<!\\]\\()(?<![<\"])(?<u>https?://[^\\s)<>\"]+)"; "<\(.u)>");
+    | gsub("(?<!\]\()(?<![<"])(?<u>https?://[^\s)<>"]*[^\s)<>".,;:!?])"; "<\(.u)>");
   # Disambiguate repeated section headings (two findings can share a title) so the
   # rendered body has no duplicate H2s (markdownlint MD024). Appends " (N)" on repeats.
   def dedupe_sections:
