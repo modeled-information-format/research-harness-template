@@ -15,7 +15,8 @@
     "astro-rehype-relative-markdown-links": "^0.19.0"
   },
   "devDependencies": {
-    "patch-package": "^8.0.1"
+    "patch-package": "^8.0.1",
+    "starlight-llms-txt": "^0.10.0"
   },
   "overrides": {
     "esbuild": "0.28.1",

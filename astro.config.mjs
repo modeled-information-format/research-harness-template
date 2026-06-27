@@ -1,5 +1,6 @@
 import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
+import starlightLlmsTxt from "starlight-llms-txt";
 import astroMermaid from "astro-mermaid";
 import rehypeRelativeMarkdownLinks from "astro-rehype-relative-markdown-links";
 
@@ -23,6 +24,7 @@ export default defineConfig({
   integrations: [
     astroMermaid(),
     starlight({
+      plugins: [starlightLlmsTxt()],
       title: "MIF Research Harness",
       customCss: ["./src/styles/mif-brand.css"],
       logo: {
