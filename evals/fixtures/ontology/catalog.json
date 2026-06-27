@@ -8,13 +8,13 @@
     },
     {
       "id": "mif-base",
-      "version": "0.1.0",
+      "version": "1.0.0",
       "source": "schemas/ontologies/mif-base/1.0.0.yaml",
       "core": true
     },
     {
       "id": "shared-traits",
-      "version": "0.1.0",
+      "version": "1.0.0",
       "source": "schemas/ontologies/shared-traits/1.0.0.yaml",
       "core": true
     },

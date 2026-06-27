@@ -666,6 +666,49 @@ gate_m8() {
 }
 
 # ---------------------------------------------------------------------------
+# Milestone 9 — Citation feature flag (features.internalCitations, SPEC §7)
+# The toggle decides whether internal/document citations (citationType ^internal:
+# carrying quoted evidence in note) count as traceable. gate_m1/1c exercises only
+# the strict DEFAULT via the web good/bad samples; this gate exercises BOTH states
+# of the toggle over a dedicated internal-citation sample, so the enabled branch of
+# check-citation-integrity.sh is no longer untested. Configs are ephemeral (mktemp,
+# fed via HARNESS_CONFIG) so the repo manifest and reports/ are never touched.
+# ---------------------------------------------------------------------------
+gate_m9() {
+  info "Milestone 9 — Citation feature flag (features.internalCitations)"
+
+  local sample="schemas/samples/citation-internal.sample.json"
+  if [ ! -f "$sample" ]; then
+    bad "internal-citation sample missing ($sample)"
+    return
+  fi
+
+  local td cfg_on cfg_off
+  td=$(mktemp -d)
+  cfg_on="$td/config-internal-on.json"
+  cfg_off="$td/config-internal-off.json"
+  printf '{"features":{"internalCitations":true}}\n'  > "$cfg_on"
+  printf '{"features":{"internalCitations":false}}\n' > "$cfg_off"
+
+  # Enabled: the internal-citation sample is traceable and PASSES.
+  if HARNESS_CONFIG="$cfg_on" scripts/check-citation-integrity.sh "$sample" >/dev/null 2>&1; then
+    ok "internal-citation sample PASSES when features.internalCitations=true"
+  else
+    bad "internal-citation sample rejected when features.internalCitations=true"
+  fi
+
+  # Strict default (flag false): the same sample has no http(s) URL and the internal
+  # branch is off, so it MUST be rejected.
+  if HARNESS_CONFIG="$cfg_off" scripts/check-citation-integrity.sh "$sample" >/dev/null 2>&1; then
+    bad "internal-citation sample PASSED under strict default (flag false; must be rejected)"
+  else
+    ok "internal-citation sample REJECTED under strict default (flag false)"
+  fi
+
+  rm -rf "$td"
+}
+
+# ---------------------------------------------------------------------------
 # Milestone 10 — MIF I/O conformance (SPEC §10)
 # Every basic markdown report the harness emits is MIF Level 3 (same bar as a
 # finding); every ingested source is a validated MIF source-envelope; and the
@@ -1857,7 +1900,7 @@ JSON
 # ---------------------------------------------------------------------------
 # Gate registry — each milestone appends its function name here.
 # ---------------------------------------------------------------------------
-GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18 gate_m19 gate_m20 gate_m21 gate_m22)
+GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18 gate_m19 gate_m20 gate_m21 gate_m22)
 
 for g in "${GATES[@]}"; do "$g"; done
 

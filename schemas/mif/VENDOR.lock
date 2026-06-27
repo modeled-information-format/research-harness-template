@@ -16,13 +16,13 @@
       "verbatim": false
     },
     {
-      "path": "schemas/ontologies/mif-base/0.1.0.yaml",
+      "path": "schemas/ontologies/mif-base/1.0.0.yaml",
       "upstream": "ontologies/mif-base.ontology.yaml",
       "sha256": "5d514bbebd7f5e395463489ed50c213711e24284e50e41ff0cd2ba8662440774",
       "verbatim": false
     },
     {
-      "path": "schemas/ontologies/shared-traits/0.1.0.yaml",
+      "path": "schemas/ontologies/shared-traits/1.0.0.yaml",
       "upstream": "ontologies/shared-traits.ontology.yaml",
       "sha256": "2bd695be879231c53c8256540c06079b77fda317dca8e178ca68b7ff97945fce",
       "verbatim": false

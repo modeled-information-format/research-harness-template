@@ -54,11 +54,20 @@ DEF='
       | .seen[$s.heading] = $n
       | .out += [ $s + {heading: (if $n>1 then ($s.heading + " (" + ($n|tostring) + ")") else $s.heading end)} ] )
     | .out;
-  # Escape every literal "*" in body prose. Research bodies carry math operators
-  # (beta * epsilon), glob/wildcard tokens (llm.token_count.*) and the occasional stray
-  # asterisk, none of which are intended emphasis; escaping all of them keeps markdownlint
-  # quiet (MD037 spaces-in-emphasis, MD049/MD050) without guessing which "*" is emphasis.
-  def deglob: gsub("\\*"; "\\*") | gsub("(?<=\\s)_"; "\\_") | gsub("_(?=\\s)"; "\\_");
+  # Escape every literal "*" and space-flanked "_" in body prose. Research bodies
+  # carry math operators (beta * epsilon), glob/wildcard tokens (llm.token_count.*)
+  # and stray asterisks, none of which are intended emphasis; escaping them keeps
+  # markdownlint quiet (MD037 spaces-in-emphasis, MD049/MD050) without guessing which
+  # mark is emphasis. But characters INSIDE an autolink "<...>" or a markdown link
+  # target "](...)" must NOT be escaped: a "\*" inside an angle-bracket autolink is
+  # rendered literally and breaks the link target. autolink runs before deglob, so a
+  # URL containing "*" is already wrapped; we therefore escape only the prose segments
+  # OUTSIDE link spans, leaving link spans verbatim.
+  def _esc: gsub("\\*"; "\\*") | gsub("(?<=\\s)_|_(?=\\s)"; "\\_");
+  def deglob:
+    [ scan("<[^<>\\s]*>|\\]\\([^)]*\\)|(?:(?!<[^<>\\s]*>|\\]\\([^)]*\\))[\\s\\S])+") ]
+    | map(if test("^(<[^<>\\s]*>|\\]\\([^)]*\\))$") then . else _esc end)
+    | join("");
   # Strip trailing whitespace on every line (MD009).
   def detrail: gsub("[ \t]+(?=\n)"; "") | gsub("[ \t]+$"; "");
   def secblock($s; $meta; $ev):
