@@ -1,0 +1,78 @@
+cff-version: 1.2.0
+message: "If you use this research harness, please cite it using the metadata from this file."
+type: software
+title: "research-harness-template: an MIF-backed AI research harness"
+abstract: >-
+  A Copier-distributable template that instantiates a complete, self-contained AI
+  research harness. Everything in and out of the harness is MIF (Modeled Information
+  Format): findings are MIF memory units, the knowledge graph is MIF EntityReferences
+  and typed relationships, and citations and provenance are MIF objects. The research
+  flow is goal-driven — an orchestrator fans out per-dimension analysts, runs a single
+  adversarial falsification gate, and synthesizes surviving, citation-backed findings
+  into the canonical MIF Level-3 report and optional published projections. Ontologies
+  type findings into a cross-topic concordance; optional packs add channels, report
+  genres, and methodologies.
+version: "0.4.1"
+date-released: "2026-06-28"
+license: MIT
+url: "https://github.com/modeled-information-format/research-harness-template"
+repository-code: "https://github.com/modeled-information-format/research-harness-template"
+authors:
+  - family-names: Allen
+    given-names: Robert
+    email: zircote@gmail.com
+    orcid: "https://orcid.org/0009-0007-9691-004X"
+identifiers:
+  - type: url
+    value: "https://github.com/modeled-information-format/research-harness-template"
+    description: "GitHub repository"
+keywords:
+  - ai-research
+  - research-harness
+  - modeled-information-format
+  - mif
+  - falsification
+  - knowledge-graph
+  - ontology
+  - provenance
+  - copier
+  - template
+  - claude-code
+  - orchestration
+preferred-citation:
+  type: software
+  title: "research-harness-template: an MIF-backed AI research harness"
+  abstract: >-
+    A Copier-distributable template for a self-contained, goal-driven AI research
+    harness built entirely on the Modeled Information Format (MIF). It orchestrates
+    fan-out dimension analysts, a single adversarial falsification gate, and synthesis
+    into MIF Level-3 reports, with ontology-typed findings composed into a cross-topic
+    concordance.
+  version: "0.4.1"
+  date-released: "2026-06-28"
+  license: MIT
+  url: "https://github.com/modeled-information-format/research-harness-template"
+  repository-code: "https://github.com/modeled-information-format/research-harness-template"
+  authors:
+    - family-names: Allen
+      given-names: Robert
+      email: zircote@gmail.com
+      orcid: "https://orcid.org/0009-0007-9691-004X"
+references:
+  - type: software
+    title: "MIF: Modeled Information Format"
+    abstract: >-
+      The open standard the harness is built on: an opinionated, OKF-compliant content
+      model for agent-readable knowledge providing a type system, typed relationships,
+      provenance/trust, and validity/freshness semantics. Markdown is canonical; JSON-LD
+      is a derived projection.
+    version: "1.0.0"
+    date-released: "2026-06-18"
+    license: MIT
+    url: "https://mif-spec.dev"
+    repository-code: "https://github.com/modeled-information-format/MIF"
+    authors:
+      - family-names: Allen
+        given-names: Robert
+        email: zircote@gmail.com
+        orcid: "https://orcid.org/0009-0007-9691-004X"
