@@ -1989,7 +1989,7 @@ gate_m23() {
      && grep -qF 'link: "/reports/"' astro.config.mjs; then
     ok "reports landing surfaced: /reports/ index page + splash link + sidebar Overview"
   else
-    bad "reports landing not surfaced (need src/pages/reports.astro, a docs/index.mdx link to /reports/, and the sidebar Overview link)"
+    bad "reports landing not surfaced (need src/pages/reports.astro, a docs/index.mdx link to /research-harness-template/reports/, and the sidebar Overview link)"
   fi
 }
 
