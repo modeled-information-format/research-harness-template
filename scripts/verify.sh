@@ -1969,6 +1969,27 @@ gate_m23() {
     else
       bad "copier.yml must run 'site-toggle.sh primary reports' in _tasks to activate the clone reports surface"
     fi
+    # 23f. The org Pages auto-redeploy is wired: docs.yml fires the source-updated
+    #      repository_dispatch the org Pages deploy listens for (so a merge republishes).
+    #      Template-only — a clone excludes .github/workflows/ (copier _exclude).
+    if grep -qF "event_type=source-updated" .github/workflows/docs.yml \
+       && grep -qF "modeled-information-format.github.io/dispatches" .github/workflows/docs.yml; then
+      ok "docs.yml notifies the org Pages to redeploy on push (source-updated dispatch)"
+    else
+      bad "docs.yml must dispatch source-updated to the org Pages repo so a merge auto-republishes"
+    fi
+  fi
+
+  # 23e. The Reports surface has a stable landing the splash and sidebar point at: the
+  #      /reports/ index page (empty-safe, lists the instance's own report topics) and a
+  #      splash link to it. Runs in both contexts (src/, docs/, astro.config travel to
+  #      clones). Guards against the landing being unreachable from `/`.
+  if [ -f src/pages/reports.astro ] \
+     && grep -qF "/research-harness-template/reports/" docs/index.mdx \
+     && grep -qF 'link: "/reports/"' astro.config.mjs; then
+    ok "reports landing surfaced: /reports/ index page + splash link + sidebar Overview"
+  else
+    bad "reports landing not surfaced (need src/pages/reports.astro, a docs/index.mdx link to /reports/, and the sidebar Overview link)"
   fi
 }
 

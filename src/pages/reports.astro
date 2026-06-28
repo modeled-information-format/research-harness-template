@@ -1,0 +1,58 @@
+---
+// The /reports/ landing: a stable index of the reports rendered in THIS harness,
+// listed from the `docs` content collection (the report pages, grouped by topic).
+// It gives the Reports surface a real route the splash and sidebar can point at,
+// in both the template (the example topic) and a clone (the clone's own reports),
+// and stays empty-safe before the first report exists. The content.config.ts
+// loader already excludes _meta/continuity/findings/README, so every `reports/`
+// entry here is a rendered report page.
+import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
+import { getCollection } from "astro:content";
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const entries = (await getCollection("docs")).filter((e) => e.id.startsWith("reports/"));
+
+const byTopic = new Map();
+for (const e of entries) {
+  const topic = e.id.split("/")[1];
+  if (!byTopic.has(topic)) byTopic.set(topic, []);
+  byTopic.get(topic).push(e);
+}
+const topics = [...byTopic.entries()]
+  .sort((a, b) => a[0].localeCompare(b[0]))
+  .map(([topic, es]) => [topic, es.sort((a, b) => a.id.localeCompare(b.id))]);
+---
+
+<StarlightPage
+  frontmatter={{
+    title: "Reports",
+    description: "The research reports rendered in this harness.",
+  }}
+>
+  <p>
+    The research reports rendered in this harness. Each report is a MIF Level-3
+    report of record, synthesized from a topic's surviving findings.
+  </p>
+
+  {
+    topics.length === 0 ? (
+      <p>
+        No reports yet. Run <code>/start</code> to research your first topic; its
+        report will appear here once it is published.
+      </p>
+    ) : (
+      topics.map(([topic, es]) => (
+        <>
+          <h2>{topic}</h2>
+          <ul>
+            {es.map((e) => (
+              <li>
+                <a href={`${base}/${e.id}/`}>{e.data.title}</a>
+              </li>
+            ))}
+          </ul>
+        </>
+      ))
+    )
+  }
+</StarlightPage>

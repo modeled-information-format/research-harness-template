@@ -1,10 +1,16 @@
 name: docs
 
-# Build-only gate for the research-harness documentation site (Astro/Starlight,
-# base "/research-harness-template"). This repo does NOT deploy itself: the org Pages shell
-# (modeled-information-format.github.io / .github/workflows/deploy.yml) checks this
-# repo out, runs `npm run build`, and mounts dist/ under /research-harness-template — exactly
-# how doc-site is served under /docs. A green build here is the local success gate.
+# Build gate for the research-harness documentation site (Astro/Starlight, base
+# "/research-harness-template"). This repo does NOT build the published bytes itself:
+# the org Pages shell (modeled-information-format.github.io / .github/workflows/deploy.yml)
+# checks this repo out, runs `npm run build`, and mounts dist/ under
+# /research-harness-template — exactly how doc-site is served under /docs. A green build
+# here is the local success gate.
+#
+# On a push to main (a green build of site-relevant paths), the notify-deploy job sends
+# the `source-updated` repository_dispatch the org Pages deploy listens for, so the live
+# site rebuilds automatically. Without it the live site only updates on a manual deploy
+# dispatch — the dormant-hook gap that left merges unpublished.
 
 on:
   push:
@@ -65,3 +71,31 @@ jobs:
 
       - name: Pack docs coverage (bidirectional docs <-> packs cross-links)
         run: python3 scripts/check-pack-docs.py
+
+  # Auto-publish: after a green build on a push to main, tell the org Pages site to
+  # rebuild and redeploy by firing the `source-updated` repository_dispatch its
+  # deploy.yml waits for. Runs only on push (not on PRs). Authenticates as the org
+  # GitHub App (the cross-repo dispatch identity), minting a token scoped to the
+  # org Pages repo — no standing PAT.
+  notify-deploy:
+    name: notify org Pages
+    needs: build
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mint a token scoped to the org Pages repo
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ vars.MIF_CI_CLIENT_APP_ID }}
+          private-key: ${{ secrets.MIF_CI_CLIENT_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: modeled-information-format.github.io
+
+      - name: Trigger the org Pages redeploy
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          gh api --method POST \
+            "repos/${{ github.repository_owner }}/modeled-information-format.github.io/dispatches" \
+            -f event_type=source-updated

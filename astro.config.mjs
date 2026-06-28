@@ -66,7 +66,13 @@ const docContentGroups = [
   { label: "Explanation", items: [{ autogenerate: { directory: "explanation" } }] },
   { label: "Decisions (ADRs)", items: [{ autogenerate: { directory: "adr" } }] },
 ];
-const reportsGroup = { label: "Reports", items: [{ autogenerate: { directory: "reports" } }] };
+const reportsGroup = {
+  label: "Reports",
+  items: [
+    { label: "Overview", link: "/reports/" },
+    { autogenerate: { directory: "reports" } },
+  ],
+};
 const ecosystemGroup = {
   // Bidirectional traversal: links OUT of this sub-site back to the org root
   // and the sibling ecosystem surfaces.
