@@ -1,7 +1,7 @@
 ---
 name: ectd
 description: "Package a clinical-submission artifact into the FDA eCTD (electronic Common Technical Document) module structure directly FROM THE SOURCES — a research topic's surviving findings corpus and the primary materials its citations point to. Lays out the eCTD module tree (M1 regional administrative, M2 summaries, M3 quality, M4 nonclinical study reports, M5 clinical study reports) and writes the eCTD XML backbone that indexes the leaf files. NEVER built from a rendered report (that would be a copy-of-a-copy). Optional channel; pure mkdir + XML, no external toolchain. Verify-live eCTD v4.0. Use when the user says 'package as eCTD', 'build the eCTD submission', or 'render to eCTD'."
-version: 0.3.0
+version: 0.4.0
 argument-hint: "<findings-dir> [-o <output-dir>] [<topic-name>]"
 allowed-tools: Read, Write, Bash, Grep, Glob
 ---

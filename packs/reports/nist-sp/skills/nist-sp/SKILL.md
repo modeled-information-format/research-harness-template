@@ -1,7 +1,7 @@
 ---
 name: nist-sp
 description: Genre template for a NIST Special Publication (SP 800-series) standards/guidance report. Use when the deliverable is a standards or guidance document with front-matter authority, numbered normative sections, defined terms, references, and appendices.
-version: 0.3.0
+version: 0.4.0
 ---
 
 # Genre Template: NIST Special Publication

@@ -1,6 +1,6 @@
 {
   "name": "regulatory-disclosure",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "kind": "genre",
   "description": "Genre template for an SEC-style annual disclosure report following Regulation S-K / Form 10-K item order (Business, Risk Factors, Properties/Legal, Selected Financial Data, MD&A, Financial Statements, Controls & Procedures)",
   "license": "MIT",

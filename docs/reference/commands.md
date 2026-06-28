@@ -6,9 +6,38 @@ diataxis_type: reference
 # Reference: commands
 
 Commands are slash-command entry points invoked directly in a Claude session.
-All seven listed here are core (non-pack); they ship with the template.
+All eight listed here are core (non-pack); they ship with the template.
 
 See [dependencies](dependencies.md) for tool installation requirements.
+
+---
+
+## /configure
+
+The configuration concierge for the harness manifest.
+
+**Purpose:** Applies a configuration change to `harness.config.json` through the
+harness's own tooling, then validates it against `harness.config.schema.json` and
+re-runs the gates. Covers packs (`scripts/pack-toggle.sh`), the reports/docs site
+surface and optional plugins (`scripts/site-toggle.sh`), ontologies (defers binding
+to `/ontology-review`), and topic/dimension/output/voice/freshness edits. It never
+hand-rolls what a script already owns, and never reports a change done while a gate
+is red.
+
+**Usage:**
+
+```text
+/configure [packs|site|ontologies|topics|verify] [<free-form request>]
+```
+
+With no area it surveys the current configuration and suggests next steps.
+
+**What it delegates to:** `harness-configurator` agent, which drives
+`scripts/pack-toggle.sh`, `scripts/site-toggle.sh`, `scripts/sync-packs.sh`, and the
+`/ontology-review` command/skill.
+
+**Dependencies:** `harness.config.json`, `harness.config.schema.json`,
+`scripts/pack-toggle.sh`, `scripts/site-toggle.sh`, `jq`, `ajv`.
 
 ---
 

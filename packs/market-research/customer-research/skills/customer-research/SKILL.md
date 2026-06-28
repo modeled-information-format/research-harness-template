@@ -1,7 +1,7 @@
 ---
 name: customer-research
 description: Use when the user asks to "understand customers", "customer research", "user personas", "customer needs analysis", "buyer journey mapping", "voice of customer", "customer segmentation", "user research", or needs guidance on customer-discovery methodologies, persona development, or buyer behavior.
-version: 0.3.0
+version: 0.4.0
 ---
 
 # Customer Research

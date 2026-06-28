@@ -11,22 +11,28 @@ on:
     branches: [main]
     paths:
       - "docs/**"
+      - "reports/**"
       - "src/**"
       - "packs/**"
       - "astro.config.mjs"
+      - "harness.config.json"
       - "package.json"
       - "package-lock.json"
+      - "patches/**"
       - "scripts/check-pack-docs.py"
       - ".github/workflows/docs.yml"
   pull_request:
     branches: [main]
     paths:
       - "docs/**"
+      - "reports/**"
       - "src/**"
       - "packs/**"
       - "astro.config.mjs"
+      - "harness.config.json"
       - "package.json"
       - "package-lock.json"
+      - "patches/**"
       - "scripts/check-pack-docs.py"
       - ".github/workflows/docs.yml"
 

@@ -1,7 +1,7 @@
 ---
 name: legal-memo
 description: Genre template for a predictive legal memorandum — Question Presented, Brief Answer, Statement of Facts, an IRAC Discussion (Issue, Rule, Application, Conclusion per issue), and a Conclusion, with Bluebook practitioner citations. Use when the deliverable is an internal legal analysis that predicts how a question of law resolves on the facts and must show its reasoning issue by issue.
-version: 0.3.0
+version: 0.4.0
 ---
 
 # Genre Template: Predictive Legal Memorandum (IRAC)

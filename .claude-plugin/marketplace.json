@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Bundled plugins for the research harness. Each SKILL is its own plugin under packs/<pack>/<skill>/ (one plugin per skill), so a clone enables exactly the skills it wants without adopting a whole pack. The harness.config.json packs[] control plane toggles each.",
-    "version": "0.3.0"
+    "version": "0.4.0"
   },
   "plugins": [
     {
@@ -41,17 +41,17 @@
     {
       "name": "jats",
       "source": "./packs/channels/jats",
-      "description": "[channels/channel] Render a topic's surviving findings into well-formed JATS (NISO Z39.96) XML directly from the SOURCES \u2014 a scholarly article with article metadata, a body of one section per finding, and a back-matter reference list of the primary-source citations; never built from a rendered report"
+      "description": "[channels/channel] Render a topic's surviving findings into well-formed JATS (NISO Z39.96) XML directly from the SOURCES — a scholarly article with article metadata, a body of one section per finding, and a back-matter reference list of the primary-source citations; never built from a rendered report"
     },
     {
       "name": "xbrl",
       "source": "./packs/channels/xbrl",
-      "description": "[channels/channel] Render surviving findings (typically a regulatory-disclosure artifact) into an inline XBRL (iXBRL) document directly from the SOURCES \u2014 facts tagged with xbrli:context / xbrli:unit and current-taxonomy concepts inside a human-readable XHTML shell; never built from a rendered report"
+      "description": "[channels/channel] Render surviving findings (typically a regulatory-disclosure artifact) into an inline XBRL (iXBRL) document directly from the SOURCES — facts tagged with xbrli:context / xbrli:unit and current-taxonomy concepts inside a human-readable XHTML shell; never built from a rendered report"
     },
     {
       "name": "ectd",
       "source": "./packs/channels/ectd",
-      "description": "[channels/channel] Package a clinical-submission artifact into the FDA eCTD module structure (M1-M5 + the XML backbone) directly from the SOURCES \u2014 a topic's surviving findings and their primary-source citations; lays out the eCTD module tree and writes the backbone; verify-live eCTD v4.0; never built from a rendered report"
+      "description": "[channels/channel] Package a clinical-submission artifact into the FDA eCTD module structure (M1-M5 + the XML backbone) directly from the SOURCES — a topic's surviving findings and their primary-source citations; lays out the eCTD module tree and writes the backbone; verify-live eCTD v4.0; never built from a rendered report"
     },
     {
       "name": "competitive-analysis",

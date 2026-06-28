@@ -130,6 +130,10 @@ run     "concordance-idempotent"         bash -c "scripts/build-concordance.sh e
 #    hand-composed shell JSON (`jq -n`) that broke under the Bash `eval` wrapper.
 run "models-authoring" python3 evals/test_models.py
 
+# Site-projection control plane: site-toggle.sh round-trips + astro/content config
+# gating + copier reports-activation (the reports-as-primary-delivery surface).
+run "site-toggle" bash evals/site-toggle.sh
+
 # 7. Progress-log markdownlint conformance (issue #85 Defect 2): a multi-session
 #    research-progress.md built per orchestrator.md's template — one H1 (file
 #    creation only) + date-qualified per-session H2s — lints clean, while each old

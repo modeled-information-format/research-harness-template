@@ -45,8 +45,10 @@ git ls-files -z | tar --null -T - -c | tar -x -C "$TMPL"
 cd "$TMPL"
 git init -q && $GA add -A && $GA commit -q -m "harness template v1.0.0" && git tag v1.0.0
 
-# 2. Instantiate the harness.
-copier copy --defaults --quiet --vcs-ref v1.0.0 "$TMPL" "$INST" >/dev/null 2>&1 || {
+# 2. Instantiate the harness. --trust: the template runs a post-copy `_tasks` hook
+#    (site-toggle.sh activates the clone's reports surface); copier executes tasks
+#    only when explicitly trusted.
+copier copy --trust --defaults --quiet --vcs-ref v1.0.0 "$TMPL" "$INST" >/dev/null 2>&1 || {
   echo "copier-update: copier copy failed" >&2; exit 1; }
 [ -f "$INST/.copier-answers.yml" ] || { echo "copier-update: no answers file recorded; update would be impossible" >&2; exit 1; }
 [ -f "$INST/docs/harness-instance.md" ] || { echo "copier-update: templated identity file not rendered" >&2; exit 1; }
@@ -62,7 +64,7 @@ cd "$TMPL" && $GA commit -q -am "template v1.1.0: propagation marker" && git tag
 
 # 5. Re-apply the template change to the instantiated harness.
 cd "$INST"
-copier update --defaults --quiet >/dev/null 2>&1 || { echo "copier-update: copier update failed" >&2; exit 1; }
+copier update --trust --defaults --quiet >/dev/null 2>&1 || { echo "copier-update: copier update failed" >&2; exit 1; }
 
 # 6. Assert the change propagated.
 if grep -q "$MARK" "$INST/docs/harness-instance.md"; then

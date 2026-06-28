@@ -1,7 +1,7 @@
 ---
 name: academic
 description: Genre template for a formal research report (abstract, background, method, findings, discussion, references) with a selectable citation style — author-date (APA) or numbered (Vancouver/IMRaD) — and optional APA Method sub-sections. Use when the deliverable is a scholarly write-up for a technical or research audience that demands traceable evidence and explicit method.
-version: 0.3.0
+version: 0.4.0
 ---
 
 # Genre Template: Academic Research Report

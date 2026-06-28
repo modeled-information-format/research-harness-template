@@ -1,7 +1,7 @@
 ---
 name: sustainability-report
 description: Genre template for a GRI-Standards sustainability/ESG report — GRI 1 Foundation, GRI 2 General Disclosures, GRI 3 Material Topics, topic standards across the GRI 200 (economic) / 300 (environmental) / 400 (social) series, and a GRI content index mapping every disclosure to its location. Use when the deliverable must reproduce the GRI sustainability-reporting structure. Reproduces the GRI structure only — not assured ESG conformance.
-version: 0.3.0
+version: 0.4.0
 ---
 
 # Genre Template: Sustainability Report (GRI Standards / ESG)

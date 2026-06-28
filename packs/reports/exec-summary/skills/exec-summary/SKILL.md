@@ -1,7 +1,7 @@
 ---
 name: exec-summary
 description: Genre template for a 1-2 page decision-oriented executive summary (BLUF, key findings, recommendation, risks). Composable as the leadership-summary section of a full ESOMAR- or PTES-style report, with optional PTES Posture / Risk Profile / Roadmap sub-elements. Use when the deliverable is a short brief for decision-makers who will act without reading a full report.
-version: 0.3.0
+version: 0.4.0
 ---
 
 # Genre Template: Executive Summary

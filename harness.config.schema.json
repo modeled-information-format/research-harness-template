@@ -222,6 +222,30 @@
         }
       }
     },
+    "site": {
+      "type": "object",
+      "description": "Optional Astro/Starlight site-projection controls. The site renders the harness's reports/ outputs (and the Di\u00e1taxis docs/) for human reading: in the template it stays a docs site that demonstrates the example report; a clone activates reports-primary on instantiation (copier _tasks runs site-toggle.sh). Read by astro.config.mjs at build time so neither the template nor a clone hand-edits astro.config.mjs. Absent \u21d2 all defaults.",
+      "additionalProperties": false,
+      "properties": {
+        "primarySurface": {
+          "type": "string",
+          "enum": ["reports", "docs", "auto"],
+          "default": "auto",
+          "description": "Which surface leads the sidebar. 'reports' puts the Reports group on top; 'docs' keeps the docs groups on top (reports still appear, after the docs); 'auto' resolves to reports when any rendered report exists, else docs. The site landing ('/') stays the docs index in every case."
+        },
+        "plugins": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Gates for optional Astro/Starlight enhancements. llmsTxt and mermaid are installed and default ON (the flag gates them, it does not re-add the dependency); imageZoom and linksValidator are installed and default OFF.",
+          "properties": {
+            "llmsTxt": { "type": "boolean", "default": true, "description": "Gate the starlight-llms-txt plugin (generates llms.txt / llms-full.txt / llms-small.txt covering docs + reports)." },
+            "mermaid": { "type": "boolean", "default": true, "description": "Gate the astro-mermaid integration (renders ```mermaid fences in docs + reports)." },
+            "imageZoom": { "type": "boolean", "default": false, "description": "Gate the starlight-image-zoom plugin (click-to-zoom images)." },
+            "linksValidator": { "type": "boolean", "default": false, "description": "Gate the starlight-links-validator plugin (fails the build on broken internal links). Off by default because reports may link to non-page sibling artifacts." }
+          }
+        }
+      }
+    },
     "packs": {
       "type": "array",
       "description": "The pack control plane (SPEC \u00a77b): each entry enables/disables a pack and declares its source. Materialized into Claude Code's enabledPlugins at instantiation.",

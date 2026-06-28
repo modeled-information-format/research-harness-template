@@ -75,6 +75,17 @@ Scripts that manage capability packs, ontology resolution, and artifact synthesi
 
 ---
 
+## Site
+
+Scripts that control the Astro/Starlight site that renders `reports/` (and the
+Diátaxis `docs/`) for human reading.
+
+| Script | Purpose | Key dependency |
+| --- | --- | --- |
+| `scripts/site-toggle.sh` | Flips the `harness.config.json` `.site` control plane that `astro.config.mjs` reads at build time: `primary <reports\|docs\|auto>` chooses which surface leads the sidebar; `plugin <llmsTxt\|mermaid\|imageZoom\|linksValidator> <on\|off>` gates an optional Astro/Starlight enhancement. Applies on the next `npm run build`/`npm run dev`. | `jq` |
+
+---
+
 ## Codegen
 
 Scripts that regenerate the Python TypedDict authoring layer from JSON Schemas.

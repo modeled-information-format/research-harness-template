@@ -20,7 +20,7 @@ For control-plane mechanics see [Packs and Plugins](../packs-and-plugins.md).
 
 ## book
 
-**Version:** 0.3.0 | **Kind:** channel | **MIF level:** exempt (output only) | **Skill:** `book:book-author`
+**Version:** 0.4.0 | **Kind:** channel | **MIF level:** exempt (output only) | **Skill:** `book:book-author`
 
 **Source:** [`packs/channels/book/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/channels/book)
 
@@ -78,7 +78,7 @@ scripts/pack-toggle.sh book on
 
 ## diataxis
 
-**Version:** 0.3.0 | **Kind:** channel | **MIF level:** L1 only (output) | **Skill:** `diataxis:diataxis-docs`
+**Version:** 0.4.0 | **Kind:** channel | **MIF level:** L1 only (output) | **Skill:** `diataxis:diataxis-docs`
 
 **Source:** [`packs/channels/diataxis/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/channels/diataxis)
 
@@ -150,7 +150,7 @@ scripts/pack-toggle.sh diataxis on
 
 ## github-discuss
 
-**Version:** 0.3.0 | **Kind:** channel
+**Version:** 0.4.0 | **Kind:** channel
 
 **Source:** [`packs/channels/github-discuss/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/channels/github-discuss)
 
@@ -210,7 +210,7 @@ scripts/pack-toggle.sh github-discuss on
 
 ## github-issues
 
-**Version:** 0.3.0 | **Kind:** channel
+**Version:** 0.4.0 | **Kind:** channel
 
 **Source:** [`packs/channels/github-issues/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/channels/github-issues)
 
@@ -276,7 +276,7 @@ scripts/pack-toggle.sh github-issues on
 
 ## notebooklm
 
-**Version:** 0.3.0 | **Kind:** channel
+**Version:** 0.4.0 | **Kind:** channel
 
 **Source:** [`packs/channels/notebooklm/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/channels/notebooklm)
 
@@ -344,7 +344,7 @@ scripts/pack-toggle.sh notebooklm on
 
 ## pdf
 
-**Version:** 0.3.0 | **Kind:** channel | **MIF level:** L1 in PDF metadata
+**Version:** 0.4.0 | **Kind:** channel | **MIF level:** L1 in PDF metadata
 
 **Source:** [`packs/channels/pdf/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/channels/pdf)
 
@@ -408,7 +408,7 @@ scripts/pack-toggle.sh pdf on
 
 ## jats
 
-**Version:** 0.3.0 | **Kind:** channel | **MIF level:** L1 in JATS article metadata
+**Version:** 0.4.0 | **Kind:** channel | **MIF level:** L1 in JATS article metadata
 
 **Source:** [`packs/channels/jats/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/channels/jats)
 
@@ -473,7 +473,7 @@ scripts/pack-toggle.sh jats on
 
 ## xbrl
 
-**Version:** 0.3.0 | **Kind:** channel | **MIF level:** L1 in XHTML head metadata (exempt)
+**Version:** 0.4.0 | **Kind:** channel | **MIF level:** L1 in XHTML head metadata (exempt)
 
 **Source:** [`packs/channels/xbrl/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/channels/xbrl)
 
@@ -534,7 +534,7 @@ scripts/pack-toggle.sh xbrl on
 
 ## ectd
 
-**Version:** 0.3.0 | **Kind:** channel | **MIF level:** L1 in backbone metadata (exempt)
+**Version:** 0.4.0 | **Kind:** channel | **MIF level:** L1 in backbone metadata (exempt)
 
 **Source:** [`packs/channels/ectd/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/channels/ectd)
 

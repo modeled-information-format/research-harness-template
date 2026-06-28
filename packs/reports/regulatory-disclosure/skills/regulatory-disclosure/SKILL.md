@@ -1,7 +1,7 @@
 ---
 name: regulatory-disclosure
 description: Genre template for an SEC-style annual disclosure report — Business, Risk Factors, Properties/Legal, Selected Financial Data, MD&A, Financial Statements & Supplementary Data, and Controls & Procedures, in Regulation S-K / Form 10-K item order. Use when the deliverable must reproduce the disclosure structure of a public-company annual report. Reproduces the disclosure structure only — not legal/financial sufficiency or audit assurance.
-version: 0.3.0
+version: 0.4.0
 ---
 
 # Genre Template: Regulatory Disclosure Report (SEC Reg S-K / Form 10-K)

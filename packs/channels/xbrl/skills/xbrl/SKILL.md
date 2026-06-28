@@ -1,7 +1,7 @@
 ---
 name: xbrl
 description: "Render surviving findings (typically a regulatory-disclosure artifact) into an inline XBRL (iXBRL) document directly from the SOURCES. Tags facts with xbrli:context / xbrli:unit and taxonomy concepts inside a human-readable XHTML shell, anchored to the current SEC inline-XBRL taxonomy. Never built from a rendered report."
-version: 0.3.0
+version: 0.4.0
 argument-hint: "<findings-dir> [-o <disclosure.xhtml>] [<topic-name>]"
 allowed-tools: Read, Write, Bash, Grep, Glob
 ---

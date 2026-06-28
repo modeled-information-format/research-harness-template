@@ -49,8 +49,16 @@ Cross-cutting: bundled enforcement hooks (`.claude/hooks/`), bundled docs
 ## The one file you edit
 
 `harness.config.json` is the deploy contract: it declares your topics, research
-dimensions, output targets, and which packs are enabled. It is validated by
-`harness.config.schema.json`.
+dimensions, output targets, which packs are enabled, and the `site` projection. It
+is validated by `harness.config.schema.json`.
+
+## Reading your reports
+
+The bundled Astro/Starlight site renders `reports/` (and the Diátaxis `docs/`) for
+human reading — `npm install && npm run dev`. A clone is activated reports-primary
+at instantiation; flip the leading surface or toggle optional site plugins with
+`scripts/site-toggle.sh` (or ask `/configure`). See
+[How to configure the reports site](docs/how-to/configure-the-site.md).
 
 ## Quality gate
 

@@ -1,7 +1,7 @@
 ---
 name: humanities-chicago
 description: Genre template for an argumentative humanities essay in Chicago Notes-Bibliography style — introduction with thesis, thematic argument sections (claim, evidence, interpretation), conclusion, numbered footnotes, and a full Bibliography. Use when the deliverable is a humanities argument rather than an empirical IMRaD paper. There is no Method or Results section — that is the distinguishing feature versus the academic genre.
-version: 0.3.0
+version: 0.4.0
 ---
 
 # Genre Template: Humanities Essay (Chicago Notes-Bibliography)

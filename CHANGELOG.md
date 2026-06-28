@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-06-28
+
+### Added
+
+- The Astro/Starlight site now renders `reports/` as a first-class surface for
+  human reading: each `reports/<topic>/<slug>.md` becomes a page in a **Reports**
+  sidebar group (mermaid + relative links resolved), covered by `llms.txt`. The
+  template hosts a rendered **example-topic** report so the docs site demonstrates
+  the reports surface; a clone is activated reports-primary at instantiation.
+- `harness.config.json` gains an optional `site` block (validated by the schema):
+  `primarySurface` (`reports|docs|auto`) and `plugins` gates for `llmsTxt`,
+  `mermaid`, `imageZoom`, `linksValidator`. `astro.config.mjs` reads it at build
+  time, so neither the template nor a clone hand-edits `astro.config.mjs`.
+- `scripts/site-toggle.sh` — flip the site surface or an optional plugin from the
+  manifest. Two optional Starlight plugins are bundled (default off):
+  `starlight-image-zoom` and `starlight-links-validator`.
+- `/configure` command + `harness-configurator` agent — a configuration concierge
+  that toggles packs and site features, manages ontologies and topics, and re-runs
+  the gates.
+- Copier post-copy `_tasks` hook (with `_message_after_copy`) activates a clone's
+  reports surface on `copier copy --trust`; the bundled example report is excluded
+  from clones so `copier update` stays conflict-free.
+- `gate_m23` (site projection) and the `site-toggle` eval.
+
+### Changed
+
+- Upgraded the docs site to **Astro 7 / Starlight 0.41** (from Astro 6 / Starlight
+  0.40), mirroring the sibling MIF repo. `astro-rehype-relative-markdown-links` is
+  retained via a `package.json` `overrides` peer relaxation (it still resolves the
+  docs' relative `.md` links on Astro 7); the `gray-matter` patch is retained (the
+  relative-links plugin reads link targets through `gray-matter`, which calls the
+  `safeLoad` removed in js-yaml 4). The Astro-6-pinned `esbuild` override is dropped.
+
 ### Fixed
 
 - `scripts/update.sh` now handles cross-platform reproducibility misses

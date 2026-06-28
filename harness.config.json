@@ -1,6 +1,6 @@
 {
   "$schema": "./harness.config.schema.json",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "mifConformanceLevel": 3,
   "features": {
     "internalCitations": false
@@ -62,6 +62,15 @@
       "article": 90,
       "video": 90,
       "podcast": 90
+    }
+  },
+  "site": {
+    "primarySurface": "docs",
+    "plugins": {
+      "llmsTxt": true,
+      "mermaid": true,
+      "imageZoom": false,
+      "linksValidator": false
     }
   },
   "packs": [

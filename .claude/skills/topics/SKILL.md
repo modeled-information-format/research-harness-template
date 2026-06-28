@@ -1,7 +1,7 @@
 ---
 name: topics
 description: "List the registered research topics from the harness manifest, each with its MIF namespace and a finding/verdict rollup from the index. Use this skill when the user asks 'what topics do I have', 'list topics', 'show the registry', 'what am I researching', 'topic status', or wants an overview of the corpus by topic. Reads harness.config.json topics[] over the MIF substrate."
-version: 0.3.0
+version: 0.4.0
 argument-hint: "[-t <query>] [--status <status>]"
 allowed-tools: Read, Bash, Grep, Glob
 ---

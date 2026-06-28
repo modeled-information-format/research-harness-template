@@ -1,7 +1,7 @@
 ---
 name: computing-paper
 description: Genre template for an ACM/IEEE computing conference or journal paper (abstract, related work, approach/system design, evaluation, discussion, conclusion & future work, references) with IEEE numbered citations. Use when the deliverable is a computing/engineering systems paper for an ACM or IEEE venue — distinct from the academic genre's APA/IMRaD structure.
-version: 0.3.0
+version: 0.4.0
 ---
 
 # Genre Template: ACM/IEEE Computing Paper

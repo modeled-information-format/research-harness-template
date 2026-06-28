@@ -22,7 +22,7 @@ For control-plane mechanics see [Packs and Plugins](../packs-and-plugins.md).
 
 ## academic
 
-**Version:** 0.3.0 | **Kind:** genre
+**Version:** 0.4.0 | **Kind:** genre
 
 **Source:** [`packs/reports/academic/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/academic)
 
@@ -147,7 +147,7 @@ scripts/pack-toggle.sh briefing on
 
 ## computing-paper
 
-**Version:** 0.3.0 | **Kind:** genre | **Disabled by default (opt-in).**
+**Version:** 0.4.0 | **Kind:** genre | **Disabled by default (opt-in).**
 
 **Source:** [`packs/reports/computing-paper/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/computing-paper)
 
@@ -209,7 +209,7 @@ scripts/pack-toggle.sh computing-paper on
 
 ## engineering
 
-**Version:** 0.3.0 | **Kind:** genre
+**Version:** 0.4.0 | **Kind:** genre
 
 **Source:** [`packs/reports/engineering/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/engineering)
 
@@ -275,7 +275,7 @@ scripts/pack-toggle.sh engineering on
 
 ## exec-summary
 
-**Version:** 0.3.0 | **Kind:** genre
+**Version:** 0.4.0 | **Kind:** genre
 
 **Source:** [`packs/reports/exec-summary/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/exec-summary)
 
@@ -358,7 +358,7 @@ scripts/pack-toggle.sh exec-summary on
 
 ## legal-memo
 
-**Version:** 0.3.0 | **Kind:** genre | **Disabled by default (opt-in).**
+**Version:** 0.4.0 | **Kind:** genre | **Disabled by default (opt-in).**
 
 **Source:** [`packs/reports/legal-memo/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/legal-memo)
 
@@ -428,7 +428,7 @@ scripts/pack-toggle.sh legal-memo on
 
 ## regulatory-disclosure
 
-**Version:** 0.3.0 | **Kind:** genre | **Disabled by default (opt-in).**
+**Version:** 0.4.0 | **Kind:** genre | **Disabled by default (opt-in).**
 
 **Source:** [`packs/reports/regulatory-disclosure/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/regulatory-disclosure)
 
@@ -496,7 +496,7 @@ scripts/pack-toggle.sh regulatory-disclosure on
 
 ## clinical-submission
 
-**Version:** 0.3.0 | **Kind:** genre | **Disabled by default (opt-in).**
+**Version:** 0.4.0 | **Kind:** genre | **Disabled by default (opt-in).**
 
 **Source:** [`packs/reports/clinical-submission/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/clinical-submission)
 
@@ -558,7 +558,7 @@ scripts/pack-toggle.sh clinical-submission on
 
 ## sustainability-report
 
-**Version:** 0.3.0 | **Kind:** genre | **Disabled by default (opt-in).**
+**Version:** 0.4.0 | **Kind:** genre | **Disabled by default (opt-in).**
 
 **Source:** [`packs/reports/sustainability-report/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/sustainability-report)
 
@@ -620,7 +620,7 @@ scripts/pack-toggle.sh sustainability-report on
 
 ## humanities-chicago
 
-**Version:** 0.3.0 | **Kind:** genre | **Disabled by default (opt-in).**
+**Version:** 0.4.0 | **Kind:** genre | **Disabled by default (opt-in).**
 
 **Source:** [`packs/reports/humanities-chicago/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/humanities-chicago)
 
@@ -689,7 +689,7 @@ scripts/pack-toggle.sh humanities-chicago on
 
 ## humanities-mla
 
-**Version:** 0.3.0 | **Kind:** genre | **Disabled by default (opt-in).**
+**Version:** 0.4.0 | **Kind:** genre | **Disabled by default (opt-in).**
 
 **Source:** [`packs/reports/humanities-mla/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/humanities-mla)
 
@@ -754,7 +754,7 @@ scripts/pack-toggle.sh humanities-mla on
 
 ## security-pentest
 
-**Version:** 0.3.0 | **Kind:** genre | **Disabled by default (opt-in).**
+**Version:** 0.4.0 | **Kind:** genre | **Disabled by default (opt-in).**
 
 **Source:** [`packs/reports/security-pentest/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/security-pentest)
 
@@ -820,7 +820,7 @@ scripts/pack-toggle.sh security-pentest on
 
 ## market-research-report
 
-**Version:** 0.3.0 | **Kind:** genre | **Disabled by default (opt-in).**
+**Version:** 0.4.0 | **Kind:** genre | **Disabled by default (opt-in).**
 
 **Source:** [`packs/reports/market-research-report/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/market-research-report)
 
@@ -903,7 +903,7 @@ scripts/pack-toggle.sh market-research-report on
 
 ## systematic-review
 
-**Version:** 0.3.0 | **Kind:** genre | **Disabled by default (opt-in).**
+**Version:** 0.4.0 | **Kind:** genre | **Disabled by default (opt-in).**
 
 **Source:** [`packs/reports/systematic-review/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/systematic-review)
 
@@ -984,7 +984,7 @@ scripts/pack-toggle.sh systematic-review on
 
 ## compliance-audit
 
-**Version:** 0.3.0 | **Kind:** genre | **Disabled by default (opt-in).**
+**Version:** 0.4.0 | **Kind:** genre | **Disabled by default (opt-in).**
 
 **Source:** [`packs/reports/compliance-audit/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/compliance-audit)
 
@@ -1058,7 +1058,7 @@ scripts/pack-toggle.sh compliance-audit on
 
 ## competitive-quadrant
 
-**Version:** 0.3.0 | **Kind:** genre | **Disabled by default (opt-in).**
+**Version:** 0.4.0 | **Kind:** genre | **Disabled by default (opt-in).**
 
 **Source:** [`packs/reports/competitive-quadrant/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/competitive-quadrant)
 
@@ -1136,7 +1136,7 @@ scripts/pack-toggle.sh competitive-quadrant on
 
 ## nist-sp
 
-**Version:** 0.3.0 | **Kind:** genre | **Disabled by default (opt-in).**
+**Version:** 0.4.0 | **Kind:** genre | **Disabled by default (opt-in).**
 
 **Source:** [`packs/reports/nist-sp/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/nist-sp)
 
@@ -1209,7 +1209,7 @@ scripts/pack-toggle.sh nist-sp on
 
 ## trend-analysis
 
-**Version:** 0.3.0 | **Kind:** genre
+**Version:** 0.4.0 | **Kind:** genre
 
 **Source:** [`packs/reports/trend-analysis/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/trend-analysis)
 
