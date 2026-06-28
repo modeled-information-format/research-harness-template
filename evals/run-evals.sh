@@ -60,6 +60,10 @@ run "outputs-blog-and-book" bash -c '
   scripts/render-artifact.sh "'"$TMP"'/a.json" book "'"$TMP"'/chapter.md" &&
   [ -s "'"$TMP"'/post.md" ] && [ -s "'"$TMP"'/chapter.md" ]'
 
+# 4b. Diagram policy: a Mermaid figure in a section body survives rendering intact
+#     (the render pass leaves fenced code blocks verbatim) and validates.
+run "mermaid-render-preserves-fences" bash evals/mermaid-render.sh
+
 # 5. MIF I/O conformance (SPEC §10).
 # 5a. A compliant report projects to a valid MIF L3 finding; bad ones are rejected.
 run     "report-mif-good"           scripts/mif-project.sh schemas/samples/report.sample.md

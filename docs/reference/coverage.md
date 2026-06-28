@@ -18,8 +18,8 @@ the **discovered** set equals the **documented** set.
 | Core skills | 10 | 10 | `.claude/skills/*/SKILL.md` |
 | Commands | 7 | 7 | `.claude/commands/*.md` |
 | Agents | 5 | 5 | `.claude/agents/*.md` |
-| Scripts | 28 | 28 | `scripts/**` (excludes `__pycache__`) |
-| **Total** | **79** | **79** | — |
+| Scripts | 29 | 29 | `scripts/**` (excludes `__pycache__`) |
+| **Total** | **80** | **80** | — |
 
 Reproduce the discovered counts:
 
@@ -30,7 +30,7 @@ ls .claude/skills | wc -l        # 10 core skills
 ls .claude/commands/*.md | wc -l # 7 commands
 ls .claude/agents/*.md | wc -l   # 5 agents
 find scripts -type f \( -name '*.sh' -o -name '*.py' -o -name '*.jq' \) \
-  | grep -v __pycache__ | wc -l  # 28 scripts
+  | grep -v __pycache__ | wc -l  # 29 scripts
 ```
 
 ## Packs (29)
@@ -90,12 +90,13 @@ All documented in [commands.md](commands.md): `/falsify`, `/goal-writer`,
 All documented in [agents.md](agents.md): `orchestrator`, `dimension-analyst`,
 `falsification-analyst`, `report-synthesizer`, `source-chunker`.
 
-## Scripts (28)
+## Scripts (29)
 
 All documented in [scripts.md](scripts.md): `assert-graph-mif`,
 `build-concordance`, `build-graph-viz`, `build-graph`, `build-index`,
-`build-topic-readme`, `check-citation-integrity`, `check-pack-docs.py`,
-`codegen/bundle_schema.py`, `codegen/gen-models`, `falsify`, `goal-version`,
+`build-topic-readme`, `check-citation-integrity`, `check-mermaid.py`,
+`check-pack-docs.py`, `codegen/bundle_schema.py`, `codegen/gen-models`,
+`falsify`, `goal-version`,
 `import-corpus`, `mif-project`, `ontology-review`, `pack-toggle`,
 `reconcile-session`, `render-artifact`, `resolve-membership`,
 `resolve-ontology`, `run-lock`, `sync-packs`,
@@ -104,5 +105,5 @@ All documented in [scripts.md](scripts.md): `assert-graph-mif`,
 
 ## Assertion
 
-Discovered (79) equals documented (79) across all five categories. No pack,
+Discovered (80) equals documented (80) across all five categories. No pack,
 skill, command, agent, or script is omitted.

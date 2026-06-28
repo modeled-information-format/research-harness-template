@@ -94,4 +94,5 @@ Scripts that verify harness integrity and attestation.
 | Script | Purpose | Key dependency |
 | --- | --- | --- |
 | `scripts/verify.sh` | Harness build gate. Runs accretive gate functions (`gate_mN`) in sequence. Detects template vs instance context. Exits 0 only when all gates pass. | `jq`, `yq`, `ajv`, `ajv-formats` |
+| `scripts/check-mermaid.py` | Structural validator for Mermaid diagrams in Markdown: flags empty blocks, unknown diagram types, markdown-escape corruption (a `\*`/`\_` leaked into a fence), and unbalanced brackets. Used by the `mermaid-render` eval; full grammar validation is left to `mmdc` (intentionally not a runtime dependency). | Python stdlib only |
 | `scripts/update.sh` | The only supported way a clone updates from the template: a fail-closed provenance gate in front of `copier update` that pins the update to a verified release commit and reproduces the release artifact before applying. | `git`, `gh`, `copier` |

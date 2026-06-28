@@ -70,8 +70,19 @@ DEF='
     | join("");
   # Strip trailing whitespace on every line (MD009).
   def detrail: gsub("[ \t]+(?=\n)"; "") | gsub("[ \t]+$"; "");
+  # Render a section body: autolink + deglob escape PROSE only. Fenced ``` code
+  # blocks (e.g. a Mermaid diagram) must pass through verbatim — escaping "*"/"_"
+  # or autolinking a URL inside a fence corrupts the diagram/code. Split the body
+  # on fenced blocks, transform prose segments, leave fences untouched (an unclosed
+  # fence is preserved to end-of-string so no content is dropped). detrail is safe
+  # everywhere (trailing whitespace is ignored inside fences and required out, MD009).
+  def render_body:
+    [ scan("(?ms)```[\\s\\S]*?\\n```|(?:(?!```)[\\s\\S])+|```[\\s\\S]*") ]
+    | map(if startswith("```") then . else (autolink | deglob) end)
+    | join("")
+    | detrail;
   def secblock($s; $meta; $ev):
-    [ "", "## " + ($s.heading | deglob | detrail), "", ($s.body | autolink | deglob | detrail) ]
+    [ "", "## " + ($s.heading | deglob | detrail), "", ($s.body | render_body) ]
     + (if (($s.entities // []) | length) > 0
        then [ "", ("Key entities: " + ([ $s.entities[] | .name + " (" + (.entityType // "entity") + ")" ] | join(", ")) + ".") ] else [] end)
     + (if $meta and ($s.dimension != null)
