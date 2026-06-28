@@ -1,1 +1,11 @@
-{"name":"regenerative-agriculture-research","version":"0.1.0","kind":"ontology","description":"Agriculture/farm research ontology","provides":{"ontologies":["regenerative-agriculture-research"]}}
+{
+  "name": "regenerative-agriculture-research",
+  "version": "0.2.0",
+  "kind": "ontology",
+  "description": "Agriculture/farm research ontology",
+  "provides": {
+    "ontologies": [
+      "regenerative-agriculture-research"
+    ]
+  }
+}

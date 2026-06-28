@@ -44,6 +44,82 @@ EntityReference = TypedDict(
 )
 
 
+class Hash(TypedDict):
+    algorithm: str
+    value: str
+
+
+DocumentReference1 = TypedDict(
+    "DocumentReference1",
+    {
+        "@type": Literal["DocumentReference"],
+        "id": NotRequired[str],
+        "documentType": NotRequired[
+            Literal[
+                "pdf",
+                "html",
+                "markdown",
+                "text",
+                "transcript",
+                "dataset",
+                "spreadsheet",
+                "presentation",
+                "image",
+                "audio",
+                "video",
+                "email",
+                "other",
+            ]
+            | str
+        ],
+        "url": str,
+        "hash": NotRequired[Hash],
+        "contentType": NotRequired[str],
+        "byteLength": NotRequired[int],
+        "version": NotRequired[str],
+        "retrievedAt": NotRequired[str],
+        "title": NotRequired[str],
+    },
+)
+
+
+DocumentReference2 = TypedDict(
+    "DocumentReference2",
+    {
+        "@type": Literal["DocumentReference"],
+        "id": str,
+        "documentType": NotRequired[
+            Literal[
+                "pdf",
+                "html",
+                "markdown",
+                "text",
+                "transcript",
+                "dataset",
+                "spreadsheet",
+                "presentation",
+                "image",
+                "audio",
+                "video",
+                "email",
+                "other",
+            ]
+            | str
+        ],
+        "url": NotRequired[str],
+        "hash": NotRequired[Hash],
+        "contentType": NotRequired[str],
+        "byteLength": NotRequired[int],
+        "version": NotRequired[str],
+        "retrievedAt": NotRequired[str],
+        "title": NotRequired[str],
+    },
+)
+
+
+type DocumentReference = DocumentReference1 | DocumentReference2
+
+
 EmbeddingReference = TypedDict(
     "EmbeddingReference",
     {
@@ -71,34 +147,6 @@ OntologyReference = TypedDict(
         "id": str,
         "version": NotRequired[str],
         "uri": NotRequired[str],
-    },
-)
-
-
-Provenance = TypedDict(
-    "Provenance",
-    {
-        "@type": NotRequired[str],
-        "sourceType": NotRequired[
-            Literal[
-                "user_explicit",
-                "user_implicit",
-                "agent_inferred",
-                "external_import",
-                "system_generated",
-            ]
-        ],
-        "confidence": NotRequired[float],
-        "trustLevel": NotRequired[
-            Literal[
-                "verified",
-                "user_stated",
-                "high_confidence",
-                "moderate_confidence",
-                "low_confidence",
-                "uncertain",
-            ]
-        ],
     },
 )
 
@@ -139,6 +187,9 @@ TemporalMetadata = TypedDict(
         "reinforcementHistory": NotRequired[list[ReinforcementHistoryItem]],
     },
 )
+
+
+type ProvNode = str | dict[str, Any]
 
 
 Citation = TypedDict(
@@ -184,6 +235,40 @@ Citation = TypedDict(
 )
 
 
+Provenance = TypedDict(
+    "Provenance",
+    {
+        "@type": NotRequired[str],
+        "sourceType": NotRequired[
+            Literal[
+                "user_explicit",
+                "user_implicit",
+                "agent_inferred",
+                "external_import",
+                "system_generated",
+            ]
+        ],
+        "confidence": NotRequired[float],
+        "trustLevel": NotRequired[
+            Literal[
+                "verified",
+                "user_stated",
+                "high_confidence",
+                "moderate_confidence",
+                "low_confidence",
+                "uncertain",
+            ]
+        ],
+        "sourceRef": NotRequired[str],
+        "agent": NotRequired[str],
+        "agentVersion": NotRequired[str],
+        "wasGeneratedBy": NotRequired[ProvNode],
+        "wasAttributedTo": NotRequired[ProvNode],
+        "wasDerivedFrom": NotRequired[ProvNode | list[ProvNode]],
+    },
+)
+
+
 Mif = TypedDict(
     "Mif",
     {
@@ -209,7 +294,9 @@ Mif = TypedDict(
         "provenance": NotRequired[Provenance],
         "embedding": NotRequired[EmbeddingReference],
         "citations": NotRequired[list[Citation]],
+        "documents": NotRequired[list[DocumentReference]],
         "summary": NotRequired[str],
+        "properties": NotRequired[dict[str, str | float | bool | None]],
         "compressedAt": NotRequired[str],
         "blocks": NotRequired[dict[str, str]],
         "extensions": NotRequired[dict[str, Any]],

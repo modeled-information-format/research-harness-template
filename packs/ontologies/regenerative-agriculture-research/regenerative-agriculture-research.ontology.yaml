@@ -3,26 +3,38 @@
 #
 # A research-oriented ontology for agriculture / regenerative-farming research
 # findings. Types describe RESEARCH OBSERVATIONS about farming practices,
-# infrastructure, funding, and technology — not farm records. Includes the
-# cross-cutting technology/security research types so infrastructure- and
-# security-flavored farm topics resolve.
+# infrastructure, funding, and technology — not farm records.
 #
-# Compatible with: mif-base v0.1.0
-# Version: 0.1.0
-# Last Updated: 2026-06-20
+# Compatible with: engineering-base v0.1.0 + mif-generic v1.0.0
+# Version: 0.3.1
+# Last Updated: 2026-06-26
+#
+# 0.3.0: Added 14 leaf subtypes across husbandry-practice (5), farm-infrastructure (6),
+# equipment-or-input (2), and grant-program (1); added has_part and connects relationships.
+#
+# 0.2.0 (ontology-spine-relayering): re-parented from mif-base onto BOTH engineering-base
+# and mif-generic, and organized as an IS-A tree (subtype_of) rooted in the inherited
+# generic/engineering supertypes (generic -> supertype -> leaf). Fully shed the six ported
+# duplicate supertypes — `design-pattern`, `delivery-metric`, `architectural-decision`,
+# `engineering-practice`, `process-discipline` (engineering-base) and `technology`
+# (mif-generic) — now inherited, not redeclared. The findings that used them were migrated:
+# `technology` stamps -> the domain leaf `equipment-or-input`; `delivery-metric` and
+# `process-discipline` stamps were re-pinned (ontology.id) to `engineering-base`, their
+# declaring layer. The cross-cutting `adoption-trend` and `compliance-regulation` are
+# retained locally (their canonical homes — trend-analysis / regulatory-legal — are not
+# in this extends chain) but are now subtyped under inherited supertypes. No same-name
+# shadowing remains.
 
 ontology:
   id: regenerative-agriculture-research
-  version: "0.1.0"
+  version: "0.3.1"
   description: >-
-    Agriculture / farm research ontology — research-oriented entity types for
-    husbandry, agronomy, farm infrastructure, grants, equipment, plus
-    cross-cutting technology and security research types.
+    Agriculture / farm research ontology — research-oriented entity types for husbandry, agronomy, farm infrastructure, grants, and equipment, organized as an IS-A tree rooted in the inherited generic/engineering supertypes.
   schema_url: >-
     https://mif-spec.dev/schema/ontology/ontology.schema.json
   extends:
-    - mif-base
-
+    - engineering-base
+    - mif-generic
 # Namespace Hierarchy (Cognitive Triad)
 namespaces:
   semantic:
@@ -39,12 +51,13 @@ namespaces:
       funding:
         description: "Grants, cost-share, and funding programs"
         type_hint: semantic
-
-# Entity Types
+# Entity Types — domain leaves, each subtype_of an inherited generic/engineering supertype.
 entity_types:
   - name: husbandry-practice
     description: "An animal-husbandry or livestock-care practice (lambing, newborn care, health management)"
     base: semantic
+    subtype_of:
+      - engineering-practice
     traits:
       - cited
     schema:
@@ -66,6 +79,8 @@ entity_types:
   - name: agronomic-practice
     description: "A grazing, soil, pasture, or crop-management practice"
     base: semantic
+    subtype_of:
+      - engineering-practice
     traits:
       - cited
     schema:
@@ -87,6 +102,8 @@ entity_types:
   - name: farm-infrastructure
     description: "A farm infrastructure system or component: fencing, irrigation, IoT, networks, towers, power"
     base: semantic
+    subtype_of:
+      - component
     traits:
       - cited
     schema:
@@ -108,6 +125,8 @@ entity_types:
   - name: grant-program
     description: "An agricultural grant, cost-share, or funding program"
     base: semantic
+    subtype_of:
+      - policy
     traits:
       - cited
     schema:
@@ -129,6 +148,8 @@ entity_types:
   - name: equipment-or-input
     description: "A piece of farm equipment, hardware, device, or production input"
     base: semantic
+    subtype_of:
+      - technology
     traits:
       - cited
     schema:
@@ -147,65 +168,386 @@ entity_types:
         specifications:
           type: string
           description: "Notable specifications, ratings, or pricing"
-  # --- Cross-cutting technology / security research types (ported faithfully) ---
-  - name: technology
-    description: "A technology, framework, protocol, or tool"
+  # --- Husbandry-practice leaves (0.3.0) ---
+  - name: parturition-protocol
+    description: "Birth-management protocol specifying care before, during, and immediately after parturition"
     base: semantic
+    subtype_of:
+      - husbandry-practice
+    traits:
+      - cited
+    schema:
+      required:
+        - practice_name
+      properties:
+        practice_name:
+          type: string
+          description: "Name of the parturition protocol"
+        labor_stage:
+          type: string
+          description: "Stage of labor addressed (e.g. early, active, delivery, stage-3)"
+        species:
+          type: string
+          description: "Target species (e.g. sheep, goat, cattle)"
+        timing_guidance:
+          type: string
+          description: "Timing cues and intervention windows"
+        breed_notes:
+          type: string
+          description: "Breed-specific considerations affecting protocol"
+  - name: neonatal-care
+    description: "Newborn care protocol covering colostrum management, bonding, and rejection prevention"
+    base: semantic
+    subtype_of:
+      - husbandry-practice
+    traits:
+      - cited
+    schema:
+      required:
+        - practice_name
+      properties:
+        practice_name:
+          type: string
+          description: "Name of the neonatal-care protocol"
+        species:
+          type: string
+          description: "Target species"
+        time_window:
+          type: string
+          description: "Critical time window for intervention (e.g. first 2–4 hours)"
+        intervention_type:
+          type: string
+          description: "Type of intervention (colostrum, fostering, tube-feed, heat lamp)"
+        outcome_target:
+          type: string
+          description: "Expected outcome or survival metric"
+  - name: periparturient-nutrition
+    description: "Pre- and post-parturition and creep nutrition protocol targeting dam and neonatal needs"
+    base: semantic
+    subtype_of:
+      - husbandry-practice
+    traits:
+      - cited
+    schema:
+      required:
+        - practice_name
+      properties:
+        practice_name:
+          type: string
+          description: "Name of the periparturient nutrition protocol"
+        species:
+          type: string
+          description: "Target species"
+        production_stage:
+          type: string
+          description: "Stage of production (late gestation, early lactation, creep)"
+        nutrient_target:
+          type: string
+          description: "Key nutrients or BCS targets (e.g. CP, ME, Ca:P ratio)"
+        ration_notes:
+          type: string
+          description: "Feed type, supplementation notes, or ration formulation guidance"
+  - name: livestock-health-condition
+    description: "A diagnosed condition or complication in livestock with associated management protocol"
+    base: semantic
+    subtype_of:
+      - husbandry-practice
+    traits:
+      - cited
+    schema:
+      required:
+        - practice_name
+        - condition_name
+      properties:
+        practice_name:
+          type: string
+          description: "Name of the health management protocol"
+        condition_name:
+          type: string
+          description: "Name of the diagnosed condition or complication"
+        species:
+          type: string
+          description: "Species affected"
+        risk_period:
+          type: string
+          description: "Production period of highest risk"
+        clinical_signs:
+          type: string
+          description: "Observable clinical signs or diagnostic indicators"
+        management_response:
+          type: string
+          description: "Recommended treatment or management response"
+  - name: breed-characteristic
+    description: "A breed-specific trait or characteristic that influences husbandry decisions"
+    base: semantic
+    subtype_of:
+      - husbandry-practice
+    traits:
+      - cited
+    schema:
+      required:
+        - practice_name
+        - breed
+      properties:
+        practice_name:
+          type: string
+          description: "Name of the husbandry practice context"
+        breed:
+          type: string
+          description: "Breed or genetic line"
+        trait_type:
+          type: string
+          description: "Category of trait (e.g. reproductive, growth, parasite-resistance)"
+        quantified_value:
+          type: string
+          description: "Quantified expression of the trait (e.g. mean litter size, ADG)"
+        management_implication:
+          type: string
+          description: "How this trait modifies management decisions"
+  # --- Farm-infrastructure leaves (0.3.0) ---
+  - name: fencing-system
+    description: "A farm fencing system including type, energizer, grounding, and special conditions"
+    base: semantic
+    subtype_of:
+      - farm-infrastructure
     traits:
       - cited
     schema:
       required:
         - name
-        - category
       properties:
         name:
           type: string
-        category:
+          description: "Name or designation of the fencing system"
+        fence_type:
           type: string
-          enum:
-            - database
-            - framework
-            - language
-            - infrastructure
-            - tool
-            - library
-        website:
+          description: "Fencing type (e.g. high-tensile, woven-wire, polytape, netting)"
+        energizer_spec:
           type: string
-          format: uri
-        license:
+          description: "Energizer specifications (joule output, power source)"
+        grounding_config:
           type: string
-        use_case:
+          description: "Grounding rod count, spacing, and soil conductivity notes"
+        special_conditions:
           type: string
-          description: "Why/where this technology is used"
-  - name: design-pattern
-    description: "A design pattern or architectural pattern"
+          description: "Predator pressure, terrain, or soil-specific considerations"
+  - name: irrigation-system
+    description: "A farm irrigation system with source, capacity, and automation details"
     base: semantic
+    subtype_of:
+      - farm-infrastructure
     traits:
       - cited
     schema:
       required:
-        - pattern_name
-        - context
-        - solution
+        - name
       properties:
-        pattern_name:
+        name:
           type: string
-        context:
+          description: "Name or designation of the irrigation system"
+        system_type:
           type: string
-          description: "When to use this pattern"
-        solution:
+          description: "System type (e.g. drip, pivot, flood, micro-spray)"
+        source:
           type: string
-          description: "How the pattern solves the problem"
-        consequences:
-          type: object
-          description: "Trade-offs and implications"
-        related_patterns:
-          type: array
-          items:
-            type: string
+          description: "Water source (well, pond, municipal, rainwater harvest)"
+        capacity:
+          type: string
+          description: "Flow rate or storage capacity"
+        automation:
+          type: string
+          description: "Automation level and control technology"
+  - name: connectivity-link
+    description: "A wireless or wired network link providing farm connectivity"
+    base: semantic
+    subtype_of:
+      - farm-infrastructure
+    traits:
+      - cited
+    schema:
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: "Name or designation of the connectivity link"
+        link_technology:
+          type: string
+          description: "Link technology (e.g. LoRaWAN, LTE-M, Wi-Fi, fiber, VSAT)"
+        range_km:
+          type: string
+          description: "Effective range in kilometers"
+        backhaul:
+          type: string
+          description: "Backhaul technology or upstream provider"
+        coverage_type:
+          type: string
+          description: "Coverage topology (point-to-point, mesh, star, cellular)"
+  - name: sensor-or-edge-node
+    description: "A field sensor or edge computing node deployed for farm data collection"
+    base: semantic
+    subtype_of:
+      - farm-infrastructure
+    traits:
+      - cited
+    schema:
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: "Name or designation of the sensor or edge node"
+        sensor_type:
+          type: string
+          description: "Sensor category (e.g. soil moisture, weather station, livestock tag)"
+        protocol:
+          type: string
+          description: "Communication protocol (e.g. MQTT, LoRa, Zigbee, Modbus)"
+        power_source:
+          type: string
+          description: "Power source (solar, battery, mains, PoE)"
+        deployment_context:
+          type: string
+          description: "Where and how the node is deployed in the field"
+  - name: power-system
+    description: "A farm power generation or storage system"
+    base: semantic
+    subtype_of:
+      - farm-infrastructure
+    traits:
+      - cited
+    schema:
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: "Name or designation of the power system"
+        power_source:
+          type: string
+          description: "Energy source (solar PV, wind, grid, generator, propane)"
+        capacity:
+          type: string
+          description: "Generation or storage capacity (kW / kWh)"
+        supported_loads:
+          type: string
+          description: "Farm loads supported (pumps, sensors, buildings, EVs)"
+        autonomy_days:
+          type: string
+          description: "Days of off-grid autonomy at typical load"
+  - name: network-segment
+    description: "A logical network segment on the farm with defined trust and isolation"
+    base: semantic
+    subtype_of:
+      - farm-infrastructure
+    traits:
+      - cited
+    schema:
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: "Name or designation of the network segment"
+        segment_type:
+          type: string
+          description: "Segment type (e.g. VLAN, SSID, subnet, VPN tunnel)"
+        trust_level:
+          type: string
+          description: "Trust level (e.g. trusted, IoT-isolated, guest, management)"
+        isolation_mechanism:
+          type: string
+          description: "Isolation method (firewall rules, VLAN tagging, air gap)"
+        connected_assets:
+          type: string
+          description: "Asset types connected to this segment"
+  # --- Equipment-or-input leaves (0.3.0) ---
+  - name: iot-device
+    description: "An IoT device deployed on the farm for sensing, actuation, or automation"
+    base: semantic
+    subtype_of:
+      - equipment-or-input
+    traits:
+      - cited
+    schema:
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: "Device name or model"
+        device_category:
+          type: string
+          description: "Device category (e.g. livestock tag, water sensor, gate controller)"
+        connectivity_protocol:
+          type: string
+          description: "Primary connectivity protocol (e.g. LoRaWAN, BLE, NB-IoT)"
+        vendor:
+          type: string
+          description: "Manufacturer or supplier"
+        specifications:
+          type: string
+          description: "Notable technical specifications, power draw, or certifications"
+  - name: fencing-component
+    description: "A discrete fencing component (post, wire, insulator, gate, clip)"
+    base: semantic
+    subtype_of:
+      - equipment-or-input
+    traits:
+      - cited
+    schema:
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: "Component name"
+        component_type:
+          type: string
+          description: "Component type (e.g. post, wire, insulator, gate, earth stake)"
+        vendor:
+          type: string
+          description: "Manufacturer or supplier"
+        specifications:
+          type: string
+          description: "Material, gauge, load rating, or other specifications"
+        use_case:
+          type: string
+          description: "Application context within a fencing system"
+  # --- Grant-program leaf (0.3.0) ---
+  - name: conservation-cost-share
+    description: "A conservation cost-share program offering agency-funded incentives for approved practice standards"
+    base: semantic
+    subtype_of:
+      - grant-program
+    traits:
+      - cited
+    schema:
+      required:
+        - program_name
+      properties:
+        program_name:
+          type: string
+          description: "Program name (e.g. EQIP, RCPP, CSP)"
+        agency:
+          type: string
+          description: "Administering agency (e.g. USDA-NRCS, FSA)"
+        practice_standards:
+          type: string
+          description: "NRCS or other practice codes covered (e.g. 393, 528)"
+        cost_share_rate:
+          type: string
+          description: "Percentage or dollar-cap of cost share offered"
+        signup_window:
+          type: string
+          description: "Signup period or ranking deadline"
+  # --- Cross-cutting research types retained locally (canonical homes not in extends chain),
+  #     now subtyped under inherited supertypes for hierarchy. ---
   - name: adoption-trend
     description: "A momentum, maturation, or standardization signal in the direction of travel"
     base: semantic
+    subtype_of:
+      - concept
     traits:
       - cited
     schema:
@@ -224,29 +566,11 @@ entity_types:
         maturity:
           type: string
           description: "How established the trend is (e.g. emerging, mainstream)"
-  - name: delivery-metric
-    description: "A measurable metric, threshold, or quantified specification"
-    base: semantic
-    traits:
-      - cited
-    schema:
-      required:
-        - metric_name
-      properties:
-        metric_name:
-          type: string
-        definition:
-          type: string
-          description: "What the metric measures"
-        benchmark:
-          type: string
-          description: "Target or reference value"
-        source:
-          type: string
-          description: "Originating framework or study"
   - name: compliance-regulation
     description: "A law, regulation, code, or government mandate"
     base: semantic
+    subtype_of:
+      - policy
     traits:
       - cited
     schema:
@@ -265,124 +589,12 @@ entity_types:
         effective_dates:
           type: string
           description: "Relevant entry-into-force or compliance deadlines"
-  - name: security-framework
-    description: "A security or assurance framework, taxonomy, or standard (e.g. NDAA 889, NIST)"
-    base: semantic
-    traits:
-      - cited
-    schema:
-      required:
-        - framework_name
-        - scope
-      properties:
-        framework_name:
-          type: string
-        scope:
-          type: string
-          description: "What the framework governs"
-        maintainer:
-          type: string
-          description: "Organization that maintains the framework"
-        relationship:
-          type: string
-          description: "How it relates to or composes with other frameworks"
-  - name: security-threat
-    description: "A security threat, attack class, or vulnerability"
-    base: semantic
-    traits:
-      - cited
-    schema:
-      required:
-        - threat_name
-        - attack_vector
-      properties:
-        threat_name:
-          type: string
-        attack_vector:
-          type: string
-          description: "How the threat is exploited"
-        impact:
-          type: string
-          description: "What an attacker gains or breaks"
-        mitigation_summary:
-          type: string
-          description: "Primary defenses against this threat"
-        references:
-          type: array
-          items:
-            type: string
-  - name: architectural-decision
-    description: "An architecture or engineering decision with rationale"
-    base: semantic
-    traits:
-      - cited
-    schema:
-      required:
-        - decision
-        - rationale
-      properties:
-        decision:
-          type: string
-          description: "The decision made"
-        rationale:
-          type: string
-          description: "Why this decision was made"
-        alternatives:
-          type: array
-          description: "Alternatives considered"
-          items:
-            type: object
-        consequences:
-          type: object
-          description: "Known consequences and trade-offs"
-  - name: engineering-practice
-    description: "An organizational, operational, or reliability practice"
-    base: semantic
-    traits:
-      - cited
-    schema:
-      required:
-        - practice_name
-      properties:
-        practice_name:
-          type: string
-        description:
-          type: string
-          description: "What the practice is"
-        evidence:
-          type: string
-          description: "Empirical support or outcome"
-        origin:
-          type: string
-          description: "Originating model, study, or author"
-  - name: process-discipline
-    description: "A governance, planning, or production-readiness discipline"
-    base: semantic
-    traits:
-      - cited
-    schema:
-      required:
-        - discipline_name
-      properties:
-        discipline_name:
-          type: string
-        purpose:
-          type: string
-          description: "What the discipline governs"
-        criteria:
-          type: string
-          description: "Acceptance or gating criteria"
-        stage:
-          type: string
-          description: "Stage where it applies"
-
 # Traits (Mixins)
 traits:
   cited:
     description: "Requires citations/sources"
     requires:
       - citations
-
 # Relationships
 relationships:
   relates_to:
@@ -399,7 +611,20 @@ relationships:
       - agronomic-practice
       - husbandry-practice
     symmetric: false
-
+  has_part:
+    description: "A fencing system has a fencing component as a constituent part (RO:0001019 has-part)"
+    from:
+      - fencing-system
+    to:
+      - fencing-component
+    symmetric: false
+  connects:
+    description: "A connectivity link connects network segments, bridging coverage zones (RO:0002418 connects)"
+    from:
+      - connectivity-link
+    to:
+      - network-segment
+    symmetric: false
 # Discovery Configuration
 discovery:
   enabled: true

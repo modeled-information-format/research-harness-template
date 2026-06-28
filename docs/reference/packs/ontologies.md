@@ -93,7 +93,7 @@ jq '(.ontologies[] | select(.id=="biology-research-lab") | .enabled) |= true' \
 ### Constraints
 
 - Opt-in only; cataloged `core=false` — topics must explicitly enable and bind; never auto-applied to non-biology-lab topics.
-- Extends `mif-base v0.1.0` and `shared-traits v0.1.0`; binding is fail-closed — `resolve-ontology.sh` and `validate-concordance.sh` abort the entire corpus if either `extends` target is missing or mistyped.
+- Extends `mif-base v1.0.0` and `shared-traits v1.0.0`; binding is fail-closed — `resolve-ontology.sh` and `validate-concordance.sh` abort the entire corpus if either `extends` target is missing or mistyped.
 - Scoped to academic biology research labs; entity types do not apply to engineering, legal, or market-research topics.
 - Compliance sub-types (IRB / IACUC / IBC) are domain-specific and resolve only within bound biology-lab topics.
 
@@ -280,7 +280,7 @@ jq '(.ontologies[] | select(.id=="market-research") | .enabled) |= true' \
 ### Constraints
 
 - Opt-in only; cataloged `core=false` — never auto-applied to non-market-research topics.
-- Extends `mif-base v0.1.0` (compatible with `shared-traits v0.1.0`); binding is fail-closed — `resolve-ontology.sh` aborts the corpus if the `extends` target is missing or mistyped.
+- Extends `mif-base v1.0.0` (compatible with `shared-traits v1.0.0`); binding is fail-closed — `resolve-ontology.sh` aborts the corpus if the `extends` target is missing or mistyped.
 - Scoped to market and competitive research; entity types do not apply to scientific, legal, or engineering topics.
 
 ### Goals
@@ -288,6 +288,143 @@ jq '(.ontologies[] | select(.id=="market-research") | .enabled) |= true' \
 - Provides vocabulary for market and competitive research: market segments, competitors, brands, buyer personas, market sizing (TAM/SAM/SOM), competitive forces, service offerings, value propositions, market-intelligence reports, survey instruments, and win-loss analyses.
 - Enables recognition of segment/vertical, competitor, TAM/SAM/SOM, Porter five-forces, NPS/conjoint survey, win-loss, and data-source terminology in research sources.
 - Grounded in schema.org/GoodRelations, Porter Five Forces, Strategyzer Value Proposition Canvas, and Umbrex market-mapping; every entity type traces to a named source class.
+- Typed findings validate fail-closed against MIF schema on binding.
+
+---
+
+## observability
+
+**Version:** 0.1.0 | **Kind:** ontology
+
+**Source:** [`packs/ontologies/observability/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/ontologies/observability)
+
+### Purpose
+
+Provides an entity vocabulary for observability-platform research: observability
+services and the telemetry signals they emit, service-ownership registries,
+capability comparisons against a baseline, market positioning, time-stamped roadmap
+signals, and platform migration patterns. Types form an explicit IS-A tree rooted in
+the inherited generic and engineering supertypes. It `extends` both
+[`engineering-base`](#engineering-base) (for `delivery-metric` and `design-pattern`)
+and `mif-generic` (for `technology` and `concept`).
+
+### Domain
+
+Observability platforms, telemetry, and platform migration analysis (for example
+AWS-native observability versus Datadog).
+
+### Entities, relationships, and traits
+
+**Namespaces (semantic):** services (observability services and the signals and
+registries they provide), analysis (capability comparisons and market positioning).
+**Namespaces (episodic):** roadmap (GA dates, launches, deprecations, predictions).
+**Namespaces (procedural):** migrations (platform migration patterns and case studies).
+
+**Entity types:** observability-service, service-ownership-registry, telemetry-signal,
+capability-comparison, market-position, roadmap-signal, migration-pattern. Two abstract
+intermediate supertypes (observability-resource, observability-assessment) organize the
+IS-A tree and are not stamped on findings.
+
+**Key relationships:** `emits`, `compares`, `positions`, `advances`, `catalogs`.
+
+**Discovery patterns:** recognizes observability service names (CloudWatch, X-Ray, ADOT,
+OpenTelemetry, Managed Prometheus, Managed Grafana, Application Signals), service-catalog
+and developer-portal terminology, capability parity and gap language, migration case
+studies, market-position language (Gartner, Magic Quadrant), and roadmap signals (GA,
+re:Invent, end-of-support).
+
+### When to bind
+
+Bind `observability` when researching observability platforms, telemetry signals,
+service-ownership and catalog tooling, capability gaps between observability vendors, or
+platform migration patterns.
+
+### Enable
+
+```sh
+jq '(.ontologies[] | select(.id=="observability") | .enabled) |= true' \
+  harness.config.json > harness.config.tmp && mv harness.config.tmp harness.config.json
+```
+
+### Constraints
+
+- Opt-in only; cataloged `core=false` — never auto-applied to non-observability topics.
+- Extends `engineering-base` and `mif-generic`; `resolve-ontology.sh` walks the full chain fail-closed — a missing or mistyped `extends` target aborts corpus resolution.
+- Scoped to observability platforms and migration analysis; the two abstract supertypes are not directly stampable on findings.
+
+### Goals
+
+- Provides vocabulary for observability-platform research: services, telemetry signals, service-ownership registries, capability comparisons, market positions, roadmap signals, and migration patterns.
+- Resolves shared engineering supertypes (delivery-metric, design-pattern) transitively via `engineering-base` and the generic `technology` and `concept` via `mif-generic` without re-declaration.
+- Enables recognition of observability service names, telemetry and pillar terminology, capability-parity language, market-position and roadmap signals, and migration case studies in research sources.
+- Typed findings validate fail-closed against MIF schema on binding.
+
+---
+
+## psycholinguistics
+
+**Version:** 0.1.0 | **Kind:** ontology
+
+**Source:** [`packs/ontologies/psycholinguistics/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/ontologies/psycholinguistics)
+
+### Purpose
+
+Provides an entity vocabulary for psycholinguistics and computational stylometry research:
+psycholinguistic constructs, stylometric features, psychometric indices, elicitation
+protocols, research instruments, linguistic frameworks, and references to existing
+frameworks. Supports voice-elicitation, personality-language mapping, and
+authorship/readability research. Sources include the Big Five/OCEAN model, LIWC, Flesch
+readability, MATTR/MTLD lexical-diversity measures, Burrows's Delta (stylo), and the
+Cognitive Interview.
+
+### Domain
+
+Psycholinguistics, computational stylometry, and voice-elicitation research.
+
+### Entities, relationships, and traits
+
+**Namespaces (semantic):** constructs (psycholinguistic and psychological constructs),
+features (stylometric and linguistic features), indices (psychometric indices and derived
+scores), instruments (research instruments, tools, and platforms), frameworks (linguistic
+and psycholinguistic frameworks), protocols (elicitation and interview protocols).
+
+**Entity types:** psycholinguistic-construct, stylometric-feature, psychometric-index,
+elicitation-protocol, research-instrument, linguistic-framework, existing-framework-reference.
+
+**Key relationships:** `measures`, `operationalizes`, `grounds`.
+
+**Traits applied:** `cited`.
+
+**Discovery patterns:** recognizes Big Five/OCEAN and HEXACO trait terminology, LIWC,
+readability and lexical-diversity measures (TTR, MATTR, MTLD, Flesch, Kincaid), stylometry
+and authorship-attribution terms (stylo, Burrows's Delta), and elicitation-protocol
+language (cognitive interview, think-aloud, voice interview).
+
+### When to bind
+
+Bind `psycholinguistics` when researching personality-language mapping, voice elicitation,
+stylometry and authorship attribution, readability and lexical diversity, or the research
+instruments and frameworks used in those studies.
+
+### Enable
+
+```sh
+jq '(.ontologies[] | select(.id=="psycholinguistics") | .enabled) |= true' \
+  harness.config.json > harness.config.tmp && mv harness.config.tmp harness.config.json
+```
+
+### Constraints
+
+- Opt-in only; cataloged `core=false` — never auto-applied to non-psycholinguistics topics.
+- Extends `engineering-base` and `mif-generic`; `resolve-ontology.sh` walks the full chain fail-closed — a missing or mistyped `extends` target aborts corpus resolution.
+- Scoped to psycholinguistics and stylometry research; entity types do not apply to engineering operational, legal, or market-research topics.
+
+### Goals
+
+- Provides vocabulary for psycholinguistics and stylometry research: constructs, stylometric features, psychometric indices, elicitation protocols, research instruments, linguistic frameworks, and existing-framework references.
+- Resolves the generic `concept` and `technology` supertypes via `mif-generic` and `delivery-metric` and `design-pattern` via `engineering-base` without re-declaration.
+- Enables recognition of Big Five/OCEAN and LIWC terminology, readability and lexical-diversity measures, stylometry and authorship-attribution terms, and elicitation-protocol language in research sources.
+- Grounded in the Big Five/OCEAN model, LIWC, Flesch readability, MATTR/MTLD, Burrows's Delta, and the Cognitive Interview; relationships are RO/IAO grounded.
 - Typed findings validate fail-closed against MIF schema on binding.
 
 ---
@@ -339,7 +476,7 @@ jq '(.ontologies[] | select(.id=="regenerative-agriculture") | .enabled) |= true
 ### Constraints
 
 - Opt-in only; cataloged `core=false` — never auto-applied to non-agriculture topics.
-- Extends `mif-base v0.1.0` and `shared-traits v0.1.0`; binding is fail-closed — `resolve-ontology.sh` and `validate-concordance.sh` abort the corpus if either `extends` target is missing or mistyped.
+- Extends `mif-base v1.0.0` and `shared-traits v1.0.0`; binding is fail-closed — `resolve-ontology.sh` and `validate-concordance.sh` abort the corpus if either `extends` target is missing or mistyped.
 - Scoped strictly to farm business records, supply chain, carbon credits, and certification tracking — not research observations; for research-oriented findings use `regenerative-agriculture-research` instead.
 
 ### Goals
@@ -361,8 +498,10 @@ jq '(.ontologies[] | select(.id=="regenerative-agriculture") | .enabled) |= true
 
 Provides a research-oriented entity vocabulary for regenerative agriculture findings.
 Covers research observations about farming practices, infrastructure, funding, and
-technology — not farm records. Includes cross-cutting technology and security research
-types so infrastructure- and security-flavored farm topics resolve correctly.
+technology — not farm records. Types form an IS-A tree rooted in the inherited generic
+and engineering supertypes. It `extends` both [`engineering-base`](#engineering-base)
+(for `engineering-practice`, `component`, and `policy`) and `mif-generic` (for
+`technology` and `concept`).
 
 ### Domain
 
@@ -375,8 +514,15 @@ infrastructure, funding programs, and farm technology.
 agronomy (grazing, soil, crop, and pasture practices), infrastructure (fencing,
 irrigation, IoT, networks), funding (grants, cost-share, and funding programs).
 
-**Entity types include:** husbandry-practice (animal-husbandry or livestock-care
-research observations such as lambing, newborn care, health management).
+**Entity types (21):** husbandry-practice, agronomic-practice, farm-infrastructure,
+grant-program, equipment-or-input, plus the husbandry leaves parturition-protocol,
+neonatal-care, periparturient-nutrition, livestock-health-condition, and
+breed-characteristic; the farm-infrastructure leaves fencing-system, irrigation-system,
+connectivity-link, sensor-or-edge-node, power-system, and network-segment; the
+equipment leaves iot-device and fencing-component; the grant-program leaf
+conservation-cost-share; and the cross-cutting adoption-trend and compliance-regulation.
+
+**Key relationships:** `relates_to`, `supports`, `has_part`, `connects`.
 
 **Traits applied:** `cited`.
 
@@ -401,7 +547,7 @@ jq '(.ontologies[] | select(.id=="regenerative-agriculture-research") | .enabled
 ### Constraints
 
 - Opt-in only; cataloged `core=false` — never auto-applied to non-agriculture topics.
-- Extends `mif-base v0.1.0`; binding is fail-closed — `resolve-ontology.sh` aborts the corpus if the `extends` target is missing or mistyped.
+- Extends `mif-base v1.0.0`; binding is fail-closed — `resolve-ontology.sh` aborts the corpus if the `extends` target is missing or mistyped.
 - Scoped to research observations about farming practices — not farm business records or supply chain tracking; for farm records use `regenerative-agriculture` instead.
 
 ### Goals
@@ -463,7 +609,7 @@ jq '(.ontologies[] | select(.id=="regulatory-legal") | .enabled) |= true' \
 ### Constraints
 
 - Opt-in only; cataloged `core=false` — never auto-applied to non-legal topics.
-- Extends `mif-base v0.1.0` and `shared-traits v0.1.0`; binding is fail-closed — `resolve-ontology.sh` and `validate-concordance.sh` abort the corpus if either `extends` target is missing or mistyped.
+- Extends `mif-base v1.0.0` and `shared-traits v1.0.0`; binding is fail-closed — `resolve-ontology.sh` and `validate-concordance.sh` abort the corpus if either `extends` target is missing or mistyped.
 - Scoped to law, regulation, compliance, and governance; `control-mapping.control_ref` bridges cross-pack to `software-security`'s `security-control` type but the types are not interchangeable across packs.
 
 ### Goals
@@ -526,7 +672,7 @@ jq '(.ontologies[] | select(.id=="scientific") | .enabled) |= true' \
 ### Constraints
 
 - Opt-in only; cataloged `core=false` — never auto-applied to non-scientific topics.
-- Extends `mif-base v0.1.0` and `shared-traits v0.1.0`; binding is fail-closed — `resolve-ontology.sh` and `validate-concordance.sh` abort the corpus if either `extends` target is missing or mistyped.
+- Extends `mif-base v1.0.0` and `shared-traits v1.0.0`; binding is fail-closed — `resolve-ontology.sh` and `validate-concordance.sh` abort the corpus if either `extends` target is missing or mistyped.
 - Scoped to scientific studies, research data management, and data provenance; entity types do not apply to engineering operational, legal, or market-research topics.
 - OBO IRIs are OLS4/Ontobee-confirmed gate-corrected values; a finding whose `ontology.id` and resolved type do not align is a hard fail, not a fallback.
 
@@ -724,7 +870,7 @@ jq '(.ontologies[] | select(.id=="trend-analysis") | .enabled) |= true' \
 ### Constraints
 
 - Opt-in only; cataloged `core=false` — never auto-applied to non-foresight topics.
-- Extends `mif-base v0.1.0` (compatible with `shared-traits v0.1.0`); binding is fail-closed — `resolve-ontology.sh` aborts the corpus if the `extends` target is missing or mistyped.
+- Extends `mif-base v1.0.0` (compatible with `shared-traits v1.0.0`); binding is fail-closed — `resolve-ontology.sh` aborts the corpus if the `extends` target is missing or mistyped.
 - `trend` is the canonical generic trend type here; the former `adoption-trend` from `software-engineering` is removed and replaced by this pack's `trend` (no back-compat alias).
 - Six entity types (adoption-curve, forecast, horizon, implication, scenario, vision) are remapped to the `semantic` base under the `_semantic/foresight` namespace tree; the mif-base cognitive triad has no `_analytical` root.
 

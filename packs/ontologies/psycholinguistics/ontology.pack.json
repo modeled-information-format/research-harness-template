@@ -1,0 +1,11 @@
+{
+  "name": "psycholinguistics",
+  "version": "0.1.0",
+  "kind": "ontology",
+  "description": "Psycholinguistics and computational stylometry ontology — constructs, stylometric features, psychometric indices, elicitation protocols, research instruments, linguistic frameworks, and existing framework references for voice-elicitation and personality-language mapping research",
+  "provides": {
+    "ontologies": [
+      "psycholinguistics"
+    ]
+  }
+}

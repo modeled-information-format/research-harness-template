@@ -1,0 +1,11 @@
+{
+  "name": "observability",
+  "version": "0.1.0",
+  "kind": "ontology",
+  "description": "Observability-platform domain ontology — services, telemetry signals, capability comparisons, service-ownership registries, migration patterns, market positioning, and roadmap signals",
+  "provides": {
+    "ontologies": [
+      "observability"
+    ]
+  }
+}

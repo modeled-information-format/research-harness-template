@@ -29,3 +29,12 @@ author-finding*.py
 
 # Local-only design/upstream-proposal drafts (not shipped in the template)
 docs/proposals/mif-entity-type-subsumption.md
+*.json.tmp
+*.tw.json
+*.tmpwrite.json
+*.mg
+*.staging
+.*.json.staging
+*.fix.json
+*.vb.json
+reports/**/.gate_stderr*

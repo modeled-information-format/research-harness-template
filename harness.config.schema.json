@@ -2,12 +2,19 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://research-harness.dev/schema/harness.config.schema.json",
   "title": "Research Harness Configuration Manifest",
-  "description": "THE deploy contract (SPEC §7): the one file a clone edits to declare its topics, research dimensions, output targets, and packs. Modeled on langgraph.json's role as the single declarative manifest (SPEC §4).",
+  "description": "THE deploy contract (SPEC \u00a77): the one file a clone edits to declare its topics, research dimensions, output targets, and packs. Modeled on langgraph.json's role as the single declarative manifest (SPEC \u00a74).",
   "type": "object",
-  "required": ["version", "topics", "dimensions", "packs"],
+  "required": [
+    "version",
+    "topics",
+    "dimensions",
+    "packs"
+  ],
   "additionalProperties": false,
   "properties": {
-    "$schema": { "type": "string" },
+    "$schema": {
+      "type": "string"
+    },
     "version": {
       "type": "string",
       "pattern": "^\\d+\\.\\d+\\.\\d+$",
@@ -15,8 +22,12 @@
     },
     "mifConformanceLevel": {
       "type": "integer",
-      "enum": [1, 2, 3],
-      "description": "Minimum MIF conformance level the harness emits AND ingests. SPEC §10 fixes this at Level 3 (provenance + citations + entities + extensions). The floor binds every artifact crossing the project boundary — findings, generic markdown reports, and ingested source envelopes — not findings alone. Orthogonal-format channel outputs (blog, book, pdf, audio, external-service bodies) are the only exceptions, and only when explicitly declared exempt (outputs[].mifExempt here for first-class channels, or the pack manifest's `.claude-plugin/plugin.json` mif.exempt for channel packs)."
+      "enum": [
+        1,
+        2,
+        3
+      ],
+      "description": "Minimum MIF conformance level the harness emits AND ingests. SPEC \u00a710 fixes this at Level 3 (provenance + citations + entities + extensions). The floor binds every artifact crossing the project boundary \u2014 findings, generic markdown reports, and ingested source envelopes \u2014 not findings alone. Orthogonal-format channel outputs (blog, book, pdf, audio, external-service bodies) are the only exceptions, and only when explicitly declared exempt (outputs[].mifExempt here for first-class channels, or the pack manifest's `.claude-plugin/plugin.json` mif.exempt for channel packs)."
     },
     "features": {
       "type": "object",
@@ -26,10 +37,6 @@
         "internalCitations": {
           "type": "boolean",
           "description": "When true, the citation-integrity gate also accepts internal/document citations (citationType ^internal: carrying the quoted evidence in `note`) as traceable, alongside http(s) URLs. For importing legacy corpora whose findings cite internal documents (ADRs, named reports) without a web URL. Default false (strict http-only)."
-        },
-        "sigintCorpusImport": {
-          "type": "boolean",
-          "description": "When true, enables the sigint->MIF corpus conversion path (scripts/convert-sigint-corpus.sh) for bringing a legacy sigint corpus forward into the MIF substrate. Default false."
         }
       }
     },
@@ -68,49 +75,82 @@
       "description": "The multi-topic registry. Each topic maps to one MIF namespace under reports/<topic>/.",
       "items": {
         "type": "object",
-        "required": ["id", "namespace"],
+        "required": [
+          "id",
+          "namespace"
+        ],
         "additionalProperties": false,
         "properties": {
-          "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
-          "title": { "type": "string" },
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "title": {
+            "type": "string"
+          },
           "namespace": {
             "type": "string",
             "pattern": "^[a-zA-Z0-9_-]+(/[a-zA-Z0-9_-]+)*$",
             "description": "MIF namespace path that owns this topic's memory units."
           },
-          "status": { "type": "string", "enum": ["active", "paused", "archived"] },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "paused",
+              "archived"
+            ]
+          },
           "ontologies": {
             "type": "array",
-            "description": "Per-topic ontology binding (SPEC §8c). Each entry is an ontology id or id@version that MUST be enabled in the top-level `ontologies[]` control plane (the catalog). The vendored core (mif-base) is global to every topic; only ENABLED extended ontologies listed here apply to this topic's findings. Findings under this topic may only be ontology-typed against a bound ontology.",
-            "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]*(@\\d+\\.\\d+\\.\\d+)?$" }
+            "description": "Per-topic ontology binding (SPEC \u00a78c). Each entry is an ontology id or id@version that MUST be enabled in the top-level `ontologies[]` control plane (the catalog). The vendored core (mif-base) is global to every topic; only ENABLED extended ontologies listed here apply to this topic's findings. Findings under this topic may only be ontology-typed against a bound ontology.",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*(@\\d+\\.\\d+\\.\\d+)?$"
+            }
           }
         }
       }
     },
     "ontologies": {
       "type": "array",
-      "description": "Ontology control plane (SPEC §8c): the enable toggle for the vendored ontology data packs under packs/ontologies/. Disabled (default) ontologies are vendored and conformance-validated but are NOT cataloged, so no topic may bind them. sync-packs.sh writes the enabled subset into the catalog (.claude/enabled-packs.json `ontologies[]`); topics[].ontologies may bind only cataloged ids.",
+      "description": "Ontology control plane (SPEC \u00a78c): the enable toggle for the vendored ontology data packs under packs/ontologies/. Disabled (default) ontologies are vendored and conformance-validated but are NOT cataloged, so no topic may bind them. sync-packs.sh writes the enabled subset into the catalog (.claude/enabled-packs.json `ontologies[]`); topics[].ontologies may bind only cataloged ids.",
       "items": {
         "type": "object",
-        "required": ["id", "enabled"],
+        "required": [
+          "id",
+          "enabled"
+        ],
         "additionalProperties": false,
         "properties": {
-          "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
-          "enabled": { "type": "boolean" }
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "enabled": {
+            "type": "boolean"
+          }
         }
       }
     },
     "dimensions": {
       "type": "array",
-      "description": "Config-declared, domain-general research dimensions the dimension-analyst fans out across (SPEC §4a). Not the fixed market-research set.",
+      "description": "Config-declared, domain-general research dimensions the dimension-analyst fans out across (SPEC \u00a74a). Not the fixed market-research set.",
       "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["id"],
+        "required": [
+          "id"
+        ],
         "additionalProperties": false,
         "properties": {
-          "id": { "type": "string", "pattern": "^[a-z][a-z0-9_-]*$" },
-          "description": { "type": "string" },
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]*$"
+          },
+          "description": {
+            "type": "string"
+          },
           "pack": {
             "type": "string",
             "description": "Optional: the methodology pack that contributes this dimension (omit for core dimensions)."
@@ -120,17 +160,24 @@
     },
     "outputs": {
       "type": "array",
-      "description": "Enabled output channels. blog is the always-on first-class output (SPEC §6d); book and other channels arrive via optional channel packs. The generic `report` channel (reports/<topic>/<slug>.md) is the canonical MIF Level-3 source of truth and is never exempt; the channels here are projections of it.",
+      "description": "Enabled output channels. blog is the always-on first-class output (SPEC \u00a76d); book and other channels arrive via optional channel packs. The generic `report` channel (reports/<topic>/<slug>.md) is the canonical MIF Level-3 source of truth and is never exempt; the channels here are projections of it.",
       "items": {
         "type": "object",
-        "required": ["channel"],
+        "required": [
+          "channel"
+        ],
         "additionalProperties": false,
         "properties": {
-          "channel": { "type": "string", "pattern": "^[a-z][a-z0-9:-]*$" },
-          "enabled": { "type": "boolean" },
+          "channel": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9:-]*$"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
           "mifExempt": {
             "type": "boolean",
-            "description": "When true, this first-class channel's rendered output is exempt from the MIF Level-3 output-conformance gate (SPEC §10) because its format is orthogonal to the result (e.g. blog/book public prose, which the citation-leak gate keeps free of internal MIF identity). The gate skips and logs exempt surfaces."
+            "description": "When true, this first-class channel's rendered output is exempt from the MIF Level-3 output-conformance gate (SPEC \u00a710) because its format is orthogonal to the result (e.g. blog/book public prose, which the citation-leak gate keeps free of internal MIF identity). The gate skips and logs exempt surfaces."
           },
           "mifExemptReason": {
             "type": "string",
@@ -139,17 +186,25 @@
           }
         },
         "if": {
-          "properties": { "mifExempt": { "const": true } },
-          "required": ["mifExempt"]
+          "properties": {
+            "mifExempt": {
+              "const": true
+            }
+          },
+          "required": [
+            "mifExempt"
+          ]
         },
         "then": {
-          "required": ["mifExemptReason"]
+          "required": [
+            "mifExemptReason"
+          ]
         }
       }
     },
     "freshness": {
       "type": "object",
-      "description": "Source-type decay for finding freshness (SPEC §11): how long a verified finding stays fresh before it is re-falsified on the next reshape/update. A finding's window is the MIN over its citations' MIF citationType values (the most volatile cited source governs); re_verify_by = verification.attempted_at + window. Absent = the harness default (default_days for all).",
+      "description": "Source-type decay for finding freshness (SPEC \u00a711): how long a verified finding stays fresh before it is re-falsified on the next reshape/update. A finding's window is the MIN over its citations' MIF citationType values (the most volatile cited source governs); re_verify_by = verification.attempted_at + window. Absent = the harness default (default_days for all).",
       "additionalProperties": false,
       "properties": {
         "default_days": {
@@ -160,20 +215,32 @@
         "by_citation_type": {
           "type": "object",
           "description": "Per-MIF-citationType staleness windows in days. Keys are MIF citationType values (article, book, paper, website, documentation, repository, video, podcast, specification, dataset, tool, other).",
-          "additionalProperties": { "type": "integer", "minimum": 1 }
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 1
+          }
         }
       }
     },
     "packs": {
       "type": "array",
-      "description": "The pack control plane (SPEC §7b): each entry enables/disables a pack and declares its source. Materialized into Claude Code's enabledPlugins at instantiation.",
+      "description": "The pack control plane (SPEC \u00a77b): each entry enables/disables a pack and declares its source. Materialized into Claude Code's enabledPlugins at instantiation.",
       "items": {
         "type": "object",
-        "required": ["name", "enabled", "source"],
+        "required": [
+          "name",
+          "enabled",
+          "source"
+        ],
         "additionalProperties": false,
         "properties": {
-          "name": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
-          "enabled": { "type": "boolean" },
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
           "source": {
             "oneOf": [
               {
@@ -183,12 +250,26 @@
               {
                 "type": "object",
                 "description": "An external or private plugin the clone is entitled to.",
-                "required": ["type", "url"],
+                "required": [
+                  "type",
+                  "url"
+                ],
                 "additionalProperties": false,
                 "properties": {
-                  "type": { "type": "string", "enum": ["git", "marketplace"] },
-                  "url": { "type": "string", "format": "uri" },
-                  "ref": { "type": "string" }
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "git",
+                      "marketplace"
+                    ]
+                  },
+                  "url": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "ref": {
+                    "type": "string"
+                  }
                 }
               }
             ]

@@ -36,7 +36,7 @@ jq -s '
       | unique_by(.id) ) as $entities
   # Relationship edges: from each finding to its relationship targets.
   | ( [ .[] | .["@id"] as $src | (.relationships // [])[]
-        | { source: $src, target: .target, type: .type,
+        | { source: $src, target: (if (.target|type)=="object" then .target."@id" else .target end), type: (.type // .relationshipType),
             strength: (.strength // null), via: "relationship" } ] ) as $reledges
   # Mention edges: from each finding to each entity it references.
   | ( [ .[] | .["@id"] as $src | (.entities // [])[]

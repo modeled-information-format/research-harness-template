@@ -1,0 +1,29 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@type": "Concept",
+  "@id": "urn:mif:concept:harness:citation-internal-0001",
+  "conceptType": "semantic",
+  "title": "Internal corpus citation is traceable only when the feature flag opts in",
+  "content": "A finding whose sole citation is an internal/document source carrying quoted evidence in note is traceable ONLY when features.internalCitations is enabled; under the strict default (flag absent/false) it must be rejected as untraceable.",
+  "created": "2026-06-19T12:00:00Z",
+  "citations": [
+    {
+      "@type": "Citation",
+      "citationType": "internal:document",
+      "citationRole": "supports",
+      "title": "Imported legacy corpus memo, section 3",
+      "url": "internal:document:legacy-corpus-memo#section-3",
+      "note": "\"Fan-out before synthesis improved coverage in the 2024 internal evaluation.\"",
+      "accessed": "2026-06-19"
+    }
+  ],
+  "extensions": {
+    "harness": {
+      "dimension": "landscape",
+      "verification": {
+        "verdict": "survived",
+        "verdict_basis": "Internal evaluation corroborated the claim; no disconfirming evidence found."
+      }
+    }
+  }
+}

@@ -52,6 +52,8 @@ For control-plane mechanics — enabling, disabling, and listing packs — see
 | biology-research-lab | ontologies | ontology | Full research lab lifecycle entity vocabulary | none |
 | data-engineering | ontologies | ontology | Data engineering domain entity vocabulary | none |
 | market-research | ontologies | ontology | Market and competitive research entity vocabulary | none |
+| observability | ontologies | ontology | Observability-platform entity vocabulary (services, telemetry signals, capability comparisons, migrations); extends engineering-base and mif-generic | none |
+| psycholinguistics | ontologies | ontology | Psycholinguistics and computational stylometry entity vocabulary (constructs, stylometric features, psychometric indices, elicitation protocols) | none |
 | regenerative-agriculture | ontologies | ontology | Farm business operations entity vocabulary | none |
 | regenerative-agriculture-research | ontologies | ontology | Regenerative agriculture research entity vocabulary | none |
 | regulatory-legal | ontologies | ontology | Regulatory and legal domain entity vocabulary | none |

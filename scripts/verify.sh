@@ -91,10 +91,7 @@ gate_m1() {
 
   # 1d. Contamination scrub: no corpus finding IDs or corpus report-slug paths
   #     in built artifacts (criteria "Constraints"). Planning docs are excluded;
-  #     they are meta, not built artifacts. The sigint-conversion test fixture is
-  #     also excluded: it deliberately carries sigint-format ids (f_tech_*,
-  #     findings_*.json) because it is the INPUT the M9 conversion gate converts
-  #     FROM — a test fixture, not a built artifact. reports/ is excluded too: it
+  #     they are meta, not built artifacts. reports/ is excluded too: it
   #     is the corpus/data, not a built artifact, and in an instance it legitimately
   #     holds finding ids (the template's reports/ cleanliness is covered by 8c).
   # git grep handles filenames with spaces and an empty match set safely (it
@@ -102,7 +99,7 @@ gate_m1() {
   local hits
   hits=$(git grep -nE 'f_(tech|competitive|trends|customer|sizing|financial|regulatory)_[0-9]+|reports/[a-z0-9][a-z0-9-]+/findings_' -- \
            ':!COMPLETION-CRITERIA.md' ':!IMPLEMENTATION-PLAN.md' ':!PROGRESS.md' \
-           ':!evals/fixtures/sample-sigint-corpus' ':!reports' 2>/dev/null || true)
+ ':!reports' 2>/dev/null || true)
   if [ -z "$hits" ]; then
     ok "no corpus finding IDs or corpus report-slug paths in built artifacts"
   else
@@ -669,97 +666,46 @@ gate_m8() {
 }
 
 # ---------------------------------------------------------------------------
-# Milestone 9 — Sigint -> MIF corpus conversion
+# Milestone 9 — Citation feature flag (features.internalCitations, SPEC §7)
+# The toggle decides whether internal/document citations (citationType ^internal:
+# carrying quoted evidence in note) count as traceable. gate_m1/1c exercises only
+# the strict DEFAULT via the web good/bad samples; this gate exercises BOTH states
+# of the toggle over a dedicated internal-citation sample, so the enabled branch of
+# check-citation-integrity.sh is no longer untested. Configs are ephemeral (mktemp,
+# fed via HARNESS_CONFIG) so the repo manifest and reports/ are never touched.
 # ---------------------------------------------------------------------------
 gate_m9() {
-  info "Milestone 9 — Sigint->MIF corpus conversion"
-  local SRC="evals/fixtures/sample-sigint-corpus"
-  local TOPIC="sigint-sample"
-  local ST T cfg cfg_on
-  ST=$(mktemp -d); T=$(mktemp -d)
+  info "Milestone 9 — Citation feature flag (features.internalCitations)"
 
-  # The conversion path is opt-in (features.sigintCorpusImport). Run the gate with
-  # a flag-on config, and pass the SAME topic id used for import below so each
-  # unit's @id/namespace match the registered topic.
-  cfg_on=$(mktemp)
-  jq '.features = ((.features // {}) + {"sigintCorpusImport": true, "internalCitations": true})' \
-    harness.config.json > "$cfg_on"
-
-  # 9a. The converter turns a legacy sigint corpus (aggregated findings_<dim>.json
-  #     wrappers) into individual MIF units — every unit validates and the count
-  #     matches the source findings (lossless conversion).
-  HARNESS_CONFIG="$cfg_on" scripts/convert-sigint-corpus.sh "$SRC" "$ST" "$TOPIC" >/dev/null 2>&1
-  local src_n staged_n valid_n=0
-  src_n=$(jq 'if type=="array" then length else ((.findings//[])|length) end' "$SRC"/findings_*.json | awk '{s+=$1} END{print s+0}')
-  staged_n=$(find "$ST/findings" -name '*.json' 2>/dev/null | grep -c .)
-  for u in "$ST/findings"/*.json; do
-    ajv validate --spec=draft2020 --strict=false -c ajv-formats \
-      -s schemas/findings.schema.json \
-      -r schemas/mif/mif.schema.json \
-      -r schemas/mif/definitions/entity-reference.schema.json \
-      -d "$u" >/dev/null 2>&1 && valid_n=$((valid_n+1))
-  done
-  if [ "$staged_n" -gt 0 ] && [ "$staged_n" = "$src_n" ] && [ "$valid_n" = "$staged_n" ]; then
-    ok "sigint->MIF conversion is lossless ($staged_n/$src_n findings, all MIF-valid)"
-  else
-    bad "sigint->MIF conversion incomplete (src=$src_n staged=$staged_n valid=$valid_n)"
+  local sample="schemas/samples/citation-internal.sample.json"
+  if [ ! -f "$sample" ]; then
+    bad "internal-citation sample missing ($sample)"
+    return
   fi
 
-  # 9b. The converted corpus imports into a FRESH harness with provenance and a
-  #     MIF-derived graph intact (entities + a typed relationship carried from
-  #     updates_finding) — the same acceptance as gate_m8, over converted input.
-  cp harness.config.json "$T/config.json"
-  if scripts/import-corpus.sh "$ST" "$TOPIC" "$T/reports" "$T/config.json" >/dev/null 2>&1; then
-    local imp_n prov_n ns_ok
-    imp_n=$(find "$T/reports/$TOPIC/findings" -name '*.json' 2>/dev/null | grep -c .)
-    prov_n=$(find "$T/reports/$TOPIC/findings" -name '*.json' -exec jq -e '.provenance.sourceType=="external_import"' {} \; 2>/dev/null | grep -c true)
-    # The unit namespace must match the import topic id (no basename/topic drift).
-    ns_ok=$(find "$T/reports/$TOPIC/findings" -name '*.json' -exec jq -e --arg t "$TOPIC" '.namespace == ("harness/" + $t)' {} \; 2>/dev/null | grep -c true)
-    if [ "$imp_n" = "$staged_n" ] && [ "$prov_n" = "$imp_n" ] && [ "$ns_ok" = "$imp_n" ] \
-       && scripts/assert-graph-mif.sh "$T/reports/$TOPIC/knowledge-graph.json" >/dev/null 2>&1; then
-      ok "converted sigint corpus imports with provenance + MIF-derived graph ($imp_n findings)"
-    else
-      bad "converted sigint import failed (imported=$imp_n prov=$prov_n)"
-    fi
+  local td cfg_on cfg_off
+  td=$(mktemp -d)
+  cfg_on="$td/config-internal-on.json"
+  cfg_off="$td/config-internal-off.json"
+  printf '{"features":{"internalCitations":true}}\n'  > "$cfg_on"
+  printf '{"features":{"internalCitations":false}}\n' > "$cfg_off"
+
+  # Enabled: the internal-citation sample is traceable and PASSES.
+  if HARNESS_CONFIG="$cfg_on" scripts/check-citation-integrity.sh "$sample" >/dev/null 2>&1; then
+    ok "internal-citation sample PASSES when features.internalCitations=true"
   else
-    bad "converted sigint corpus failed to import"
+    bad "internal-citation sample rejected when features.internalCitations=true"
   fi
 
-  # 9c. Internal/document citations are CONFIG-GATED (features.internalCitations):
-  #     refused under the strict default, accepted only when the flag is enabled.
-  local intf off_refused=0 on_accepted=0
-  intf=$(grep -l 'internal:document' "$ST/findings"/*.json 2>/dev/null | head -1)
-  if [ -n "$intf" ]; then
-    cfg=$(mktemp)
-    printf '{"features":{"internalCitations":false}}' > "$cfg"
-    HARNESS_CONFIG="$cfg" scripts/check-citation-integrity.sh "$intf" >/dev/null 2>&1 || off_refused=1
-    printf '{"features":{"internalCitations":true}}' > "$cfg"
-    HARNESS_CONFIG="$cfg" scripts/check-citation-integrity.sh "$intf" >/dev/null 2>&1 && on_accepted=1
-    if [ "$off_refused" = 1 ] && [ "$on_accepted" = 1 ]; then
-      ok "internal-citation feature is config-gated (refused strict, accepted when enabled)"
-    else
-      bad "internal-citation feature flag not enforced (strict_refused=$off_refused enabled_accepted=$on_accepted)"
-    fi
-    rm -f "$cfg"
+  # Strict default (flag false): the same sample has no http(s) URL and the internal
+  # branch is off, so it MUST be rejected.
+  if HARNESS_CONFIG="$cfg_off" scripts/check-citation-integrity.sh "$sample" >/dev/null 2>&1; then
+    bad "internal-citation sample PASSED under strict default (flag false; must be rejected)"
   else
-    bad "sigint fixture produced no internal:document citation to gate-test"
+    ok "internal-citation sample REJECTED under strict default (flag false)"
   fi
 
-  # 9d. The conversion path itself is CONFIG-GATED (features.sigintCorpusImport):
-  #     refused when the flag is disabled.
-  local conv_off=0 cfg_off ST2
-  cfg_off=$(mktemp); ST2=$(mktemp -d)
-  printf '{"features":{"sigintCorpusImport":false}}' > "$cfg_off"
-  HARNESS_CONFIG="$cfg_off" scripts/convert-sigint-corpus.sh "$SRC" "$ST2" "$TOPIC" >/dev/null 2>&1 || conv_off=1
-  if [ "$conv_off" = 1 ]; then
-    ok "sigint conversion is config-gated (refused when sigintCorpusImport disabled)"
-  else
-    bad "sigint conversion ran with sigintCorpusImport disabled (flag not enforced)"
-  fi
-  rm -f "$cfg_off"; rm -rf "$ST2"
-
-  rm -f "$cfg_on"
-  rm -rf "$ST" "$T"
+  rm -rf "$td"
 }
 
 # ---------------------------------------------------------------------------
@@ -1054,8 +1000,8 @@ gate_m12() {
   cat > "$T/cat.json" <<'JSON'
 {"ontologies":[
  {"id":"mif-generic","version":"1.0.0","source":"schemas/ontologies/mif-generic/1.0.0.yaml","core":true},
- {"id":"mif-base","version":"0.1.0","source":"schemas/ontologies/mif-base/0.1.0.yaml","core":true},
- {"id":"shared-traits","version":"0.1.0","source":"schemas/ontologies/shared-traits/0.1.0.yaml","core":true},
+ {"id":"mif-base","version":"1.0.0","source":"schemas/ontologies/mif-base/1.0.0.yaml","core":true},
+ {"id":"shared-traits","version":"1.0.0","source":"schemas/ontologies/shared-traits/1.0.0.yaml","core":true},
  {"id":"edu-fixture","version":"0.1.0","source":"evals/fixtures/ontology/edu-fixture.ontology.yaml","core":false}
 ]}
 JSON
@@ -1154,7 +1100,7 @@ JSON
   cat > "$T/coll.cat" <<'JSON'
 {"ontologies":[
  {"id":"mif-generic","version":"1.0.0","source":"schemas/ontologies/mif-generic/1.0.0.yaml","core":true},
- {"id":"mif-base","version":"0.1.0","source":"schemas/ontologies/mif-base/0.1.0.yaml","core":true},
+ {"id":"mif-base","version":"1.0.0","source":"schemas/ontologies/mif-base/1.0.0.yaml","core":true},
  {"id":"collide-fixture","version":"0.1.0","source":"evals/fixtures/ontology/collide-fixture.ontology.yaml","core":false}
 ]}
 JSON
@@ -1192,7 +1138,7 @@ JSON
   local base found RT
   base=$(onto_registry_yaml | grep -c . || true)
   RT="$(mktemp -d)"; mkdir -p "$RT/packs/ontologies/demo-new"
-  if bash .claude/skills/ontology-manager/scripts/scaffold_ontology.sh demo-new 0.1.0 --extends mif-base \
+  if bash .claude/skills/ontology-manager/scripts/scaffold_ontology.sh demo-new 1.0.0 --extends mif-base \
        > "$RT/packs/ontologies/demo-new/demo-new.ontology.yaml" 2>/dev/null \
      && ajv_onto "$RT/packs/ontologies/demo-new/demo-new.ontology.yaml"; then
     found=$( cd "$RT" && onto_registry_yaml | grep -c . || true )
@@ -1234,8 +1180,8 @@ gate_m13() {
   cat > "$T/cat.json" <<JSON
 {"ontologies":[
  {"id":"mif-generic","version":"1.0.0","source":"schemas/ontologies/mif-generic/1.0.0.yaml","core":true},
- {"id":"mif-base","version":"0.1.0","source":"schemas/ontologies/mif-base/0.1.0.yaml","core":true},
- {"id":"shared-traits","version":"0.1.0","source":"schemas/ontologies/shared-traits/0.1.0.yaml","core":true},
+ {"id":"mif-base","version":"1.0.0","source":"schemas/ontologies/mif-base/1.0.0.yaml","core":true},
+ {"id":"shared-traits","version":"1.0.0","source":"schemas/ontologies/shared-traits/1.0.0.yaml","core":true},
  {"id":"engineering-base","version":"0.1.0","source":"schemas/ontologies/engineering-base/0.1.0.yaml","core":false},
  {"id":"edu-fixture","version":"0.1.0","source":"evals/fixtures/ontology/edu-fixture.ontology.yaml","core":false},
  {"id":"software-engineering","version":"0.5.0","source":"packs/ontologies/software-engineering/software-engineering.ontology.yaml","core":false}
@@ -1888,8 +1834,8 @@ gate_m21() {
   cat > "$T/cat.json" <<'JSON'
 {"ontologies":[
  {"id":"mif-generic","version":"1.0.0","source":"schemas/ontologies/mif-generic/1.0.0.yaml","core":true},
- {"id":"mif-base","version":"0.1.0","source":"schemas/ontologies/mif-base/0.1.0.yaml","core":true},
- {"id":"shared-traits","version":"0.1.0","source":"schemas/ontologies/shared-traits/0.1.0.yaml","core":true},
+ {"id":"mif-base","version":"1.0.0","source":"schemas/ontologies/mif-base/1.0.0.yaml","core":true},
+ {"id":"shared-traits","version":"1.0.0","source":"schemas/ontologies/shared-traits/1.0.0.yaml","core":true},
  {"id":"engineering-base","version":"0.1.0","source":"schemas/ontologies/engineering-base/0.1.0.yaml","core":false},
  {"id":"edu-fixture","version":"0.1.0","source":"evals/fixtures/ontology/edu-fixture.ontology.yaml","core":false},
  {"id":"software-engineering","version":"0.5.0","source":"packs/ontologies/software-engineering/software-engineering.ontology.yaml","core":false}
@@ -1919,8 +1865,8 @@ gate_m22() {
   cat > "$T/cat.json" <<'JSON'
 {"ontologies":[
  {"id":"mif-generic","version":"1.0.0","source":"schemas/ontologies/mif-generic/1.0.0.yaml","core":true},
- {"id":"mif-base","version":"0.1.0","source":"schemas/ontologies/mif-base/0.1.0.yaml","core":true},
- {"id":"shared-traits","version":"0.1.0","source":"schemas/ontologies/shared-traits/0.1.0.yaml","core":true},
+ {"id":"mif-base","version":"1.0.0","source":"schemas/ontologies/mif-base/1.0.0.yaml","core":true},
+ {"id":"shared-traits","version":"1.0.0","source":"schemas/ontologies/shared-traits/1.0.0.yaml","core":true},
  {"id":"engineering-base","version":"0.1.0","source":"schemas/ontologies/engineering-base/0.1.0.yaml","core":false},
  {"id":"software-security","version":"0.2.0","source":"packs/ontologies/software-security/software-security.ontology.yaml","core":false}
 ]}

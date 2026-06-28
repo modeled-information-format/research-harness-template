@@ -58,7 +58,7 @@ for fdir in "$RD"/*/findings; do
   # Edges: typed relationships[] + mention edges (finding -> referenced entity).
   g=$(jq -s '
       ( [ .[] | ."@id" as $s | (.relationships // [])[]
-          | { source:$s, target:.target, type:.type, strength:(.strength // null), via:"relationship" } ] )
+          | { source:$s, target:(if (.target|type)=="object" then .target."@id" else .target end), type:(.type // .relationshipType), strength:(.strength // null), via:"relationship" } ] )
     + ( [ .[] | ."@id" as $s | (.entities // [])[]
           | { source:$s, target:.entity["@id"], type:"mentions", strength:null, via:"entity" } ] )' "$tf") \
     || { echo "build-concordance: jq failed on topic '$topic' (edges)" >&2; rm -f "$tf"; exit 1; }

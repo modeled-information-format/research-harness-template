@@ -1,30 +1,30 @@
 {
   "source": "github.com/modeled-information-format/MIF",
-  "commit": "031ad2a",
-  "note": "MIF ontology contract + definitions are vendored-as-seed and FULLY UNLOCKED (verbatim:false, nothing checksum-gated): the contract is first-class and evolves in-repo (e.g. subtype_of) on its way back to MIF. gate_m12 re-validates every ontology against the contract; checksums here are provenance seeds, not a lock.",
+  "commit": "04fb331",
+  "note": "Re-vendored to MIF develop/v1.0.0 (STABILIZED, commit 04fb331): adds optional W3C-PROV provenance layer + vendor-neutral DocumentReference (additive; top-level required unchanged, existing findings validate). Concept/conceptType/type/string-target vocab unchanged from 4994f25. subtype_of contract (ontology.schema.json) retained, verbatim:false.",
   "files": [
     {
       "path": "schemas/mif/ontology.schema.json",
       "upstream": "schema/ontology/ontology.schema.json",
-      "sha256": "aac68c2572fe7583a0572172b285d1c215b3f4fbe0435f50b36bf908cff76c07",
+      "sha256": "b2f5e492381f62c1c14d06fb0e20a2978bc7c20b162dda86dbabde0c6b717bd5",
       "verbatim": false
     },
     {
       "path": "schemas/mif/ontology.context.jsonld",
       "upstream": "schema/ontology/ontology.context.jsonld",
-      "sha256": "50c12542044aa540ddfb236c405e46642c2e469543b2d5def9865b01468e6445",
+      "sha256": "8486db35fd3322060a27209a67666dad0270781642f34d0dc9212012b3aa3881",
       "verbatim": false
     },
     {
-      "path": "schemas/ontologies/mif-base/0.1.0.yaml",
+      "path": "schemas/ontologies/mif-base/1.0.0.yaml",
       "upstream": "ontologies/mif-base.ontology.yaml",
-      "sha256": "76a91d7815b95012277c4c8f734b7a9ec1403d09fe74e4cae9b6ad5d8a57beb1",
+      "sha256": "5d514bbebd7f5e395463489ed50c213711e24284e50e41ff0cd2ba8662440774",
       "verbatim": false
     },
     {
-      "path": "schemas/ontologies/shared-traits/0.1.0.yaml",
+      "path": "schemas/ontologies/shared-traits/1.0.0.yaml",
       "upstream": "ontologies/shared-traits.ontology.yaml",
-      "sha256": "438ddd94e23eaa8c897a7daa363658e2e4c51cc20b2f2d6007757cacc330683f",
+      "sha256": "2bd695be879231c53c8256540c06079b77fda317dca8e178ca68b7ff97945fce",
       "verbatim": false
     },
     {
@@ -42,7 +42,7 @@
     {
       "path": ".claude/skills/ontology-manager/SKILL.md",
       "upstream": ".claude/skills/ontology-manager/SKILL.md",
-      "sha256": "bf3c0adb8acdb7d2c582caa67c0646713fa97dd710e2c48c5e83d3e199e7109f",
+      "sha256": "198b2c22c117ee1d996f3f795d0dc2d37e776072667a820907586f5bd46b537d",
       "verbatim": false
     },
     {
@@ -72,7 +72,7 @@
     {
       "path": ".claude/skills/ontology-manager/references/schema-reference.md",
       "upstream": ".claude/skills/ontology-manager/references/schema-reference.md",
-      "sha256": "42ed55f8f433ec6f7bc1732291f79f2ef316da45250659697409b0a008aecae0",
+      "sha256": "e0aa7a572c96022fa17c331f1d492b43a0062fa7d95ce17896b3d22ced0c7971",
       "verbatim": false
     },
     {
@@ -81,5 +81,6 @@
       "sha256": "3ee2efa82d97dd6715fdee93e6162365ab9f82beb061828d4175d1b839d7301b",
       "verbatim": false
     }
-  ]
+  ],
+  "branch": "develop/v1.0.0"
 }

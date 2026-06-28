@@ -40,7 +40,7 @@ travel unchanged.
 ### Pull later template improvements
 
 This is the differentiator over snapshot engines. When the template ships a fix
-or addition (for example the sigint→MIF converter), re-apply it to your instance:
+or addition (for example a new channel pack or an engine fix), re-apply it to your instance:
 
 ```bash
 cd my-harness

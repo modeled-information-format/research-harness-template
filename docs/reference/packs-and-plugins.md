@@ -38,13 +38,13 @@ packs/
 │   └── …               #   6 more — see the Bundled inventory below
 ├── trend-modeling/     # family: scenario methodology (1 plugin)
 │   └── trend-modeling/
-└── ontologies/         # family: MIF entity/relationship extensions (10 plugins)
+└── ontologies/         # family: MIF entity/relationship extensions (12 plugins)
     ├── scientific/
-    └── …               #   9 more — see the Bundled inventory below
+    └── …               #   11 more — see the Bundled inventory below
 ```
 
-The harness bundles **43 pack plugins** across five families: 9 channels,
-5 market-research methodologies, 10 ontologies, 18 report genres, and
+The harness bundles **45 pack plugins** across five families: 9 channels,
+5 market-research methodologies, 12 ontologies, 18 report genres, and
 1 trend-modeling methodology. The [Packs reference](packs/index.md) and the
 per-family pages document every one — its use, constraints, and goals.
 
@@ -140,7 +140,7 @@ before `harness.config.json` can reference it by name.
 
 ## Bundled inventory
 
-The harness bundles **43 pack plugins** across five families. Each family has a
+The harness bundles **45 pack plugins** across five families. Each family has a
 dedicated reference page documenting every component's purpose, constraints, and
 goals; the counts below match `ls packs/<family>/` exactly.
 
@@ -166,9 +166,9 @@ goals; the counts below match `ls packs/<family>/` exactly.
 ([`packs/trend-modeling/`](packs/trend-modeling.md), 1 plugin): `trend-modeling`.
 
 **Ontologies** — MIF entity/relationship/trait vocabularies
-([`packs/ontologies/`](packs/ontologies.md), 10 plugins):
-`biology-research-lab`, `data-engineering`, `market-research`,
-`regenerative-agriculture`, `regenerative-agriculture-research`,
+([`packs/ontologies/`](packs/ontologies.md), 12 plugins):
+`biology-research-lab`, `data-engineering`, `market-research`, `observability`,
+`psycholinguistics`, `regenerative-agriculture`, `regenerative-agriculture-research`,
 `regulatory-legal`, `scientific`, `software-engineering`, `software-security`,
 `trend-analysis`.
 
