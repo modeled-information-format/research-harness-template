@@ -82,7 +82,11 @@ When operations span jurisdictions, identify the mechanism: Standard Contractual
 9. Address COPPA and parental consent when users may be minors.
 10. Provide compliance-cost ranges by Technology, Personnel, Legal/Consulting, Training, Audit.
 
-Render any regulatory timeline or approval-flow figure as a Mermaid `timeline` or `flowchart`. Any figure, chart, or diagram is rendered as a fenced Mermaid code block (a `mermaid` info-string fence), never ASCII art, an image link, or Graphviz/DOT; a required figure is never silently omitted — if the data cannot support it, say so in prose. Plain tabular matter stays a Markdown table.
+Render any regulatory timeline or approval-flow figure as a Mermaid `timeline` or
+`flowchart`. Any figure, chart, or diagram is rendered as a fenced Mermaid code block (a
+`mermaid` info-string fence), never ASCII art, an image link, or Graphviz/DOT; a
+required figure is never silently omitted — if the data cannot support it, say so in
+prose. Plain tabular matter stays a Markdown table.
 
 ## Output Structure
 

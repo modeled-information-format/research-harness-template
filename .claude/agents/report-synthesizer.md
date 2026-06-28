@@ -74,7 +74,7 @@ market report and no domain-specific scaffolding by default.
 - **Diagrams are Mermaid.** Any figure, chart, diagram, or graph a genre's
   *Required Figures & Matter* calls for is emitted as a fenced Mermaid code block (a `mermaid`
   info-string fence) of the fitting type — `flowchart`/`graph`, `quadrantChart`,
-  `xychart-beta`, `stateDiagram-v2`, `timeline`, `gantt`, `pie`,
+  `xychart-beta`, `stateDiagram-v2`, `timeline`, `journey`, `gantt`, `pie`,
   `sequenceDiagram`, `erDiagram`. Never render a figure as ASCII art, an
   image link, or a Graphviz/DOT block, and never silently omit a figure the
   genre requires — if the data cannot support it, say so explicitly in prose

@@ -59,7 +59,13 @@ For each force provide an explicit rating (HIGH/MODERATE/LOW/VERY HIGH), industr
 
 ## Positioning Map
 
-Visualize positioning on two key dimensions (e.g., feature richness vs. premium positioning) as a Mermaid `quadrantChart` with labeled axes and all competitors as data points. When the user specifies axes, use those exact dimensions. Precede the chart with a rationale table explaining each placement. Any figure, chart, or diagram is rendered as a fenced Mermaid code block (a `mermaid` info-string fence), never ASCII art, an image link, or Graphviz/DOT; a required figure is never silently omitted — if the data cannot support it, say so in prose. Plain tabular matter stays a Markdown table.
+Visualize positioning on two key dimensions (e.g., feature richness vs. premium
+positioning) as a Mermaid `quadrantChart` with labeled axes and all competitors as data
+points. When the user specifies axes, use those exact dimensions. Precede the chart with
+a rationale table explaining each placement. Any figure, chart, or diagram is rendered
+as a fenced Mermaid code block (a `mermaid` info-string fence), never ASCII art, an
+image link, or Graphviz/DOT; a required figure is never silently omitted — if the data
+cannot support it, say so in prose. Plain tabular matter stays a Markdown table.
 
 ## Research Process
 

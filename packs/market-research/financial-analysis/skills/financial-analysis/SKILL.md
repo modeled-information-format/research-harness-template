@@ -83,7 +83,11 @@ Fixed (rent, salaries, infra → operating leverage), variable (COGS, commission
 
 Scenario table (Bear < Base < Bull on growth, margin, cash position).
 
-Render financial trend and projection charts (revenue, cost, cash flow over time) as a Mermaid `xychart-beta`. Any figure, chart, or diagram is rendered as a fenced Mermaid code block (a `mermaid` info-string fence), never ASCII art, an image link, or Graphviz/DOT; a required figure is never silently omitted — if the data cannot support it, say so in prose. Plain tabular matter stays a Markdown table.
+Render financial trend and projection charts (revenue, cost, cash flow over time) as a
+Mermaid `xychart-beta`. Any figure, chart, or diagram is rendered as a fenced Mermaid
+code block (a `mermaid` info-string fence), never ASCII art, an image link, or
+Graphviz/DOT; a required figure is never silently omitted — if the data cannot support
+it, say so in prose. Plain tabular matter stays a Markdown table.
 
 ## Output Structure
 

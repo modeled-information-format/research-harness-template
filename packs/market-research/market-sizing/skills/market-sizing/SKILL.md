@@ -71,7 +71,11 @@ Every output MUST include all of:
 6. A **"Confidence Level"** section (High/Medium/Low + explanation).
 7. **TAM > SAM > SOM** ordering.
 
-Render the TAM/SAM/SOM sizing figure as Mermaid — a `flowchart` for nested scope or a `pie` for share. Any figure, chart, or diagram is rendered as a fenced Mermaid code block (a `mermaid` info-string fence), never ASCII art, an image link, or Graphviz/DOT; a required figure is never silently omitted — if the data cannot support it, say so in prose. Plain tabular matter stays a Markdown table.
+Render the TAM/SAM/SOM sizing figure as Mermaid — a `flowchart` for nested scope or a
+`pie` for share. Any figure, chart, or diagram is rendered as a fenced Mermaid code
+block (a `mermaid` info-string fence), never ASCII art, an image link, or Graphviz/DOT;
+a required figure is never silently omitted — if the data cannot support it, say so in
+prose. Plain tabular matter stays a Markdown table.
 
 ## Output Structure
 

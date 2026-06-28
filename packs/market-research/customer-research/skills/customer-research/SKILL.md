@@ -49,7 +49,11 @@ Stages: Awareness → Consideration → Decision → Purchase → Onboarding →
 | Stage | Actions | Thoughts | Emotions | Pain Points | Opportunities |
 | --- | --- | --- | --- | --- | --- |
 
-When the journey is shown as a figure rather than the stage table above, render it as a Mermaid `timeline` (or `journey`). Any figure, chart, or diagram is rendered as a fenced Mermaid code block (a `mermaid` info-string fence), never ASCII art, an image link, or Graphviz/DOT; a required figure is never silently omitted — if the data cannot support it, say so in prose. Plain tabular matter stays a Markdown table.
+When the journey is shown as a figure rather than the stage table above, render it as a
+Mermaid `timeline` (or `journey`). Any figure, chart, or diagram is rendered as a fenced
+Mermaid code block (a `mermaid` info-string fence), never ASCII art, an image link, or
+Graphviz/DOT; a required figure is never silently omitted — if the data cannot support
+it, say so in prose. Plain tabular matter stays a Markdown table.
 
 ## Segmentation
 

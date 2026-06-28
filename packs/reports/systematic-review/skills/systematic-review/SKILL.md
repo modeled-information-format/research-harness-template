@@ -63,7 +63,7 @@ included study and every extracted claim cites its originating MIF finding's `@i
 
 - **Front matter**: title, date, the structured abstract, and the registration record (or an
   explicit statement that the review was not registered).
-- **Figures**: the **PRISMA flow diagram is REQUIRED** — a Mermaid `flowchart` (graph TD)
+- **Figures**: the **PRISMA flow diagram is REQUIRED** — a Mermaid `flowchart` (top-down, `flowchart TD`)
   showing the count of records at each stage: **identified → screened → excluded (with
   reasons) → included**. Any figure, chart, or diagram is rendered as a fenced `mermaid` code
   block (never ASCII art, an image link, or Graphviz/DOT), and a required figure is never
