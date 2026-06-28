@@ -1,0 +1,94 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-json-ld-schema-org-linked-data",
+  "@type": "Concept",
+  "citations": [
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "JSON-LD - A JSON-based Serialization for Linked Data (W3C Recommendation)",
+      "url": "https://www.w3.org/TR/json-ld11/"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "JSON-LD - JSON for Linked Data (Official Site)",
+      "url": "https://json-ld.org/"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "article",
+      "title": "JSON-LD Schema Markup for AI Discoverability: Technical Guide 2026 - AgentVisibility.ai",
+      "url": "https://agentvisibility.ai/insights/json-ld-schema-ai-discoverability"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "The PROV-JSONLD Serialization - W3C Member Submission 2024",
+      "url": "https://www.w3.org/submissions/2024/SUBM-prov-jsonld-20240825/"
+    }
+  ],
+  "conceptType": "semantic",
+  "content": "JSON-LD (JavaScript Object Notation for Linked Data) is a W3C Recommendation (JSON-LD 1.1, 2020) that makes RDF accessible to web developers without additional parsers or triple stores. Its five design goals are simplicity, compatibility with existing JSON, expressiveness (labeled directed graphs), terseness, and zero-edit migration from plain JSON. The `@context` keyword maps short terms to IRIs; `@id` uniquely identifies nodes; `@type` classifies them. As of 2023 JSON-LD is used by 45% of the top 10 million websites, making it the dominant linked-data serialization on the web.\n\nSchema.org is the vocabulary layer: founded in 2011 by Google, Bing, Yahoo, and Yandex, it provides 614 types and 905 properties covering people, organizations, products, events, creative works, and more. A 2025 Semrush analysis found that pages with valid schema.org structured data are 2.3x more likely to appear in Google AI Overviews. JSON-LD is the preferred serialization format for schema.org markup. Unlike DCAT, schema.org is not a W3C standard — it is governed by an informal steering group with a multi-release-per-year cadence.\n\nThe limitations for knowledge spine use cases are significant: (1) JSON-LD is a serialization syntax, not a knowledge management framework — it provides no lifecycle for findings, no confidence scoring, and no citation chains beyond what custom schema.org types could express. (2) Provenance in the RDF/JSON-LD world requires RDF reification or named graphs, neither of which is native to schema.org; PROV-JSONLD (a 2024 W3C submission) attempts to bridge PROV-O and JSON-LD but remains a submission, not a Recommendation. (3) Schema.org's vocabulary is web-annotation-oriented — the 'Dataset' and 'ScholarlyArticle' types cover some knowledge management cases but do not model typed relationships between research findings, temporal verdicts, or adversarial falsification states. (4) JSON-LD's zero-edit transition goal means it is designed to layer onto existing JSON systems, not to be authored as a primary knowledge format — the inverse of OKF's and MIF's authoring model.\n\nIn the OKF+MIF landscape, JSON-LD and schema.org occupy the web entity annotation layer. They solve the problem of making web pages machine-readable to search engines and AI crawlers — a complementary concern to, not a replacement for, a knowledge spine that carries provenance, typed relationships, temporal versioning, and falsification lifecycle management.",
+  "created": "2026-06-28T00:00:00Z",
+  "extensions": {
+    "harness": {
+      "dimension": "landscape",
+      "verification": {
+        "verdict": "survived",
+        "verdict_basis": "W3Techs/WebDataCommons data corroborate JSON-LD as the dominant structured-data serialization and schema.org's wide adoption; no source contradicted the finding's claim that JSON-LD/schema.org solve web annotation rather than knowledge-spine management.",
+        "disconfirming_evidence": [],
+        "attempted_at": "2026-06-28T11:42:12Z"
+      },
+      "gathered_under": "gv-722bb7b64725"
+    }
+  },
+  "provenance": {
+    "@type": "Provenance",
+    "confidence": 0.9,
+    "sourceType": "agent_inferred",
+    "trustLevel": "high_confidence"
+  },
+  "relationships": [
+    {
+      "strength": 0.9,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-rdf-owl-semantic-alternative",
+      "type": "relates-to"
+    },
+    {
+      "strength": 0.6,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-prov-o-provenance-alternative",
+      "type": "relates-to"
+    }
+  ],
+  "summary": "JSON-LD (W3C Recommendation) serializes RDF as developer-friendly JSON using @context/@id, and schema.org supplies a 900-property vocabulary used by 45% of top websites, but together they solve web entity annotation rather than knowledge spine management — lacking native provenance, temporal versioning, and the opinionated finding lifecycle that MIF provides.",
+  "tags": [
+    "json-ld",
+    "schema-org",
+    "linked-data",
+    "w3c",
+    "rdf",
+    "semantic-web",
+    "structured-data",
+    "landscape",
+    "prior-art",
+    "web-annotation"
+  ],
+  "title": "JSON-LD and schema.org: Linked-Data Serialization Without Knowledge Management Depth",
+  "ontology": {
+    "id": "mif-generic"
+  },
+  "entity": {
+    "name": "JSON-LD and schema.org",
+    "entity_type": "technology"
+  },
+  "namespace": "harness/example-okf-mif-knowledge-spine"
+}

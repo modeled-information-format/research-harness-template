@@ -1,0 +1,79 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-json-ld-yaml-ld-comparator",
+  "@type": "Concept",
+  "citations": [
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "JSON-LD 1.1 — W3C Recommendation",
+      "url": "https://www.w3.org/TR/json-ld11/"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "YAML-LD — W3C CG Final Report, December 2023",
+      "url": "https://www.w3.org/community/reports/json-ld/CG-FINAL-yaml-ld-20231206/"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "OKF SPEC.md v0.1 — GoogleCloudPlatform/knowledge-catalog",
+      "url": "https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md"
+    }
+  ],
+  "conceptType": "semantic",
+  "content": "JSON-LD (JSON for Linked Data, W3C Recommendation 1.1, 2020) and its YAML superset YAML-LD (W3C JSON-LD Community Group Final Report, December 2023) deliver the core of what the OKF+MIF stack provides, but at a different layer of the stack: JSON-LD enables any JSON document to carry globally-identified typed entities and relationships through three reserved keywords: '@context' (vocabulary mapping), '@id' (global URI), '@type' (class assignment). A JSON-LD document can be mechanically converted to RDF triples, enabling SPARQL queries and OWL reasoning. YAML-LD extends this to YAML, using use cases including 'static site front matter, API documentation formats, Verifiable Credentials, FAIR metadata publications, and nanopublications.' The technical gap relative to OKF+MIF is: (1) Human authoring: JSON-LD requires authors to manage '@context' URIs, global identifiers, and RDF-compatible field names. YAML-LD eases this but still requires Linked Data literacy. OKF's plain YAML frontmatter is authorable by any developer without semantic-web training. (2) Markdown body: JSON-LD/YAML-LD are purely data formats; they carry no concept for human-readable narrative alongside structured metadata. OKF's dual markdown+YAML structure is the key affordance that makes knowledge bundles both agent-consumable and human-readable. (3) Git-native distribution: JSON-LD files can live in git, but the OKF bundle (index.md, log.md, directory-organized concept files) is specifically designed for git workflows — pull requests, diffs, blame, and review are first-class. A JSON-LD graph lacks the progressive-disclosure and human-navigation affordances that OKF directories provide. The OKF+MIF stack can be understood as a pragmatic middle path: OKF provides JSON-LD's human/agent interoperability goal at markdown authoring cost, while MIF provides JSON-LD's semantic typing via its own context.jsonld — without requiring every author to understand RDF or write @context declarations.",
+  "created": "2026-06-28T00:00:00Z",
+  "extensions": {
+    "harness": {
+      "dimension": "technical",
+      "verification": {
+        "verdict": "survived",
+        "verdict_basis": "W3C primary sources confirm the load-bearing dates: JSON-LD 1.1 became a W3C Recommendation 2020-07-16 and the YAML-LD Final Community Group Report published 2023-12-06. The @context/@id/@type mechanism and YAML-LD use cases described match the W3C reports. No disconfirming evidence across 6 queries.",
+        "disconfirming_evidence": [],
+        "attempted_at": "2026-06-28T11:54:01Z"
+      },
+      "gathered_under": "gv-722bb7b64725"
+    }
+  },
+  "provenance": {
+    "@type": "Provenance",
+    "confidence": 0.92,
+    "sourceType": "agent_inferred",
+    "trustLevel": "high_confidence"
+  },
+  "relationships": [
+    {
+      "strength": 0.75,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-okf-mif-layering-mechanics",
+      "type": "relates-to"
+    }
+  ],
+  "summary": "JSON-LD (W3C Rec 2020) and YAML-LD (W3C Community Report, finalized Dec 2023) provide the @context mechanism for turning flat key-value data into RDF-compatible typed linked data. They deliver formally typed, globally-identified entities and can encode provenance, but require the Semantic Web toolchain and lack OKF's human-readable markdown body and git-native bundle distribution model.",
+  "tags": [
+    "json-ld",
+    "yaml-ld",
+    "linked-data",
+    "rdf",
+    "technical",
+    "comparator",
+    "w3c",
+    "semantic-web"
+  ],
+  "title": "JSON-LD and YAML-LD as Technical Alternatives: Full Linked Data Without Markdown Packaging",
+  "ontology": {
+    "id": "mif-generic"
+  },
+  "entity": {
+    "name": "JSON-LD / YAML-LD",
+    "entity_type": "technology"
+  },
+  "namespace": "harness/example-okf-mif-knowledge-spine"
+}

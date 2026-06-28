@@ -1,0 +1,79 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-skos-taxonomy-thesaurus-standard",
+  "@type": "Concept",
+  "citations": [
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "SKOS Simple Knowledge Organization System - W3C Home Page",
+      "url": "https://www.w3.org/2004/02/skos/"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "SKOS Simple Knowledge Organization System Primer - W3C Recommendation",
+      "url": "https://www.w3.org/TR/skos-primer/"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "article",
+      "title": "Simple Knowledge Organization System (SKOS) - ISKO Encyclopedia of Knowledge Organization",
+      "url": "https://www.isko.org/cyclo/skos.htm"
+    }
+  ],
+  "conceptType": "semantic",
+  "content": "The Simple Knowledge Organization System (SKOS) is a W3C Recommendation (August 18, 2009) that provides an RDF vocabulary for representing semi-formal knowledge organization systems — thesauri, classification schemes, subject heading lists, taxonomies, and folksonomies — as linked data on the Semantic Web. It is widely deployed: the EU's ESCO skills vocabulary, national library thesauri, government business glossaries, and media content catalogs all use SKOS.\n\nSKOS's data model centers on Concepts identified by URIs, with three label types (preferred, alternate, hidden), two hierarchical relationships (`skos:broader` / `skos:narrower`), one associative relationship (`skos:related`), and documentation properties for definitions, scope notes, and editorial annotations. Concepts aggregate into `skos:ConceptScheme` with top-level entry points via `skos:hasTopConcept`.\n\nSKOS intentionally lacks features that MIF provides: (1) No provenance mechanism — the primer explicitly acknowledges 'there is no mechanism in SKOS to record that a specific statement concerning these concepts pertains to a specific concept scheme'; provenance requires named graphs and RDF Datasets outside SKOS core. (2) No relationship sub-typing — SKOS cannot distinguish generic hierarchies from part-whole hierarchies; users must create extensions. (3) No formal logic — SKOS deliberately avoids OWL axioms and inference rules, trading expressiveness for adoption simplicity. (4) No confidence or trustLevel fields — concepts carry no epistemic qualification.\n\nSKOS operates as an RDF vocabulary, meaning it inherits the full semantic web toolchain requirement (triple stores, SPARQL, ontology editors) even though it is simpler than OWL. This makes SKOS inaccessible for the plain-JSON/markdown-first authoring patterns that OKF and MIF target.\n\nThe SKOS authors describe it as 'a bridging technology' between formal ontologies and informal collaborative systems. In the OKF+MIF landscape, SKOS occupies the taxonomy/vocabulary layer — it can express what MIF's ontology module provides, but requires the RDF ecosystem and lacks provenance, temporal modeling, confidence scoring, and citation chains that MIF's finding model delivers natively.",
+  "created": "2026-06-28T00:00:00Z",
+  "extensions": {
+    "harness": {
+      "dimension": "landscape",
+      "verification": {
+        "verdict": "survived",
+        "verdict_basis": "W3C SKOS Primer and Use-Cases-and-Requirements corroborate that SKOS lacks a built-in provenance mechanism and cannot adequately model relationship sub-types; the finding's characterization is supported, not contradicted.",
+        "disconfirming_evidence": [],
+        "attempted_at": "2026-06-28T11:42:12Z"
+      },
+      "gathered_under": "gv-722bb7b64725"
+    }
+  },
+  "provenance": {
+    "@type": "Provenance",
+    "confidence": 0.9,
+    "sourceType": "agent_inferred",
+    "trustLevel": "high_confidence"
+  },
+  "relationships": [
+    {
+      "strength": 0.85,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-rdf-owl-semantic-alternative",
+      "type": "relates-to"
+    },
+    {
+      "strength": 0.7,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-prov-o-provenance-alternative",
+      "type": "relates-to"
+    }
+  ],
+  "summary": "SKOS (W3C Recommendation, 2009) enables publishing taxonomies and controlled vocabularies as linked data with hierarchical and associative relationships, but explicitly omits provenance mechanisms and cannot distinguish relationship sub-types — making it a complementary but insufficient spine for citation-backed knowledge management.",
+  "tags": [
+    "skos",
+    "w3c",
+    "taxonomy",
+    "thesaurus",
+    "controlled-vocabulary",
+    "rdf",
+    "semantic-web",
+    "landscape",
+    "prior-art",
+    "knowledge-organization"
+  ],
+  "title": "SKOS: W3C Taxonomy and Thesaurus Standard Without Provenance or Typed Relationships",
+  "namespace": "harness/example-okf-mif-knowledge-spine"
+}

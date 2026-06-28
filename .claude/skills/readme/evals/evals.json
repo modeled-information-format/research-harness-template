@@ -3,7 +3,7 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "Build the navigation README backbone for a topic from its MIF findings and confirm the structure. Run exactly:\n\n  OUTDIR=$(pwd)\n  bash $CLAUDE_PROJECT_DIR/scripts/build-topic-readme.sh example-topic --findings $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings --out $OUTDIR/README.md\n\nConfirm the README has the verdict-aware metadata header and every required section.",
+      "prompt": "Build the navigation README backbone for a topic from its MIF findings and confirm the structure. Run exactly:\n\n  OUTDIR=$(pwd)\n  bash $CLAUDE_PROJECT_DIR/scripts/build-topic-readme.sh example-okf-mif-knowledge-spine --findings $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings --out $OUTDIR/README.md\n\nConfirm the README has the verdict-aware metadata header and every required section.",
       "expected_output": "README.md with an H1 title; a metadata header reading '**Findings:** 3 (survived 3) | **Sources:** 2 unique URLs' and a Status line; and Purpose, Dimensions, Key Findings, Reports, Findings by Dimension, and Tags sections. Counts and the verdict breakdown are projected from the substrate, not hand-authored.",
       "files": [],
       "deterministic_checks": [
@@ -45,13 +45,13 @@
     },
     {
       "id": 2,
-      "prompt": "The gate must fail closed when a README is missing. Run:\n\n  OUTDIR=$(pwd)\n  bash $CLAUDE_PROJECT_DIR/scripts/build-topic-readme.sh example-topic --out $OUTDIR/none.md --check ; echo \"check exit: $?\"\n\nThe check must exit non-zero (the README does not exist).",
+      "prompt": "The gate must fail closed when a README is missing. Run:\n\n  OUTDIR=$(pwd)\n  bash $CLAUDE_PROJECT_DIR/scripts/build-topic-readme.sh example-okf-mif-knowledge-spine --out $OUTDIR/none.md --check ; echo \"check exit: $?\"\n\nThe check must exit non-zero (the README does not exist).",
       "expected_output": "build-topic-readme.sh --check exits non-zero because the README does not exist; the gate fails closed.",
       "files": [],
       "deterministic_checks": [
         {
           "type": "shell_command",
-          "command": "! bash \"$CLAUDE_PROJECT_DIR/scripts/build-topic-readme.sh\" example-topic --out none.md --check 2>/dev/null",
+          "command": "! bash \"$CLAUDE_PROJECT_DIR/scripts/build-topic-readme.sh\" example-okf-mif-knowledge-spine --out none.md --check 2>/dev/null",
           "description": "the validation gate exits non-zero for a missing README (fails closed)"
         }
       ],
@@ -62,7 +62,7 @@
     },
     {
       "id": 3,
-      "prompt": "A just-created topic with zero findings must still get a valid README (the 'created' trigger). Run:\n\n  OUTDIR=$(pwd)\n  mkdir -p $OUTDIR/empty-findings\n  bash $CLAUDE_PROJECT_DIR/scripts/build-topic-readme.sh example-topic --findings $OUTDIR/empty-findings --out $OUTDIR/README.md\n  bash $CLAUDE_PROJECT_DIR/scripts/build-topic-readme.sh example-topic --findings $OUTDIR/empty-findings --out $OUTDIR/README.md --check\n\nConfirm the zero-findings README is valid and passes the check (the synthesis gate is exempt — there is nothing to synthesize).",
+      "prompt": "A just-created topic with zero findings must still get a valid README (the 'created' trigger). Run:\n\n  OUTDIR=$(pwd)\n  mkdir -p $OUTDIR/empty-findings\n  bash $CLAUDE_PROJECT_DIR/scripts/build-topic-readme.sh example-okf-mif-knowledge-spine --findings $OUTDIR/empty-findings --out $OUTDIR/README.md\n  bash $CLAUDE_PROJECT_DIR/scripts/build-topic-readme.sh example-okf-mif-knowledge-spine --findings $OUTDIR/empty-findings --out $OUTDIR/README.md --check\n\nConfirm the zero-findings README is valid and passes the check (the synthesis gate is exempt — there is nothing to synthesize).",
       "expected_output": "A README with Findings: 0, a 'No findings yet' Key Findings bullet, all required sections; --check passes.",
       "files": [],
       "deterministic_checks": [
@@ -80,7 +80,7 @@
         },
         {
           "type": "shell_command",
-          "command": "mkdir -p empty-findings && bash \"$CLAUDE_PROJECT_DIR/scripts/build-topic-readme.sh\" example-topic --findings empty-findings --out README.md && bash \"$CLAUDE_PROJECT_DIR/scripts/build-topic-readme.sh\" example-topic --findings empty-findings --out README.md --check",
+          "command": "mkdir -p empty-findings && bash \"$CLAUDE_PROJECT_DIR/scripts/build-topic-readme.sh\" example-okf-mif-knowledge-spine --findings empty-findings --out README.md && bash \"$CLAUDE_PROJECT_DIR/scripts/build-topic-readme.sh\" example-okf-mif-knowledge-spine --findings empty-findings --out README.md --check",
           "description": "the zero-findings README builds and passes the gate (synthesis check exempt)"
         }
       ],
@@ -97,7 +97,7 @@
       "deterministic_checks": [
         {
           "type": "shell_command",
-          "command": "set -e; SF=\"$CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings\"; bash \"$CLAUDE_PROJECT_DIR/scripts/build-topic-readme.sh\" example-topic --findings \"$SF\" --out README.md; if bash \"$CLAUDE_PROJECT_DIR/scripts/build-topic-readme.sh\" example-topic --findings \"$SF\" --out README.md --check 2>/dev/null; then echo 'skeleton wrongly passed'; exit 1; fi; awk '/^## Key Findings$/{print;print \"\";print \"- Synthesized cross-finding bullet with specifics.\";print \"\";s=1;next} s&&/^## /{s=0;print;next} s{next} {print}' README.md > R && mv R README.md; bash \"$CLAUDE_PROJECT_DIR/scripts/build-topic-readme.sh\" example-topic --findings \"$SF\" --out README.md --check",
+          "command": "set -e; SF=\"$CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings\"; bash \"$CLAUDE_PROJECT_DIR/scripts/build-topic-readme.sh\" example-okf-mif-knowledge-spine --findings \"$SF\" --out README.md; if bash \"$CLAUDE_PROJECT_DIR/scripts/build-topic-readme.sh\" example-okf-mif-knowledge-spine --findings \"$SF\" --out README.md --check 2>/dev/null; then echo 'skeleton wrongly passed'; exit 1; fi; awk '/^## Key Findings$/{print;print \"\";print \"- Synthesized cross-finding bullet with specifics.\";print \"\";s=1;next} s&&/^## /{s=0;print;next} s{next} {print}' README.md > R && mv R README.md; bash \"$CLAUDE_PROJECT_DIR/scripts/build-topic-readme.sh\" example-okf-mif-knowledge-spine --findings \"$SF\" --out README.md --check",
           "description": "skeleton is refused (synthesis not applied); synthesized README passes the gate"
         }
       ],

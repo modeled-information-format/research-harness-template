@@ -1,0 +1,254 @@
+[
+  {
+    "basis": "declared",
+    "entity_type": "technology",
+    "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-frictionless-data-packages",
+    "resolved_ontology": "mif-generic@1.0.0",
+    "valid": true
+  },
+  {
+    "basis": "declared",
+    "entity_type": "technology",
+    "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-json-ld-schema-org-linked-data",
+    "resolved_ontology": "mif-generic@1.0.0",
+    "valid": true
+  },
+  {
+    "basis": "declared",
+    "entity_type": "technology",
+    "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-okf-google-open-knowledge-format",
+    "resolved_ontology": "mif-generic@1.0.0",
+    "valid": true
+  },
+  {
+    "basis": "discovery",
+    "entity_type": "data-provenance",
+    "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-pkm-tools-obsidian-logseq-roam",
+    "resolved_ontology": "scientific@0.1.0",
+    "valid": true
+  },
+  {
+    "basis": "discovery",
+    "entity_type": "data-provenance",
+    "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-prov-o-provenance-alternative",
+    "resolved_ontology": "scientific@0.1.0",
+    "valid": true
+  },
+  {
+    "basis": "discovery",
+    "entity_type": "data-provenance",
+    "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-rdf-owl-semantic-alternative",
+    "resolved_ontology": "scientific@0.1.0",
+    "valid": true
+  },
+  {
+    "basis": "discovery",
+    "entity_type": "data-provenance",
+    "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-skos-taxonomy-thesaurus-standard",
+    "resolved_ontology": "scientific@0.1.0",
+    "valid": true
+  },
+  {
+    "basis": "declared",
+    "entity_type": "market-demand",
+    "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-ai-demand-structured-provenance",
+    "resolved_ontology": "market-research@0.1.0",
+    "valid": true
+  },
+  {
+    "basis": "declared",
+    "entity_type": "segment",
+    "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-buyer-segments-pain-points",
+    "resolved_ontology": "market-research@0.1.0",
+    "valid": true
+  },
+  {
+    "basis": "declared",
+    "entity_type": "value-proposition",
+    "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-competitive-positioning",
+    "resolved_ontology": "market-research@0.1.0",
+    "valid": true
+  },
+  {
+    "basis": "discovery",
+    "entity_type": "data-provenance",
+    "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-institutional-memory-loss-pain",
+    "resolved_ontology": "scientific@0.1.0",
+    "valid": true
+  },
+  {
+    "basis": "declared",
+    "entity_type": "sizing-estimate",
+    "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-km-software-market-sizing",
+    "resolved_ontology": "market-research@0.1.0",
+    "valid": true
+  },
+  {
+    "basis": "declared",
+    "entity_type": "critical-uncertainty",
+    "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-okf-nascency-and-risk",
+    "resolved_ontology": "trend-analysis@0.1.0",
+    "valid": true
+  },
+  {
+    "basis": "declared",
+    "entity_type": "segment",
+    "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-open-source-vs-commercial",
+    "resolved_ontology": "market-research@0.1.0",
+    "valid": true
+  },
+  {
+    "basis": "declared",
+    "entity_type": "market-intelligence-report",
+    "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-pricing-business-model-signals",
+    "resolved_ontology": "market-research@0.1.0",
+    "valid": true
+  },
+  {
+    "basis": "declared",
+    "entity_type": "technology",
+    "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-frictionless-data-comparator",
+    "resolved_ontology": "mif-generic@1.0.0",
+    "valid": true
+  },
+  {
+    "basis": "declared",
+    "entity_type": "technology",
+    "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-json-ld-yaml-ld-comparator",
+    "resolved_ontology": "mif-generic@1.0.0",
+    "valid": true
+  },
+  {
+    "basis": "discovery",
+    "entity_type": "data-platform",
+    "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-mif-formal-ontology",
+    "resolved_ontology": "data-engineering@0.2.0",
+    "valid": true
+  },
+  {
+    "basis": "discovery",
+    "entity_type": "data-provenance",
+    "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-mif-provenance-block",
+    "resolved_ontology": "scientific@0.1.0",
+    "valid": true
+  },
+  {
+    "basis": "declared",
+    "entity_type": "concept",
+    "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-mif-temporal-decay",
+    "resolved_ontology": "mif-generic@1.0.0",
+    "valid": true
+  },
+  {
+    "basis": "discovery",
+    "entity_type": "dataset",
+    "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-mif-typed-relationships",
+    "resolved_ontology": "scientific@0.1.0",
+    "valid": true
+  },
+  {
+    "basis": "declared",
+    "entity_type": "concept",
+    "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-okf-core-data-model",
+    "resolved_ontology": "mif-generic@1.0.0",
+    "valid": true
+  },
+  {
+    "basis": "discovery",
+    "entity_type": "data-provenance",
+    "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-okf-informal-provenance",
+    "resolved_ontology": "scientific@0.1.0",
+    "valid": true
+  },
+  {
+    "basis": "declared",
+    "entity_type": "concept",
+    "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-okf-mif-layering-mechanics",
+    "resolved_ontology": "mif-generic@1.0.0",
+    "valid": true
+  },
+  {
+    "basis": "declared",
+    "entity_type": "concept",
+    "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-okf-untyped-links",
+    "resolved_ontology": "mif-generic@1.0.0",
+    "valid": true
+  },
+  {
+    "basis": "declared",
+    "entity_type": "technology",
+    "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-schema-org-comparator",
+    "resolved_ontology": "mif-generic@1.0.0",
+    "valid": true
+  },
+  {
+    "basis": "declared",
+    "entity_type": "technology",
+    "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-skos-comparator",
+    "resolved_ontology": "mif-generic@1.0.0",
+    "valid": true
+  },
+  {
+    "basis": "discovery",
+    "entity_type": "data-provenance",
+    "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-agent-memory-provenance-demand",
+    "resolved_ontology": "scientific@0.1.0",
+    "valid": true
+  },
+  {
+    "basis": "declared",
+    "entity_type": "trend",
+    "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-enterprise-kg-market-growth",
+    "resolved_ontology": "trend-analysis@0.1.0",
+    "valid": true
+  },
+  {
+    "basis": "discovery",
+    "entity_type": "data-provenance",
+    "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-git-native-markdown-km",
+    "resolved_ontology": "scientific@0.1.0",
+    "valid": true
+  },
+  {
+    "basis": "discovery",
+    "entity_type": "data-provenance",
+    "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-graphrag-hybrid-dominance",
+    "resolved_ontology": "scientific@0.1.0",
+    "valid": true
+  },
+  {
+    "basis": "discovery",
+    "entity_type": "data-provenance",
+    "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-llm-wiki-karpathy-adoption",
+    "resolved_ontology": "scientific@0.1.0",
+    "valid": true
+  },
+  {
+    "basis": "declared",
+    "entity_type": "emerging-issue",
+    "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-mif-nascent-ecosystem",
+    "resolved_ontology": "trend-analysis@0.1.0",
+    "valid": true
+  },
+  {
+    "basis": "declared",
+    "entity_type": "signal",
+    "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-okf-v01-launch-momentum",
+    "resolved_ontology": "trend-analysis@0.1.0",
+    "valid": true
+  },
+  {
+    "basis": "discovery",
+    "entity_type": "data-provenance",
+    "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-semantic-web-failure-lessons",
+    "resolved_ontology": "scientific@0.1.0",
+    "valid": true
+  },
+  {
+    "basis": "discovery",
+    "entity_type": "data-provenance",
+    "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-w3c-rdf-star-provenance",
+    "resolved_ontology": "scientific@0.1.0",
+    "valid": true
+  }
+]

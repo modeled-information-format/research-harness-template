@@ -35,7 +35,7 @@ Roll up each topic's findings from the index, joined on `namespace`:
 ```bash
 jq -n \
   --slurpfile cfg harness.config.json \
-  --slurpfile idx reports/_meta/sample-session/research-index.json '
+  --slurpfile idx reports/example-okf-mif-knowledge-spine/research-index.json '
   ($idx[0].findings | group_by(.namespace)
      | map({ key: .[0].namespace,
              value: { findings: length,
@@ -56,7 +56,7 @@ Present a table:
 ```text
 | Topic | Namespace | Status | Findings | Verdicts |
 | --- | --- | --- | --- | --- |
-| Example research topic | harness/example-topic | active | 3 | survived: 3 |
+| Example: OKF+MIF as a foundational research knowledge spine | harness/example-okf-mif-knowledge-spine | archived | 36 | survived: 31, weakened: 5 |
 ```
 
 End with a one-line summary: "N topics, M with findings."

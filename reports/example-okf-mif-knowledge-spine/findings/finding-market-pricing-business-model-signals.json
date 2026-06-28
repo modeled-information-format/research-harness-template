@@ -1,0 +1,109 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-pricing-business-model-signals",
+  "@type": "Concept",
+  "citations": [
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "website",
+      "title": "Neo4j Software Pricing & Plans 2026 (Vendr)",
+      "url": "https://www.vendr.com/marketplace/neo4j"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "website",
+      "title": "Enterprise Knowledge Graph Buyer's Guide 2026 - Pricing and ROI signals (Promethium)",
+      "url": "https://promethium.ai/guides/enterprise-knowledge-graph-buyers-guide-2026/"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "website",
+      "title": "Obsidian Pricing 2026: Plans, Hidden Costs & Cheaper Alternatives (ToolRadar)",
+      "url": "https://toolradar.com/tools/obsidian/pricing"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "website",
+      "title": "2026 Enterprise AI Knowledge Management: AI-native KM market size (Windows Forum/GoSearch)",
+      "url": "https://windowsforum.com/threads/2026-enterprise-ai-knowledge-management-from-search-to-governed-agent-workflows.410816/"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "website",
+      "title": "Stardog Enterprise Knowledge Graph Platform Pricing (AWS Marketplace)",
+      "url": "https://aws.amazon.com/marketplace/pp/prodview-ulfm6fel7xgjq"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "refutes",
+      "citationType": "website",
+      "title": "AI-Driven Knowledge Management System Market Report (The Business Research Company) - the '$7.71B 2025 / 47.2%' figure traces here, not to GoSearch; cross-firm AI-KM sizing varies widely and the finding's two growth rates do not reconcile",
+      "url": "https://www.thebusinessresearchcompany.com/report/ai-driven-knowledge-management-system-global-market-report"
+    }
+  ],
+  "conceptType": "semantic",
+  "content": "Pricing signals from adjacent knowledge infrastructure markets provide the calibration data for a knowledge-spine business model built on OKF+MIF.\n\nENTERPRISE KNOWLEDGE GRAPH PLATFORMS: HIGH-END PRICING\nEnterprise knowledge graph platforms command significant licensing fees, establishing the upper bound of the willingness-to-pay curve for structured knowledge infrastructure:\n- Neo4j Enterprise Edition: $15,000-25,000/year for small deployments, scaling to $100,000+ for large-scale, multi-datacenter implementations with premium support. AuraDB (managed cloud) scales from $65-146/GB/month.\n- Stardog: Custom enterprise pricing; negotiated contracts based on deployment scale. No published list price.\n- Amazon Neptune: Usage-based pricing at $0.10-0.24/hour for database instances, plus $0.10 per 1M requests for read replicas.\n- Promethium's 2026 buyer's guide documents customers reporting 300%+ ROI in year one, but at ~1 FTE per 50-100 entity types as ongoing operational cost for semantic governance — establishing that the enterprise segment accepts significant total cost of ownership for structured knowledge.\n\nPERSONAL AND TEAM KM TOOLS: CONSUMER-TIER PRICING\nPersonal and team KM tools occupy the lower end of the market, establishing the entry-level willingness-to-pay:\n- Notion: Free for personal use; $10/user/month (Plus); $15/user/month (Business); custom Enterprise.\n- Roam Research: $15/month or $165/year flat.\n- Obsidian: Free for personal use; $50/user/year for commercial use; Obsidian Sync $4-8/month; Obsidian Publish $8-16/month.\n- Logseq: Free open-source; Logseq Sync approximately $5-6/month.\nThese tools do not price structured provenance or typed relationships as premium features because they do not offer them. This establishes the price floor: a knowledge format with no semantic enrichment charges at the $5-15/user/month tier.\n\nAI-NATIVE KM: THE GROWTH TIER\nThe AI-native knowledge management segment is the fastest-growing and most relevant pricing comparator:\n- The AI-driven knowledge management market grows at 47.2% year-over-year, reaching USD 7.71B in 2025 (GoSearch).\n- AI Knowledge Management Tool market priced at an estimated $4.2B in 2024, growing at 25.3% CAGR to $36.5B by 2033 (GrowthMarketReports).\n- Enterprise AI search tools (Glean, GoSearch, Microsoft Search) are priced at approximately $15-30/user/month for enterprise licensing.\n- The enterprise search market reached $6.83B in 2025, projecting to $11.15B by 2030 (10.3% CAGR).\nAn OKF+MIF knowledge spine that provides structured, provenance-backed, AI-queryable knowledge would price in the AI-native tier rather than the personal KM tier — roughly $15-30/user/month for enterprise features, or usage-based for the hosted/API tier.\n\nINFERRED BUSINESS MODEL FOR AN OKF+MIF SPINE\nBased on the adjacent-market pricing architecture, the canonical business model for an OKF+MIF knowledge spine is:\n1. OPEN-SOURCE CORE: OKF format specification + MIF schema layer + CLI tooling = free, MIT-licensed. This creates the ecosystem and drives developer adoption.\n2. COMMERCIAL ENTERPRISE TIER: Hosted sync and version management + provenance audit dashboards + SSO/SAML + compliance certification (SOC 2, HIPAA) + enterprise support = $15-25/user/month or $20K-100K/year enterprise license.\n3. PLATFORM/API TIER: Hosted knowledge graph serving (OKF bundles as queryable knowledge APIs for LLM agents) = usage-based pricing at $0.10-1.00 per 1K API calls.\n\nThis model mirrors Neo4j (open-source Community + commercial Enterprise), Obsidian (free personal + paid commercial + paid sync), and emerging AI knowledge infrastructure players. The TAM for the commercial enterprise tier, targeting the SAM of AI/research-intensive organizations (USD 2B-3.3B in 2025), supports a viable business at even sub-1% market share.",
+  "created": "2026-06-28T00:00:00Z",
+  "extensions": {
+    "harness": {
+      "dimension": "market",
+      "verification": {
+        "attempted_at": "2026-06-28T11:54:01Z",
+        "disconfirming_evidence": [
+          "https://www.thebusinessresearchcompany.com/report/ai-driven-knowledge-management-system-global-market-report"
+        ],
+        "verdict": "weakened",
+        "verdict_basis": "AI-KM market-sizing figures are soft and partly misattributed: the '$7.71B 2025 at 47.2%' figure is a Research and Markets / Business Research Company number (not GoSearch as cited via a Windows Forum thread), the '$4.2B 2024 -> $36.5B 2033 at 25.3% CAGR' figure could not be verified, and cross-firm estimates vary widely (e.g. $9.6B 2025 -> $251.2B 2034 at 43.7%). The two cited growth rates do not reconcile. Pricing comparators (Neo4j, personal-KM tiers) hold, so not falsified."
+      },
+      "gathered_under": "gv-722bb7b64725"
+    }
+  },
+  "provenance": {
+    "@type": "Provenance",
+    "confidence": 0.6,
+    "sourceType": "agent_inferred",
+    "trustLevel": "low_confidence"
+  },
+  "relationships": [
+    {
+      "strength": 0.8,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-km-software-market-sizing",
+      "type": "supports"
+    },
+    {
+      "strength": 0.85,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-open-source-vs-commercial",
+      "type": "relates-to"
+    }
+  ],
+  "summary": "Adjacent markets reveal a consistent pricing architecture for structured knowledge infrastructure: open-source format core with commercial enterprise tiers. Enterprise knowledge graph platforms command $15K-100K+/year for self-managed deployments. Personal KM tools price at $5-16/user/month. The AI-driven KM segment grows at 47% year-over-year. An OKF+MIF spine would follow the open-core model: free format, paid governance/hosting/audit layer. [Weakened 2026-06-28 - see verification block.]",
+  "tags": [
+    "pricing",
+    "business-model",
+    "open-core",
+    "saas",
+    "enterprise-licensing",
+    "adjacent-markets",
+    "market"
+  ],
+  "title": "Pricing and Business Model Signals from Adjacent Knowledge Infrastructure Markets",
+  "ontology": {
+    "id": "market-research"
+  },
+  "entity": {
+    "name": "Pricing and business-model signals from adjacent knowledge-infrastructure markets",
+    "entity_type": "market-intelligence-report"
+  },
+  "namespace": "harness/example-okf-mif-knowledge-spine"
+}

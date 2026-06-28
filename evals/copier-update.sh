@@ -54,6 +54,20 @@ copier copy --trust --defaults --quiet --vcs-ref v1.0.0 "$TMPL" "$INST" >/dev/nu
 [ -f "$INST/docs/harness-instance.md" ] || { echo "copier-update: templated identity file not rendered" >&2; exit 1; }
 echo "  copier: instantiated harness (answers recorded, identity rendered)"
 
+# 2b. Assert the served example topic seeded into the clone: renamed (example- prefix
+#     stripped), archived, no residual token, no stale topic ids in the manifest. This is
+#     scripts/seed-example-topic.sh running as a post-copy _task (SPEC §7 seed fixture).
+[ -d "$INST/reports/okf-mif-knowledge-spine" ] || { echo "copier-update: seed not renamed into reports/okf-mif-knowledge-spine" >&2; exit 1; }
+[ ! -d "$INST/reports/example-okf-mif-knowledge-spine" ] || { echo "copier-update: example- prefixed corpus leaked into the clone" >&2; exit 1; }
+[ ! -d "$INST/reports/example-topic" ] || { echo "copier-update: legacy example-topic corpus leaked into the clone" >&2; exit 1; }
+if grep -rq 'example-okf-mif-knowledge-spine' "$INST/reports/okf-mif-knowledge-spine" 2>/dev/null; then
+  echo "copier-update: residual example- token in seeded corpus" >&2; exit 1; fi
+SEED_STATUS=$(jq -r '.topics[] | select(.id=="okf-mif-knowledge-spine") | .status' "$INST/harness.config.json" 2>/dev/null)
+[ "$SEED_STATUS" = "archived" ] || { echo "copier-update: seed topic not archived (got '$SEED_STATUS')" >&2; exit 1; }
+if jq -e '.topics[] | select(.id=="example-topic" or .id=="example-okf-mif-knowledge-spine")' "$INST/harness.config.json" >/dev/null 2>&1; then
+  echo "copier-update: stale example topic id left in manifest" >&2; exit 1; fi
+echo "  copier: example topic seeded as archived reports/okf-mif-knowledge-spine (example- stripped)"
+
 # 3. Make the instance a git repo (copier update needs a clean VCS state).
 cd "$INST" && git init -q && $GA add -A && $GA commit -q -m "instantiated harness"
 
@@ -65,6 +79,13 @@ cd "$TMPL" && $GA commit -q -am "template v1.1.0: propagation marker" && git tag
 # 5. Re-apply the template change to the instantiated harness.
 cd "$INST"
 copier update --trust --defaults --quiet >/dev/null 2>&1 || { echo "copier-update: copier update failed" >&2; exit 1; }
+
+# 6a. The seed must survive update idempotently: the renamed seed persists and the
+#     re-shipped example- copy is self-cleaned (no duplicate) — what keeps update
+#     conflict-free (scripts/seed-example-topic.sh).
+[ -d "$INST/reports/okf-mif-knowledge-spine" ] || { echo "copier-update: seed lost on update" >&2; exit 1; }
+[ ! -d "$INST/reports/example-okf-mif-knowledge-spine" ] || { echo "copier-update: example- corpus reappeared after update (seed task not self-cleaning)" >&2; exit 1; }
+echo "  copier: seed survived update idempotently (no example- duplicate)"
 
 # 6. Assert the change propagated.
 if grep -q "$MARK" "$INST/docs/harness-instance.md"; then

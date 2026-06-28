@@ -1,0 +1,63 @@
+---
+// Sidebar override: render Starlight's default sidebar, plus a client-side filter that
+// narrows the Reports topic list (the sidebar lists one link per topic to its README
+// index; this keeps a large corpus's topic list manageable). The filter is purely
+// progressive-enhancement — with JS off, every topic link is shown.
+import Default from '@astrojs/starlight/components/Sidebar.astro';
+---
+
+<div class="reports-filter">
+  <input
+    type="search"
+    placeholder="Filter reports…"
+    aria-label="Filter report topics"
+    autocomplete="off"
+    data-reports-filter
+  />
+</div>
+<Default><slot /></Default>
+
+<script>
+  function wireReportsFilter() {
+    const input = document.querySelector('[data-reports-filter]');
+    if (!input) return;
+    // A topic link points at /reports/<topic>/ — exclude the bare /reports/ Overview link.
+    const isTopicLink = (a) => {
+      const href = a.getAttribute('href') || '';
+      return /\/reports\//.test(href) && !/\/reports\/?$/.test(href);
+    };
+    const apply = () => {
+      const q = input.value.trim().toLowerCase();
+      for (const a of document.querySelectorAll('nav a')) {
+        if (!isTopicLink(a)) continue;
+        const li = a.closest('li');
+        if (!li) continue;
+        li.hidden = q !== '' && !(a.textContent || '').toLowerCase().includes(q);
+      }
+    };
+    input.addEventListener('input', apply);
+    apply();
+  }
+  wireReportsFilter();
+  document.addEventListener('astro:after-swap', wireReportsFilter);
+</script>
+
+<style>
+  .reports-filter {
+    padding: 0.5rem var(--sl-sidebar-pad-x, 1rem) 0;
+  }
+  .reports-filter input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.4rem 0.6rem;
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-text);
+    background: var(--sl-color-bg);
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.375rem;
+  }
+  .reports-filter input:focus-visible {
+    outline: 2px solid var(--sl-color-accent);
+    outline-offset: 1px;
+  }
+</style>

@@ -1,0 +1,117 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-buyer-segments-pain-points",
+  "@type": "Concept",
+  "citations": [
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "website",
+      "title": "Knowledge Management Statistics and Trends in 2025 (CAKE)",
+      "url": "https://cake.com/blog/knowledge-management-statistics/"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "website",
+      "title": "Enterprise Knowledge Graph Buyer's Guide 2026 - Buyer Segments (Promethium)",
+      "url": "https://promethium.ai/guides/enterprise-knowledge-graph-buyers-guide-2026/"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "website",
+      "title": "Knowledge Management and Dissemination for Think Tanks (DataCalculus)",
+      "url": "https://datacalculus.com/en/blog/think-tanks/program-director/knowledge-management-and-dissemination-for-think-tanks"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "website",
+      "title": "How the Open Knowledge Format can improve data sharing - Target segments (Google Cloud)",
+      "url": "https://cloud.google.com/blog/products/data-analytics/how-the-open-knowledge-format-can-improve-data-sharing"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "website",
+      "title": "Knowledge Management Software Market Size, Industry Share | Forecast 2034 - Enterprise segment data (Fortune Business Insights)",
+      "url": "https://www.fortunebusinessinsights.com/knowledge-management-software-market-110376"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "article",
+      "title": "A Decade of Scholarly Research on Open Knowledge Graphs - Research community KG adoption (arXiv)",
+      "url": "https://arxiv.org/pdf/2306.13186"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "refutes",
+      "citationType": "website",
+      "title": "Gartner Predicts 40% of Enterprise Apps Will Feature Task-Specific AI Agents by 2026, Up from Less Than 5% in 2025 (Gartner Newsroom)",
+      "url": "https://www.gartner.com/en/newsroom/press-releases/2025-08-26-gartner-predicts-40-percent-of-enterprise-apps-will-feature-task-specific-ai-agents-by-2026-up-from-less-than-5-percent-in-2025"
+    }
+  ],
+  "conceptType": "semantic",
+  "content": "Market demand for a structured knowledge spine maps to five identifiable buyer segments, each with a distinct pain profile and willingness-to-pay signal.\n\nSEGMENT 1: AI/ML TEAMS AT LARGE ENTERPRISES\nPain: LLMs deployed without grounded, structured knowledge sources hallucinate at rates that block production AI deployment (16.7% accuracy without grounding vs. 54.2% with, per Promethium 2026). Gartner reports 80% of enterprise applications shipped in Q1 2026 embed at least one AI agent — each requiring traceable, current knowledge. Existing solutions (vector databases, raw document RAG) lack provenance and typed relationships, making AI outputs opaque and unauditable. Willingness to pay: High. AI knowledge infrastructure is a capital investment tied to avoiding AI failures that cost business outcomes. The enterprise knowledge graph segment at $890M-2.9B (2025) is primarily funded by this segment.\n\nSEGMENT 2: ENTERPRISE KNOWLEDGE ENGINEERING TEAMS (CDOs, Data Architects)\nPain: Knowledge silos across 5+ incompatible platforms (54% of organizations use more than 5 platforms for documentation, per CAKE 2025 statistics). 47% of professionals spend 1-5 hours daily searching for specific information. The shift toward conversational AI over search requires semantic layers that existing document systems do not provide. 83% of decision-makers plan increased data integration investment. Willingness to pay: High. IT and telecom sector accounts for 38.7% of enterprise KM adoption. Financial services, healthcare, and legal verticals prioritize explainability and auditability — both core OKF+MIF capabilities.\n\nSEGMENT 3: RESEARCH ORGANIZATIONS (Academic, National Labs, R&D Teams)\nPain: Research data management workflows require citation tracking, provenance (who produced what data, when, with what methodology), and long-term data findability (FAIR principles: Findable, Accessible, Interoperable, Reusable). The Open Science Graph ecosystem is demonstrating active community investment in knowledge graphs that represent research lifecycle entities (projects, people, outcomes, institutions). Sharing data between research groups is a significant pain point due to incompatible formats and lack of attribution standards. The Make Data Count initiative drives standardized data citation — but most KM tools do not natively support formal citation objects. Willingness to pay: Moderate. Research organizations are cost-sensitive but will invest in infrastructure that satisfies funder data-sharing mandates.\n\nSEGMENT 4: THINK TANKS AND POLICY ORGANIZATIONS\nPain: Without a structured knowledge management system, valuable research gets lost, duplicated, or underutilized in think tanks. The challenge is preserving institutional memory across staff turnover while maintaining the provenance chain (which analyst produced which finding, on what evidence). Knowledge Management and Dissemination for Think Tanks (DataCalculus) identifies centralized, structured repositories with historical and live research as the recommended approach. Policy knowledge requires temporal versioning (policy positions change; historical context matters). Willingness to pay: Low to moderate. Think tanks are budget-constrained but face existential institutional memory risk.\n\nSEGMENT 5: DEVELOPER AND PLATFORM TEAMS\nPain: Traditional wiki systems suffer from abandonment because human contributors do not maintain cross-reference links as systems evolve. Google's OKF is explicitly motivated by this failure mode: agents can handle the bookkeeping that causes human wiki abandonment. Developer teams managing runbooks, incident response playbooks, and API documentation need knowledge that is version-controlled, diffable, and machine-readable. Willingness to pay: Low individually, high at the enterprise scale. DevOps and SRE organizations are a named target segment for OKF. The developer tools market funds open-source infrastructure adoption through upstream commercial support models.\n\nCROSS-SEGMENT SIGNALS\nLarge enterprises represent 46% of KM software market revenue (Fortune Business Insights). AI integration is now prioritized by 41% of KM leaders. The enterprise search market reached $6.83B in 2025 (10.3% CAGR to $11.15B by 2030), indicating that buyers fund knowledge discovery as a first-class capability. 48% of executives acknowledge employees take valuable procedural knowledge on departure — a direct institutional memory risk that structured, persistent knowledge formats address.",
+  "created": "2026-06-28T00:00:00Z",
+  "extensions": {
+    "harness": {
+      "dimension": "market",
+      "verification": {
+        "attempted_at": "2026-06-28T11:42:12Z",
+        "disconfirming_evidence": [
+          "https://www.gartner.com/en/newsroom/press-releases/2025-08-26-gartner-predicts-40-percent-of-enterprise-apps-will-feature-task-specific-ai-agents-by-2026-up-from-less-than-5-percent-in-2025"
+        ],
+        "verdict": "weakened",
+        "verdict_basis": "The five-segment pain-point structure is well grounded, but the cited 'Gartner reports 80% of enterprise applications shipped in Q1 2026 embed at least one AI agent' conflicts with Gartner's official prediction of 40% by end-2026 (from <5% in 2025) and the 2026 Gartner CIO survey showing only 17% of organizations have deployed AI agents to date; the segment thesis survives but the headline adoption statistic is overstated."
+      },
+      "gathered_under": "gv-722bb7b64725"
+    }
+  },
+  "provenance": {
+    "@type": "Provenance",
+    "confidence": 0.7,
+    "sourceType": "agent_inferred",
+    "trustLevel": "moderate_confidence"
+  },
+  "relationships": [
+    {
+      "strength": 0.85,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-km-software-market-sizing",
+      "type": "relates-to"
+    },
+    {
+      "strength": 0.8,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-ai-demand-structured-provenance",
+      "type": "supports"
+    }
+  ],
+  "summary": "Five buyer segments have documented pains an OKF+MIF spine addresses: AI/ML teams (LLM grounding), enterprise knowledge-engineering teams (semantic layers), research orgs (provenance/citation tracking), think tanks (institutional memory), and developer/platform teams (replacing fragmented wikis with git-distributable docs). [Gate 2026-06-28: weakened — a cited Gartner 80%/Q1-2026 AI-agent adoption stat is overstated; moderate_confidence.]",
+  "tags": [
+    "buyer-segments",
+    "pain-points",
+    "enterprise",
+    "research",
+    "think-tank",
+    "ai-ml-teams",
+    "market"
+  ],
+  "title": "Buyer Segments and Pain Points for a Structured Knowledge Spine",
+  "ontology": {
+    "id": "market-research"
+  },
+  "entity": {
+    "name": "Buyer segments for a structured knowledge spine",
+    "entity_type": "segment"
+  },
+  "namespace": "harness/example-okf-mif-knowledge-spine"
+}

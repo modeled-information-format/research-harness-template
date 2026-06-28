@@ -1,0 +1,78 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-prov-o-provenance-alternative",
+  "@type": "Concept",
+  "citations": [
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "PROV-O: The PROV Ontology - W3C Recommendation",
+      "url": "https://www.w3.org/TR/prov-o/"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "article",
+      "title": "PROV-AGENT: Unified Provenance for Tracking AI Agent Interactions in Agentic Workflows (arXiv)",
+      "url": "https://arxiv.org/pdf/2508.02866"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "article",
+      "title": "A semantic approach to mapping the Provenance Ontology to Basic Formal Ontology (Nature Scientific Data)",
+      "url": "https://www.nature.com/articles/s41597-025-04580-1"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "article",
+      "title": "Introducing MIF: Memory Interchange Format - zircote.com",
+      "url": "https://zircote.com/blog/2026/02/introducing-mif-memory-interchange-format/"
+    }
+  ],
+  "conceptType": "semantic",
+  "content": "PROV-O (W3C Provenance Ontology, 2013) is the recognized standard for expressing provenance in a machine-readable form across domains. It defines three core classes — Entity (data), Activity (process), and Agent (software or human actor) — with properties covering derivation, attribution, and generation. PROV-O is designed to be extended for domain-specific use cases, and research in 2024-2025 actively extends it for AI agent workflows: PROV-AGENT, presented at IEEE e-Science 2025, adds LLM-centric entities, prompt/response interactions, model invocations, and telemetry into a unified PROV graph. PROV-O thus sits on the research frontier for AI provenance, validating the need MIF addresses. However, PROV-O operates within the RDF/OWL ecosystem: authoring provenance metadata requires RDF serialization (Turtle, JSON-LD, or RDF/XML), SPARQL for querying, and a triple store or OWL reasoner for inference. MIF's provenance layer covers the same conceptual ground — sourceType (user_explicit, agent_inferred, external_import), confidence score (0.0–1.0), trustLevel, and agent identification — but expresses it as plain JSON properties on a Concept object, requiring no RDF toolchain. MIF's approach is explicitly W3C-PROV-O compatible (the provenance block traces to PROV classes) while remaining readable as a flat YAML/JSON property. PROV-O fills neither the packaging gap (OKF's markdown layer) nor the typed concept-relationship gap that MIF addresses; it addresses only the provenance slice of the knowledge spine. Where PROV-O demands the full RDF stack, MIF delivers PROV-O-compatible semantics at JSON authoring cost, making it the accessible alternative for teams unwilling to adopt a triple store.",
+  "created": "2026-06-28T00:00:00Z",
+  "extensions": {
+    "harness": {
+      "dimension": "landscape",
+      "verification": {
+        "verdict": "survived",
+        "verdict_basis": "PROV-O's status as the W3C provenance standard operating within the RDF/SPARQL/triple-store ecosystem is corroborated; no source contradicted the finding's claim that PROV-O covers provenance semantics but imposes an RDF-toolchain cost MIF avoids.",
+        "disconfirming_evidence": [],
+        "attempted_at": "2026-06-28T11:42:12Z"
+      }
+    }
+  },
+  "provenance": {
+    "@type": "Provenance",
+    "confidence": 0.9,
+    "sourceType": "agent_inferred",
+    "trustLevel": "high_confidence"
+  },
+  "relationships": [
+    {
+      "strength": 0.8,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-rdf-owl-semantic-alternative",
+      "type": "relates-to"
+    }
+  ],
+  "summary": "PROV-O is the W3C standard covering the same provenance semantics as MIF's provenance layer but requires the full RDF toolchain; MIF delivers PROV-O-compatible provenance at plain-JSON authoring cost without a triple store.",
+  "tags": [
+    "prov-o",
+    "w3c",
+    "provenance",
+    "rdf",
+    "landscape",
+    "prior-art",
+    "comparison"
+  ],
+  "title": "PROV-O: W3C Provenance Standard Without the Accessibility Layer",
+  "namespace": "harness/example-okf-mif-knowledge-spine"
+}

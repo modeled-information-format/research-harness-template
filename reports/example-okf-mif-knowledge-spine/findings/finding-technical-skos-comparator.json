@@ -1,0 +1,78 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-skos-comparator",
+  "@type": "Concept",
+  "citations": [
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "SKOS Simple Knowledge Organization System Reference — W3C",
+      "url": "https://www.w3.org/TR/skos-reference/"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "article",
+      "title": "Simple Knowledge Organization System (SKOS) — ISKO Encyclopedia of KO",
+      "url": "https://www.isko.org/cyclo/skos.htm"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "OKF SPEC.md v0.1 — GoogleCloudPlatform/knowledge-catalog",
+      "url": "https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md"
+    }
+  ],
+  "conceptType": "semantic",
+  "content": "SKOS (Simple Knowledge Organization System, W3C Recommendation 2009) represents thesauri, taxonomies, classification schemes, and controlled vocabularies as RDF graphs. A SKOS concept (skos:Concept) carries preferred labels (skos:prefLabel), alternate labels, definitions (skos:definition), scope notes, and three structural relationship types: skos:broader (parent term), skos:narrower (child term), and skos:related (associative, non-hierarchical). SKOS is specifically designed to enable controlled vocabulary alignment and thesaurus interoperability across institutions. The technical gaps relative to OKF+MIF are: (1) Relationship expressiveness: SKOS provides only broader/narrower/related predicates. It cannot express 'derived-from', 'contradicts', 'supersedes', 'depends-on', or other typed predicates needed for a research or agent-knowledge spine. MIF's nine structural-core relationship types go far beyond SKOS's three vocabulary-alignment predicates. (2) No narrative body: SKOS concepts carry only labels, notes, and references — no structured markdown body with Schema, Examples, or Citations sections. OKF's markdown body is the critical affordance for human and agent consumption. (3) RDF dependency: SKOS is expressed in RDF (Turtle, RDF/XML, JSON-LD), requiring the full Semantic Web toolchain for authoring and querying. OKF requires only a text editor. (4) No provenance: SKOS has no built-in provenance or temporal tracking beyond optional Dublin Core metadata annotations. (5) No git-native distribution: SKOS files are typically served from triple stores or vocabulary servers, not git repositories with diff/blame/PR workflows. SKOS solves vocabulary-alignment interoperability in existing triple-store ecosystems where OKF+MIF is irrelevant. OKF+MIF targets teams building AI-agent knowledge bases from scratch who need git-native, markdown-first knowledge with layered formal semantics — a use case SKOS's vocabulary model never targeted.",
+  "created": "2026-06-28T00:00:00Z",
+  "extensions": {
+    "harness": {
+      "dimension": "technical",
+      "verification": {
+        "verdict": "survived",
+        "verdict_basis": "Independent sources (W3C, ISKO, Wikipedia) confirm SKOS is a 2009 W3C Recommendation whose structural relations are broader/narrower/related under a 'minimal ontological commitment' design, lacking narrative bodies, provenance, and git-native distribution. 1 adversarial query; no source contradicts the stated gaps.",
+        "disconfirming_evidence": [],
+        "attempted_at": "2026-06-28T12:20:00Z"
+      },
+      "gathered_under": "gv-722bb7b64725"
+    }
+  },
+  "provenance": {
+    "@type": "Provenance",
+    "confidence": 0.93,
+    "sourceType": "agent_inferred",
+    "trustLevel": "high_confidence"
+  },
+  "relationships": [
+    {
+      "strength": 0.7,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-mif-typed-relationships",
+      "type": "relates-to"
+    }
+  ],
+  "summary": "SKOS (W3C Recommendation, 2009) provides formal term hierarchies (broader/narrower/related) for controlled vocabularies and taxonomies but lacks narrative prose bodies, typed relationship predicates beyond broader/narrower, provenance tracking, and git-native distribution. It solves the vocabulary alignment problem, not the knowledge distribution problem.",
+  "tags": [
+    "skos",
+    "thesaurus",
+    "controlled-vocabulary",
+    "rdf",
+    "technical",
+    "comparator",
+    "w3c"
+  ],
+  "title": "SKOS as Technical Comparator: Thesaurus Hierarchy Without Typed Relationships or Prose",
+  "ontology": {
+    "id": "mif-generic"
+  },
+  "entity": {
+    "name": "SKOS",
+    "entity_type": "technology"
+  },
+  "namespace": "harness/example-okf-mif-knowledge-spine"
+}

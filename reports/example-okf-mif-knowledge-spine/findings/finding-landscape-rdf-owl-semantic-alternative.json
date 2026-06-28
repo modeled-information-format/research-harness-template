@@ -1,0 +1,71 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-rdf-owl-semantic-alternative",
+  "@type": "Concept",
+  "citations": [
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "RDF vs OWL: Key Differences, Use Cases and Examples Explained - Atlan",
+      "url": "https://atlan.com/know/rdf-vs-owl/"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "article",
+      "title": "Beyond OWL: Reconsidering Ontologies in the Age of AI and the Semantic Web",
+      "url": "https://medium.com/@nfigay/beyond-owl-reconsidering-ontologies-in-the-age-of-ai-and-the-semantic-web-4059b519f23d"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "article",
+      "title": "OWL Reasoners still useable in 2023 (arXiv)",
+      "url": "https://arxiv.org/pdf/2309.06888"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "OKF SPEC.md - GoogleCloudPlatform/knowledge-catalog",
+      "url": "https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md"
+    }
+  ],
+  "conceptType": "semantic",
+  "content": "RDF (Resource Description Framework) and OWL (Web Ontology Language) are the W3C-recommended backbone for the Semantic Web and deliver exactly the typed-relationship, formal-ontology, and inference capabilities that OKF's untyped markdown links deliberately omit. An RDF triple (subject, predicate, object) can express any typed relationship with machine-processable semantics; OWL adds class hierarchies, property restrictions, and formal reasoning. These are precisely the gaps OKF v0.1 openly defers to later versions. However, RDF/OWL imposes a toolchain and authoring cost that eliminates the accessibility advantage OKF provides: practitioners must learn Turtle or RDF/XML syntax, SPARQL querying, triple store infrastructure, and OWL reasoners. An evaluation of OWL 2 DL reasoners found that many are no longer actively maintained, reflecting ecosystem sustainability challenges. RDF's atomic triple structure also complicates n-ary relationships (requiring complex reification workarounds), and the Semantic Web 'layer cake' introduced ambiguities by conflating data modeling, knowledge representation, and logic reasoning. Modern platforms abstract RDF complexity through catalogs, glossaries, and policy engines, but this requires heavyweight infrastructure incompatible with OKF's 'just markdown, just files, just YAML' philosophy. OKF+MIF occupies a distinct niche: OKF's markdown packaging layer preserves the authoring accessibility that RDF sacrifices, while MIF provides typed relationships and provenance at a JSON-native level without forcing users into SPARQL or triple stores. RDF/OWL solves the semantic completeness problem but not the adoption-friction problem; OKF+MIF targets both simultaneously, layering semantic depth under an accessible surface.",
+  "created": "2026-06-28T00:00:00Z",
+  "extensions": {
+    "harness": {
+      "dimension": "landscape",
+      "verification": {
+        "verdict": "survived",
+        "verdict_basis": "The arXiv 2023 evaluation 'OWL Reasoners still useable in 2023' confirms many OWL 2 DL reasoners are no longer maintained, supporting the finding's authoring/tooling-cost claim; no disconfirming evidence surfaced.",
+        "disconfirming_evidence": [],
+        "attempted_at": "2026-06-28T11:42:12Z"
+      }
+    }
+  },
+  "provenance": {
+    "@type": "Provenance",
+    "confidence": 0.92,
+    "sourceType": "agent_inferred",
+    "trustLevel": "high_confidence"
+  },
+  "summary": "RDF/OWL delivers complete typed semantics and formal ontologies but at authoring/tooling costs that eliminate OKF's accessibility advantage; OKF+MIF addresses both semantic depth and adoption friction simultaneously.",
+  "tags": [
+    "rdf",
+    "owl",
+    "semantic-web",
+    "knowledge-representation",
+    "landscape",
+    "prior-art",
+    "comparison"
+  ],
+  "title": "RDF/OWL: Full Semantic Rigor, Prohibitive Authoring Cost",
+  "namespace": "harness/example-okf-mif-knowledge-spine"
+}

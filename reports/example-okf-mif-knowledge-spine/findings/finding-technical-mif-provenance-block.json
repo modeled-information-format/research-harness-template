@@ -1,0 +1,79 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-mif-provenance-block",
+  "@type": "Concept",
+  "citations": [
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "MIF Modeled Information Format Specification — mif-spec.dev",
+      "url": "https://mif-spec.dev/"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "MIF v1.0 — GitHub zircote/MIF: bi-temporal tracking, W3C PROV provenance",
+      "url": "https://github.com/zircote/MIF"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "PROV-Overview — W3C",
+      "url": "https://www.w3.org/TR/prov-overview/"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "Introducing MIF: Memory Interchange Format — zircote.com",
+      "url": "https://zircote.com/blog/2026/02/introducing-mif-memory-interchange-format/"
+    }
+  ],
+  "conceptType": "semantic",
+  "content": "MIF's provenance block is a mandatory structural element at MIF Level 2+ conformance, designed to be W3C PROV-O compatible while remaining expressible as flat JSON properties. The block has '@type': 'Provenance' and carries: 'sourceType' — a closed enum with five values: 'user_explicit' (human-authored fact), 'user_implicit' (inferred from user behavior), 'agent_inferred' (derived by an AI agent from evidence), 'external_import' (imported from an external system), 'system_generated' (automated pipeline output). This enum maps directly to PROV-O's Agent/Activity/Entity attribution model. 'confidence' — a 0.0 to 1.0 numeric score expressing the authoring agent's epistemic certainty. 'trustLevel' — a categorical tier ('high_confidence', 'moderate_confidence', 'low_confidence', 'uncertain', 'verified', 'user_stated') for coarse filtering. 'agent' — an identifier for the originating agent (human, model name, tool). Optional W3C PROV properties 'wasGeneratedBy', 'wasAttributedTo', 'wasDerivedFrom' allow full PROV-O graph construction for systems that need RDF-level provenance interoperability. In the OKF+MIF layering, MIF's provenance block solves the knowledge-decay and trust-erosion problems that OKF's 'timestamp' (last-modified only) and informal log.md cannot address. Specifically: a knowledge spine needs to know not just when a concept was last edited, but whether it was AI-generated or human-verified, how confident the authoring agent was, and whether it derives from an authoritative external source or internal inference. OKF's single 'timestamp' field encodes only last-modified time; MIF's provenance block encodes the epistemic status of the claim itself. When layered over OKF, MIF provenance blocks would be stored as extended frontmatter fields or companion JSON files, making every OKF concept traceable to its authoring process without requiring the full RDF toolchain that PROV-O natively demands.",
+  "created": "2026-06-28T00:00:00Z",
+  "extensions": {
+    "harness": {
+      "dimension": "technical",
+      "verification": {
+        "verdict": "survived",
+        "verdict_basis": "The published mif-spec.dev provenance page confirms the finding verbatim: five sourceType enum values (user_explicit, user_implicit, agent_inferred, external_import, system_generated), a 0-1 confidence, a six-value trustLevel ladder, and W3C PROV-O predicates (wasAttributedTo/wasDerivedFrom/wasGeneratedBy). MIF is first-party (bounded). No disconfirming evidence.",
+        "disconfirming_evidence": [],
+        "attempted_at": "2026-06-28T11:54:01Z"
+      },
+      "gathered_under": "gv-722bb7b64725"
+    }
+  },
+  "provenance": {
+    "@type": "Provenance",
+    "confidence": 0.95,
+    "sourceType": "agent_inferred",
+    "trustLevel": "high_confidence"
+  },
+  "relationships": [
+    {
+      "strength": 0.9,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-okf-informal-provenance",
+      "type": "derived-from"
+    }
+  ],
+  "summary": "MIF's 'provenance' object is a first-class structured JSON field on every Concept that encodes W3C PROV-O compatible attribution: sourceType enum (user_explicit, agent_inferred, external_import, system_generated, user_implicit), numeric confidence (0-1), trustLevel, agent identity, and wasGeneratedBy/wasAttributedTo/wasDerivedFrom properties. This replaces OKF's informal log.md convention with a machine-verifiable record.",
+  "tags": [
+    "mif",
+    "provenance",
+    "w3c-prov-o",
+    "attribution",
+    "technical",
+    "mif-advantage",
+    "confidence"
+  ],
+  "title": "MIF's First-Class Provenance Block: W3C PROV-O Compatible JSON Attribution",
+  "namespace": "harness/example-okf-mif-knowledge-spine"
+}

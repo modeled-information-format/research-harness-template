@@ -1,0 +1,89 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-okf-mif-layering-mechanics",
+  "@type": "Concept",
+  "citations": [
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "OKF SPEC.md v0.1 — Extension mechanism, §3 — GoogleCloudPlatform/knowledge-catalog",
+      "url": "https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "MIF v1.0 — GitHub zircote/MIF",
+      "url": "https://github.com/zircote/MIF"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "article",
+      "title": "How the Open Knowledge Format can improve data sharing — Google Cloud Blog",
+      "url": "https://cloud.google.com/blog/products/data-analytics/how-the-open-knowledge-format-can-improve-data-sharing"
+    }
+  ],
+  "conceptType": "semantic",
+  "content": "The OKF+MIF layering is technically feasible because OKF's conformance model is deliberately extensible: 'Producers MAY include additional key-value pairs [in frontmatter]. Consumers SHOULD preserve unknown keys when round-tripping and MUST NOT reject documents with unrecognized fields.' This means an OKF-compliant bundle CAN carry MIF fields as extended frontmatter without breaking OKF conformance. The field-by-field complement mapping is: OKF 'type' (string) → MIF 'entity.entity_type' + 'ontology.id' (formal typed resolution). OKF 'timestamp' (last-modified) → MIF 'temporal.validFrom'/'validUntil'/'recordedAt' (bi-temporal). OKF 'tags' → MIF 'tags' (compatible, both YAML string arrays). OKF 'resource' (asset URI) → MIF 'citations[].url' with citationType 'primary-source'. OKF 'log.md' entries → MIF 'provenance' block + 'temporal.reinforcementHistory'. OKF '#Citations' section → MIF 'citations[]' with structured citationRole/citationType. OKF untyped markdown links → MIF 'relationships[]' with typed edge and strength. The primary tension is architectural: OKF's permissive-consumer model ('tolerate broken links, unknown types, missing fields') is optimized for resilient consumption across heterogeneous producers, while MIF's harness is fail-closed (an entity type that does not resolve against its declared ontology is a hard failure). An OKF+MIF layering must decide at what boundary this flip happens: OKF bundles remain permissive for authoring and distribution; MIF validation is applied at ingestion time (the 'enrichment pass') to validate and stamp the formal fields. A second tension is round-trip fidelity: converting OKF untyped prose links to MIF typed relationships requires an enrichment step (AI or human) to classify relationship types — this is lossy in the OKF→MIF direction (type inference) and lossless in the MIF→OKF direction (types degrade gracefully to untyped links with prose annotation). The recommended implementation pattern: OKF bundles are the authoring and git-distribution surface; an OKF→MIF enrichment agent (as demonstrated by Google's BigQuery enrichment reference agent) adds MIF frontmatter extensions at consumption time; MIF JSON companions carry the formal typed graph alongside the OKF markdown files, with the OKF package as the durable, human-readable spine.",
+  "created": "2026-06-28T00:00:00Z",
+  "extensions": {
+    "harness": {
+      "dimension": "technical",
+      "verification": {
+        "verdict": "survived",
+        "verdict_basis": "OKF SPEC.md confirms the permissive extension seam the finding relies on: 'Producers MAY include additional key-value pairs' and consumers 'MUST NOT reject documents with unrecognized fields', enabling MIF fields as frontmatter extensions. The OKF-permissive vs MIF-fail-closed tension is accurately characterized. The field-mapping/enrichment design is reasoned architecture, not a web-checkable fact. No disconfirming evidence.",
+        "disconfirming_evidence": [],
+        "attempted_at": "2026-06-28T11:54:01Z"
+      },
+      "gathered_under": "gv-722bb7b64725"
+    }
+  },
+  "provenance": {
+    "@type": "Provenance",
+    "confidence": 0.88,
+    "sourceType": "agent_inferred",
+    "trustLevel": "moderate_confidence"
+  },
+  "relationships": [
+    {
+      "strength": 0.9,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-okf-core-data-model",
+      "type": "derived-from"
+    },
+    {
+      "strength": 0.85,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-mif-typed-relationships",
+      "type": "derived-from"
+    },
+    {
+      "strength": 0.85,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-mif-provenance-block",
+      "type": "derived-from"
+    }
+  ],
+  "summary": "OKF v0.1's permissive extension mechanism (producers MAY add any frontmatter keys; consumers MUST preserve unknown keys) provides the seam for MIF enrichment. MIF's typed relationships, provenance, temporal, and ontology fields can be injected as OKF frontmatter extensions. The primary tension is OKF's permissive-consumer model versus MIF's fail-closed validation.",
+  "tags": [
+    "okf",
+    "mif",
+    "layering",
+    "integration",
+    "technical",
+    "architecture",
+    "extension-seam",
+    "round-trip"
+  ],
+  "title": "OKF+MIF Layering Mechanics: Complementary Fields, Conflicts, and the Extension Seam",
+  "ontology": {
+    "id": "mif-generic"
+  },
+  "entity": {
+    "name": "OKF+MIF layering mechanics",
+    "entity_type": "concept"
+  },
+  "namespace": "harness/example-okf-mif-knowledge-spine"
+}

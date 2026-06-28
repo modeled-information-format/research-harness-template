@@ -1,0 +1,85 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-km-software-market-sizing",
+  "@type": "Concept",
+  "citations": [
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "website",
+      "title": "Knowledge Management Software Market Size, Industry Share | Forecast 2034 (Fortune Business Insights)",
+      "url": "https://www.fortunebusinessinsights.com/knowledge-management-software-market-110376"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "website",
+      "title": "Knowledge Management Software Market Size, Share, Growth, 2034 (Straits Research)",
+      "url": "https://straitsresearch.com/report/knowledge-management-software-market"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "website",
+      "title": "AI-Ready Enterprise Knowledge Graph Market to Reach USD 6,550.0 Million by 2036 (AccessNewswire/FMI)",
+      "url": "https://www.accessnewswire.com/newsroom/en/business-and-professional-services/ai-ready-enterprise-knowledge-graph-market-to-reach-usd-6-550.0-1167718"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "website",
+      "title": "Enterprise Knowledge Graph Buyer's Guide 2026 (Promethium)",
+      "url": "https://promethium.ai/guides/enterprise-knowledge-graph-buyers-guide-2026/"
+    }
+  ],
+  "conceptType": "semantic",
+  "content": "Two overlapping market segments frame the sizing opportunity for a structured knowledge-spine offering that layers OKF (packaging/distribution) with MIF (provenance, typed relationships, ontology).\n\nKNOWLEDGE MANAGEMENT (KM) SOFTWARE MARKET\nFortune Business Insights estimates the global KM software market at USD 23.2B in 2025, growing to USD 74.2B by 2034 (13.8% CAGR). Straits Research puts the 2025 baseline at USD 13.43B, reaching USD 62B by 2034 (18.53% CAGR). The variance reflects differences in market scope (pure-play KM vs. broader knowledge-collaboration platforms), but all credible reports agree on double-digit CAGRs. North America holds ~38-40% market share; cloud-based deployments account for ~61-65% of revenue. Large enterprises are the primary buyers (46% of market value per Fortune Business Insights), with demand driven by hybrid-work information silos, AI integration, and measurable ROI: organizations lose 209 hours per knowledge worker annually to duplicative work caused by information fragmentation.\n\nENTERPRISE KNOWLEDGE GRAPH MARKET\nThe AI-ready enterprise knowledge graph market, more directly comparable to an OKF+MIF spine, is smaller but faster-growing. Future Market Insights values it at USD 890M in 2025, reaching USD 6.55B by 2036 (20.1% CAGR). Grand View Research estimates the broader enterprise knowledge graph market at USD 2.89B in 2025, growing to USD 13.4B by 2033 (21.3% CAGR). Technavio forecasts a 33.4% CAGR from 2025-2030. The primary driver is enterprises needing structured, semantically grounded knowledge to reduce AI hallucinations: LLMs achieve only 16.7% accuracy on complex enterprise queries without knowledge graph grounding, rising to 54.2% with it (per Promethium's 2026 buyer's guide).\n\nTAM/SAM/SOM FRAMEWORK (Top-Down, Base Scenario)\nTAM: Combined KM software and enterprise knowledge graph markets = approximately USD 25B-28B in 2025, growing to USD 80B-90B by 2034.\nSAM: Organizations actively seeking open, format-neutral, git-distributable knowledge infrastructure (AI/ML teams, research-intensive enterprises, think tanks, academic research groups) represent approximately 8-12% of the broader KM software market = USD 2B-3.3B in 2025.\nSOM (1-3 year realistic capture): An open-source project targeting the most technically sophisticated segment (research orgs, AI teams at large enterprises, developer-led knowledge infrastructure builders) = USD 20M-60M in year 1-3 if distribution is git-native and open-source, scaling to USD 200M-500M with commercial add-ons if the format achieves meaningful adoption.\n\nKEY ASSUMPTIONS\n1. The SAM excludes organizations locked into Confluence/SharePoint/Notion who lack a format-migration impetus; only organizations with active AI/research infrastructure initiatives are considered reachable near-term.\n2. SOM assumes OKF achieves meaningful community adoption within 18-24 months of its June 2026 v0.1 launch, and that MIF's richer provenance/ontology layer differentiates upward-market from OKF-only deployments.\n3. AI-driven demand (GraphRAG, agentic AI) is the primary growth accelerant; the KM market grew at 3-5% CAGR before AI tailwinds.\n\nCONFIDENCE: Medium. KM market figures are from multiple credible analyst firms (Fortune Business Insights, Grand View Research, Straits Research, Future Market Insights). SAM and SOM figures are analyst inference from reported segment breakdowns. The enterprise knowledge graph market figures show 2-3x variation across firms, reflecting definitional differences.",
+  "created": "2026-06-28T00:00:00Z",
+  "extensions": {
+    "harness": {
+      "dimension": "market",
+      "verification": {
+        "verdict": "survived",
+        "verdict_basis": "Fortune Business Insights' KM software figure ($23.2B in 2025, 13.8% CAGR to ~$74.2B by 2034) is confirmed verbatim; the finding self-hedges the enterprise-KG variance and carries moderate_confidence, and no source contradicted the sizing.",
+        "disconfirming_evidence": [],
+        "attempted_at": "2026-06-28T11:42:12Z"
+      },
+      "gathered_under": "gv-722bb7b64725"
+    }
+  },
+  "provenance": {
+    "@type": "Provenance",
+    "confidence": 0.78,
+    "sourceType": "agent_inferred",
+    "trustLevel": "moderate_confidence"
+  },
+  "relationships": [
+    {
+      "strength": 0.85,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-ai-demand-structured-provenance",
+      "type": "relates-to"
+    }
+  ],
+  "summary": "The addressable market for a structured knowledge-spine offering combining OKF+MIF spans two converging segments: the KM software market (~$23B in 2025, 13-18% CAGR) and the enterprise knowledge graph market (~$1.3-2.9B in 2025, 20-33% CAGR). Together they define a TAM exceeding $25B in 2025, projected to surpass $85B by 2034, with the fastest-growing niche being AI-ready, structured knowledge infrastructure tied to GraphRAG and agentic AI deployments.",
+  "tags": [
+    "market-sizing",
+    "tam-sam-som",
+    "knowledge-management",
+    "enterprise-knowledge-graph",
+    "graphrag",
+    "market"
+  ],
+  "title": "Knowledge Management Software and Enterprise Knowledge Graph Market Sizing (2025-2034)",
+  "ontology": {
+    "id": "market-research"
+  },
+  "entity": {
+    "name": "KM software + enterprise knowledge graph market size (2025-2034)",
+    "entity_type": "sizing-estimate"
+  },
+  "namespace": "harness/example-okf-mif-knowledge-spine"
+}

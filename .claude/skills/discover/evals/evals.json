@@ -4,7 +4,7 @@
     {
       "id": 1,
       "prompt": "Audit the research corpus for coverage gaps against the config-declared dimension taxonomy. The fixed sample corpus holds exactly one finding per dimension, so it cannot exercise gap detection — build a deliberately skewed corpus first. Create a findings directory `skewed/` containing TWO MIF findings whose `extensions.harness.dimension` is `technical` (copy the JSON shape from `$CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings/finding-copier.json`, give each a distinct `@id`, and set the dimension to `technical`). Build its index: `bash $CLAUDE_PROJECT_DIR/scripts/build-index.sh skewed skewed-index.json`. Then read the authoritative dimension taxonomy from `$CLAUDE_PROJECT_DIR/harness.config.json` (`.dimensions[].id`), count findings per dimension in `skewed-index.json`, and emit the coverage rollup. Write a JSON object `{\"coverage\": [ {\"dimension\": <id>, \"findings\": <count>} ... ]}` covering every config dimension to `gaps.json`, and a readable coverage table that flags the zero-finding dimensions to `gaps.md`.",
-      "expected_output": "gaps.json whose coverage array lists technical with 2 findings and landscape and trajectory with 0 findings each, plus gaps.md that surfaces landscape and trajectory as coverage gaps and recommends filling them, while NOT flagging technical (which is populated).",
+      "expected_output": "gaps.json whose coverage array lists technical with 2 findings and landscape, trajectory, and market with 0 findings each, plus gaps.md that surfaces landscape, trajectory, and market as coverage gaps and recommends filling them, while NOT flagging technical (which is populated).",
       "files": [],
       "deterministic_checks": [
         {
@@ -22,8 +22,8 @@
           "file": "gaps.json",
           "path": ".coverage",
           "op": "eq",
-          "expected": 3,
-          "description": "coverage rollup covers all three config dimensions"
+          "expected": 4,
+          "description": "coverage rollup covers all four config dimensions"
         },
         {
           "type": "json_array_contains",
@@ -43,6 +43,13 @@
           "type": "json_array_contains",
           "file": "gaps.json",
           "path": ".coverage",
+          "match": { "dimension": "market", "findings": 0 },
+          "description": "market is a true zero-finding gap in the skewed corpus"
+        },
+        {
+          "type": "json_array_contains",
+          "file": "gaps.json",
+          "path": ".coverage",
           "match": { "dimension": "technical", "findings": 2 },
           "description": "technical is populated (2 findings) and must NOT be flagged as a gap"
         },
@@ -57,12 +64,18 @@
           "file": "gaps.md",
           "literal": "trajectory",
           "description": "the gap report names the trajectory dimension"
+        },
+        {
+          "type": "file_contains",
+          "file": "gaps.md",
+          "literal": "market",
+          "description": "the gap report names the market dimension"
         }
       ],
       "expectations": [
-        "gaps.md identifies landscape and trajectory as the coverage gaps (zero findings) and does not present technical as a gap.",
+        "gaps.md identifies landscape, trajectory, and market as the coverage gaps (zero findings) and does not present technical as a gap.",
         "The report recommends a concrete next step for the empty dimensions (e.g. running /start --augment to fill them), per the skill's guidance.",
-        "The dimension taxonomy is read from harness.config.json, not hard-coded — all three configured dimensions appear in the rollup."
+        "The dimension taxonomy is read from harness.config.json, not hard-coded — all four configured dimensions appear in the rollup."
       ]
     },
     {
@@ -212,8 +225,8 @@
     },
     {
       "id": 5,
-      "prompt": "Check coverage gaps on the balanced sample corpus where every config-declared dimension has exactly one finding — the normal healthy state. Read $CLAUDE_PROJECT_DIR/harness.config.json for the dimension taxonomy and $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/research-index.json for the index. Write the gap-coverage rollup as `{\"coverage\": [{\"dimension\": <id>, \"findings\": <count>}]}` to `gaps-balanced.json` and a readable table to `gaps-balanced.md`. Do NOT create a skewed corpus — use the sample index as-is.",
-      "expected_output": "gaps-balanced.json showing technical=1, landscape=1, trajectory=1. No dimension has 0 findings. gaps-balanced.md contains all three dimensions in the table and does NOT flag any of them as a gap or emit /start --augment recommendations.",
+      "prompt": "Check coverage gaps on a balanced corpus where every config-declared dimension has exactly one finding — the normal healthy state. Read the dimension taxonomy from $CLAUDE_PROJECT_DIR/harness.config.json (`.dimensions[].id`) and build a findings directory `balanced/` containing exactly ONE MIF finding per config dimension (copy the JSON shape from `$CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings/finding-copier.json`, give each a distinct `@id`, and set `extensions.harness.dimension` to each dimension id in turn). Build its index: `bash $CLAUDE_PROJECT_DIR/scripts/build-index.sh balanced balanced-index.json`. Write the gap-coverage rollup as `{\"coverage\": [{\"dimension\": <id>, \"findings\": <count>}]}` to `gaps-balanced.json` and a readable table to `gaps-balanced.md`.",
+      "expected_output": "gaps-balanced.json showing every config dimension (technical, landscape, trajectory, market) with exactly 1 finding. No dimension has 0 findings. gaps-balanced.md contains all four dimensions in the table and does NOT flag any of them as a gap or emit /start --augment recommendations.",
       "files": [],
       "deterministic_checks": [
         {
@@ -231,8 +244,8 @@
           "file": "gaps-balanced.json",
           "path": ".coverage",
           "op": "eq",
-          "expected": 3,
-          "description": "all three config-declared dimensions appear in the output"
+          "expected": 4,
+          "description": "all four config-declared dimensions appear in the output"
         },
         {
           "type": "json_array_contains",
@@ -256,13 +269,20 @@
           "description": "trajectory has exactly 1 finding in the balanced corpus"
         },
         {
+          "type": "json_array_contains",
+          "file": "gaps-balanced.json",
+          "path": ".coverage",
+          "match": { "dimension": "market", "findings": 1 },
+          "description": "market has exactly 1 finding in the balanced corpus"
+        },
+        {
           "type": "shell_command",
           "command": "jq -e '[.coverage[] | select(.findings == 0)] | length == 0' gaps-balanced.json",
           "description": "no dimension has 0 findings — the balanced corpus has no genuine gaps"
         }
       ],
       "expectations": [
-        "No dimension is flagged as a coverage gap — each of the three config-declared dimensions has exactly 1 finding and none is at 0 or far below the corpus mean.",
+        "No dimension is flagged as a coverage gap — each of the four config-declared dimensions has exactly 1 finding and none is at 0 or far below the corpus mean.",
         "No /start --augment commands are recommended because the corpus is uniformly balanced."
       ]
     },

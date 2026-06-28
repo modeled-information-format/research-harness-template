@@ -1,0 +1,76 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-mif-formal-ontology",
+  "@type": "Concept",
+  "citations": [
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "MIF Modeled Information Format Specification — mif-spec.dev",
+      "url": "https://mif-spec.dev/"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "MIF v1.0 — Ontology support, EntityReference — GitHub zircote/MIF",
+      "url": "https://github.com/zircote/MIF"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "OKF SPEC.md v0.1 — Type field definition — GoogleCloudPlatform/knowledge-catalog",
+      "url": "https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md"
+    }
+  ],
+  "conceptType": "semantic",
+  "content": "OKF's 'type' field is deliberately unregistered: the spec requires a non-empty string, but 'Types are not centrally registered; producers should pick descriptive values; consumers must tolerate unknown types gracefully.' This maximizes flexibility but means OKF concepts cannot be formally classified against a shared type system, enabling type conflicts and impeding cross-bundle interoperability. MIF addresses this with a two-level formal typing system: (1) The 'ontology' field references a specific ontology version (id, version, uri) against which the concept is classified. The ontology file (YAML format) declares entity types, required fields, relationship types, and content patterns. A finding's type must resolve to the referenced ontology — a hard validation that fails fail-closed if the type is absent from the declared ontology. (2) The 'entity' block carries 'name', 'entity_type', 'entity_id', and domain-specific fields required by the ontology. This block transforms each MIF Concept into a formally typed domain object: a technology concept carries 'stack_layer', 'maturity_level', 'license_type'; an organization carries 'org_type', 'size'; a concept carries 'domain', 'abstractionLevel'. MIF's generic core ontology provides five types available to every topic without binding a domain-specific ontology: 'concept', 'person', 'organization', 'technology', 'file'. Domain packs extend this with specialized types, and the 'extends' mechanism enables hierarchical ontology composition. In an OKF+MIF layering, OKF's free-form 'type' string would be treated as a hint for MIF ontology matching, with the formal MIF 'entity' block carrying the validated, schema-enforced typing. This means OKF concepts authored with producer-defined types ('BigQuery Table', 'API Endpoint') can be retroactively typed into MIF's formal ontology ('technology' or a data-catalog domain type) during an enrichment pass — precisely the 'ontology-review' workflow the MIF harness provides.",
+  "created": "2026-06-28T00:00:00Z",
+  "extensions": {
+    "harness": {
+      "dimension": "technical",
+      "verification": {
+        "verdict": "survived",
+        "verdict_basis": "OKF SPEC.md confirms 'type' is producer-defined with no central registry and consumers must tolerate unknown types. The published MIF spec / zircote-MIF corroborate MIF's five core entity types and ontology/entity typing. First-party-only on the MIF side (bounded epistemics). No disconfirming evidence across 6 queries.",
+        "disconfirming_evidence": [],
+        "attempted_at": "2026-06-28T11:54:01Z"
+      },
+      "gathered_under": "gv-722bb7b64725"
+    }
+  },
+  "provenance": {
+    "@type": "Provenance",
+    "confidence": 0.92,
+    "sourceType": "agent_inferred",
+    "trustLevel": "high_confidence"
+  },
+  "relationships": [
+    {
+      "strength": 0.85,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-okf-core-data-model",
+      "type": "derived-from"
+    },
+    {
+      "strength": 0.75,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-mif-typed-relationships",
+      "type": "supports"
+    }
+  ],
+  "summary": "MIF provides an 'ontology' reference field (id, version, uri) and an 'entity' block (name, entity_type, entity_id) for formal domain typing of every Concept. A generic core ontology supplies five entity types (concept, person, organization, technology, file); domain packs extend with specific types. OKF's 'type' field is an unregistered producer-defined string with no schema enforcement.",
+  "tags": [
+    "mif",
+    "ontology",
+    "entity-typing",
+    "formal-typing",
+    "technical",
+    "mif-advantage",
+    "schema-enforcement"
+  ],
+  "title": "MIF's Formal Ontology and EntityReference System: Structured Domain Typing",
+  "namespace": "harness/example-okf-mif-knowledge-spine"
+}

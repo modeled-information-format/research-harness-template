@@ -1,0 +1,113 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-ai-demand-structured-provenance",
+  "@type": "Concept",
+  "citations": [
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "website",
+      "title": "Enterprise Knowledge Graph Buyer's Guide 2026 - LLM accuracy with/without knowledge graph grounding (Promethium)",
+      "url": "https://promethium.ai/guides/enterprise-knowledge-graph-buyers-guide-2026/"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "website",
+      "title": "AI-Ready Enterprise Knowledge Graph Market to Reach USD 6,550.0 Million by 2036 - GraphRAG enablement 31% (AccessNewswire/FMI)",
+      "url": "https://www.accessnewswire.com/newsroom/en/business-and-professional-services/ai-ready-enterprise-knowledge-graph-market-to-reach-usd-6-550.0-1167718"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "website",
+      "title": "Why AI Hallucinates in Your Enterprise (and how Context Graphs Fix it) - Kamiwaza",
+      "url": "https://www.kamiwaza.ai/insights/why-ai-hallucinates-in-your-enterprise"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "website",
+      "title": "How the Open Knowledge Format can improve data sharing - Google Cloud Blog",
+      "url": "https://cloud.google.com/blog/products/data-analytics/how-the-open-knowledge-format-can-improve-data-sharing"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "website",
+      "title": "AI Hallucination Statistics 2026: 50+ Sourced Data Points (Suprmind)",
+      "url": "https://suprmind.ai/hub/insights/ai-hallucination-statistics-research-report-2026/"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "article",
+      "title": "Agent-to-agent audit trail: provenance for AI ecosystems (TrueScreen)",
+      "url": "https://truescreen.io/articles/agent-to-agent-audit-trail/"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "refutes",
+      "citationType": "website",
+      "title": "Gartner Predicts 40% of Enterprise Apps Will Feature Task-Specific AI Agents by 2026, Up from Less Than 5% in 2025 (Gartner Newsroom)",
+      "url": "https://www.gartner.com/en/newsroom/press-releases/2025-08-26-gartner-predicts-40-percent-of-enterprise-apps-will-feature-task-specific-ai-agents-by-2026-up-from-less-than-5-percent-in-2025"
+    }
+  ],
+  "conceptType": "semantic",
+  "content": "The AI/LLM workflow revolution is the single most powerful demand driver for a structured knowledge spine. This finding documents the mechanism and scale of that demand.\n\nTHE HALLUCINATION PROBLEM AS BUYER PAIN\nAI hallucination is quantified and enterprise-felt: LLMs answer complex enterprise queries correctly only 16.7% of the time without knowledge graph grounding, rising to 54.2% with grounding (Promethium, 2026). A 2026 multi-model benchmark across 37 AI models reports hallucination rates between 15% and 52%. Domain-specific failure rates are worse: legal AI systems hallucinate on 69-88% of specific queries. Only 32% of organizations actively mitigate AI inaccuracy despite it being the top reported generative AI risk (Kamiwaza). 91% of organizations doubt they are 'very prepared' to implement and scale AI safely. This gap between AI deployment urgency and knowledge grounding readiness defines a clear buyer pain.\n\nGRAPHRAG AS CATALYST\nGraphRAG (combining vector retrieval with knowledge graph traversal) is the production architecture driving structured knowledge demand. GraphRAG enablement services are forecast to represent 31% of the enterprise knowledge graph market share in 2026 (Future Market Insights). By 2026, 85% of enterprises are projected to adopt hybrid RAG systems combining vector and graph databases. LLM-driven knowledge graph construction reached production maturity in 2024-2025, with organizations automatically extracting structured knowledge from unstructured text at scale. The combination of provenance (why was this inferred), typed relationships (how entities connect), and temporal versioning (what changed and when) is exactly what distinguishes an OKF+MIF spine from raw document dumps.\n\nAGENTIC AI DEMAND FOR KNOWLEDGE PROVENANCE\nThe shift to agentic AI systems intensifies the requirement for structured, citable knowledge. Gartner estimates 80% of enterprise applications shipped or updated in Q1 2026 embed at least one AI agent, up from 33% in 2024. Each agent requires auditable knowledge sources: actions and decisions taken by AI agents must have auditable provenance, structured to allow attribution and tracing of harmful outcomes through agent interactions to their root decision. OKF's git-distributable markdown bundles combined with MIF's first-class provenance objects (sourceType, confidence, W3C-PROV-O-compatible derivation) directly satisfy this requirement. Current systems do not natively provide structured reasoning provenance as a first-class, schema-level primitive — normalized, queryable records of why an agent chose each action and which evidence supports its final verdict.\n\nTHE GOOGLE OKF ANNOUNCEMENT AS DEMAND SIGNAL\nGoogle Cloud's publication of OKF v0.1 on June 12, 2026 is itself a market demand signal: it confirms that a major cloud vendor recognizes the need for a portable, format-neutral knowledge packaging standard for AI agents. Google positions OKF as superior to RAG systems because it preserves curated, cross-linked concepts that an agent reads and updates directly, rather than re-deriving knowledge from raw chunks at query time. This is the same positioning that MIF's layer enables — but MIF adds the typed-relationship and provenance layers that OKF v0.1 explicitly does not provide.\n\nAI-DRIVEN KM INVESTMENT\nThe AI-driven knowledge management market grows at 47.2% year-over-year, reaching USD 7.71B in 2025 (GoSearch). 41% of knowledge management leaders prioritize incorporating AI into KM systems. 83% of decision-makers plan increased data integration investment. 44% identify generative AI as the most important KM technology. These investment signals indicate buyers are actively funding the infrastructure layer, not just consuming AI outputs.",
+  "created": "2026-06-28T00:00:00Z",
+  "extensions": {
+    "harness": {
+      "dimension": "market",
+      "verification": {
+        "attempted_at": "2026-06-28T11:42:12Z",
+        "disconfirming_evidence": [
+          "https://www.gartner.com/en/newsroom/press-releases/2025-08-26-gartner-predicts-40-percent-of-enterprise-apps-will-feature-task-specific-ai-agents-by-2026-up-from-less-than-5-percent-in-2025"
+        ],
+        "verdict": "weakened",
+        "verdict_basis": "The hallucination-grounding figures (16.7% without / 54.2% with) are corroborated by Promethium and an arXiv benchmark, but the cited 'Gartner: 80% of enterprise applications embed an AI agent by Q1 2026, up from 33% in 2024' conflicts with Gartner's own newsroom (40% by end-2026 from <5% in 2025) and the 2026 Gartner CIO survey (17% of orgs have deployed AI agents to date); the magnitude/attribution is overstated though the directional surge is real."
+      },
+      "gathered_under": "gv-722bb7b64725"
+    }
+  },
+  "provenance": {
+    "@type": "Provenance",
+    "confidence": 0.72,
+    "sourceType": "agent_inferred",
+    "trustLevel": "moderate_confidence"
+  },
+  "relationships": [
+    {
+      "strength": 0.9,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-km-software-market-sizing",
+      "type": "relates-to"
+    }
+  ],
+  "summary": "The shift from static RAG to structured knowledge graphs is creating direct demand for exactly what an OKF+MIF spine offers: git-distributable, provenance-backed, typed knowledge that reduces LLM hallucinations. GraphRAG enablement is forecast at 31% of the enterprise knowledge-graph market in 2026, and agentic-AI adoption is rising fast. [Gate 2026-06-28: weakened — the cited Gartner '80% by Q1 2026, from 33% in 2024' is overstated vs Gartner's own 40%-by-2026/<5%-in-2025; moderate_confidence.]",
+  "tags": [
+    "ai-demand",
+    "graphrag",
+    "llm",
+    "provenance",
+    "hallucination",
+    "agentic-ai",
+    "market"
+  ],
+  "title": "AI and LLM Workflows Are Driving Demand for Structured, Citable, Provenance-Backed Knowledge",
+  "ontology": {
+    "id": "market-research"
+  },
+  "entity": {
+    "name": "AI/LLM demand for structured, provenance-backed knowledge",
+    "entity_type": "market-demand",
+    "item_offered": "Git-distributable, provenance-backed, typed knowledge (OKF+MIF spine)"
+  },
+  "namespace": "harness/example-okf-mif-knowledge-spine"
+}

@@ -177,6 +177,12 @@ Each finding is a single MIF concept. The fields **you** are responsible for:
 - A MIF identity: `@context`, `@type` (`"Concept"`), and a unique
   `@id` of the form `urn:mif:concept:<namespace>:<slug>` (use the topic's
   namespace; **never** an `f_<dimension>_<n>` id).
+- A top-level **`namespace`** set to the topic's MIF namespace (the SAME
+  `<namespace>` you put in `@id`, e.g. `harness/<topic>`). This is a separate
+  REQUIRED field, not just the `@id` segment: the projected research-index,
+  `synthesize-artifact.sh`, and namespace-scoped `/search` read this top-level
+  field — omit it and they record a `null` namespace (broken namespace queries).
+  `verify.sh` fails closed if any finding lacks it.
 - `title`, `content`, `summary`, `created`, and `tags` (lowercase-hyphenated).
 - The MIF **provenance** block (W3C-PROV): `sourceType`, `confidence` (0–1),
   `trustLevel`. `sourceType` MUST be one of the MIF enum values exactly —

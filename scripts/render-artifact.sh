@@ -131,7 +131,7 @@ case "$CHANNEL" in
     # The title lives in the frontmatter (the MIF concept); the body therefore
     # carries no H1 (a body H1 plus the frontmatter title trips markdownlint MD025).
     BODY=$(jq -r "$DEF"'
-      ( [ ("This " + (.genre // "general") + " synthesis covers " + ((.sections | length) | tostring) + " surviving finding(s) across the research.") ]
+      ( [ ("This " + (.genre // "general") + " synthesis covers " + (((.finding_refs // []) | length) | tostring) + " surviving finding(s) across the research.") ]
         + ( reduce (.sections|dedupe_sections)[] as $s ([]; . + secblock($s; true; true)) )
         + [ "", "## Sources", "" ]
         + [ .sources[] | "- [" + (.title|gsub("^[ \\t]+|[ \\t]+$";"")) + "](<" + .url + ">)" ]

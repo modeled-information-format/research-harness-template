@@ -24,13 +24,13 @@ _exclude:
   - "PROGRESS.md"            # the template's build log, not the instance's
   - "COMPLETION-CRITERIA.md"
   - "IMPLEMENTATION-PLAN.md"
-  # The bundled example-topic report demonstrates the reports site IN THE TEMPLATE
-  # only. A clone must NOT inherit it: copier's default topic_id is `example-topic`,
-  # so the user's first `/start` regenerates reports/example-topic/example-topic.md;
-  # if the template's copy also travelled, a later `copier update` would conflict on
-  # that regenerated, template-managed file. Excluding it keeps clones clean and
-  # `copier update` conflict-free — the clone populates its own reports.
-  - "reports/example-topic/**"
+  # NOTE: reports/example-okf-mif-knowledge-spine/ is intentionally NOT excluded. The
+  # template serves this single ARCHIVED example research topic straight out of reports/
+  # as its worked showcase, and clones inherit it: the post-copy `seed-example-topic.sh`
+  # task (below) strips the `example-` prefix to `okf-mif-knowledge-spine` so every clone
+  # starts with it as a seed fixture. That task is idempotent and self-cleaning, which is
+  # what keeps `copier update` conflict-free (the prefixed copy re-shipped on update is
+  # discarded; the renamed, instance-owned seed is never touched).
 
 # Instantiation Q&A.
 project_name:
@@ -43,29 +43,24 @@ author_name:
   help: "Your name or organization (the harness owner)"
   default: "zircote"
 
-topic_id:
-  type: str
-  help: "The id of your first research topic (kebab-case)"
-  default: "example-topic"
-
-topic_title:
-  type: str
-  help: "A human-readable title for that topic"
-  default: "Example research topic"
-
-# Post-generation activation. A clone's primary local mode of consuming its
-# research is the Astro/Starlight site rendering reports/, so on instantiation we
-# flip the site to reports-primary (the template itself ships docs-primary). This
-# only edits `.site.primarySurface` in the clone's harness.config.json; the site
-# still builds docs-primary until the clone's first report exists. copier runs
-# `_tasks` only with `copier copy --trust`; without it the clone stays docs-primary
-# and the user can run `bash scripts/site-toggle.sh primary reports` by hand.
+# Post-generation tasks (run only with `copier copy --trust` / `copier update --trust`):
+#   1. site-toggle: a clone's primary local mode of consuming its research is the
+#      Astro/Starlight site rendering reports/, so flip the site to reports-primary
+#      (the template itself ships docs-primary). Edits only `.site.primarySurface`.
+#   2. site symlinks: re-establish docs/reports + src/content/docs, which copier
+#      flattens into real dirs on render, so the Astro content collection resolves.
+#   3. seed-example-topic: rename the shipped archived example topic
+#      (example-okf-mif-knowledge-spine -> okf-mif-knowledge-spine) so the clone starts
+#      with it as a seed fixture. Idempotent + self-cleaning; no-op in the template
+#      itself. Without `--trust` the clone keeps the `example-`-prefixed copy and the
+#      user can run `bash scripts/seed-example-topic.sh` by hand.
 _tasks:
   - "bash scripts/site-toggle.sh primary reports"
   # Copier renders symlinked directories as real dirs; re-establish the two
   # site symlinks so the Astro content collection reaches docs/ and reports/.
   - "rm -rf docs/reports && ln -s ../reports docs/reports"
   - "rm -rf src/content/docs && ln -s ../../docs src/content/docs"
+  - "bash scripts/seed-example-topic.sh"
 
 _message_after_copy: |
   Your research harness is ready.
@@ -81,4 +76,7 @@ _message_after_copy: |
       bash scripts/site-toggle.sh primary <reports|docs|auto>
       bash scripts/site-toggle.sh plugin <imageZoom|linksValidator|llmsTxt|mermaid> <on|off>
 
-  Then run `/start` to research your first topic.
+  Your harness ships with one archived seed topic — `okf-mif-knowledge-spine`, a worked
+  OKF + MIF knowledge-spine research corpus (findings, knowledge graph, and a full set of
+  genre reports) — so you can see the engine's output immediately. Browse it under
+  reports/okf-mif-knowledge-spine/, then run `/start` to research your own first topic.

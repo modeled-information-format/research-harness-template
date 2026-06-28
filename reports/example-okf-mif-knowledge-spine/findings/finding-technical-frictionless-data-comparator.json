@@ -1,0 +1,77 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-frictionless-data-comparator",
+  "@type": "Concept",
+  "citations": [
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "Frictionless Data Package Specification — specs.frictionlessdata.io",
+      "url": "https://specs.frictionlessdata.io/data-package/"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "Frictionless Data Package — GitHub frictionlessdata/datapackage",
+      "url": "https://github.com/frictionlessdata/datapackage"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "OKF SPEC.md v0.1 — GoogleCloudPlatform/knowledge-catalog",
+      "url": "https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md"
+    }
+  ],
+  "conceptType": "semantic",
+  "content": "The Frictionless Data Package specification (Open Knowledge Foundation, maintained since 2012, major update June 2024 with NLnet support) is a 'simple container format for describing a coherent collection of data in a single package.' Its descriptor file (datapackage.json) carries dataset-level metadata: name, id, title, description, contributors, licenses, version, keywords, homepage, and created timestamp. Resources are described by a mandatory 'resources' array pointing to data files (typically CSV, JSON, or Parquet). While Frictionless Data Package and OKF share the same git-native, file-based distribution model (both ship as directories of files, are version-controllable, and require no specialized runtime), their scopes are fundamentally different: Frictionless Data Package is for tabular data with schema validation. It defines field types, constraints, and inter-resource foreign key relationships for data quality and FAIR compliance. OKF is for narrative knowledge (concepts, playbooks, documentation) with markdown bodies. The gaps relative to OKF+MIF: (1) No typed knowledge relationships: Frictionless's 'foreignKeys' is a data-integrity constraint (this field in resource A maps to that field in resource B), not a semantic knowledge predicate. There is no equivalent to MIF's 'supports', 'derived-from', etc. (2) No provenance chain: 'contributors' and 'sources' track who built the dataset and what it was derived from, but there is no confidence scoring, trust level, or W3C PROV-compatible attribution. (3) No temporal decay: 'created' is a single timestamp; there is no TTL, decay model, or bi-temporal tracking. (4) No narrative body: a datapackage.json 'description' is a short string; there is no markdown body for human and agent consumption of contextual knowledge. Frictionless Data Package solves the tabular data FAIR packaging problem. OKF+MIF solves the knowledge FAIR packaging problem. They are complementary, not competitive: an OKF knowledge bundle about a BigQuery table would reference the underlying Frictionless Data Package descriptor as a 'resource' URI while MIF's provenance and relationship layers carry the semantic enrichment Frictionless deliberately omits.",
+  "created": "2026-06-28T00:00:00Z",
+  "extensions": {
+    "harness": {
+      "dimension": "technical",
+      "verification": {
+        "verdict": "survived",
+        "verdict_basis": "specs.frictionlessdata.io/data-package confirms Frictionless Data Package is a JSON descriptor + resources container for (primarily tabular) data and 'makes no mention' of typed knowledge relationships, provenance chains with confidence scoring, temporal decay/TTL, or markdown narrative bodies - matching the finding's gap analysis. 6 adversarial queries run; no disconfirming evidence.",
+        "disconfirming_evidence": [],
+        "attempted_at": "2026-06-28T11:54:01Z"
+      },
+      "gathered_under": "gv-722bb7b64725"
+    }
+  },
+  "provenance": {
+    "@type": "Provenance",
+    "confidence": 0.92,
+    "sourceType": "agent_inferred",
+    "trustLevel": "high_confidence"
+  },
+  "relationships": [
+    {
+      "strength": 0.65,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-okf-core-data-model",
+      "type": "relates-to"
+    }
+  ],
+  "summary": "Frictionless Data Package (Open Knowledge Foundation) is a JSON-based containerization format for tabular datasets (datapackage.json + CSV/JSON resources). It handles data packaging, contributor attribution, and licensing but lacks knowledge representation, typed inter-dataset relationships, provenance chains, decay modeling, and human-readable narrative bodies.",
+  "tags": [
+    "frictionless-data",
+    "data-package",
+    "tabular-data",
+    "fair-data",
+    "technical",
+    "comparator"
+  ],
+  "title": "Frictionless Data Package as Technical Comparator: Tabular Data Packaging, Not Knowledge Representation",
+  "ontology": {
+    "id": "mif-generic"
+  },
+  "entity": {
+    "name": "Frictionless Data Package",
+    "entity_type": "technology"
+  },
+  "namespace": "harness/example-okf-mif-knowledge-spine"
+}

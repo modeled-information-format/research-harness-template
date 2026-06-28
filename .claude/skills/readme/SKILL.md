@@ -17,23 +17,31 @@ modeled on a research corpus's per-directory READMEs. Its structure:
 **Research ID:** <slug>
 **Created:** <date> | **Updated:** <date>
 **Findings:** <N> (survived S, weakened W) | **Sources:** <N> unique URLs
+**Falsification:** <date> — survived S, weakened W[, quarantined Q] ([report](…))   ← when a falsification report exists
 **Status:** <status>
 
 ---
 
+![<title>](_assets/<topic>-readme-hero.*)   ← optional, only when the hero asset exists
+
 ## Purpose            — 1–2 sentences, what the session decides/answers
-## Dimensions         — the comma-separated dimension set
+## Dimensions         — bulleted; each dimension with its harness.config description
 ## Key Findings       — 4–10 SYNTHESIS-GRADE bullets (see below)
-## Reports            — table of rendered reports + session docs
+## Reports            — Type → Title table of the topic's constituents, in reader-consumption order
 ## Findings by Dimension — table of per-dimension counts
-## Artifacts          — (only if channel-pack assets exist) table of assets
-## Tags               — the comma-separated tag set
+## Artifacts          — (only if channel-pack assets exist) File / Type / Size table
+## Tags               — backtick-quoted tag tokens
 ```
 
-The README is a **navigation projection, not a MIF Level-3 report.** Like the
-`blog`/`book` channels it carries no MIF frontmatter and is exempt from the
-output-conformance gate. Its source of truth is the MIF substrate
-(`reports/<topic>/findings/*.json`, `goal.json`, `harness.config.json`).
+The README is the **served topic index**: the site's content loader derives its Starlight
+title from the H1, so it renders as the topic's landing page at `/reports/<topic>/`, with
+the constituent report tree reached from its Reports table — the sidebar links only to this
+index, not the per-report tree (ADR-0009). It remains a **navigation projection, not a MIF
+Level-3 report**: like the `blog`/`book` channels it carries no MIF frontmatter and is exempt
+from the output-conformance gate. Its source of truth is the MIF substrate
+(`reports/<topic>/findings/*.json`, `goal.json`, `harness.config.json`). The Reports table is
+ordered by a single canonical Type map in `scripts/build-topic-readme.sh` (executive summary →
+briefing → synthesis → genre reports → falsification report → research progress).
 
 ## When this runs
 

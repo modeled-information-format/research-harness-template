@@ -1,0 +1,75 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-okf-v01-launch-momentum",
+  "@type": "Concept",
+  "citations": [
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "How the Open Knowledge Format can improve data sharing — Google Cloud Blog",
+      "url": "https://cloud.google.com/blog/products/data-analytics/how-the-open-knowledge-format-can-improve-data-sharing"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "OKF SPEC.md — GoogleCloudPlatform/knowledge-catalog",
+      "url": "https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "article",
+      "title": "Google Cloud Introduces Open Knowledge Format (OKF) — MarkTechPost",
+      "url": "https://www.marktechpost.com/2026/06/16/google-cloud-introduces-open-knowledge-format-okf-a-vendor-neutral-markdown-spec-for-giving-ai-agents-curated-context/"
+    }
+  ],
+  "conceptType": "semantic",
+  "content": "Open Knowledge Format (OKF) v0.1 was published on June 12, 2026, by Google Cloud tech leads Sam McVeety and Amir Hormati. The specification formalizes Andrej Karpathy's LLM-wiki pattern — a directory of markdown files with YAML frontmatter that AI agents read, update, and curate like code — into a vendor-neutral, portable interoperability standard. The format is intentionally minimal: the only required field is 'type'; everything else (field names, section headings, content model) is producer-defined. Links between concepts are untyped, and timestamps record last meaningful modification in ISO 8601 format. OKF explicitly defers typed relationships, formal ontologies, and provenance objects to future versions or to layered tools.\n\nThe GoogleCloudPlatform/knowledge-catalog repository that hosts the OKF specification accumulated 5,440 GitHub stars and 416 forks (as of late June 2026), reaching this level within weeks of the announcement — a signal of strong early practitioner attention. The specification ships under Apache 2.0, with three reference implementations (an enrichment agent, a static HTML visualizer, and sample bundles for GA4, Stack Overflow, and Bitcoin public datasets), and Google Cloud's own Knowledge Catalog already ingests OKF to serve context to agents.\n\nThe trajectory signal here is double-edged. On the positive side: Google's institutional weight, the explicit 'LLM wiki' alignment with the Karpathy gist (itself 5,000+ stars and forks), Apache 2.0 licensing, and a published GitHub-native spec lower the adoption barrier dramatically. On the cautionary side: OKF v0.1 is candidly 'a starting point, not a finished standard.' The spec itself says 'the format will evolve as more producers and consumers emerge and as we collectively learn what knowledge representations agents actually need in practice.' There is no formal governance body, no registered namespace, no semantic versioning guarantee beyond best-effort backward compatibility for minor versions, and no provenance or relationship-typing layer — the very features MIF provides. The repository was created on May 4, 2026, and the OKF subpath was published six weeks later; OKF has not yet been adopted outside Google's own tooling at the time of this research.\n\nFor the OKF+MIF layering question, OKF's early momentum is a directional tailwind: the LLM-wiki pattern is gaining traction, and OKF's minimalism creates explicit forward demand for a typed-relationship and provenance layer — which MIF supplies. The open question is whether OKF achieves the critical mass of independent producers and consumers required to become a de facto standard, or remains primarily a Google Cloud-ecosystem pattern.",
+  "created": "2026-06-28T00:00:00Z",
+  "extensions": {
+    "harness": {
+      "dimension": "trajectory",
+      "verification": {
+        "verdict": "survived",
+        "verdict_basis": "Google Cloud blog (primary) and independent coverage confirm OKF v0.1 released June 12 2026 by McVeety and Hormati under Apache 2.0, repo GoogleCloudPlatform/knowledge-catalog created May 4 2026, only 'type' required, untyped links, provenance/relationships deferred, no formal governance. Star snapshot (~3.3K early to 5,440 late June) is consistent with growth. 2 queries; no disconfirmation.",
+        "disconfirming_evidence": [],
+        "attempted_at": "2026-06-28T12:20:00Z"
+      },
+      "gathered_under": "gv-722bb7b64725"
+    }
+  },
+  "provenance": {
+    "@type": "Provenance",
+    "confidence": 0.88,
+    "sourceType": "agent_inferred",
+    "trustLevel": "high_confidence"
+  },
+  "summary": "Google Cloud released OKF v0.1 on June 12, 2026, formalizing the LLM-wiki pattern into an Apache 2.0 specification; the repository reached 5,440 stars and 416 forks within weeks, signaling strong practitioner interest but equally reflecting its brand-new, pre-community-governed status.",
+  "tags": [
+    "okf",
+    "open-knowledge-format",
+    "google-cloud",
+    "llm-wiki",
+    "trajectory",
+    "momentum",
+    "launch",
+    "v0-1",
+    "github",
+    "adoption"
+  ],
+  "title": "OKF v0.1 Launch: Early Momentum from Google-Backed Formalization",
+  "ontology": {
+    "id": "trend-analysis"
+  },
+  "entity": {
+    "name": "OKF v0.1 launch momentum",
+    "entity_type": "signal",
+    "observation": "Google Cloud released OKF v0.1 on 2026-06-12 (Apache 2.0); the repo reached 5,440 stars and 416 forks within weeks."
+  },
+  "namespace": "harness/example-okf-mif-knowledge-spine"
+}

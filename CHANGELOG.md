@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `scripts/seed-example-topic.sh` — a copier post-copy `_task` that renames the shipped
+  example topic to `okf-mif-knowledge-spine` (strips the `example-` prefix across the
+  directory name, every finding/report `@id` namespace, the manifest, and goal check
+  paths) so each clone starts with it as a seed fixture. Idempotent and self-cleaning
+  (it discards the prefixed copy copier re-ships on update and is a no-op in the template
+  itself), which keeps `copier update` conflict-free. The `copier-update` eval now asserts
+  the seed renames + archives on copy and survives update without duplication.
+
+### Changed
+
+- The bundled example is now a single **archived** research topic served straight out of
+  `reports/` — `example-okf-mif-knowledge-spine`, a worked OKF + MIF knowledge-spine corpus
+  (36 findings, knowledge graph, falsification report, and a full set of genre reports:
+  exec-summary, briefing, market-research-report, market-sizing, competitive-analysis,
+  competitive-quadrant, trend-analysis, trend-modeling, academic, engineering, and
+  computing-paper). The distribution gate (`verify.sh` 8c) now permits this one served
+  example under `reports/` alongside `reports/_meta/`.
+- **The site now serves the full topic deliverable tree** — the README (as the topic
+  index at `/reports/<topic>/`), the neutral synthesis, the falsification report, the
+  research-progress log, and every genre report all render, instead of being excluded
+  (these are critical consumer-facing deliverables). `src/content.config.ts` wraps `glob()`
+  to DERIVE the Starlight `title` from each file's body `# H1` (so the generated artifacts
+  are never mutated and clones get the same behaviour) and re-slugs the README to the topic
+  index; a `remarkStripReportH1` plugin drops the duplicate body heading at render. The
+  reports **sidebar lists one link per topic** (its README index), not a per-report tree, and
+  a `Sidebar` component override adds a client-side **topic filter**. ADR-0009 is amended to
+  record this (superseding its README/falsification exclusions).
+- The **readme channel** is upgraded toward the `zircote/research` per-topic exemplars:
+  a falsification audit-trail line in the header, dimensions rendered with their
+  descriptions, a richer Artifacts table (type + size), backtick-quoted tags, an optional
+  hero image, and a **Reports table listing the topic's constituents as Type → Title** in a
+  deterministic reader-consumption order (executive summary → briefing → synthesis → genre
+  reports → falsification report → research progress).
+- Site sidebar groups collapse by default so a large corpus stays navigable.
+
+### Removed
+
+- The legacy `example-topic` placeholder and the `topic_id` / `topic_title` copier
+  prompts. The inherited archived seed is the clone's starting topic; run `/start` to
+  research new topics.
+
 ### Fixed
 
 - The rendered site now builds and navigates the full instance corpus, not just
@@ -16,11 +59,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   on render, and `gate_m23` now asserts both; and the content glob excludes
   audit/continuity artifacts (`*-falsification-report.md`, `*-delta.md`,
   `*-build-spec.md`) that carry no Starlight frontmatter. (#164, #165)
-
-### Changed
-
-- Site sidebar groups collapse by default so a large corpus stays navigable.
-- ADR-0009 records the site-renders-full-corpus decision.
+- `scripts/render-artifact.sh` derived the report intro's "covers N surviving finding(s)"
+  from the section count, which undercounts once a genre reshapes sections; it now counts
+  `finding_refs` (the true surviving-finding total), accurate for every genre.
+- Findings now carry a top-level `namespace` field. The example corpus's 36 findings
+  omitted it (it lived only inside the `@id` URN), so `build-index.sh` projected
+  `namespace: null` for every finding and namespace-scoped `/search` + the `/topics`
+  rollup silently broke (and report synthesis fell back to a `harness/report` namespace).
+  The corpus is backfilled, the `dimension-analyst` now emits the field, and a new
+  fail-closed gate (`verify.sh` 8e) requires every finding under `reports/**/findings`
+  to carry a non-empty top-level `namespace` so the omission can never ship silently.
+  The `topics` and `discover` skill evals are realigned to the new manifest (sole
+  archived example topic; four research dimensions).
 
 ## [0.4.1] - 2026-06-28
 

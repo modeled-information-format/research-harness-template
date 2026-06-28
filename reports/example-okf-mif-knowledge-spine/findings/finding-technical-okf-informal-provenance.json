@@ -1,0 +1,63 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-okf-informal-provenance",
+  "@type": "Concept",
+  "citations": [
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "OKF SPEC.md v0.1 — Log Files and Citations sections — GoogleCloudPlatform/knowledge-catalog",
+      "url": "https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "How the Open Knowledge Format can improve data sharing — Google Cloud Blog",
+      "url": "https://cloud.google.com/blog/products/data-analytics/how-the-open-knowledge-format-can-improve-data-sharing"
+    }
+  ],
+  "conceptType": "semantic",
+  "content": "OKF v0.1 provides two optional mechanisms for tracking knowledge origins and change history, but both are deliberately informal conventions rather than structured metadata. The first is 'log.md': an optional file at any directory level, organized by ISO 8601 date headings (newest first), with entries using conventional bold prefixes such as '**Update**', '**Creation**', '**Deprecation**'. The spec notes: 'Date headings MUST use ISO 8601 format. Leading bold words are convention, not requirement.' This log is a human-readable narrative, not a machine-processable provenance chain. There is no way to attribute a specific change to a named agent, timestamp an individual concept's last verification, or link a modification to an external source. The second mechanism is a '#Citations' section in the markdown body: external sources are listed as numbered markdown links ('1. [Title](url)'). These citations are embedded in free text with no structured role (does the source 'support', 'contradict', or merely 'provide context'?), no confidence score, and no date-of-access field. By contrast, MIF's first-class provenance block ('provenance: { @type: Provenance, sourceType, confidence, trustLevel, agent }') directly encodes W3C PROV-O-compatible attributions as structured JSON properties on every concept. MIF's 'citations[]' array carries typed citation objects with role (supports, contradicts, provides-context), citationType, URL, and accessed date — enabling programmatic citation-integrity gates. The OKF+MIF layering addresses this gap by using MIF's provenance block and citations[] as the persistent, machine-verifiable provenance spine while OKF's log.md and Citations section serve the human-readable narrative layer.",
+  "created": "2026-06-28T00:00:00Z",
+  "extensions": {
+    "harness": {
+      "dimension": "technical",
+      "verification": {
+        "verdict": "survived",
+        "verdict_basis": "OKF SPEC.md confirms provenance is handled only by an optional log.md (ISO-8601 date-grouped narrative, bold prefixes 'convention not requirement') and a free-text '# Citations' section - neither machine-processable, with no structured attribution/confidence/agent. Matches the finding. No disconfirming evidence.",
+        "disconfirming_evidence": [],
+        "attempted_at": "2026-06-28T11:54:01Z"
+      },
+      "gathered_under": "gv-722bb7b64725"
+    }
+  },
+  "provenance": {
+    "@type": "Provenance",
+    "confidence": 0.95,
+    "sourceType": "agent_inferred",
+    "trustLevel": "high_confidence"
+  },
+  "relationships": [
+    {
+      "strength": 0.85,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-okf-core-data-model",
+      "type": "derived-from"
+    }
+  ],
+  "summary": "OKF v0.1 handles provenance through two optional prose conventions — log.md (chronological update history) and a '#Citations' markdown section. Neither constitutes a machine-processable provenance record. There is no structured attribution, confidence scoring, agent identification, or W3C PROV-compatible mechanism.",
+  "tags": [
+    "okf",
+    "provenance",
+    "log-md",
+    "citations",
+    "technical",
+    "gap-analysis",
+    "informal"
+  ],
+  "title": "OKF's Informal Provenance Model: log.md and Citations as Prose Conventions",
+  "namespace": "harness/example-okf-mif-knowledge-spine"
+}

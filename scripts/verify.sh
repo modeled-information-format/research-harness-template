@@ -643,13 +643,16 @@ gate_m8() {
   # an imported corpus in reports/ and may import in place, so these run only in
   # the template.
   if [ "$IS_TEMPLATE" = 1 ]; then
-    # 8c. The template repo itself ships clean — no imported corpus committed under
-    #     reports/ (only reports/_meta/ scaffolding and the sample session).
-    if [ -z "$(find reports -path 'reports/_meta' -prune -o -name '*.json' -print 2>/dev/null)" ]; then
-      ok "template repo reports/ ships clean (no corpus committed outside _meta)"
+    # 8c. The template repo itself ships clean — the only corpus committed under
+    #     reports/ is reports/_meta/ scaffolding (the sample-session gate fixture) plus
+    #     the single ARCHIVED example research topic the template serves straight out of
+    #     reports/ (example-okf-mif-knowledge-spine). On clone, scripts/seed-example-topic.sh
+    #     strips the `example-` prefix; everything else under reports/ is unexpected.
+    if [ -z "$(find reports -path 'reports/_meta' -prune -o -path 'reports/example-okf-mif-knowledge-spine' -prune -o -name '*.json' -print 2>/dev/null)" ]; then
+      ok "template repo reports/ ships clean (_meta scaffolding + the archived example topic only)"
     else
-      bad "unexpected corpus committed under reports/ (the template must stay clean)"
-      find reports -path 'reports/_meta' -prune -o -name '*.json' -print 2>/dev/null | sed 's/^/      /' >&2
+      bad "unexpected corpus committed under reports/ (only _meta and the example topic may ship)"
+      find reports -path 'reports/_meta' -prune -o -path 'reports/example-okf-mif-knowledge-spine' -prune -o -name '*.json' -print 2>/dev/null | sed 's/^/      /' >&2
     fi
 
     # 8d. The import REFUSES to populate the template repo's own reports/ — the
@@ -662,6 +665,25 @@ gate_m8() {
     fi
   else
     info "Milestone 8 — 8c/8d template-clean checks skipped (instance holds a corpus)"
+  fi
+
+  # 8e. Namespace integrity (capability gate — runs in the template AND in a clone).
+  #     Every finding under reports/**/findings MUST carry a NON-EMPTY top-level
+  #     `.namespace`. build-index.sh / synthesize-artifact.sh / namespace-scoped
+  #     `/search` read this field; a finding that omits it projects a `null` namespace
+  #     (silently broken namespace queries + a "Findings: Research" artifact fallback).
+  #     The dimension-analyst is required to emit it; this is the deterministic gate
+  #     that fails closed if it is ever missing, so the bug can never ship silently.
+  local ns_missing=0 ns_checked=0 nsf nsv
+  while IFS= read -r -d '' nsf; do
+    ns_checked=$((ns_checked + 1))
+    nsv=$(jq -r 'if (.namespace | type) == "string" then .namespace else "" end' "$nsf" 2>/dev/null)
+    [ -n "${nsv//[[:space:]]/}" ] || { ns_missing=$((ns_missing + 1)); echo "      finding lacks a non-empty string .namespace: $nsf" >&2; }
+  done < <(find reports -path '*/findings/*.json' ! -name '.*' -print0 2>/dev/null)
+  if [ "$ns_missing" -eq 0 ]; then
+    ok "every finding carries a top-level .namespace ($ns_checked checked; index never null)"
+  else
+    bad "$ns_missing/$ns_checked finding(s) lack a top-level .namespace (projects a null namespace — breaks /search, topics rollup, synthesize-artifact)"
   fi
 }
 
@@ -1902,49 +1924,61 @@ JSON
 # config-driven feature flags). The Astro/Starlight site renders reports/ for human
 # reading; harness.config.json `.site` is the control plane astro.config.mjs reads at
 # build time (so neither template nor clone hand-edits astro.config.mjs). The template
-# hosts the example-topic report (docs-primary) and a copier hook activates
-# reports-primary in a clone.
+# serves the archived example topic (example-okf-mif-knowledge-spine; docs-primary) and
+# a copier hook activates reports-primary in a clone.
 # ---------------------------------------------------------------------------
 gate_m23() {
   info "Milestone 23 — site projection (reports surface + feature flags)"
 
-  # 23a. The content loader binds BOTH docs/ and reports/ into the single Starlight
-  #      `docs` collection via a plain glob (not docsLoader) whose base stays the standard
-  #      `./src/content/docs` location the relative-links plugin relies on (so docs' relative
-  #      *.md cross-links still rewrite to routes); reports/ is reached through the committed
-  #      `docs/reports` symlink. The negations docsLoader's fixed pattern cannot express
-  #      exclude _meta/continuity/findings and the report README. Regression guard against a
-  #      revert that re-leaks _meta, drops the README handling, or moves the base off
-  #      src/content/docs (which silently breaks relative-link rewriting site-wide).
+  # 23a. The content loader binds BOTH docs/ and reports/ into the single Starlight `docs`
+  #      collection via a `glob()` WRAPPED to derive a Starlight title for reports/ deliverables
+  #      that carry none (README, synthesis, falsification report, research-progress) — so the
+  #      FULL topic deliverable tree renders (ADR-0009) instead of being excluded. The base
+  #      stays `./src/content/docs` (the relative-links plugin relies on it) and reports/ is
+  #      reached via the committed `docs/reports` symlink. README is re-slugged to the topic
+  #      index. Only _meta/findings + the *-delta/*-build-spec build logs stay excluded.
+  #      Regression guard: the three deliverable negations MUST be absent (so they serve), the
+  #      loader markers + kept negations + both symlinks MUST be present.
   local cc=src/content.config.ts
   if grep -qF "glob(" "$cc" \
      && grep -qF "base: './src/content/docs'" "$cc" \
+     && grep -qF "reportsLoader(" "$cc" \
+     && grep -qF "deriveTitleFromH1" "$cc" \
+     && grep -qF "generateId" "$cc" \
      && grep -qF "!reports/_meta/**" "$cc" \
-     && grep -qF "!reports/**/research-progress.md" "$cc" \
      && grep -qF "!reports/**/findings/**" "$cc" \
-     && grep -qF "!reports/**/README.md" "$cc" \
-     && grep -qF "!reports/**/*-falsification-report.md" "$cc" \
      && grep -qF "!reports/**/*-delta.md" "$cc" \
      && grep -qF "!reports/**/*-build-spec.md" "$cc" \
+     && ! grep -qF "!reports/**/README.md" "$cc" \
+     && ! grep -qF "!reports/**/*-falsification-report.md" "$cc" \
+     && ! grep -qF "!reports/**/research-progress.md" "$cc" \
      && [ "$(readlink docs/reports 2>/dev/null)" = "../reports" ] \
      && [ "$(readlink src/content/docs 2>/dev/null)" = "../../docs" ]; then
-    ok "content.config.ts binds reports via glob (docs/reports->../reports and src/content/docs->../../docs symlinks; report/findings/audit negations)"
+    ok "content.config.ts serves the full deliverable tree via the derived-title loader (README index re-slug; _meta/findings/build-log negations kept; the README/falsification/progress negations removed; both site symlinks)"
   else
-    bad "reports binding regressed (need glob base './src/content/docs', the docs/reports->../reports and src/content/docs->../../docs symlinks, and the _meta/research-progress/README/audit negations)"
+    bad "reports binding regressed (need the reportsLoader/deriveTitleFromH1/generateId glob at base './src/content/docs', the README+falsification+research-progress negations REMOVED so they render, _meta/findings/*-delta/*-build-spec kept, and the docs/reports + src/content/docs symlinks)"
   fi
 
   # 23b. astro.config.mjs reads harness.config.json and GATES each site enhancement on
   #      .site.plugins / .site.primarySurface — integrations are config-driven, not hardcoded.
+  #      It also builds the reports sidebar as ONE link per topic README index (reportTopics,
+  #      not a per-report autogenerate tree), strips the duplicate body H1 of derived-title
+  #      pages (remarkStripReportH1), and registers the Sidebar override that adds the topic
+  #      filter. The override component must exist.
   local ac=astro.config.mjs
   if grep -qF "harness.config.json" "$ac" \
      && grep -qF "primarySurface" "$ac" \
      && grep -qF "plugins.mermaid" "$ac" \
      && grep -qF "plugins.llmsTxt" "$ac" \
      && grep -qF "plugins.imageZoom" "$ac" \
-     && grep -qF "plugins.linksValidator" "$ac"; then
-    ok "astro.config.mjs reads harness.config.json and gates llms-txt/mermaid/image-zoom/links-validator + primarySurface"
+     && grep -qF "plugins.linksValidator" "$ac" \
+     && grep -qF "remarkStripReportH1" "$ac" \
+     && grep -qF "reportTopics(" "$ac" \
+     && grep -qF "Sidebar:" "$ac" \
+     && [ -f src/components/Sidebar.astro ]; then
+    ok "astro.config.mjs gates site plugins + primarySurface, builds an index-only reports sidebar (reportTopics), strips derived-title H1, and registers the Sidebar filter override"
   else
-    bad "astro.config.mjs must read harness.config.json and gate each site plugin + primarySurface (not hardcode them)"
+    bad "astro.config.mjs must read harness.config.json, gate each site plugin + primarySurface, build the index-only reports sidebar (reportTopics), strip the derived-title H1 (remarkStripReportH1), and register src/components/Sidebar.astro"
   fi
 
   # 23c. The manifest (with the optional .site block) validates against the schema.
@@ -1954,15 +1988,29 @@ gate_m23() {
     bad "harness.config.json does not validate against harness.config.schema.json"
   fi
 
-  # 23d. Template-only invariants: the template hosts the example-topic report (so the
-  #      reports surface is demonstrated) yet stays docs-primary, and the copier hook
-  #      activates reports-primary in a clone. (The example topic is .md-only by design;
-  #      gate 8c already enforces reports/ ships JSON-clean.)
+  # 23d. Template-only invariants: the template serves the single archived example
+  #      research topic straight out of reports/ (example-okf-mif-knowledge-spine — its
+  #      findings + rendered genre reports) so the reports surface is demonstrated, yet
+  #      stays docs-primary, and the copier hook activates reports-primary in a clone.
+  #      gate 8c enforces reports/ ships only this example topic + _meta scaffolding.
   if [ "$IS_TEMPLATE" = 1 ]; then
-    if [ -f reports/example-topic/example-topic.md ] && [ -f reports/example-topic/README.md ]; then
-      ok "template hosts the example-topic report (example-topic.md + README.md)"
+    if [ -f reports/example-okf-mif-knowledge-spine/README.md ] \
+       && ls reports/example-okf-mif-knowledge-spine/report-*.md >/dev/null 2>&1; then
+      ok "template serves the archived example topic (example-okf-mif-knowledge-spine: README + genre reports)"
     else
-      bad "template must host the example-topic report (reports/example-topic/{example-topic.md,README.md})"
+      bad "template must serve the example topic (reports/example-okf-mif-knowledge-spine/{README.md,report-*.md})"
+    fi
+    # The full deliverable tree renders: synthesis, falsification report, and research-progress
+    # each exist and start with an H1, so the derived-title loader gives them a Starlight title
+    # (they are no longer excluded). This is the positive counterpart to the 23a negation removal.
+    local edir=reports/example-okf-mif-knowledge-spine all_titled=1
+    for d in "$edir"/synthesis-*.md "$edir"/*-falsification-report.md "$edir"/research-progress.md; do
+      { [ -f "$d" ] && grep -qE '^#[[:space:]]+' "$d"; } || all_titled=0
+    done
+    if [ "$all_titled" = 1 ]; then
+      ok "template serves the full deliverable tree (synthesis + falsification report + research-progress each render via a derivable H1 title)"
+    else
+      bad "example topic deliverables must each exist with an H1 so the derived-title loader renders them (synthesis, falsification report, research-progress)"
     fi
     if [ "$(jq -r '.site.primarySurface // empty' harness.config.json)" = "docs" ]; then
       ok "template pins site.primarySurface = docs (docs-primary despite shipping the example report)"

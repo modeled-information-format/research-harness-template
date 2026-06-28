@@ -1,0 +1,78 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-mif-nascent-ecosystem",
+  "@type": "Concept",
+  "citations": [
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "article",
+      "title": "Introducing MIF: Memory Interchange Format — zircote.com (February 2026)",
+      "url": "https://zircote.com/blog/2026/02/introducing-mif-memory-interchange-format/"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "article",
+      "title": "State of AI Agent Memory 2026: Benchmarks, Architectures & Production Gaps — Mem0",
+      "url": "https://mem0.ai/blog/state-of-ai-agent-memory-2026"
+    }
+  ],
+  "conceptType": "semantic",
+  "content": "MIF's origin story is described in its February 2026 introduction blog post: Robert Allen encountered the practical pain of migrating memories between his own tools and found that 'the formats were different, the schemas did not align, context got lost in translation.' The market gap MIF addresses is real and documented: the AI memory ecosystem as of mid-2026 includes Mem0 (48,000+ GitHub stars, $24M funded), Zep, Letta, LangMem, Basic Memory, and over a dozen others, each with proprietary schemas. Switching between them requires custom migration scripts; when providers shut down, accumulated memories vanish; multi-tool workflows create isolated silos with no cross-tool learning.\n\nMIF's design response is an interoperability specification with three conformance levels (Level 1: four required fields; Level 3: full provenance, citations, and ontology support) and a dual-format representation (human-readable .memory.md and machine-processable JSON-LD). The specification explicitly adopts W3C PROV-O for provenance and JSON-LD for semantic web compatibility, positioning MIF as a bridge between the accessible markdown world (where practitioners live) and the formal semantic infrastructure (where interoperability lives). The stated roadmap prioritizes memory provider Level 1 export implementations first, then Obsidian plugin development, community converter tools, and federation protocols.\n\nAssessing MIF's trajectory means separating three things: the gap it addresses, the maturity of the specification, and the distribution it has achieved. The gap is real and growing — as AI agent memory systems proliferate and multi-agent architectures become standard, the cost of format fragmentation rises. The specification itself is mature: MIF has been public since February 2026 and reached v1.0.0 (Release Candidate; the spec was last updated 2026-06-18 and the v1.0.0 line was cut over to main on 2026-06-28), with two first-party reference implementations (subcog, mnemonic) and this research harness template — the flagship implementation — itself persisting its research as MIF. What MIF has not yet achieved is broad distribution: as of the research date it has no large independent adopter base, no formal governance body, and no published adoption metrics. The network effects that turn a format into a de facto standard have not yet materialized — but that is an adoption gap, not a version-maturity gap.\n\nThe OKF+MIF layering question must frame this asymmetry correctly. MIF is the older and more stabilized specification: it has been public since early 2026 and stands at v1.0.0, whereas OKF v0.1 launched on 12 June 2026 and is described by its own authors as 'a starting point, not a finished standard.' What OKF brings is distribution momentum, not specification maturity — Google Cloud institutional weight, 5,440+ GitHub stars in its first weeks, and enterprise integration via Knowledge Catalog. The favorable trajectory scenario is therefore complementary: OKF supplies the accessible, broadly distributed packaging layer and the practitioner base, while MIF — already stabilized — supplies the typed-relationship, provenance, and temporal layer those practitioners will need as they hit the walls OKF v0.1 defers. The unfavorable scenario is that OKF's minimalism becomes a ceiling: producers standardize on OKF's untyped links and minimal frontmatter and never develop demand for the heavier layer.",
+  "created": "2026-06-28T00:00:00Z",
+  "extensions": {
+    "harness": {
+      "dimension": "trajectory",
+      "verification": {
+        "verdict": "survived",
+        "verdict_basis": "Corrected against the authoritative MIF specification in this workspace (SPECIFICATION.md: Version 1.0.0, Status Release Candidate, Last Updated 2026-06-18; the v1.0.0 line was cut over to main 2026-06-28) plus the February 2026 public introduction — these supersede the analyst's web sources, which had recorded a stale v0.1.0-draft. The corrected claim (MIF public since early 2026, stabilized at v1.0.0, predating OKF v0.1, differentiated but with a smaller independent adopter base and no formal governance versus OKF's Google-backed launch) is consistent with the spec and repository; the residual adoption/governance caveat stands. Verdict: survived (post-research ground-truth correction).",
+        "disconfirming_evidence": [],
+        "attempted_at": "2026-06-28T12:20:00Z"
+      },
+      "gathered_under": "gv-722bb7b64725"
+    }
+  },
+  "provenance": {
+    "@type": "Provenance",
+    "confidence": 0.85,
+    "sourceType": "agent_inferred",
+    "trustLevel": "high_confidence"
+  },
+  "relationships": [
+    {
+      "strength": 0.85,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-okf-v01-launch-momentum",
+      "type": "relates-to"
+    },
+    {
+      "strength": 0.8,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-agent-memory-provenance-demand",
+      "type": "relates-to"
+    }
+  ],
+  "summary": "MIF has been public since February 2026 and reached v1.0.0 (Release Candidate, stabilized 2026-06-18) — predating OKF v0.1 (12 June 2026) and at a more advanced, stabilized version. It fills a documented gap (fragmented AI-memory formats) with genuine technical differentiation, but versus OKF's Google-backed launch it still lacks a large independent adopter base and formal governance. Its challenge is distribution and adoption, not spec maturity.",
+  "tags": [
+    "mif",
+    "modeled-information-format",
+    "ecosystem",
+    "nascent",
+    "trajectory",
+    "momentum",
+    "open-source",
+    "interoperability",
+    "memory-format"
+  ],
+  "title": "MIF Momentum: a Stabilized v1.0.0 Spec, Public Since Early 2026, Differentiated but Still Building Adoption",
+  "ontology": {
+    "id": "trend-analysis"
+  },
+  "entity": {
+    "name": "MIF v1.0.0 adoption trajectory",
+    "entity_type": "emerging-issue",
+    "description": "MIF is public since February 2026 and stabilized at v1.0.0 (Release Candidate, 2026-06-18), predating OKF v0.1 (June 2026); it is differentiated and specification-mature but still building an independent adopter base and formal governance."
+  },
+  "namespace": "harness/example-okf-mif-knowledge-spine"
+}

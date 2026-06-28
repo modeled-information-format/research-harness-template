@@ -1,0 +1,72 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-mif-typed-relationships",
+  "@type": "Concept",
+  "citations": [
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "MIF Schema Reference — mif-spec.dev",
+      "url": "https://mif-spec.dev/"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "GitHub — zircote/MIF: Open standard for portable AI memory interchange",
+      "url": "https://github.com/zircote/MIF"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "refutes",
+      "citationType": "website",
+      "title": "MIF relationship types (mif-spec.dev) - the core vocabulary is relates-to/derived-from/supersedes/conflicts-with/part-of/implements/uses/created-by/mentioned-in; supports/contradicts/refines/depends-on/updates are not MIF-native core, only custom namespaced",
+      "url": "https://mif-spec.dev/specification/relationship-types/"
+    }
+  ],
+  "conceptType": "semantic",
+  "content": "MIF's typed relationship system is the central semantic layer that OKF's untyped markdown links lack. In MIF, every Concept object MAY carry a 'relationships[]' array where each entry is a typed directed edge to another concept identified by its 'urn:mif:concept:' URI. The MIF schema defines a 'type' pattern '^[a-z0-9][a-z0-9-]*(:[a-z0-9][a-z0-9-]*)?$' — allowing both simple kebab-case tokens (for the structural-core types) and namespaced tokens (for domain-specific extensions). The nine MIF-native structural-core relationship types, validated by the concordance gate, are: 'supports' (one finding confirms another), 'contradicts' (adversarial counter-evidence), 'derived-from' (synthesis from a source), 'relates-to' (associative, non-directional semantics), 'supersedes' (replaces an earlier version), 'refines' (narrows or clarifies), 'part-of' (containment or composition), 'depends-on' (dependency), 'updates' (temporal replacement). Each relationship entry also carries an optional 'strength' numeric score (0.0 to 1.0) indicating confidence or weight of the edge, and an optional 'metadata' extension object for context. This formal graph substrate enables: concordance validation across topics, knowledge-graph traversal for clustering and gap analysis, ontological spine construction, and machine-checkable assertions about relationships between findings. In an OKF+MIF layering, OKF bundles would contain the file-system packaging and human-readable prose while MIF's typed relationships would be encoded as extended frontmatter or companion JSON files — the semantic enrichment layer over OKF's minimalist structure. This means OKF provides the authoring and distribution surface (git-native, markdown-first) while MIF provides the queryable semantic graph that neither OKF nor any plain markdown tool can natively support.",
+  "created": "2026-06-28T00:00:00Z",
+  "extensions": {
+    "harness": {
+      "dimension": "technical",
+      "verification": {
+        "attempted_at": "2026-06-28T11:54:01Z",
+        "disconfirming_evidence": [
+          "https://mif-spec.dev/specification/relationship-types/"
+        ],
+        "verdict": "weakened",
+        "verdict_basis": "Broader thesis holds (MIF provides typed directed relationship edges with optional strength 0-1 that OKF's untyped prose links lack), but the load-bearing enumeration is mislabeled. The finding names supports/contradicts/refines/depends-on/updates as MIF-native structural-core types; mif-spec.dev/specification/relationship-types lists a different core set (relates-to, derived-from, supersedes, conflicts-with, part-of, implements, uses, created-by, mentioned-in) and permits the finding's extra tokens only as custom NAMESPACED types, not core - a narrowing, not a contradiction. Only 4 of 9 named types (relates-to, derived-from, supersedes, part-of) are MIF core; the disputed five match the harness's own finding-relationship vocabulary. Rests on a single first-party extraction, so weakened, not falsified."
+      },
+      "gathered_under": "gv-722bb7b64725"
+    }
+  },
+  "provenance": {
+    "@type": "Provenance",
+    "confidence": 0.75,
+    "sourceType": "agent_inferred",
+    "trustLevel": "moderate_confidence"
+  },
+  "relationships": [
+    {
+      "strength": 0.9,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-okf-untyped-links",
+      "type": "derived-from"
+    }
+  ],
+  "summary": "MIF defines a 'relationships[]' array on every Concept with nine structural-core types (supports, contradicts, derived-from, relates-to, supersedes, refines, part-of, depends-on, updates) as machine-processable directed edges. Each edge carries an optional numeric strength (0-1) and extensible metadata. This is the primary semantic capability OKF lacks. [Weakened 2026-06-28 - see verification block.]",
+  "tags": [
+    "mif",
+    "typed-relationships",
+    "knowledge-graph",
+    "semantics",
+    "technical",
+    "mif-advantage"
+  ],
+  "title": "MIF's Typed Relationship System: Nine Structural-Core Predicates with Strength",
+  "namespace": "harness/example-okf-mif-knowledge-spine"
+}

@@ -1,0 +1,100 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-competitive-positioning",
+  "@type": "Concept",
+  "citations": [
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "website",
+      "title": "Google Cloud Introduces OKF - Competitive comparison table (MarkTechPost)",
+      "url": "https://www.marktechpost.com/2026/06/16/google-cloud-introduces-open-knowledge-format-okf-a-vendor-neutral-markdown-spec-for-giving-ai-agents-curated-context/"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "website",
+      "title": "Enterprise Knowledge Graph Buyer's Guide 2026 - Six platform categories and pricing (Promethium)",
+      "url": "https://promethium.ai/guides/enterprise-knowledge-graph-buyers-guide-2026/"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "website",
+      "title": "Neo4j Software Pricing & Plans 2026 (Vendr)",
+      "url": "https://www.vendr.com/marketplace/neo4j"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "website",
+      "title": "Notion vs Obsidian vs Roam Research 2025: Best Note-Taking App for Productivity",
+      "url": "https://www.primeproductiv4.com/blog-articles/notion-vs-obsidian-vs-roam-research-productivity-comparison"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "website",
+      "title": "Top Knowledge Management Trends 2026 - Semantic layers and enterprise AI (Enterprise Knowledge)",
+      "url": "https://enterprise-knowledge.com/top-knowledge-management-trends-2026/"
+    }
+  ],
+  "conceptType": "semantic",
+  "content": "The competitive landscape for a knowledge-spine offering combining OKF (git-distributable packaging) and MIF (typed relationships, provenance, ontology) spans two established categories that each leave a distinct gap.\n\nPERSONAL AND TEAM KM TOOLS (Notion, Obsidian, Confluence, Roam)\nThese tools dominate the team and personal knowledge management market. Notion is the most feature-complete, offering a collaborative workspace with databases, pages, and tasks. Confluence is the enterprise incumbent for technical documentation. Obsidian and Roam are developer-favored tools for linked, bidirectional knowledge graphs using local markdown files. Logseq (open-source, local-first markdown) is the closest philosophical predecessor to OKF. Pricing: Notion charges $10-16/user/month for team plans; Roam costs $15/month; Obsidian commercial use is $50/user/year. Logseq Sync costs approximately $5-6/month.\n\nWhat these tools lack versus OKF+MIF:\n- Notion: Proprietary database format; export-only portability; no typed relationships or formal ontology; no first-class provenance objects; not agent-readable without a custom integration.\n- Obsidian: Local markdown files (similar to OKF); no schema enforcement; links are untyped markdown links; no provenance layer; requires bespoke agent conventions.\n- Confluence/SharePoint: Enterprise-grade but vendor-locked; no semantic layer; no typed relationships; no git-native diffability.\n- Roam/Logseq: Bidirectional linking in markdown; graph view; but no formal ontology, no provenance, no typed relationships, no structured citation objects.\n\nCOMPETITIVE GAP: None of these tools provide (a) typed, ontology-backed relationships, (b) first-class W3C-PROV-O-compatible provenance metadata, or (c) schema-enforced citation objects. For organizations where knowledge traceability and AI grounding are requirements, the personal KM tools are insufficient.\n\nENTERPRISE KNOWLEDGE GRAPH PLATFORMS (Neo4j, Stardog, Amazon Neptune, Azure Knowledge Graph)\nThese platforms provide formal semantics, SPARQL querying, and production-grade knowledge graph management. Neo4j Enterprise Edition costs $15,000-25,000/year for small deployments, scaling to $100,000+ for large-scale, multi-datacenter implementations. AuraDB (managed cloud) scales from $65-146/GB/month. Stardog does not publish pricing publicly; it requires a custom contract call. Amazon Neptune and Azure Knowledge Graph are usage-priced cloud services.\n\nWhat enterprise KG platforms lack versus OKF+MIF:\n- High barrier to adoption: requires RDF/SPARQL expertise, triple store infrastructure, and often a dedicated knowledge engineering team.\n- Not git-native: knowledge is stored in graph database, not version-controlled files. PRs, diffs, and review workflows do not apply.\n- Not human-readable without tooling: RDF Turtle or JSON-LD requires a rendering step; OKF markdown renders natively on GitHub.\n- No packaging/distribution primitive: there is no 'bundle' that can be cloned, tarred, and shared as self-contained knowledge.\n- Approximately 1 FTE per 50-100 entity types as ongoing operational cost for semantic governance (Promethium, 2026).\n\nOKF+MIF POSITIONING\nThe combination occupies the niche between 'linked markdown notes' (Obsidian/Logseq — no provenance, no schema, untyped links) and 'enterprise knowledge graph' (Neo4j/Stardog — high barrier, expensive, not git-native). Key differentiators:\n1. Git-native distribution: Knowledge bundles are directories of markdown files; any developer can clone, diff, and contribute.\n2. Progressive enrichment: OKF alone covers the base case (typed concepts, markdown links, timestamps). MIF's layer adds typed relationships, formal ontology, and W3C-PROV-O-compatible provenance without requiring a graph database.\n3. Agent-readable without custom integration: OKF markdown + YAML frontmatter is readable by any LLM agent with no SDK dependency.\n4. Zero vendor lock-in: No proprietary accounts, no SaaS subscription, no SDK dependency.\n\nCOUNTER-CONSIDERATION: OKF is v0.1 published June 12, 2026 — the ecosystem (producer libraries, consumer integrations, governance tooling) does not yet exist. Notion and Confluence have mature ecosystems with enterprise SSO, compliance certifications, and large communities. A knowledge-spine offering based on OKF+MIF competes on format merit before ecosystem depth, which is a slower value capture path.",
+  "created": "2026-06-28T00:00:00Z",
+  "extensions": {
+    "harness": {
+      "dimension": "market",
+      "verification": {
+        "verdict": "survived",
+        "verdict_basis": "Neo4j pricing (AuraDB $65-146/GB/month; enterprise tens-of-thousands to $100k+/yr) and OKF v0.1's June 2026 nascency are corroborated; the finding already states the ecosystem-immaturity counter-consideration, and no source contradicted the positioning claim.",
+        "disconfirming_evidence": [],
+        "attempted_at": "2026-06-28T11:42:12Z"
+      },
+      "gathered_under": "gv-722bb7b64725"
+    }
+  },
+  "provenance": {
+    "@type": "Provenance",
+    "confidence": 0.82,
+    "sourceType": "agent_inferred",
+    "trustLevel": "high_confidence"
+  },
+  "relationships": [
+    {
+      "strength": 0.85,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-buyer-segments-pain-points",
+      "type": "relates-to"
+    },
+    {
+      "strength": 0.75,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-km-software-market-sizing",
+      "type": "relates-to"
+    }
+  ],
+  "summary": "OKF+MIF occupies a niche between personal KM tools (Notion, Obsidian, Confluence) that lack provenance and typed relationships, and enterprise knowledge graph platforms (Neo4j, Stardog) requiring significant engineering overhead. The combination is the 'structured but accessible' option: more semantically rich than KM wikis, more open and git-distributable than proprietary graph databases.",
+  "tags": [
+    "competitive-positioning",
+    "notion",
+    "obsidian",
+    "confluence",
+    "neo4j",
+    "stardog",
+    "knowledge-graph",
+    "market"
+  ],
+  "title": "Competitive Positioning: OKF+MIF vs Personal KM Tools and Enterprise Knowledge Graph Platforms",
+  "ontology": {
+    "id": "market-research"
+  },
+  "entity": {
+    "name": "OKF+MIF competitive positioning",
+    "entity_type": "value-proposition"
+  },
+  "namespace": "harness/example-okf-mif-knowledge-spine"
+}

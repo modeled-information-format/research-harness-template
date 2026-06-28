@@ -15,10 +15,17 @@
   },
   "topics": [
     {
-      "id": "example-topic",
-      "title": "Example research topic",
-      "namespace": "harness/example-topic",
-      "status": "active"
+      "id": "example-okf-mif-knowledge-spine",
+      "title": "Example: OKF+MIF as a foundational research knowledge spine",
+      "namespace": "harness/example-okf-mif-knowledge-spine",
+      "status": "archived",
+      "ontologies": [
+        "data-engineering",
+        "software-engineering",
+        "scientific",
+        "market-research",
+        "trend-analysis"
+      ]
     }
   ],
   "dimensions": [
@@ -33,6 +40,10 @@
     {
       "id": "trajectory",
       "description": "Direction of travel: adoption, standards, and momentum signals."
+    },
+    {
+      "id": "market",
+      "description": "Market analysis for an OKF+MIF knowledge spine: demand drivers, buyer segments, competitive positioning, and sizing."
     }
   ],
   "outputs": [
@@ -111,7 +122,7 @@
     },
     {
       "name": "competitive-analysis",
-      "enabled": false,
+      "enabled": true,
       "source": "bundled"
     },
     {
@@ -126,7 +137,7 @@
     },
     {
       "name": "market-sizing",
-      "enabled": false,
+      "enabled": true,
       "source": "bundled"
     },
     {
@@ -146,7 +157,7 @@
     },
     {
       "name": "computing-paper",
-      "enabled": false,
+      "enabled": true,
       "source": "bundled"
     },
     {
@@ -176,7 +187,7 @@
     },
     {
       "name": "trend-modeling",
-      "enabled": false,
+      "enabled": true,
       "source": "bundled"
     },
     {
@@ -206,7 +217,7 @@
     },
     {
       "name": "market-research-report",
-      "enabled": false,
+      "enabled": true,
       "source": "bundled"
     },
     {
@@ -221,7 +232,7 @@
     },
     {
       "name": "competitive-quadrant",
-      "enabled": false,
+      "enabled": true,
       "source": "bundled"
     },
     {
@@ -247,7 +258,7 @@
     },
     {
       "id": "software-engineering",
-      "enabled": false
+      "enabled": true
     },
     {
       "id": "biology-research-lab",
@@ -255,7 +266,7 @@
     },
     {
       "id": "data-engineering",
-      "enabled": false
+      "enabled": true
     },
     {
       "id": "regenerative-agriculture-research",
@@ -263,7 +274,7 @@
     },
     {
       "id": "market-research",
-      "enabled": false
+      "enabled": true
     },
     {
       "id": "regulatory-legal",
@@ -271,7 +282,7 @@
     },
     {
       "id": "scientific",
-      "enabled": false
+      "enabled": true
     },
     {
       "id": "software-security",
@@ -279,7 +290,7 @@
     },
     {
       "id": "trend-analysis",
-      "enabled": false
+      "enabled": true
     },
     {
       "id": "observability",

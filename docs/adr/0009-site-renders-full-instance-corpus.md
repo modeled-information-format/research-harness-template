@@ -75,11 +75,11 @@ Close the four gaps at the source:
    is navigable.
 
 Canonical L3 reports and genre deliverables continue to carry MIF frontmatter and
-remain pages; the per-topic `README.md` stays the (frontmatter-less) build-topic
-nav index and is intentionally not a page (it serves the `--check` gate). Surfacing
-the per-topic README as a Starlight page would require the README generator to emit
-Starlight frontmatter without breaking the `--check` gate or `markdownlint` MD025;
-that is left to a follow-up.
+remain pages.
+
+> **Superseded in part — see the [2026-06-28 amendment](#amendment-2026-06-28-serve-the-full-deliverable-tree) below.**
+> Point 3's exclusion of `*-falsification-report.md` and the README, and the deferral
+> of "the per-topic README as a page", are reversed: every deliverable now renders.
 
 ## Consequences
 
@@ -95,4 +95,37 @@ that is left to a follow-up.
 - The audit/continuity artifacts (falsification reports, deltas, build specs) are
   not browsable as site pages. They remain in `reports/` for the corpus and the
   gates; only the site projection omits them.
+  *(Falsification reports are now served — see the amendment.)*
 - The per-topic README is still not a navigable page (follow-up).
+  *(Now served as the topic index — see the amendment.)*
+
+## Amendment (2026-06-28): serve the full deliverable tree
+
+The original decision hid the README, the falsification report, the neutral synthesis,
+and the research-progress log from the site because each lacks Starlight frontmatter.
+That was wrong for the product: **these are critical, consumer-facing research
+deliverables — excluding them obfuscates the work and costs credibility.** Every
+deliverable under `reports/<topic>/` now renders. This supersedes Decision point 3's
+README/falsification exclusion and the deferred "README as a page" follow-up.
+
+How, without mutating the generated artifacts:
+
+1. **Derived titles in the content loader.** `src/content.config.ts` wraps `glob()`
+   (`reportsLoader`/`deriveTitleFromH1`): a reports/ entry with no Starlight `title`
+   gets one derived from its body `# H1` (then a humanized filename). The files are
+   never edited, so clones' future artifacts render the same way — no generator change.
+2. **README is the topic index.** A custom `generateId` re-slugs `reports/<topic>/README.md`
+   to `reports/<topic>/`, making it the topic's landing page.
+3. **No double heading.** A remark plugin (`remarkStripReportH1`) strips the leading body
+   H1 of a derived-title page at render, since Starlight already renders the derived title.
+4. **Uncluttered nav.** The sidebar lists ONE link per topic (its README index), not a
+   per-report autogenerate tree; a `Sidebar` component override adds a client-side topic
+   filter. A topic's constituents are navigated from the README index's **Type → Title**
+   Reports table (ordered by a single canonical map in `scripts/build-topic-readme.sh`:
+   executive summary → briefing → synthesis → genre reports → falsification report →
+   research progress).
+
+Only `reports/_meta/`, `findings/*.json`, and the `*-delta.md` / `*-build-spec.md` build
+logs remain excluded (data/logs with no stable page shape). `gate_m23` is updated to assert
+the loader markers, that the README/falsification/research-progress negations are gone, and
+that the example topic's deliverables each carry a derivable H1.

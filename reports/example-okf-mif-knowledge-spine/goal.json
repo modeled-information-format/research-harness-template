@@ -1,0 +1,40 @@
+{
+  "$schema": "../../schemas/goal.schema.json",
+  "topic": "example-okf-mif-knowledge-spine",
+  "goal_statement": "Enable the decision of whether MIF (Modeled Information Format) should serve as the modeling, provenance, and temporal spine layered with OKF (Google Cloud's Open Knowledge Format) as the accessible git-distributable packaging layer for a foundational research knowledge spine — establishing whether that layering is technically feasible, differentiated from existing knowledge-representation prior art, on a favorable adoption trajectory, and addressed to a real market.",
+  "scope": {
+    "in_scope": [
+      "The OKF specification's data model (Concepts, Knowledge Bundles, untyped markdown links, frontmatter, timestamps, citations, log.md) and its stated minimalism",
+      "MIF capabilities that OKF lacks: typed relationships, formal ontologies, first-class provenance objects, temporal/versioning modeling, EntityReferences",
+      "The OKF<->MIF mapping and how MIF's ontology/provenance/temporal layers exploit OKF for greater linking and long-term persistence",
+      "Prior art and alternatives: RDF/OWL, PROV-O, SKOS, schema.org, JSON-LD, knowledge graphs, Frictionless Data / Data Packages",
+      "Adoption, standards momentum, and AI/LLM-driven knowledge-persistence trends",
+      "Market demand drivers, buyer segments, competitive positioning, and sizing for a knowledge-spine offering"
+    ],
+    "out_of_scope": [
+      "Implementing an OKF<->MIF converter or runtime",
+      "Pricing a specific commercial product",
+      "Vendor/cloud selection for hosting"
+    ],
+    "non_goals": [
+      "This session will NOT ship an OKF-MIF integration implementation.",
+      "This session will NOT make a procurement or build-vs-buy recommendation for a named vendor."
+    ]
+  },
+  "dimensions": ["technical", "landscape", "trajectory", "market"],
+  "completion_condition": {
+    "summary": "Each of the four config dimensions (technical >=4, landscape >=3, trajectory >=3, market >=3) carries that many active (non-falsified) citation-backed MIF findings, AND the externally-falsifiable thesis sub-questions (OKF's minimalism; MIF's typed-relationship/provenance/temporal advantage) are each answered by >=1 surviving finding at a survived/weakened verdict, AND every active finding validates against the MIF-backed findings schema, AND the adversarial falsification gate ran exactly once per finding this round, AND citation integrity holds.",
+    "checks": [
+      { "id": "coverage_technical", "assertion": "The technical dimension has >=4 active (non-falsified) findings.", "verify": "ls reports/example-okf-mif-knowledge-spine/findings/*.json | xargs -I{} jq -r 'select(.extensions.harness.dimension==\"technical\" and ((.extensions.harness.verification.verdict // \"survived\")!=\"falsified\")) | .[\"@id\"]' {} | sort -u | wc -l prints >= 4" },
+      { "id": "coverage_landscape", "assertion": "The landscape dimension has >=3 active (non-falsified) findings.", "verify": "ls reports/example-okf-mif-knowledge-spine/findings/*.json | xargs -I{} jq -r 'select(.extensions.harness.dimension==\"landscape\" and ((.extensions.harness.verification.verdict // \"survived\")!=\"falsified\")) | .[\"@id\"]' {} | sort -u | wc -l prints >= 3" },
+      { "id": "coverage_trajectory", "assertion": "The trajectory dimension has >=3 active (non-falsified) findings.", "verify": "ls reports/example-okf-mif-knowledge-spine/findings/*.json | xargs -I{} jq -r 'select(.extensions.harness.dimension==\"trajectory\" and ((.extensions.harness.verification.verdict // \"survived\")!=\"falsified\")) | .[\"@id\"]' {} | sort -u | wc -l prints >= 3" },
+      { "id": "coverage_market", "assertion": "The market dimension has >=3 active (non-falsified) findings.", "verify": "ls reports/example-okf-mif-knowledge-spine/findings/*.json | xargs -I{} jq -r 'select(.extensions.harness.dimension==\"market\" and ((.extensions.harness.verification.verdict // \"survived\")!=\"falsified\")) | .[\"@id\"]' {} | sort -u | wc -l prints >= 3" },
+      { "id": "thesis_okf_minimalism", "assertion": "OKF being a minimalist markdown format (untyped links, last-modified timestamps, no formal ontology) is established by >=1 surviving finding.", "verify": "ls reports/example-okf-mif-knowledge-spine/findings/*.json | xargs -I{} jq -r 'select(((.extensions.harness.verification.verdict // \"\")==\"survived\") or ((.extensions.harness.verification.verdict // \"\")==\"weakened\")) | select([..|strings]|join(\" \")|test(\"untyped|minimal|markdown|last-modified|no .* ontology\";\"i\")) | .[\"@id\"]' {} | sort -u | wc -l prints >= 1" },
+      { "id": "thesis_mif_advantage", "assertion": "MIF providing typed relationships, first-class provenance, and temporal/versioning that OKF lacks is established by >=1 surviving finding.", "verify": "ls reports/example-okf-mif-knowledge-spine/findings/*.json | xargs -I{} jq -r 'select(((.extensions.harness.verification.verdict // \"\")==\"survived\") or ((.extensions.harness.verification.verdict // \"\")==\"weakened\")) | select([..|strings]|join(\" \")|test(\"provenance|temporal|typed relationship|ontolog\";\"i\")) | .[\"@id\"]' {} | sort -u | wc -l prints >= 1" },
+      { "id": "finding_valid", "assertion": "Every active finding validates against the MIF-backed findings schema.", "verify": "ajv validate --spec=draft2020 --strict=false -c ajv-formats -s schemas/findings.schema.json -r schemas/mif/mif.schema.json -r schemas/mif/definitions/entity-reference.schema.json -d 'reports/example-okf-mif-knowledge-spine/findings/*.json' exits 0" },
+      { "id": "gate_ran", "assertion": "The adversarial falsification gate ran exactly once per finding this round.", "verify": "the transcript shows one 'falsification-gate: run' line per finding this round" },
+      { "id": "citation_integrity", "assertion": "Every active finding passes the citation-integrity gate.", "verify": "scripts/check-citation-integrity.sh reports/example-okf-mif-knowledge-spine/findings exits 0" }
+    ]
+  },
+  "bound": { "max_rounds": 3, "min_dimensions_complete": 4 }
+}

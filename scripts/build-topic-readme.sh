@@ -117,15 +117,40 @@ if [ -d "$TOPIC_DIR/quarantine" ]; then
 fi
 [ "$QCOUNT" -eq 0 ] && QCOUNT="$FALS"
 
-# Dimensions: union of goal dimensions and dimensions seen in findings.
-DIMENSIONS=$(jq -rn \
+# Dimensions: union of goal dimensions and dimensions seen in findings, rendered as a
+# bulleted list with each dimension's harness.config description (matching the richer
+# zircote/research per-topic READMEs) — falls back to a bare bullet when no description.
+DIM_BULLETS=$(jq -rn \
   --argjson roll "$ROLL" \
-  --slurpfile goal_arr <(cat "$GOAL" 2>/dev/null || echo '{}') '
-  ($goal_arr[0] // {}) as $g
-  | (($g.dimensions // []) + $roll.dimensions) | unique
-  | if length == 0 then "—" else join(", ") end')
+  --slurpfile goal_arr <(cat "$GOAL" 2>/dev/null || echo '{}') \
+  --slurpfile cfg_arr <(cat "$CONFIG") '
+  ($cfg_arr[0] // {}) as $c
+  | ($goal_arr[0] // {}) as $g
+  | ((($g.dimensions // []) + $roll.dimensions) | unique) as $dims
+  | ($c.dimensions // []) as $cd
+  | if ($dims | length) == 0 then "—"
+    else ($dims | map(
+        . as $d
+        | ([$cd[] | select(.id == $d or .name == $d) | .description]
+           | map(select(. != null)) | first) as $desc
+        | "- **" + $d + "**" + (if ($desc // "") != "" then " — " + $desc else "" end)
+      ) | join("\n"))
+    end')
 
-TAGS=$(printf '%s' "$ROLL" | jq -r 'if (.tags | length) == 0 then "—" else (.tags | join(", ")) end')
+# Tags rendered as backtick-quoted tokens (matches the zircote/research exemplars).
+TAGS=$(printf '%s' "$ROLL" | jq -r '
+  if (.tags | length) == 0 then "—" else (.tags | map("`" + . + "`") | join(" ")) end')
+
+# Falsification audit trail: link + date of the topic's falsification report, if one exists.
+FALS_REPORT=$(find "$TOPIC_DIR" -maxdepth 1 -name '*-falsification-report.md' 2>/dev/null | sort | tail -1)
+FALS_BASE=""; FALS_DATE=""
+if [ -n "$FALS_REPORT" ]; then
+  FALS_BASE=$(basename "$FALS_REPORT")
+  FALS_DATE=$(printf '%s' "$FALS_BASE" | grep -oE '^[0-9]{4}-[0-9]{2}-[0-9]{2}' || true)
+fi
+
+# Optional hero image (a *-readme-hero.* asset), surfaced under the metadata header.
+HERO=$(find "$TOPIC_DIR/_assets" -maxdepth 1 -iname '*readme-hero*' 2>/dev/null | sort | head -1)
 
 # Purpose draft: the goal statement, else a generic line.
 PURPOSE=$(jq -rn --slurpfile goal_arr <(cat "$GOAL" 2>/dev/null || echo '{}') --arg t "$TITLE" '
@@ -166,15 +191,41 @@ fi
 
 # ----- markdown assembly -------------------------------------------------------
 
-report_desc() {
+# Canonical reader-consumption order for a topic's constituents: high-level decision →
+# detail → audit → process. Echoes "<rank>\t<Type label>"; lower rank sorts higher.
+# Unknown genres sort after the known set (then alphabetically by filename). This is the
+# single source of truth for the README Reports-table ordering.
+report_type() {
   case "$1" in
-    *delta*|*DELTA*)                    echo "Delta update" ;;
-    blog*|*-blog.md)                    echo "Blog post" ;;
-    ARCHITECT*)                         echo "Architecture / engineering document" ;;
-    RESEARCH-REPORT.md|REPORT.md|report.md|*-report.md) echo "Full research report" ;;
-    *.pdf)                              echo "PDF document" ;;
-    *)                                  echo "Document" ;;
+    report-exec-summary.md)            printf '1\tExecutive Summary' ;;
+    report-briefing.md)                printf '2\tBriefing Report' ;;
+    synthesis-*.md)                    printf '3\tSynthesis' ;;
+    report-market-research-report.md)  printf '4\tMarket Research Report' ;;
+    report-market-sizing.md)           printf '5\tMarket Sizing' ;;
+    report-competitive-analysis.md)    printf '6\tCompetitive Analysis' ;;
+    report-competitive-quadrant.md)    printf '7\tCompetitive Quadrant' ;;
+    report-trend-analysis.md)          printf '8\tTrend Analysis' ;;
+    report-trend-modeling.md)          printf '9\tTrend Modeling' ;;
+    report-engineering.md)             printf '10\tEngineering Report' ;;
+    report-academic.md)                printf '11\tAcademic Paper' ;;
+    report-computing-paper.md)         printf '12\tComputing Paper' ;;
+    *-falsification-report.md)         printf '13\tFalsification Report' ;;
+    research-progress.md)              printf '14\tResearch Progress' ;;
+    report-*.md)                       printf '40\tReport' ;;
+    *.pdf)                             printf '45\tPDF Document' ;;
+    *)                                 printf '50\tDocument' ;;
   esac
+}
+
+# Extract a deliverable's title: its YAML frontmatter `title:` (the genre report-*.md),
+# else its first body `# H1` (synthesis, falsification report, progress), else filename.
+file_title() {
+  local fp="$1" t
+  t=$(sed -n '/^---$/,/^---$/s/^title:[[:space:]]*//p' "$fp" 2>/dev/null | head -1 \
+        | sed -E 's/^["'\'']//; s/["'\'']$//')
+  [ -n "$t" ] || t=$(grep -m1 -E '^#[[:space:]]+' "$fp" 2>/dev/null | sed -E 's/^#[[:space:]]+//')
+  [ -n "$t" ] || t=$(basename "$fp")
+  printf '%s' "$t"
 }
 
 artifact_type() {
@@ -185,8 +236,21 @@ artifact_type() {
     *.mp4|*.webm)                       echo "Video" ;;
     *mindmap*|*mind-map*)               echo "Mind map" ;;
     *.pdf)                              echo "Slide deck" ;;
+    *.json)                            echo "Data" ;;
     *)                                  echo "Asset" ;;
   esac
+}
+
+# Human-readable file size (e.g. "7.8 MB"); empty on error.
+human_size() {
+  local b
+  b=$(wc -c < "$1" 2>/dev/null | tr -d ' ') || return 0
+  [ -n "$b" ] || return 0
+  awk -v b="$b" 'BEGIN{
+    split("B KB MB GB TB",u," "); i=1;
+    while (b>=1024 && i<5){b/=1024;i++}
+    if (i==1) printf "%d %s", b, u[i]; else printf "%.1f %s", b, u[i]
+  }'
 }
 
 build_readme() {
@@ -204,12 +268,22 @@ build_readme() {
     [ "$QCOUNT" -gt 0 ] && q=" — quarantined $QCOUNT"
     printf '**Findings:** %s%s%s | **Sources:** %s unique URLs\n' "$COUNT" "$detail" "$q" "$SOURCES"
   fi
+  if [ -n "$FALS_BASE" ]; then
+    local fq=""
+    [ "$QCOUNT" -gt 0 ] && fq=", quarantined $QCOUNT"
+    printf '**Falsification:** %s — survived %s, weakened %s%s ([report](%s))\n' \
+      "${FALS_DATE:-see report}" "$SURV" "$WEAK" "$fq" "$FALS_BASE"
+  fi
   printf '**Status:** %s\n\n' "$STATUS"
   printf -- '---\n\n'
 
+  if [ -n "$HERO" ]; then
+    printf '![%s](%s)\n\n' "$TITLE" "${HERO#"$TOPIC_DIR"/}"
+  fi
+
   printf '## Purpose\n\n%s\n\n' "$PURPOSE"
 
-  printf '## Dimensions\n\n%s\n\n' "$DIMENSIONS"
+  printf '## Dimensions\n\n%s\n\n' "$DIM_BULLETS"
 
   printf '## Key Findings\n\n'
   if [ -n "$KEY_PRESERVED" ]; then
@@ -224,21 +298,26 @@ build_readme() {
   fi
 
   printf '## Reports\n\n'
-  # Rendered deliverables only — exclude README.md and research-progress.md (a
-  # continuity/audit log, not a report; consistent with PR #72).
-  local docs base
+  # Every constituent deliverable EXCEPT this README index, listed as Type -> Title in a
+  # fixed reader-consumption order (report_type): exec summary → briefing → synthesis →
+  # the genre reports → falsification report → research progress. The linked title is the
+  # rendered page. Build logs (*-delta, *-build-spec) are omitted.
+  local docs base meta rank label title rows
   docs=$(find "$TOPIC_DIR" -maxdepth 1 -name '*.md' \
-    ! -name 'README.md' ! -name 'research-progress.md' 2>/dev/null | sort)
+    ! -name 'README.md' ! -name '*-delta.md' ! -name '*-build-spec.md' 2>/dev/null)
   if [ -z "$docs" ]; then
     printf 'No reports rendered yet.\n\n'
   else
-    printf '| File | Description |\n'
-    printf '| --- | --- |\n'
+    printf '| Type | Title |\n| --- | --- |\n'
+    rows=""
     while IFS= read -r f; do
       [ -n "$f" ] || continue
       base=$(basename "$f")
-      printf '| [`%s`](%s) | %s |\n' "$base" "$base" "$(report_desc "$base")"
+      meta=$(report_type "$base"); rank=${meta%%$'\t'*}; label=${meta#*$'\t'}
+      title=$(file_title "$f")
+      rows+=$(printf '%s\t| %s | [%s](%s) |' "$rank" "$label" "$title" "$base")$'\n'
     done <<< "$docs"
+    printf '%s' "$rows" | sort -t"$(printf '\t')" -k1,1n -k2 | cut -f2-
     printf '\n'
   fi
 
@@ -257,12 +336,13 @@ build_readme() {
   assets=$(find "$TOPIC_DIR/_assets" "$TOPIC_DIR/slides" -maxdepth 1 -type f 2>/dev/null | sort)
   if [ -n "$assets" ]; then
     printf '## Artifacts\n\n'
-    printf '| File | Type |\n'
-    printf '| --- | --- |\n'
+    printf '| File | Type | Size |\n'
+    printf '| --- | --- | --- |\n'
     while IFS= read -r f; do
       [ -n "$f" ] || continue
       local rel; rel="${f#"$TOPIC_DIR"/}"
-      printf '| [`%s`](%s) | %s |\n' "$(basename "$f")" "$rel" "$(artifact_type "$(basename "$f")")"
+      printf '| [`%s`](%s) | %s | %s |\n' \
+        "$(basename "$f")" "$rel" "$(artifact_type "$(basename "$f")")" "$(human_size "$f")"
     done <<< "$assets"
     printf '\n'
   fi
@@ -306,12 +386,15 @@ run_check() {
     fi
   fi
 
-  # Every linked file in a table must exist on disk (relative to the topic dir).
+  # Every local link/image target must exist on disk (relative to the topic dir).
+  # Covers the Type->Title Reports table, the Artifacts table, the hero image, and the
+  # falsification-report link in the header. External (http/mailto) and anchor links skip.
   local link
   while IFS= read -r link; do
     [ -n "$link" ] || continue
+    case "$link" in http://*|https://*|"#"*|mailto:*) continue ;; esac
     [ -f "$TOPIC_DIR/$link" ] || { echo "FAIL: dangling link: $link" >&2; errs=$((errs+1)); }
-  done < <(grep -oE '\| \[`[^`]+`\]\([^)]+\)' "$OUT" | grep -oE '\]\([^)]+\)' | sed -E 's/^\]\(//; s/\)$//')
+  done < <(grep -oE '\]\([^)]+\)' "$OUT" | sed -E 's/^\]\(//; s/\)$//')
 
   if [ "$errs" -ne 0 ]; then
     echo "build-topic-readme: $errs validation error(s) for $TOPIC" >&2

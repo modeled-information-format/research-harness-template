@@ -1,0 +1,82 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-enterprise-kg-market-growth",
+  "@type": "Concept",
+  "citations": [
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "article",
+      "title": "GraphRAG: Unlocking LLM Discovery on Narrative Private Data — Microsoft Research Blog",
+      "url": "https://www.microsoft.com/en-us/research/blog/graphrag-unlocking-llm-discovery-on-narrative-private-data/"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "article",
+      "title": "Gartner on Context Graphs: Trends, Capabilities, Setup in 2026 — Atlan",
+      "url": "https://atlan.com/know/gartner-context-graphs/"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "article",
+      "title": "Enterprise Knowledge Graph Market Industry Report 2033 — Grand View Research",
+      "url": "https://www.grandviewresearch.com/industry-analysis/enterprise-knowledge-graph-market-report"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "article",
+      "title": "Knowledge Graph Market Worth $9.88 Billion by 2032 — MarketsandMarkets",
+      "url": "https://www.marketsandmarkets.com/PressReleases/knowledge-graph.asp"
+    }
+  ],
+  "conceptType": "semantic",
+  "content": "The enterprise knowledge graph market reached a decisive inflection point in 2024-2025. Market research firms project different but uniformly strong growth rates: Technavio estimates 33.4% CAGR from 2025-2030 (adding $3.92 billion); Grand View Research estimates $2.89 billion in 2025 growing to $13.37 billion by 2033 at 21.3% CAGR; MarketsandMarkets projects $9.88 billion by 2032 at 31.6% CAGR. The property graphs segment led with 65.3% revenue share in 2025. The 'AI-ready enterprise knowledge graph' sub-segment, valued at $890 million in 2025, is the fastest-growing slice.\n\nThree signal events mark the 2024-2025 maturation. First, Microsoft open-sourced GraphRAG in February 2024, demonstrating that LLM-generated knowledge graphs enable qualitatively different enterprise reasoning (global synthesis across entire document corpora, not just local semantic similarity). LinkedIn's GraphRAG deployment reduced ticket resolution time from 40 hours to 15 hours — a 63% improvement. Microsoft's LazyGraphRAG (November 2024) reduced indexing costs by 10-90%, removing the primary production deployment barrier. Second, Google Cloud Spanner Graph reached general availability in January 2025, integrating graph analysis into operational relational data for the first time in a major cloud platform. Third, enterprise vendors Workday and ServiceNow both integrated RAG into their platforms.\n\nGartner's 2025-2026 analysis is particularly directional. The firm placed knowledge graphs on the 'Slope of Enlightenment' in its 2025 AI Hype Cycle, forecasting that 50%+ of AI agent systems will use context graphs by 2028. Gartner defines 'context graphs' as an evolution of knowledge graphs purpose-built for agentic AI grounding, adding decision traces, temporal validity, and policy layers to the traditional semantic foundation. The firm predicts context engineering improvements will enhance agentic AI accuracy by at least 30% and that context engineering features will be built into 80% of software tools for AI application development by 2028.\n\nFor the OKF+MIF question, enterprise KG adoption trajectory is a structural tailwind. The enterprise market's move toward knowledge-graph-grounded agents aligns with exactly the use case OKF+MIF targets. However, most enterprise KG deployments run on specialized graph databases (Neo4j, Amazon Neptune, Google Spanner Graph) rather than on markdown-in-git formats — OKF+MIF competes with, and should position itself as complementary to, these infrastructure-heavy deployments. The opportunity is that OKF+MIF provides the 'human-readable, git-distributable layer' on top of or alongside these systems, not a replacement for them.",
+  "created": "2026-06-28T00:00:00Z",
+  "extensions": {
+    "harness": {
+      "dimension": "trajectory",
+      "verification": {
+        "verdict": "survived",
+        "verdict_basis": "Gartner's '50%+ of AI agent systems will use context graphs by 2028' and Google Spanner Graph GA (Jan 30 2025) are confirmed by independent sources; GraphRAG (Feb 2024) and LinkedIn's 63% gain corroborated. CAGR dispersion across Technavio/Grand View/MarketsandMarkets is normal market-research variance, not contradiction. 1 adversarial query.",
+        "disconfirming_evidence": [],
+        "attempted_at": "2026-06-28T12:20:00Z"
+      },
+      "gathered_under": "gv-722bb7b64725"
+    }
+  },
+  "provenance": {
+    "@type": "Provenance",
+    "confidence": 0.88,
+    "sourceType": "agent_inferred",
+    "trustLevel": "high_confidence"
+  },
+  "summary": "The enterprise knowledge graph market reached production maturity in 2024-2025 with 21-36% CAGR projections and Gartner predicting 50%+ of AI agent systems will use context graphs by 2028; Microsoft's open-source GraphRAG (2024), Google Cloud Spanner Graph (GA January 2025), and LinkedIn's 63% efficiency gains signal enterprise KG entering mainstream AI infrastructure.",
+  "tags": [
+    "enterprise",
+    "knowledge-graph",
+    "market-growth",
+    "graphrag",
+    "gartner",
+    "trajectory",
+    "context-graphs",
+    "microsoft",
+    "google-cloud"
+  ],
+  "title": "Enterprise Knowledge Graph Market: 21-36% CAGR, Gartner Predicts 50%+ Agent Adoption by 2028",
+  "ontology": {
+    "id": "trend-analysis"
+  },
+  "entity": {
+    "name": "Enterprise knowledge graph market growth",
+    "entity_type": "trend",
+    "direction": "increasing"
+  },
+  "namespace": "harness/example-okf-mif-knowledge-spine"
+}

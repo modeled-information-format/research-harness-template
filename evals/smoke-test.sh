@@ -113,37 +113,48 @@ fi
 # skeleton.
 RM="$TMP/README.md"
 SF="reports/_meta/sample-session/findings"
-bash scripts/build-topic-readme.sh example-topic --findings "$SF" --out "$RM" >/dev/null 2>&1
-if bash scripts/build-topic-readme.sh example-topic --findings "$SF" --out "$RM" --check >/dev/null 2>&1; then
-  note "FAIL: gate accepted the un-synthesized skeleton"; fail=1
+# build-topic-readme requires a REGISTERED topic; use the manifest's first topic so this
+# works in the template (the archived example) and in a clone (its seeded topic) alike.
+# Derive it fail-loud: a jq error or an empty registry must NOT silently pass an empty
+# topic id downstream (which would make the gate checks below pass/fail for the wrong
+# reason) — surface it as a failure and skip the phase instead.
+RTOPIC=$(jq -r '.topics[0].id // empty' harness.config.json 2>/dev/null || true)
+if [ -z "$RTOPIC" ]; then
+  note "FAIL: no registered topic in harness.config.json — cannot exercise the README reconcile gate"
+  fail=1
 else
-  note "README gate refuses the un-synthesized skeleton (synthesis enforced)"
-fi
+  bash scripts/build-topic-readme.sh "$RTOPIC" --findings "$SF" --out "$RM" >/dev/null 2>&1
+  if bash scripts/build-topic-readme.sh "$RTOPIC" --findings "$SF" --out "$RM" --check >/dev/null 2>&1; then
+    note "FAIL: gate accepted the un-synthesized skeleton"; fail=1
+  else
+    note "README gate refuses the un-synthesized skeleton (synthesis enforced)"
+  fi
 
-# Simulate synthesis: replace the Key Findings draft with a cross-finding bullet.
-awk '
-  /^## Key Findings$/ { print; print ""; print "- Synthesized cross-finding insight with specifics."; print ""; skip=1; next }
-  skip && /^## / { skip=0; print; next }
-  skip { next }
-  { print }
-' "$RM" > "$RM.tmp" && mv "$RM.tmp" "$RM"
-if bash scripts/build-topic-readme.sh example-topic --findings "$SF" --out "$RM" --check >/dev/null 2>&1; then
-  note "README gate passes once Key Findings are synthesized"
-else
-  note "FAIL: gate rejected a synthesized README"; fail=1
-fi
+  # Simulate synthesis: replace the Key Findings draft with a cross-finding bullet.
+  awk '
+    /^## Key Findings$/ { print; print ""; print "- Synthesized cross-finding insight with specifics."; print ""; skip=1; next }
+    skip && /^## / { skip=0; print; next }
+    skip { next }
+    { print }
+  ' "$RM" > "$RM.tmp" && mv "$RM.tmp" "$RM"
+  if bash scripts/build-topic-readme.sh "$RTOPIC" --findings "$SF" --out "$RM" --check >/dev/null 2>&1; then
+    note "README gate passes once Key Findings are synthesized"
+  else
+    note "FAIL: gate rejected a synthesized README"; fail=1
+  fi
 
-# The 'created' trigger: a zero-findings topic yields a valid README (synthesis
-# gate is exempt — there is nothing to synthesize) and passes --check.
-mkdir -p "$TMP/empty"
-if bash scripts/build-topic-readme.sh example-topic --findings "$TMP/empty" \
-      --out "$TMP/empty-README.md" >/dev/null 2>&1 \
-   && grep -qF '**Findings:** 0' "$TMP/empty-README.md" \
-   && bash scripts/build-topic-readme.sh example-topic --findings "$TMP/empty" \
-      --out "$TMP/empty-README.md" --check >/dev/null 2>&1; then
-  note "created-but-unstarted topic gets a valid zero-findings README (gate passes)"
-else
-  note "FAIL: zero-findings README not produced/validated"; fail=1
+  # The 'created' trigger: a zero-findings topic yields a valid README (synthesis
+  # gate is exempt — there is nothing to synthesize) and passes --check.
+  mkdir -p "$TMP/empty"
+  if bash scripts/build-topic-readme.sh "$RTOPIC" --findings "$TMP/empty" \
+        --out "$TMP/empty-README.md" >/dev/null 2>&1 \
+     && grep -qF '**Findings:** 0' "$TMP/empty-README.md" \
+     && bash scripts/build-topic-readme.sh "$RTOPIC" --findings "$TMP/empty" \
+        --out "$TMP/empty-README.md" --check >/dev/null 2>&1; then
+    note "created-but-unstarted topic gets a valid zero-findings README (gate passes)"
+  else
+    note "FAIL: zero-findings README not produced/validated"; fail=1
+  fi
 fi
 
 # Phase 8 — living-corpus goal evolution (SPEC §11): a goal version is content-

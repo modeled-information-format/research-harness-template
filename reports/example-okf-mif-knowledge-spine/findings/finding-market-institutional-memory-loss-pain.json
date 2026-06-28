@@ -1,0 +1,83 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-institutional-memory-loss-pain",
+  "@type": "Concept",
+  "citations": [
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "website",
+      "title": "The Cost and Consequence of Institutional Memory Drain (Inc. Magazine)",
+      "url": "https://www.inc.com/bethmaser/the-cost-and-consequence-of-institutional-memory-drain/91178504"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "website",
+      "title": "Cost of Organizational Knowledge Loss and Countermeasures (Iterators HQ)",
+      "url": "https://www.iteratorshq.com/blog/cost-of-organizational-knowledge-loss-and-countermeasures/"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "website",
+      "title": "Knowledge Management Statistics and Trends in 2025 - Worker productivity costs (CAKE)",
+      "url": "https://cake.com/blog/knowledge-management-statistics/"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "website",
+      "title": "Why Bad Knowledge Management Is Killing Your Profits (WikiTeq)",
+      "url": "https://wikiteq.com/post/hidden-costs-poor-knowledge-management"
+    }
+  ],
+  "conceptType": "semantic",
+  "content": "The financial case for enterprise knowledge management infrastructure is well-quantified. These figures ground the demand for a structured knowledge spine that prevents knowledge loss through provenance, temporal versioning, and persistent structured relationships.\n\nQUANTIFIED COSTS OF INSTITUTIONAL KNOWLEDGE LOSS\n- Institutional knowledge loss caused by rapid organizational change costs Fortune 500 companies US$31.5 billion per year.\n- The average U.S. enterprise-size company loses $4.5 million in productivity per year from failing to share and preserve information.\n- Replacement costs when institutional memory evaporates climb to 30-200% of an employee's annual salary. For a departing executive earning $150,000, that represents $45,000-$300,000 per vacancy.\n- 42% of institutional knowledge resides solely with individual employees — their departures leave organizations unable to handle nearly half of what those employees did.\n- Research from Forrester indicates that poorly managed knowledge can slash productivity by up to 35%, translating to millions in squandered resources for mid-to-large firms.\n- 48% of executives acknowledge employees take valuable procedural knowledge on departure.\n\nWHY EXISTING TOOLS FAIL THIS PAIN\nThe core failure of existing knowledge management tools — wikis, document repositories, even enterprise knowledge graphs — is that they capture knowledge without sufficient provenance to make it trustworthy and traceable over time. Consider the specific failure modes:\n\n1. Temporal decay: A wiki article written in 2021 by an employee who left in 2023 has no timestamp for when its claims were true, no link to the evidence that supported them, and no way for a reader (or an AI agent) to assess whether it is still accurate. OKF's required `timestamp` field and MIF's temporal versioning and provenance block address this directly.\n\n2. Attribution and accountability: When institutional knowledge is stored as anonymous documents, it cannot be attributed, verified, or updated by successors. MIF's `sourceType` (user_explicit, agent_inferred), `confidence` score, and agent identification fields provide the attribution layer missing from document stores.\n\n3. Relationship decay: The links between knowledge elements (this policy depends on that regulation, this decision supersedes that prior approach) are stored in human prose rather than typed, machine-readable relationships. When an employee leaves, the informal knowledge of how things connect is lost. MIF's typed `relationships[]` (supports, derived-from, supersedes, depends-on) encode these connections formally.\n\nBUYER INVESTMENT SIGNALS\nThe financial quantification of institutional memory loss is already driving enterprise KM investment:\n- 83% of decision-makers plan increased data integration investment.\n- The enterprise search market reached $6.83B in 2025 (CAGR 10.3%).\n- Knowledge workers lose an average of 209 hours per year to duplicative work caused by information silos (corresponding to a measurable productivity cost at enterprise scale).\n- 80% of managers experience pain points when pulling data for decisions; 43% describe data as 'difficult to assess and time-consuming.'\n\nSTRUCTURED KNOWLEDGE SPINE AS SOLUTION\nA knowledge spine that combines OKF's git-distributable packaging (enabling organizational knowledge to be managed like code, with version history, authorship, and reviewable diffs) and MIF's provenance layer (tracking when knowledge was produced, by whom, on what evidence, with what confidence) directly addresses the institutional memory failure modes listed above. The temporal versioning inherent in git ensures that knowledge is not just stored but preserved with its full change history — addressing the 'when was this true?' question that document stores cannot answer.",
+  "created": "2026-06-28T00:00:00Z",
+  "extensions": {
+    "harness": {
+      "dimension": "market",
+      "verification": {
+        "verdict": "survived",
+        "verdict_basis": "The headline figures (IDC's $31.5B/year Fortune 500 knowledge-sharing loss and the 42% individually-held-knowledge stat) are widely corroborated across independent sources; no source contradicted the finding's quantified institutional-memory-loss claims.",
+        "disconfirming_evidence": [],
+        "attempted_at": "2026-06-28T11:42:12Z"
+      },
+      "gathered_under": "gv-722bb7b64725"
+    }
+  },
+  "provenance": {
+    "@type": "Provenance",
+    "confidence": 0.85,
+    "sourceType": "agent_inferred",
+    "trustLevel": "high_confidence"
+  },
+  "relationships": [
+    {
+      "strength": 0.9,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-buyer-segments-pain-points",
+      "type": "supports"
+    },
+    {
+      "strength": 0.7,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-km-software-market-sizing",
+      "type": "relates-to"
+    }
+  ],
+  "summary": "Institutional knowledge loss costs Fortune 500 companies $31.5B/year; the average U.S. enterprise loses $4.5M/year in productivity from information silos; 42% of institutional knowledge resides solely with individual employees. These quantified costs represent the primary financial justification for enterprise knowledge management investment, and the provenance and temporal versioning capabilities of a structured knowledge spine directly address the most severe failure modes.",
+  "tags": [
+    "institutional-memory",
+    "knowledge-loss",
+    "enterprise",
+    "provenance",
+    "temporal-versioning",
+    "market"
+  ],
+  "title": "Quantified Institutional Memory Loss as a Primary Driver for Enterprise Knowledge Investment",
+  "namespace": "harness/example-okf-mif-knowledge-spine"
+}

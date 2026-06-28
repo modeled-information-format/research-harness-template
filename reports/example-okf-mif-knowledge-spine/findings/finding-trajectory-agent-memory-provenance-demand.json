@@ -1,0 +1,73 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-agent-memory-provenance-demand",
+  "@type": "Concept",
+  "citations": [
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "article",
+      "title": "State of AI Agent Memory 2026: Benchmarks, Architectures & Production Gaps — Mem0",
+      "url": "https://mem0.ai/blog/state-of-ai-agent-memory-2026"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "article",
+      "title": "Governing Evolving Memory in LLM Agents: Risks, Mechanisms, and the SSGM Framework — arXiv",
+      "url": "https://arxiv.org/html/2603.11768v1"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "article",
+      "title": "AI Agent Memory Architectures: From Context Windows to Persistent Knowledge — Zylos Research",
+      "url": "https://zylos.ai/research/2026-04-05-ai-agent-memory-architectures-persistent-knowledge/"
+    }
+  ],
+  "conceptType": "semantic",
+  "content": "In 2026, persistent memory has become a first-class architectural component for AI agents, with its own benchmark suite (LoCoMo, LongMemEval, BEAM), dedicated research literature, and measurable performance comparisons. Mem0, the most widely deployed semantic memory layer (48,000+ GitHub stars, $24M in funding), demonstrates the current architecture's capabilities and limits: it extracts named entities and relationships from conversations via LLM pipeline, stores them as nodes and edges in a graph database, cross-links to vector embeddings for fuzzy search, and achieves 92.5 on LoCoMo and 94.4 on LongMemEval.\n\nBut two structural limitations are documented as the field's hardest open problems. First, memory staleness: high-relevance memories can become confidently wrong when user circumstances change. Decay-based approaches fail to address this because relevance and recency are orthogonal — a fact about a user's address from two years ago can be highly relevant today yet completely wrong. Temporal abstraction degrades significantly at scale: 64% accuracy at 1M tokens, 49% at 10M tokens. The biggest performance gains in 2025-2026 benchmarks were in temporal reasoning (+29.6 points) and multi-hop queries (+23.1 points), confirming these are the active improvement frontier. Second, actor attribution: multi-agent systems require tracking which agent or user contributed each memory fact to prevent ambiguity about source and authority.\n\nThe MemClaw framework (2025) addresses governed shared memory in multi-agent environments, explicitly requiring 'scoped access, temporal correctness, provenance, and policy-controlled propagation.' Research on the Stability and Safety Governed Memory (SSGM) framework catalogs provenance tracking as a core safety requirement, not an optional feature. LongMemEval, the benchmark emphasizing knowledge updates and temporal reasoning, identified the multi-session temporal coherence problem as the dominant unsolved challenge.\n\nMIF's design directly maps to these open problems. The provenance block (PROV-O-grounded: sourceType, confidence, trustLevel, agent attribution) addresses actor attribution. The 'temporal validity' concern — when did this fact become true, when did it stop being true, and under what condition would it need re-verification — is the gap MIF's temporal fields and versioning model target. OKF's 'timestamp' field records last meaningful modification but carries no structured provenance, no confidence score, and no validity window. The demand for provenance-aware, temporally valid memory is not speculative — it is the active, documented research frontier for the entire AI agent memory ecosystem as of mid-2026.",
+  "created": "2026-06-28T00:00:00Z",
+  "extensions": {
+    "harness": {
+      "dimension": "trajectory",
+      "verification": {
+        "verdict": "survived",
+        "verdict_basis": "Independent 2026 sources confirm temporal reasoning and memory staleness are the open frontier (production accuracy ~49% after 30 days at high staleness; valid_from/valid_to schemas distinguish memory systems; provenance treated as core), and Mem0's 92.5 LoCoMo / 94.4 LongMemEval and $24M funding. 2 adversarial queries; no disconfirmation.",
+        "disconfirming_evidence": [],
+        "attempted_at": "2026-06-28T12:20:00Z"
+      },
+      "gathered_under": "gv-722bb7b64725"
+    }
+  },
+  "provenance": {
+    "@type": "Provenance",
+    "confidence": 0.9,
+    "sourceType": "agent_inferred",
+    "trustLevel": "high_confidence"
+  },
+  "relationships": [
+    {
+      "strength": 0.8,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-graphrag-hybrid-dominance",
+      "type": "supports"
+    }
+  ],
+  "summary": "The 2026 state of AI agent memory shows that memory staleness and provenance tracking (who asserted what, and when did it change) are the two hardest unsolved architectural problems; systems achieving 92.5/94.4 on recall benchmarks still fail at temporal reasoning at scale, creating direct demand for memory formats with first-class temporal validity and actor attribution — the core MIF provenance model.",
+  "tags": [
+    "ai-agent",
+    "memory",
+    "provenance",
+    "temporal-validity",
+    "trajectory",
+    "demand",
+    "mif",
+    "staleness",
+    "actor-attribution"
+  ],
+  "title": "AI Agent Memory: Provenance and Temporal Validity are the Hard Open Problems in 2026",
+  "namespace": "harness/example-okf-mif-knowledge-spine"
+}

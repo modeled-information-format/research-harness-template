@@ -1,0 +1,81 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-semantic-web-failure-lessons",
+  "@type": "Concept",
+  "citations": [
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "article",
+      "title": "The Semantic Web: 20 Years and a Handful of Enterprise Knowledge Graphs Later — Ontotext",
+      "url": "https://www.ontotext.com/blog/the-semantic-web-20-years-later/"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "article",
+      "title": "Semantic Web: Past, Present, and Future — arXiv 2412.17159",
+      "url": "https://arxiv.org/pdf/2412.17159"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "article",
+      "title": "Semantic Web and Software Agents — A Forgotten Wave of Artificial Intelligence? arXiv 2503.20793",
+      "url": "https://arxiv.org/pdf/2503.20793"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "Lessons Learned from the Combined Development of OWL and SHACL — ACM K-CAP 2025",
+      "url": "https://dl.acm.org/doi/full/10.1145/3731443.3771340"
+    }
+  ],
+  "conceptType": "semantic",
+  "content": "The Semantic Web — Tim Berners-Lee's 1999 vision of machine-readable web data — failed to achieve its mass-adoption goal after more than two decades. A 2024 review of the 20-year arc identifies the core failure modes: (1) complexity and authoring cost — RDF, OWL, and SPARQL require significant technical expertise and infrastructure investment; (2) misaligned incentives — individual web publishers lacked motivation to annotate content without immediate returns; (3) logic-first priority — the vision prioritized formal completeness over developer experience, treating usability as an implementation detail; (4) infrastructure chicken-and-egg — Semantic Web agents needed pre-existing machine-readable RDF data to function, but that data only existed if agents were already deployed.\n\nRDF's atomic triple structure complicates n-ary relationships, requiring reification workarounds. OWL reasoners faced scalability limits and many are no longer actively maintained. After 2010, mainstream AI shifted to machine learning and the Semantic Web receded. The OWL and SHACL combined development (2025 retrospective) documented that even within the Semantic Web community, combining two standards that make different closed-world/open-world assumptions created years of friction.\n\nThe exceptions prove the rule. Schema.org achieved massive adoption (80+ million web pages) by being pragmatic: minimal vocabulary, immediate search-engine incentives, no logic layer. Linked Open Data (LOD, 1,301+ datasets) succeeded within specific communities with genuine integration needs. Both succeeded by solving discrete, measurable problems rather than the comprehensive vision.\n\nFor OKF+MIF, the Semantic Web failure is both a headwind and a map. The headwind: practitioners burned by RDF/OWL adoption costs carry deep skepticism toward any new knowledge format that requires ontological modeling. The map: the strategies that worked (Schema.org, LOD) confirm that layered, opt-in complexity beats mandatory completeness. OKF's 'minimally opinionated' design directly applies the Schema.org lesson — start with one required field (type), let everything else be producer-defined. MIF's three conformance levels (Level 1: four fields; Level 3: full provenance and citations) apply the same ladder: adopt incrementally, get value at each step. The risk is that MIF's provenance block (PROV-O, JSON-LD, ontologies) is perceived as 'Semantic Web complexity repackaged' by practitioners who already rejected RDF. Making the full conformance ladder visible and the entry cost genuinely low is the critical adoption challenge.",
+  "created": "2026-06-28T00:00:00Z",
+  "extensions": {
+    "harness": {
+      "dimension": "trajectory",
+      "verification": {
+        "verdict": "survived",
+        "verdict_basis": "Multiple independent sources confirm the Semantic Web's mass-adoption failure was driven by OWL/RDF complexity, formal-logic-first priority, open-world vs closed-world mismatch, and misaligned incentives, while schema.org succeeded via lightweight pragmatic minimalism. 1 adversarial 'why failed' query; the lesson is corroborated, not contradicted.",
+        "disconfirming_evidence": [],
+        "attempted_at": "2026-06-28T12:20:00Z"
+      },
+      "gathered_under": "gv-722bb7b64725"
+    }
+  },
+  "provenance": {
+    "@type": "Provenance",
+    "confidence": 0.9,
+    "sourceType": "agent_inferred",
+    "trustLevel": "high_confidence"
+  },
+  "relationships": [
+    {
+      "strength": 0.85,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-rdf-owl-semantic-alternative",
+      "type": "relates-to"
+    }
+  ],
+  "summary": "The Semantic Web failed to achieve mass adoption due to complexity (RDF, OWL, SPARQL toolchain), misaligned developer incentives, and logical completeness prioritized over practical usability — but Schema.org succeeded by being minimal and immediately useful; the lesson for OKF+MIF is that specificity and pragmatism beat completeness, and any semantic layer that demands a paradigm shift will stall.",
+  "tags": [
+    "semantic-web",
+    "rdf",
+    "owl",
+    "adoption-failure",
+    "lessons",
+    "trajectory",
+    "schema-org",
+    "headwind",
+    "complexity"
+  ],
+  "title": "The Semantic Web's Adoption Failure: Headwind and Cautionary Map for OKF+MIF",
+  "namespace": "harness/example-okf-mif-knowledge-spine"
+}

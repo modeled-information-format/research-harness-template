@@ -1,0 +1,81 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-graphrag-hybrid-dominance",
+  "@type": "Concept",
+  "citations": [
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "Project GraphRAG — Microsoft Research",
+      "url": "https://www.microsoft.com/en-us/research/project/graphrag/"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "article",
+      "title": "Graph RAG Guide 2025: Architecture, Implementation & ROI — Salfati Group",
+      "url": "https://salfati.group/topics/graph-rag"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "article",
+      "title": "Knowledge Graph vs Vector Database for RAG: Which Is Best? — Meilisearch",
+      "url": "https://www.meilisearch.com/blog/knowledge-graph-vs-vector-database-for-rag"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "article",
+      "title": "From LLMs to Knowledge Graphs: Building Production-Ready Graph Systems in 2025 — Medium",
+      "url": "https://medium.com/@claudiubranzan/from-llms-to-knowledge-graphs-building-production-ready-graph-systems-in-2025-2b4aff1ec99a"
+    }
+  ],
+  "conceptType": "semantic",
+  "content": "The retrieval-augmented generation (RAG) architectural trajectory underwent a fundamental shift in 2024-2025 that directly shapes demand for structured knowledge formats. Pure vector-based RAG — semantic similarity search over text chunk embeddings — proved inadequate for the most valuable enterprise use cases. Specific failure modes: zero accuracy (0%) on schema-bound queries requiring reasoning over entire datasets; inability to synthesize information across thousands of disconnected documents; failure to preserve hierarchical or conceptual dependencies; and 'semantic gap' challenges where term-level similarities mislead retrieval for concept-level queries. Industry benchmarking found that optimized GraphRAG implementations achieve 90%+ accuracy on queries where vector-only approaches score 0%, and that an LLM grounded with a knowledge graph achieves 56.2% accuracy versus 16.7% without (a 3.4x improvement).\n\nMicrosoft Research's GraphRAG (open-sourced February 2024) pioneered the 'community detection' paradigm: LLMs generate knowledge graphs from document corpora, then graph community structures enable global summarization that no vector approach can replicate. The GitHub repository (microsoft/graphrag) reached substantial star counts within months of release. LazyGraphRAG (November 2024) addressed the remaining production barrier — indexing cost — by deferring community summarization to query time, reducing costs by 10-90% while maintaining competitive accuracy. Enterprise adoption followed: Workday and ServiceNow integrated KG-grounded RAG into their enterprise platforms, and LinkedIn's production deployment achieved 63% reduction in ticket resolution time.\n\nBy mid-2025, the practitioner consensus had converged: 'the future of enterprise search is not Vector or Graph, but Vector plus Graph.' Hybrid search with Reciprocal Rank Fusion (RRF) typically shows 15-30% better retrieval accuracy than pure vector search. The dominant 2025-2026 production pattern is a three-tier query router: vector search for semantic similarity, graph traversal for relational reasoning, and SQL for structured fact retrieval — with an LLM orchestrating across all three. Organizations implementing hybrid architectures report 300-320% ROI and measurable business impact across finance, healthcare, and manufacturing.\n\nFor the OKF+MIF question, this shift is the strongest structural tailwind in the finding set. The demand for typed relationships, formally defined entity structures, and provenance tracking is driven by the failure of untyped, schema-less storage to support the knowledge-reasoning tasks that LLMs are being deployed to solve. OKF's untyped links and minimal frontmatter are a packaging layer — they reduce authoring friction. MIF's typed relationships, ontologies, and provenance objects are the semantic substrate that enables the graph traversal, entity linking, and provenance-aware retrieval that hybrid architectures require. The two layers are complementary, not competing.",
+  "created": "2026-06-28T00:00:00Z",
+  "extensions": {
+    "harness": {
+      "dimension": "trajectory",
+      "verification": {
+        "verdict": "survived",
+        "verdict_basis": "LinkedIn's GraphRAG 40h-to-15h (63%) result and ~3x LLM accuracy improvement from knowledge-graph grounding (Data.world, 3x across 43 questions) are confirmed independently; vector-only failure on global/multi-hop synthesis is uncontested. 1 adversarial query; the finding's 3.4x is within the corroborated 3x range, no narrowing source.",
+        "disconfirming_evidence": [],
+        "attempted_at": "2026-06-28T12:20:00Z"
+      },
+      "gathered_under": "gv-722bb7b64725"
+    }
+  },
+  "provenance": {
+    "@type": "Provenance",
+    "confidence": 0.92,
+    "sourceType": "agent_inferred",
+    "trustLevel": "high_confidence"
+  },
+  "relationships": [
+    {
+      "strength": 0.88,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-enterprise-kg-market-growth",
+      "type": "supports"
+    }
+  ],
+  "summary": "Pure vector-based RAG demonstrably fails on multi-hop reasoning and global synthesis; hybrid graph+vector systems achieve 3.4x accuracy improvement and 90%+ accuracy on schema-bound queries; the 2024-2025 'Vector plus Graph' convergence establishes the dominant production architecture for LLM knowledge systems and creates explicit demand for structured, typed knowledge representations.",
+  "tags": [
+    "graphrag",
+    "rag",
+    "vector-search",
+    "knowledge-graph",
+    "hybrid-architecture",
+    "trajectory",
+    "microsoft",
+    "production",
+    "accuracy"
+  ],
+  "title": "Hybrid Graph+Vector Architectures Displacing Pure RAG: 3.4x Accuracy Gains Signal Structural Shift",
+  "namespace": "harness/example-okf-mif-knowledge-spine"
+}

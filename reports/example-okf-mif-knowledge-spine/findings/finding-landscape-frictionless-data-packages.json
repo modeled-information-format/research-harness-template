@@ -1,0 +1,81 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-frictionless-data-packages",
+  "@type": "Concept",
+  "citations": [
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "Data Package (v1) Specification - Frictionless Data",
+      "url": "https://specs.frictionlessdata.io/data-package/"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "Frictionless Data Specifications - Official Home",
+      "url": "https://specs.frictionlessdata.io/"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "article",
+      "title": "Frictionless Data and FAIR Research Principles - Open Knowledge Foundation Blog",
+      "url": "https://blog.okfn.org/2018/08/14/frictionless-data-and-fair-research-principles/"
+    }
+  ],
+  "conceptType": "semantic",
+  "content": "Frictionless Data is a set of specifications and software libraries published by the Open Knowledge Foundation (OKFN) — a distinct organization from Google Cloud's Open Knowledge Format (OKF). The core specification, Data Package, describes a simple container format for packaging collections of data (typically tabular) with a JSON descriptor file named `datapackage.json` at the top level of the directory. The June 2024 update (v2, with NLnet support) added extensibility features. Community discussions in November 2025 addressed Zenodo integration and a 2026 reactivation plan.\n\nA Data Package descriptor supports: `resources` (required, the packaged data files), `name`, `id`, `licenses`, `title`, `description`, `version`, `sources` (raw source lineage), `contributors` (with role specifications: author, publisher, maintainer, wrangler), `keywords`, and `created`. The `sources` array provides basic data lineage — tracking where raw data came from — and `contributors` records who was involved. This is shallow provenance: it covers authorship and original sources but provides no confidence scoring, trustLevel, or structured citation chains.\n\nFrictionless Data explicitly lacks several features required for a knowledge spine: (1) No typed relationships between datasets or concepts — the spec has no mechanism to express that dataset A 'derives-from' or 'contradicts' dataset B. (2) No formal ontology — the community notes that provenance features 'are of limited use in some disciplines' while others (social sciences, epidemiology, clinical research) 'rely heavily on them', and those disciplines cannot adopt Frictionless meaningfully until the standard supports such features. (3) No concept model — Data Packages describe data files, not knowledge findings; there is no `conceptType`, `summary`, or finding lifecycle. (4) No temporal versioning model beyond a single `created` timestamp.\n\nFrictionless Data occupies the data publishing layer — it solves the 'how do I package a CSV with its schema and metadata for sharing' problem and advances FAIR data publishing. It is a compelling analogy to OKF in its minimalism and JSON-descriptor-plus-files structure, but it targets datasets rather than curated knowledge concepts, and its provenance layer is substantially thinner than MIF's W3C-PROV-compatible provenance objects. A FAIR knowledge spine needs MIF's citation-backed finding model layered over OKF's packaging approach, not Frictionless Data's tabular dataset descriptor.",
+  "created": "2026-06-28T00:00:00Z",
+  "extensions": {
+    "harness": {
+      "dimension": "landscape",
+      "verification": {
+        "verdict": "survived",
+        "verdict_basis": "Adversarial search corroborated Frictionless Data as an Open Knowledge Foundation (OKFN) project distinct from Google's OKF, with a Data Package containerization format whose provenance is shallow source/contributor linking; no source contradicted the finding's characterization.",
+        "disconfirming_evidence": [],
+        "attempted_at": "2026-06-28T11:42:12Z"
+      },
+      "gathered_under": "gv-722bb7b64725"
+    }
+  },
+  "provenance": {
+    "@type": "Provenance",
+    "confidence": 0.88,
+    "sourceType": "agent_inferred",
+    "trustLevel": "high_confidence"
+  },
+  "relationships": [
+    {
+      "strength": 0.75,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-okf-google-open-knowledge-format",
+      "type": "relates-to"
+    }
+  ],
+  "summary": "Frictionless Data, published by the Open Knowledge Foundation (OKFN), provides a lightweight JSON descriptor (`datapackage.json`) for packaging tabular data with minimal provenance (sources, contributors), but omits typed relationships, formal ontology, and citation-backed finding lifecycle — solving dataset distribution rather than knowledge spine management.",
+  "tags": [
+    "frictionless-data",
+    "okfn",
+    "open-knowledge-foundation",
+    "data-package",
+    "dataset-packaging",
+    "fair-data",
+    "landscape",
+    "prior-art",
+    "data-distribution",
+    "json-descriptor"
+  ],
+  "title": "Frictionless Data Packages (OKFN): Accessible Dataset Packaging Without Knowledge Spine Semantics",
+  "ontology": {
+    "id": "mif-generic"
+  },
+  "entity": {
+    "name": "Frictionless Data Package (OKFN)",
+    "entity_type": "technology"
+  },
+  "namespace": "harness/example-okf-mif-knowledge-spine"
+}

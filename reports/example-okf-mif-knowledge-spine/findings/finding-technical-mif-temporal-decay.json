@@ -1,0 +1,79 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-mif-temporal-decay",
+  "@type": "Concept",
+  "citations": [
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "MIF — Bi-temporal tracking, decay models — GitHub zircote/MIF",
+      "url": "https://github.com/zircote/MIF"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "MIF Schema Reference — mif-spec.dev",
+      "url": "https://mif-spec.dev/"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "article",
+      "title": "Bi-temporal memory for AI coding agents — git-pinned context that survives context compaction",
+      "url": "https://sverklo.com/blog/bi-temporal-memory-for-ai-agents/"
+    }
+  ],
+  "conceptType": "semantic",
+  "content": "OKF v0.1's temporal model is a single optional frontmatter field: 'timestamp' (ISO 8601 datetime of last meaningful change). This is a point-in-time last-modified marker, not a temporal knowledge model. It cannot express: when the fact the concept describes became true (valid time), when the concept was recorded in the bundle (transaction time), or how confident the knowledge remains as time passes without reinforcement. MIF provides a 'temporal' block with three independent axes: (1) 'validFrom' / 'validUntil' — the real-world validity window for the claim (valid time). A regulatory fact may be valid from 2024-01-01 to 2025-12-31; OKF cannot express this interval. (2) 'recordedAt' — when the concept was captured in the knowledge store (transaction time). The combination enables bi-temporal queries: 'what did the agent believe at T?' vs. 'what was actually true at T?' — the core requirement for auditable knowledge systems. (3) Decay modeling: a 'ttl' field (ISO 8601 duration, e.g. 'P90D') and a 'decay' sub-object with 'model' (linear, exponential, or step), 'halfLife' (ISO 8601 duration), 'currentStrength' (0.0–1.0), and 'lastReinforced'. This Ebbinghaus-inspired decay model allows a knowledge-spine consumer to automatically demote or flag concepts whose temporal validity is weakening, without requiring a human to manually audit freshness. MIF also defines 'lastAccessed' and a 'reinforcementHistory[]' array to track how many times and when a concept has been confirmed or challenged. In an OKF+MIF layering, the temporal and decay fields would be encoded as extended frontmatter or companion JSON alongside OKF bundles, enabling the git-distributable OKF packaging layer to carry time-bounded, decay-aware knowledge — a capability no plain markdown format provides.",
+  "created": "2026-06-28T00:00:00Z",
+  "extensions": {
+    "harness": {
+      "dimension": "technical",
+      "verification": {
+        "verdict": "survived",
+        "verdict_basis": "The mif-spec.dev temporal-model page confirms bi-temporal tracking (validFrom/validUntil/recordedAt), an ISO-8601 ttl, and a decay object with model (linear/exponential/step), halfLife, strength, lastReinforced, lastAccessed. OKF SPEC.md confirms only a single 'timestamp'. Minor imprecision: spec exposes accessCount rather than the finding's 'reinforcementHistory[]', not load-bearing. No disconfirming evidence.",
+        "disconfirming_evidence": [],
+        "attempted_at": "2026-06-28T11:54:01Z"
+      },
+      "gathered_under": "gv-722bb7b64725"
+    }
+  },
+  "provenance": {
+    "@type": "Provenance",
+    "confidence": 0.93,
+    "sourceType": "agent_inferred",
+    "trustLevel": "high_confidence"
+  },
+  "relationships": [
+    {
+      "strength": 0.8,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-okf-core-data-model",
+      "type": "derived-from"
+    }
+  ],
+  "summary": "MIF provides bi-temporal tracking (valid time vs. recorded time), ISO 8601 duration TTL, and configurable decay models (linear, exponential, step) with half-life and strength fields. OKF v0.1 supports only a single 'timestamp' for last-meaningful-change. The bi-temporal gap makes OKF knowledge bundles unable to express claim validity windows or automate staleness detection.",
+  "tags": [
+    "mif",
+    "temporal",
+    "bi-temporal",
+    "decay",
+    "ttl",
+    "technical",
+    "mif-advantage",
+    "staleness"
+  ],
+  "title": "MIF's Bi-Temporal Tracking and Decay Modeling: What OKF's Single Timestamp Cannot Express",
+  "ontology": {
+    "id": "mif-generic"
+  },
+  "entity": {
+    "name": "MIF bi-temporal tracking and decay modeling",
+    "entity_type": "concept"
+  },
+  "namespace": "harness/example-okf-mif-knowledge-spine"
+}

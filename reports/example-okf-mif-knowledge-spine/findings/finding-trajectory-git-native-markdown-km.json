@@ -1,0 +1,72 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-git-native-markdown-km",
+  "@type": "Concept",
+  "citations": [
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "article",
+      "title": "History of Obsidian: Second Brain to AI Knowledge OS — Taskade Blog",
+      "url": "https://www.taskade.com/blog/obsidian-history"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "article",
+      "title": "Obsidian Complete Guide: The Ultimate Markdown Editor for Knowledge Management Revolution 2025 — SmartScope",
+      "url": "https://smartscope.blog/en/obsidian-complete-guide/"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "article",
+      "title": "Personal Knowledge Management Software Market Research Report 2034 — DataIntelo",
+      "url": "https://dataintelo.com/report/personal-knowledge-management-software-market"
+    }
+  ],
+  "conceptType": "semantic",
+  "content": "The personal knowledge management (PKM) ecosystem has undergone a structural shift since 2022. Tools like Obsidian (1.5+ million active users, 22% year-over-year growth), Roam Research, and Logseq share a common architectural bet: knowledge lives in plain markdown files, stored locally, version-controlled in git. Tiago Forte's 'Building a Second Brain' (2022, 500,000+ copies sold) brought the conceptual framework into mainstream professional awareness. Millennials and Gen Z, who now constitute over 60% of the global knowledge workforce, show strong preference for interconnected, bidirectional-link based tools.\n\nObsidian's January 2025 release of 'Bases' — structured data capabilities without plugins — represented its most significant feature addition since Canvas, pushing the tool further toward the structured knowledge use cases that OKF addresses. Critically, AI integration has become the dominant adoption driver: practitioners are arriving at Obsidian because of AI agents and LLM-context workflows, not because of PKM philosophy. The vault-as-knowledge-layer pattern (giving Claude Code or similar agents direct read/write access to a markdown vault) pulls developers into the markdown-in-git ecosystem who never cared about personal knowledge management as such. Enterprise spending on PKM tools grew approximately 18% year-over-year in 2025.\n\nPlain text's structural advantage in the AI era has become explicit: markdown files are in exactly the format AI coding agents process natively. There is no proprietary encoding, no vendor lock-in, no SDK required to read or generate content. This aligns precisely with OKF's 'if you can cat a file, you can read OKF; if you can git clone a repo, you can ship it' design principle.\n\nThe trajectory implication for OKF+MIF is favorable: the practitioner community has already converged on the packaging model OKF formalizes (markdown + git + minimal conventions). OKF is arriving into a pre-conditioned market. MIF's typed-relationship and provenance model addresses the next-order gap that PKM tools expose — knowledge graphs in tools like Obsidian are untyped (just bidirectional links), have no formal provenance, and carry no temporal validity model. As AI agents take on more responsibility for maintaining these vaults, the demand for a structured, typed semantic layer above the markdown will intensify.",
+  "created": "2026-06-28T00:00:00Z",
+  "extensions": {
+    "harness": {
+      "dimension": "trajectory",
+      "verification": {
+        "verdict": "survived",
+        "verdict_basis": "Independent sources confirm Obsidian ~1.5M active users with 22% YoY growth (crossed in Feb 2026) and the 2025 'Bases' structured-data release as its biggest feature since Canvas. The markdown-in-git PKM convergence and AI-driven adoption are corroborated. 1 adversarial query; no disconfirmation.",
+        "disconfirming_evidence": [],
+        "attempted_at": "2026-06-28T12:20:00Z"
+      },
+      "gathered_under": "gv-722bb7b64725"
+    }
+  },
+  "provenance": {
+    "@type": "Provenance",
+    "confidence": 0.85,
+    "sourceType": "agent_inferred",
+    "trustLevel": "high_confidence"
+  },
+  "relationships": [
+    {
+      "strength": 0.85,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-llm-wiki-karpathy-adoption",
+      "type": "supports"
+    }
+  ],
+  "summary": "Obsidian has 1.5 million+ active users growing at 22% year-over-year, anchoring a broader second-brain / PKM movement where markdown files in git are the de facto format; AI integration (Claude Code, Karpathy LLM wiki) is pulling developers into this ecosystem who previously ignored PKM, reinforcing the OKF design bet that plain markdown + git is the right packaging surface.",
+  "tags": [
+    "obsidian",
+    "second-brain",
+    "pkm",
+    "git-native",
+    "markdown",
+    "trajectory",
+    "adoption",
+    "knowledge-management"
+  ],
+  "title": "Git-Native Markdown Knowledge Management: 1.5M+ Obsidian Users and 22% YoY Growth",
+  "namespace": "harness/example-okf-mif-knowledge-spine"
+}

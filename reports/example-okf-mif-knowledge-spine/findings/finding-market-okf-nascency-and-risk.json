@@ -1,0 +1,104 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-okf-nascency-and-risk",
+  "@type": "Concept",
+  "citations": [
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "website",
+      "title": "Google Cloud Launches Open Knowledge Format Standard - sober adoption assessment (Let's Data Science)",
+      "url": "https://letsdatascience.com/news/google-cloud-launches-open-knowledge-format-standard-b9480a66"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "website",
+      "title": "How the Open Knowledge Format can improve data sharing - v0.1 'starting point' framing (Google Cloud)",
+      "url": "https://cloud.google.com/blog/products/data-analytics/how-the-open-knowledge-format-can-improve-data-sharing"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "website",
+      "title": "Open Knowledge Format (OKF) Complete 2026 Guide - ecosystem gaps identified (WitsCode)",
+      "url": "https://witscode.com/open-knowledge-format"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "website",
+      "title": "Notion vs Obsidian - minimalism as user preference (NotionApps)",
+      "url": "https://www.notionapps.com/blog/notion-vs-obsidian-knowledge-productivity-2025"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "website",
+      "title": "How 100 Enterprise CIOs Are Building and Buying Gen AI - 76% SaaS shift (a16z)",
+      "url": "https://a16z.com/ai-enterprise-2025/"
+    }
+  ],
+  "conceptType": "semantic",
+  "content": "This finding documents the disconfirming evidence for OKF+MIF market demand. A decision to build on OKF+MIF must account for these real market risks, not just the bullish signals documented in other findings.\n\nOKF IS EXTREMELY NEW AND UNPROVEN\nGoogle Cloud published OKF v0.1 on June 12, 2026 — 16 days before this research was conducted. The specification is explicitly positioned as 'a starting point, not a finished standard' and is openly described as 'early.' Broader adoption is assessed as 'still unproven' by independent analysts covering the announcement (Let's Data Science). The format has zero enterprise adoption record, no large-scale deployments, and no community-produced implementations beyond Google Cloud's reference enrichment agent and static HTML visualizer.\n\nMISSING ECOSYSTEM COMPONENTS\nIndustry adoption of OKF will hinge on ecosystem components that do not yet exist:\n- Producer libraries for major languages (Python, JavaScript, Go, Java)\n- Consumer integrations with major AI agent frameworks (LangChain, LlamaIndex, AutoGen, crewAI)\n- Governance patterns for multi-author knowledge bundles\n- Enterprise access control and compliance features\n- Tooling for large-scale knowledge bundle management\nWithout these, OKF adoption is limited to organizations willing to build their own tooling — a much smaller segment than the broader KM market.\n\nTHE FORMAT ADOPTION PROBLEM\nKnowledge format adoption is historically slow and contested. The semantic web ecosystem (RDF/OWL, SPARQL, JSON-LD) has been technically superior to document-based knowledge stores since the early 2000s, yet enterprise adoption remains limited. Frictionless Data Packages, Open Annotation, Schema.org, and numerous other format-first initiatives achieved only partial market penetration. Google's backing is significant but not determinative: Google Buzz, Google+, and Google Wave all failed to establish category leadership despite Google's resources. OKF's value proposition rests on network effects (more parties speaking the same format = more value), and network effects require critical mass before they materialize.\n\nTHE MINIMALISM-AS-FEATURE RISK\nOKF's explicit design principle is minimalism: 'only one field on every concept: type.' The specification deliberately excludes typed relationships, formal ontology, schema enforcement, and provenance objects — these are what MIF would add. But the risk is that OKF's minimalism is the actual market preference, not a gap. The adoption pattern of Obsidian (plain markdown, local files, untyped links, no schema) demonstrates that minimalism itself is a differentiator for a large user segment. If the market that wants OKF-style knowledge formatting wants it because it is minimal — i.e., they are actively repelled by schema enforcement, formal ontology, and provenance overhead — then adding MIF's layer is a misreading of buyer preference.\n\nSAAS COMPETITOR PRESSURE ON THE OPEN FORMAT SEGMENT\nThe broader KM market is trending toward SaaS (76% of enterprise AI buying in 2025). Well-funded competitors with AI-native KM features — Notion AI, Microsoft Copilot integrated with SharePoint/Confluence, Glean, GoSearch — are actively expanding into the segments that a knowledge spine would target. These competitors have enterprise SSO, compliance certifications, and sales forces that open-format projects do not. A purely format-based offering competes on format merit, which is a slow path to revenue in a market that is increasingly buying, not building.\n\nCONCLUSION\nThe demand for structured knowledge infrastructure is real and growing (see companion findings). But that demand does not automatically translate to demand for OKF specifically or for OKF+MIF as a specific combination. The path to market for this offering requires OKF to demonstrate ecosystem adoption before MIF's additional layer can be positioned as a value-add. At present (June 2026), OKF is too new to assess whether it will achieve the critical mass required for the network-effects-driven value proposition to materialize.",
+  "created": "2026-06-28T00:00:00Z",
+  "extensions": {
+    "harness": {
+      "dimension": "market",
+      "verification": {
+        "verdict": "survived",
+        "verdict_basis": "Primary source (Google Cloud blog) confirms OKF v0.1 is explicitly 'a starting point, not a finished standard' published 2026-06-12; OKF SPEC.md confirms the minimalist/untyped/single-timestamp design and permissive-consumer conformance. The bear-case claims (nascency, absent ecosystem, format-adoption-is-slow, minimalism-as-preference) are corroborated. 6 adversarial queries run; no source overturns the nascency thesis.",
+        "disconfirming_evidence": [],
+        "attempted_at": "2026-06-28T11:54:01Z"
+      },
+      "gathered_under": "gv-722bb7b64725"
+    }
+  },
+  "provenance": {
+    "@type": "Provenance",
+    "confidence": 0.85,
+    "sourceType": "agent_inferred",
+    "trustLevel": "high_confidence"
+  },
+  "relationships": [
+    {
+      "strength": 0.6,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-ai-demand-structured-provenance",
+      "type": "contradicts"
+    },
+    {
+      "strength": 0.8,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-open-source-vs-commercial",
+      "type": "relates-to"
+    },
+    {
+      "strength": 0.7,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-competitive-positioning",
+      "type": "relates-to"
+    }
+  ],
+  "summary": "OKF v0.1 was published June 12, 2026 — just 16 days before this research was conducted. It has no ecosystem (no producer libraries, no consumer integrations, no governance tooling, no enterprise adoption record). Market demand for OKF specifically (as distinct from demand for structured knowledge formats generally) is undemonstrated. The risk is that OKF's minimalism may be the actual buyer preference — making MIF's richer layer a solution without a market segment that wants it.",
+  "tags": [
+    "risk",
+    "okf-nascency",
+    "market-risk",
+    "format-adoption",
+    "counter-evidence",
+    "market"
+  ],
+  "title": "OKF Nascency and Unproven Adoption as Market Risk for an OKF+MIF Knowledge Spine",
+  "ontology": {
+    "id": "trend-analysis"
+  },
+  "entity": {
+    "name": "OKF nascency / unproven adoption as market risk",
+    "entity_type": "critical-uncertainty",
+    "description": "OKF v0.1 published 2026-06-12 with no ecosystem; demand for OKF specifically is unproven, and its minimalism may be a buyer preference rather than a gap."
+  },
+  "namespace": "harness/example-okf-mif-knowledge-spine"
+}

@@ -1,0 +1,70 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-okf-untyped-links",
+  "@type": "Concept",
+  "citations": [
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "OKF SPEC.md v0.1 — Cross-linking section, §4 — GoogleCloudPlatform/knowledge-catalog",
+      "url": "https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "Open Knowledge Format (OKF) — Official Grounding Page",
+      "url": "https://groundingpage.com/facts/open-knowledge-format/"
+    }
+  ],
+  "conceptType": "semantic",
+  "content": "A foundational design decision in OKF v0.1 is that cross-concept links use standard markdown link syntax with no associated semantic type. The specification states: 'Link semantics represent untyped relationships; the relationship type is conveyed through surrounding prose.' A concept author writes something like 'Joined with [customers](/tables/customers.md) on customer_id' — the relationship type ('joined with') is natural language inside the body text, not a machine-processable predicate attached to the link. Consumers who build a graph view 'MUST treat all links as directed edges of untyped relationships.' Furthermore, 'Consumers MUST tolerate broken links — they may represent not-yet-written knowledge.' This means OKF's graph is structurally a typed directed graph but semantically an untyped one: a graph processor knows that concept A links to concept B, but cannot determine without reading and interpreting prose text whether that link expresses derivation, composition, dependency, citation, or another relationship. This is precisely the gap that MIF's typed 'relationships[]' array fills. MIF defines nine structural-core relationship types (supports, contradicts, derived-from, relates-to, supersedes, refines, part-of, depends-on, updates) as machine-processable edge types with optional 'strength' (0-1) and 'metadata' extension. A knowledge-spine layering OKF+MIF would use OKF bundles as the packaging and file distribution layer while MIF's typed relationships provide the formal semantic graph that enables deterministic traversal, concordance validation, and ontological reasoning — capabilities the OKF untyped link model cannot support natively.",
+  "created": "2026-06-28T00:00:00Z",
+  "extensions": {
+    "harness": {
+      "dimension": "technical",
+      "verification": {
+        "verdict": "survived",
+        "verdict_basis": "OKF SPEC.md primary source confirms verbatim: cross-concept links are untyped markdown with relationship 'conveyed by the surrounding prose, not by the link itself', consumers MUST tolerate broken links, only 'type' is required, and relationship typing/ontologies/provenance are deferred. 1 adversarial primary-source query; no disconfirming evidence.",
+        "disconfirming_evidence": [],
+        "attempted_at": "2026-06-28T12:20:00Z"
+      },
+      "gathered_under": "gv-722bb7b64725"
+    }
+  },
+  "provenance": {
+    "@type": "Provenance",
+    "confidence": 0.97,
+    "sourceType": "agent_inferred",
+    "trustLevel": "high_confidence"
+  },
+  "relationships": [
+    {
+      "strength": 0.9,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-okf-core-data-model",
+      "type": "derived-from"
+    }
+  ],
+  "summary": "OKF v0.1 uses standard markdown hyperlinks for all inter-concept relationships. These links are explicitly untyped: semantic meaning (e.g., 'depends on', 'joins with', 'part of') lives in surrounding prose only. Consumers MUST tolerate broken links. No vocabulary for typing connections exists in the spec.",
+  "tags": [
+    "okf",
+    "untyped-links",
+    "relationships",
+    "graph",
+    "technical",
+    "gap-analysis",
+    "markdown"
+  ],
+  "title": "OKF's Untyped Link Mechanism: Relationship Semantics Carried Only by Prose",
+  "ontology": {
+    "id": "mif-generic"
+  },
+  "entity": {
+    "name": "OKF untyped link mechanism",
+    "entity_type": "concept"
+  },
+  "namespace": "harness/example-okf-mif-knowledge-spine"
+}

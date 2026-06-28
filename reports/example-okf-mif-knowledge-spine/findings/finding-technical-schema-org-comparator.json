@@ -1,0 +1,77 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-schema-org-comparator",
+  "@type": "Concept",
+  "citations": [
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "Ontology vs. Semantic Layer: Differences and schema.org limitations — Atlan",
+      "url": "https://atlan.com/know/ontology-vs-semantic-layer/"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "article",
+      "title": "Ontologies, Context Graphs, and Semantic Layers: What AI Actually Needs in 2026",
+      "url": "https://contextandchaos.substack.com/p/ontologies-context-graphs-and-semantic"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "OKF SPEC.md v0.1 — GoogleCloudPlatform/knowledge-catalog",
+      "url": "https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md"
+    }
+  ],
+  "conceptType": "semantic",
+  "content": "schema.org is the de facto web structured-data vocabulary, co-developed by Google, Bing, Yahoo, and Yandex and adopted by hundreds of millions of web pages. It defines approximately 800 entity types (Thing, Person, Organization, Product, Event, CreativeWork, etc.) and 1,300 property types as a JSON-LD vocabulary. Schema.org is embedded in web-page HTML as JSON-LD scripts or Microdata attributes to enable rich search results. As a technical comparator to OKF+MIF: (1) Distribution model: schema.org is embedded in HTML, served by web servers, indexed by search engine crawlers. It has no git-native bundle model, no directory structure, and no concept of a self-contained knowledge package. OKF bundles are designed to 'ship as a tarball, hostable in any git repo, mountable on any filesystem' — an entirely different distribution philosophy. (2) Provenance: schema.org has no built-in mechanism for expressing confidence, agent attribution, or W3C PROV-compatible provenance. A schema.org entity cannot express 'this claim was inferred by an AI agent at 0.85 confidence.' (3) Temporal decay: schema.org has no TTL, decay model, or bi-temporal tracking. dateCreated/dateModified are plain timestamps, not validity windows. (4) Relationship typing: schema.org uses specific properties (author, memberOf, worksFor) rather than a generic typed-relationship system. It lacks MIF's structural core predicates (derived-from, contradicts, supersedes) and cannot express adversarial or evidential relationships between knowledge claims. (5) Completeness gaps: Schema.org covers ~800 types but is highly incomplete for specific domains (CollegeOrUniversity has 67 properties but misses numberOfStudents or degreesOffered). MIF's ontology packs allow domain completeness through domain-specific extension without the schema.org consortium review cycle. Schema.org is the right choice for making web pages machine-readable to search engines. OKF+MIF is the right choice for building distributable, agent-consumable knowledge bundles with formal provenance and temporal semantics — a use case schema.org never targeted.",
+  "created": "2026-06-28T00:00:00Z",
+  "extensions": {
+    "harness": {
+      "dimension": "technical",
+      "verification": {
+        "verdict": "survived",
+        "verdict_basis": "Official schema.org vocabulary counts (823 types, 1529 properties) confirm the ~800-type scale; its lack of confidence/provenance, temporal decay, and git-native bundle distribution plus its HTML/JSON-LD search-engine orientation are uncontested. 1 adversarial query; the only imprecision (property count understated as ~1300 vs ~1529) does not narrow the comparator thesis.",
+        "disconfirming_evidence": [],
+        "attempted_at": "2026-06-28T12:20:00Z"
+      },
+      "gathered_under": "gv-722bb7b64725"
+    }
+  },
+  "provenance": {
+    "@type": "Provenance",
+    "confidence": 0.9,
+    "sourceType": "agent_inferred",
+    "trustLevel": "high_confidence"
+  },
+  "relationships": [
+    {
+      "strength": 0.7,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-json-ld-yaml-ld-comparator",
+      "type": "relates-to"
+    }
+  ],
+  "summary": "schema.org (Google/Bing/Yahoo/Yandex consortium) provides ~800 entity types and ~1300 property types optimized for web search-engine interoperability. It solves entity classification for web pages, not knowledge packaging for AI agents. It lacks OKF's git-native distribution, MIF's formal provenance, temporal decay, and is implemented in JSON-LD or Microdata embedded in HTML — incompatible with the markdown-first knowledge-bundle model.",
+  "tags": [
+    "schema-org",
+    "structured-data",
+    "web-vocabulary",
+    "json-ld",
+    "technical",
+    "comparator"
+  ],
+  "title": "schema.org as Technical Comparator: Web-Optimized Vocabulary Without Git Distribution or Provenance",
+  "ontology": {
+    "id": "mif-generic"
+  },
+  "entity": {
+    "name": "schema.org",
+    "entity_type": "technology"
+  },
+  "namespace": "harness/example-okf-mif-knowledge-spine"
+}

@@ -1,0 +1,78 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-w3c-rdf-star-provenance",
+  "@type": "Concept",
+  "citations": [
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "RDF & SPARQL Working Group Charter — W3C (April 2025)",
+      "url": "https://www.w3.org/2025/04/rdf-star-wg-charter.html"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "A Semantic Approach to Mapping the Provenance Ontology to Basic Formal Ontology — Scientific Data",
+      "url": "https://www.nature.com/articles/s41597-025-04580-1"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "documentation",
+      "title": "Ontologies and Knowledge Graphs in Industry Community Group — W3C",
+      "url": "https://www.w3.org/community/oki/"
+    }
+  ],
+  "conceptType": "semantic",
+  "content": "Two W3C standards trajectories are directly relevant to the OKF+MIF question: the advancement of RDF 1.2 (via the RDF-star Working Group, established August 2022) and the ongoing application of PROV-O (the W3C Provenance Ontology).\n\nThe RDF-star Working Group is extending RDF to support 'edge properties' — the ability to annotate individual triples with metadata including provenance, confidence, validity windows, and marginal notes. This directly addresses the n-ary relationship limitation that historically required awkward RDF reification workarounds. Deliverables include RDF 1.2 and SPARQL 1.2, targeting Q3 2025 for Candidate Recommendation. The working group's use cases explicitly include provenance, qualifying statements, and beliefs — the same information categories MIF's provenance block carries. Wikidata has already committed to using RDF 1.2 triple terms to standardize its own property-annotation system, and several triplestores (Dydra) have pre-implemented RDF-star in anticipation of the recommendation.\n\nThe W3C Provenance Working Group produced PROV-O as a Recommendation in 2013, and it remains the authoritative vocabulary for representing provenance information in RDF. In 2024-2025, PROV-O is actively extending its reach: a semantic mapping to Basic Formal Ontology (BFO) was published in Scientific Data (2025), enabling integration with biological and scientific ontologies. A lightweight PROV-based model has become the open conceptual foundation of the ISO 23494 standard on biotechnology provenance. The W3C Ontologies and Knowledge Graphs in Industry Community Group is actively connecting PROV-O to enterprise deployment patterns.\n\nMIF's provenance block is explicitly grounded in PROV-O vocabulary (sourceType maps to prov:wasAttributedTo concepts; the Provenance object structure mirrors prov:Entity semantics). This is a design strength under the current standards trajectory: MIF aligns with a recommendation that is consolidating adoption rather than fragmenting. The RDF 1.2 / RDF-star advancement signals that the standards community has recognized the provenance gap and is closing it — which makes the decision to build MIF's provenance on PROV-O (rather than inventing a new vocabulary) increasingly well-positioned as the two standards trajectories converge.\n\nThe cautionary note: W3C standards processes are slow (the RDF-star WG was established in 2022 and is targeting a 2025 CR for what amounts to a targeted extension). The gap between a W3C Recommendation and widespread tooling support typically spans 3-5 years. MIF's JSON-native approach (not requiring RDF tooling) lets it operate independently of this timeline while remaining semantically compatible with it.",
+  "created": "2026-06-28T00:00:00Z",
+  "extensions": {
+    "harness": {
+      "dimension": "trajectory",
+      "verification": {
+        "verdict": "survived",
+        "verdict_basis": "W3C confirms RDF 1.2 Concepts reached Candidate Recommendation (7 April 2026, adding triple terms / edge annotation) with SPARQL 1.2 advancing and PROV-O remaining the recommended provenance vocabulary. The 'Q3 2025 CR' figure is the charter target the finding already hedges as slow; the CR actually landing confirms the consolidation thesis rather than contradicting it. 1 adversarial query; no disconfirmation.",
+        "disconfirming_evidence": [],
+        "attempted_at": "2026-06-28T12:20:00Z"
+      },
+      "gathered_under": "gv-722bb7b64725"
+    }
+  },
+  "provenance": {
+    "@type": "Provenance",
+    "confidence": 0.82,
+    "sourceType": "agent_inferred",
+    "trustLevel": "high_confidence"
+  },
+  "relationships": [
+    {
+      "strength": 0.75,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-agent-memory-provenance-demand",
+      "type": "supports"
+    },
+    {
+      "strength": 0.8,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-prov-o-provenance-alternative",
+      "type": "relates-to"
+    }
+  ],
+  "summary": "The W3C RDF-star Working Group (est. 2022) is advancing RDF 1.2 toward Candidate Recommendation with SPARQL 1.2, targeting Q3 2025, addressing exactly the provenance and statement-qualification gaps that have blocked RDF adoption; PROV-O remains the recommended provenance ontology and is being mapped to ISO 23494 for biotechnology — the standards layer MIF's provenance model builds on is consolidating rather than fragmenting.",
+  "tags": [
+    "w3c",
+    "rdf-star",
+    "rdf-1-2",
+    "prov-o",
+    "provenance",
+    "standards",
+    "trajectory",
+    "sparql",
+    "mif"
+  ],
+  "title": "W3C RDF 1.2 and RDF-Star: Standards Momentum for Provenance Standardization",
+  "namespace": "harness/example-okf-mif-knowledge-spine"
+}

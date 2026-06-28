@@ -1,0 +1,109 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-open-source-vs-commercial",
+  "@type": "Concept",
+  "citations": [
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "website",
+      "title": "How 100 Enterprise CIOs Are Building and Buying Gen AI in 2025 (a16z)",
+      "url": "https://a16z.com/ai-enterprise-2025/"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "website",
+      "title": "Open-Source vs SaaS Agent Platforms: Pros & Cons for Enterprises (OneReach.ai)",
+      "url": "https://onereach.ai/blog/open-source-frameworks-vs-saas-agent-platforms/"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "website",
+      "title": "State of Open Data 2025 - FAIR data and open science trends",
+      "url": "https://stateofopendata.com/"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "website",
+      "title": "Open-Sourcing the Knowledge Graph Studio under MIT license (Medium/Enterprise RAG)",
+      "url": "https://medium.com/enterprise-rag/open-sourcing-the-whyhow-knowledge-graph-studio-powered-by-nosql-edce283fb341"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "supports",
+      "citationType": "website",
+      "title": "Obsidian Pricing 2026: Plans, Hidden Costs & Cheaper Alternatives (ToolRadar)",
+      "url": "https://toolradar.com/tools/obsidian/pricing"
+    },
+    {
+      "@type": "Citation",
+      "accessed": "2026-06-28",
+      "citationRole": "refutes",
+      "citationType": "website",
+      "title": "a16z 'How 100 Enterprise CIOs Are Building and Buying Gen AI in 2025' - source does not substantiate the specific 76%/50-50 build-vs-buy figure on inspection (only a qualitative shift-to-buying)",
+      "url": "https://a16z.com/ai-enterprise-2025/"
+    }
+  ],
+  "conceptType": "semantic",
+  "content": "The enterprise knowledge management market has a clear SaaS-vs-open-source divide, and understanding where each segment wants to operate is critical for positioning an OKF+MIF knowledge spine.\n\nTHE DOMINANT TREND: ENTERPRISE BUYERS ARE BUYING, NOT BUILDING\nThe a16z 'How 100 Enterprise CIOs Are Building and Buying Gen AI in 2025' report documents a significant shift: enterprises have moved from a 50/50 build-vs-buy approach in 2024 to purchasing 76% of AI solutions in 2025. CIOs prefer SaaS agent platforms because they accelerate time-to-value, come with built-in scalability, enterprise-grade compliance (GDPR, SOC 2, HIPAA), and managed infrastructure. This is the dominant behavior in the broader enterprise KM market and is a genuine counter-force to open-format adoption at the large-enterprise tier.\n\nTHE OPEN-FORMAT SEGMENT: WHO IS IT?\nHowever, the market is segmented, and the open-format preference is strong in specific sub-populations:\n\n1. DEVELOPER AND ENGINEERING TEAMS: Git-native tooling is the default for this segment. Infrastructure knowledge (runbooks, incident playbooks, API docs) managed as code in version-controlled repositories is already the standard practice. OKF's 'if you can git clone a repo, you can ship it' positioning directly aligns with this segment's existing workflow. The Knowledge Graph Studio was open-sourced under MIT license specifically to enable researchers and developers to adapt and extend the platform for their needs.\n\n2. RESEARCH AND ACADEMIC ORGANIZATIONS: The FAIR data movement (Findable, Accessible, Interoperable, Reusable), driven by funder mandates from NSF, NIH, EU Horizon, and similar bodies, is systematically pushing research organizations toward open, standard, vendor-neutral formats. The European Commission's Joint Research Centre published FAIR Data Guidelines in 2025 with five progressive maturity levels. Open data repositories (Zenodo, Figshare) use git repositories for processing pipelines. This segment explicitly cannot accept vendor lock-in on knowledge infrastructure.\n\n3. PRIVACY-SENSITIVE AND REGULATED ENTERPRISES: Organizations in financial services, healthcare, and government with on-premises infrastructure requirements and data sovereignty concerns prefer open-source frameworks with in-house deployment. The a16z data shows open-source adoption (Llama, Mistral) is concentrated among larger enterprises with on-premises infrastructure needs. For these buyers, a git-native, self-hosted knowledge format is a requirement, not a compromise.\n\n4. SMALLER ORGANIZATIONS AND EARLY-STAGE TEAMS: The KM market's SME segment (54% of market value per Fortune Business Insights) is cost-sensitive. Open-source knowledge formats with no licensing cost represent the accessible entry point.\n\nOPEN-SOURCE BUSINESS MODELS IN ADJACENT MARKETS\nThe open-source vs. commercial tension is resolved in adjacent markets through commercial support and enterprise feature layers on top of an open-source core:\n- Neo4j: Open-source Community Edition + commercial Enterprise Edition ($15K-100K+/year).\n- Logseq: Free open-source core + Logseq Sync ($5-6/month).\n- Obsidian: Free for personal use + $50/user/year commercial license + Obsidian Sync ($4-8/month).\nThis 'open core + commercial add-on' model is the standard template for open knowledge formats with enterprise ambitions. OKF+MIF would naturally follow this path: the format is open-source and zero-cost; provenance audit tooling, enterprise governance features, and hosted sync could form a commercial tier.\n\nCOUNTER-CONSIDERATION\nThe dominant enterprise KM market prefers SaaS. The 76% buy rate among enterprise AI buyers means the open-format market is a niche. An OKF+MIF spine positioned purely as an open-source format needs to either succeed with the developer/research sub-segment on format merit before broader enterprise uptake, or build enterprise SaaS features that make the open format the backend of a commercial product. Format-first adoption is slower than SaaS adoption; the competitive pressure from well-funded SaaS competitors (Notion AI, Microsoft Copilot for SharePoint, Glean) with enterprise sales motions is real.",
+  "created": "2026-06-28T00:00:00Z",
+  "extensions": {
+    "harness": {
+      "dimension": "market",
+      "verification": {
+        "attempted_at": "2026-06-28T11:54:01Z",
+        "disconfirming_evidence": [
+          "https://a16z.com/ai-enterprise-2025/"
+        ],
+        "verdict": "weakened",
+        "verdict_basis": "The load-bearing headline statistic 'enterprise AI buyers shifted to 76% SaaS in 2025, up from 50/50 in 2024' could not be located in the cited a16z source on two independent retrievals (WebFetch + WebSearch) - the source supplies only a qualitative 'marked shift towards buying' and '90% testing third-party apps'. The directional claim survives; the specific quantitative figure attributed to a16z is unverified."
+      },
+      "gathered_under": "gv-722bb7b64725"
+    }
+  },
+  "provenance": {
+    "@type": "Provenance",
+    "confidence": 0.65,
+    "sourceType": "agent_inferred",
+    "trustLevel": "moderate_confidence"
+  },
+  "relationships": [
+    {
+      "strength": 0.8,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-buyer-segments-pain-points",
+      "type": "relates-to"
+    },
+    {
+      "strength": 0.75,
+      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-competitive-positioning",
+      "type": "relates-to"
+    }
+  ],
+  "summary": "Enterprise AI buyers shifted to 76% SaaS in 2025 (from 50/50 in 2024), but the open-format/git-native segment remains distinct: developer teams, research organizations, and privacy-sensitive enterprises prefer open formats for lock-in avoidance and on-premises compliance. OKF+MIF targets this niche, where open-source format adoption for AI infrastructure is accelerating even as SaaS dominates the broader KM market. [Weakened 2026-06-28 - see verification block.]",
+  "tags": [
+    "open-source",
+    "commercial",
+    "saas",
+    "buyer-preference",
+    "business-model",
+    "fair-data",
+    "market"
+  ],
+  "title": "Open-Source vs. Commercial Segment: Who Wants Open Formats vs. SaaS for Knowledge Management",
+  "ontology": {
+    "id": "market-research"
+  },
+  "entity": {
+    "name": "Open-format / git-native vs SaaS knowledge-management segment",
+    "entity_type": "segment"
+  },
+  "namespace": "harness/example-okf-mif-knowledge-spine"
+}

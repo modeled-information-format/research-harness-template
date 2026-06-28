@@ -39,12 +39,19 @@ for needle in "harness.config.json" "primarySurface" "plugins.llmsTxt" "plugins.
   grep -qF "$needle" "$ac" || fail "astro.config.mjs does not reference '$needle' (hardcoded integration?)"
 done
 
-# 4. content.config.ts binds reports via glob (standard src/content/docs base) with the
-#    report negations, and reports/ is reached through the docs/reports symlink.
+# 4. content.config.ts binds reports via a derived-title glob (standard src/content/docs
+#    base): every deliverable renders (README index, synthesis, falsification report,
+#    research-progress), only _meta/findings/build-logs stay excluded, and reports/ is
+#    reached through the docs/reports symlink.
 cc=src/content.config.ts
-for needle in "glob(" "base: './src/content/docs'" "!reports/_meta/**" \
-              "!reports/**/research-progress.md" "!reports/**/README.md"; do
+for needle in "glob(" "base: './src/content/docs'" "reportsLoader(" "deriveTitleFromH1" \
+              "!reports/_meta/**" "!reports/**/findings/**"; do
   grep -qF "$needle" "$cc" || fail "content.config.ts missing '$needle' (reports binding regressed)"
+done
+# The full deliverable tree is served — these negations MUST be absent.
+for neg in "!reports/**/README.md" "!reports/**/*-falsification-report.md" \
+           "!reports/**/research-progress.md"; do
+  grep -qF "$neg" "$cc" && fail "content.config.ts still excludes '$neg' (deliverable not served)"
 done
 [ "$(readlink docs/reports 2>/dev/null)" = "../reports" ] || fail "docs/reports symlink (-> ../reports) missing"
 
