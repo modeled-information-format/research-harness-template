@@ -15,8 +15,15 @@ class Source(TypedDict):
 
 
 class Entity(TypedDict):
+    id: NotRequired[str]
     name: NotRequired[str]
     entityType: NotRequired[str]
+
+
+class Relationship(TypedDict):
+    type: NotRequired[str]
+    target: NotRequired[str]
+    strength: NotRequired[float]
 
 
 class Section(TypedDict):
@@ -25,6 +32,7 @@ class Section(TypedDict):
     supports: NotRequired[list[str]]
     sources: NotRequired[list[Source]]
     entities: NotRequired[list[Entity]]
+    relationships: NotRequired[list[Relationship]]
     dimension: NotRequired[str]
     verdict: NotRequired[str]
 

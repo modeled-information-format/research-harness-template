@@ -68,8 +68,21 @@
             "items": {
               "type": "object",
               "properties": {
+                "id": { "type": "string", "description": "The entity's MIF @id, carried so a per-section diagram can wire relationship edges to it." },
                 "name": { "type": "string" },
                 "entityType": { "type": "string" }
+              }
+            }
+          },
+          "relationships": {
+            "type": "array",
+            "description": "The finding's typed relationships, carried through so a per-section Mermaid graph can render edges (finding -> target) instead of omitting the diagram.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": { "type": "string" },
+                "target": { "type": "string" },
+                "strength": { "type": "number" }
               }
             }
           },

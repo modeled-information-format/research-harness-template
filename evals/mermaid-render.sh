@@ -38,6 +38,16 @@ for ch in blog book; do
   grep -q 'weight \\\* 2' "$TMP/$ch.md" || { echo "prose not escaped in $ch" >&2; exit 1; }
 done
 
+# Auto-generation: a section that carries entity/relationship data GENERATES a
+# Mermaid graph rather than omitting it. Synthesize the shipped sample findings
+# (which carry entities + relationships) and assert the rendered output contains
+# >=1 generated graph that validates.
+SF="reports/_meta/sample-session/findings"
+scripts/synthesize-artifact.sh "$SF" general "$TMP/auto.json" >/dev/null
+scripts/render-artifact.sh "$TMP/auto.json" blog "$TMP/auto.md" >/dev/null
+[ "$(grep -c '```mermaid' "$TMP/auto.md")" -ge 1 ] || { echo "no auto-generated graph from graph-bearing findings" >&2; exit 1; }
+python3 scripts/check-mermaid.py "$TMP/auto.md" >/dev/null
+
 # Every Mermaid block committed in the repo is structurally valid too.
 # (portable across bash 3.2 / 4+: no mapfile)
 MM="$(git grep -l '```mermaid' -- '*.md' 2>/dev/null || true)"

@@ -81,8 +81,34 @@ DEF='
     | map(if startswith("```") then . else (autolink | deglob) end)
     | join("")
     | detrail;
+  # Per-section knowledge graph: when a section carries entity/relationship data,
+  # GENERATE a Mermaid `graph` of it (entities as nodes, the typed relationships
+  # as edges) rather than omitting the diagram. Node ids are index-synthesised
+  # (n0, n1, …) so MIF urn:/@id targets never leak special chars into Mermaid.
+  # Labels replace any embedded double-quote with U+0027 (a single quote),
+  # written as a jq escape because this program lives in a single-quoted shell string.
+  def mermaid_graph($s):
+    ($s.entities // []) as $ents
+    | ($s.relationships // []) as $rels
+    | ($s.supports[0]) as $src
+    | if (($ents | length) == 0 and ($rels | length) == 0) then []
+      else
+        ( [ $src ] + [ $ents[].id ] + [ $rels[].target ] | map(select(. != null)) | unique ) as $ids
+        | ( $ids | to_entries | map({ key: .value, value: ("n" + (.key | tostring)) }) | from_entries ) as $nid
+        | ( reduce $ids[] as $id ({};
+              .[$id] = ( if $id == $src then $s.heading
+                         elif (($ents | map(select(.id == $id)) | length) > 0)
+                           then (($ents | map(select(.id == $id)) | .[0]) | (.name + " (" + (.entityType // "entity") + ")"))
+                         else ($id | sub("^.*[:/]"; "")) end ) ) ) as $lbl
+        | [ "", "```mermaid", "graph TD" ]
+          + [ $ids[] | "  " + $nid[.] + "[\"" + ($lbl[.] | gsub("\""; "\u0027")) + "\"]" ]
+          + [ $rels[] | select(.target != null and $src != null)
+              | "  " + $nid[$src] + " -->|" + ((.type // "relates-to") | gsub("\"|\\|"; "\u0027")) + "| " + $nid[.target] ]
+          + [ "```" ]
+      end;
   def secblock($s; $meta; $ev):
     [ "", "## " + ($s.heading | deglob | detrail), "", ($s.body | render_body) ]
+    + mermaid_graph($s)
     + (if (($s.entities // []) | length) > 0
        then [ "", ("Key entities: " + ([ $s.entities[] | .name + " (" + (.entityType // "entity") + ")" ] | join(", ")) + ".") ] else [] end)
     + (if $meta and ($s.dimension != null)

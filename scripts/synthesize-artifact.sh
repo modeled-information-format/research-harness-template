@@ -41,7 +41,11 @@ if ! jq -s --arg genre "$GENRE" '
         supports: [ .["@id"] ],
         sources: [ (.citations // [])[]
                    | { title: .title, url: .url, citationType: (.citationType // "website"), citationRole: (.citationRole // "supports") } + (if .note then {note: .note} else {} end) ],
-        entities: [ (.entities // [])[] | { name: .name, entityType: (.entityType // "entity") } ],
+        entities: [ (.entities // [])[] | { id: .entity["@id"], name: .name, entityType: (.entityType // "entity") } ],
+        relationships: [ (.relationships // [])[]
+                         | { type: (.type // .relationshipType // "relates-to"),
+                             target: (if (.target|type)=="object" then .target["@id"] else .target end) }
+                         + (if .strength then {strength: .strength} else {} end) ],
         dimension: (.extensions.harness.dimension // "general"),
         verdict: (.extensions.harness.verification.verdict // "inconclusive")
       } ],
