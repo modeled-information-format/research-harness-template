@@ -1909,22 +1909,23 @@ gate_m23() {
   info "Milestone 23 — site projection (reports surface + feature flags)"
 
   # 23a. The content loader binds BOTH docs/ and reports/ into the single Starlight
-  #      `docs` collection via a plain glob (not docsLoader): base '.' globs both real
-  #      trees directly (no symlink of reports/ into the docs tree), the report negations
-  #      docsLoader's fixed pattern cannot express exclude _meta/continuity/findings/README,
-  #      and generateId strips the docs/ prefix so docs keep their root routes. Regression
-  #      guard against a revert that re-leaks _meta or drops report README handling.
+  #      `docs` collection via a plain glob (not docsLoader) whose base stays the standard
+  #      `./src/content/docs` location the relative-links plugin relies on (so docs' relative
+  #      *.md cross-links still rewrite to routes); reports/ is reached through the committed
+  #      `docs/reports` symlink. The negations docsLoader's fixed pattern cannot express
+  #      exclude _meta/continuity/findings and the report README. Regression guard against a
+  #      revert that re-leaks _meta, drops the README handling, or moves the base off
+  #      src/content/docs (which silently breaks relative-link rewriting site-wide).
   local cc=src/content.config.ts
   if grep -qF "glob(" "$cc" \
-     && grep -qF "base: '.'" "$cc" \
-     && grep -qF "reports/**" "$cc" \
+     && grep -qF "base: './src/content/docs'" "$cc" \
      && grep -qF "!reports/_meta/**" "$cc" \
      && grep -qF "!reports/**/research-progress.md" "$cc" \
      && grep -qF "!reports/**/README.md" "$cc" \
-     && grep -qF "generateId" "$cc"; then
-    ok "content.config.ts binds reports via glob (base '.', report negations, docs/ generateId)"
+     && [ "$(readlink docs/reports 2>/dev/null)" = "../reports" ]; then
+    ok "content.config.ts binds reports via glob (base src/content/docs + docs/reports symlink, report negations)"
   else
-    bad "content.config.ts reports binding regressed (need glob base '.', reports/** + _meta/research-progress negations, generateId)"
+    bad "reports binding regressed (need glob base './src/content/docs', the docs/reports->../reports symlink, and the _meta/research-progress/README negations)"
   fi
 
   # 23b. astro.config.mjs reads harness.config.json and GATES each site enhancement on

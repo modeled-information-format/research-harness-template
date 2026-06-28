@@ -39,12 +39,14 @@ for needle in "harness.config.json" "primarySurface" "plugins.llmsTxt" "plugins.
   grep -qF "$needle" "$ac" || fail "astro.config.mjs does not reference '$needle' (hardcoded integration?)"
 done
 
-# 4. content.config.ts binds reports via glob with the report negations + generateId.
+# 4. content.config.ts binds reports via glob (standard src/content/docs base) with the
+#    report negations, and reports/ is reached through the docs/reports symlink.
 cc=src/content.config.ts
-for needle in "glob(" "base: '.'" "reports/**" "!reports/_meta/**" \
-              "!reports/**/research-progress.md" "!reports/**/README.md" "generateId"; do
+for needle in "glob(" "base: './src/content/docs'" "!reports/_meta/**" \
+              "!reports/**/research-progress.md" "!reports/**/README.md"; do
   grep -qF "$needle" "$cc" || fail "content.config.ts missing '$needle' (reports binding regressed)"
 done
+[ "$(readlink docs/reports 2>/dev/null)" = "../reports" ] || fail "docs/reports symlink (-> ../reports) missing"
 
 # 5. copier activates reports-primary in a clone.
 grep -A3 '_tasks:' copier.yml | grep -qF "site-toggle.sh primary reports" \
