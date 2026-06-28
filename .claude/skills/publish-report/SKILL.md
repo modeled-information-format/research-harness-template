@@ -1,7 +1,7 @@
 ---
 name: publish-report
 description: "Render surviving research findings into the canonical MIF Level-3 markdown report — the harness's source of truth (reports/<topic>/<slug>.md), held to the same bar as a finding and graded by the falsification gate. A first-class harness output (not a pack), never exempt. Use this skill when the user wants the authoritative MIF report, the L3 report of record, or to emit the canonical report from the corpus. Triggers on 'publish report', 'generate the MIF report', 'render the report of record', 'emit the canonical report', 'L3 report from findings'."
-version: 0.4.0
+version: 0.4.1
 argument-hint: "[--topic <id>] [--genre <genre>] [--out <path.md>]"
 allowed-tools: Read, Bash, Edit, Glob, Grep
 ---

@@ -1,7 +1,7 @@
 ---
 name: systematic-review
 description: Genre template for a PRISMA 2020 systematic review (structured abstract, methods, results with a PRISMA flow diagram, discussion, registration). Use when the deliverable must make the evidence-selection process legible and reproducible end to end.
-version: 0.4.0
+version: 0.4.1
 ---
 
 # Genre Template: Systematic Review (PRISMA 2020)

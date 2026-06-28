@@ -1,6 +1,6 @@
 {
   "name": "clinical-submission",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "kind": "genre",
   "description": "Genre template for a clinical study report following the ICH E3 CSR skeleton (Synopsis, Ethics, Objectives, Investigational Plan, Methods, Results, Discussion & Conclusions) situated in the CTD five-module frame",
   "license": "MIT",

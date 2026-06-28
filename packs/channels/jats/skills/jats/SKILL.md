@@ -1,7 +1,7 @@
 ---
 name: jats
 description: "Render a research topic's surviving findings into well-formed JATS (NISO Z39.96) XML directly FROM THE SOURCES — the findings corpus and the primary materials its citations point to. Composes a scholarly article (article metadata in <front>/<article-meta>, a <body> of one section per finding, and a <back>/<ref-list> reference list) and serializes it as JATS XML. NEVER built from a rendered report (that would be a copy-of-a-copy). Optional channel; verify the current NISO Z39.96 version live before tagging. Use when the user says 'render to JATS', 'export as JATS XML', or 'make a JATS article'."
-version: 0.4.0
+version: 0.4.1
 argument-hint: "<findings-dir> [-o <article.xml>] [<topic-name>]"
 allowed-tools: Read, Write, Bash, Grep, Glob
 ---

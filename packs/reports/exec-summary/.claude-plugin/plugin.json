@@ -1,6 +1,6 @@
 {
   "name": "exec-summary",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "kind": "genre",
   "description": "Genre template for a 1-2 page decision-oriented executive summary (BLUF, key findings, recommendation, risks). Composable as the leadership-summary section of a full ESOMAR- or PTES-style report, with optional PTES Posture / Risk Profile / Roadmap sub-elements.",
   "license": "MIT",

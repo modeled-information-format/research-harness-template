@@ -1,7 +1,7 @@
 ---
 name: engineering
 description: Genre template for a design / evaluation report (problem, options, decision, trade-offs, implementation notes), with optional ANSI/NISO Z39.18 technical-report front-matter (report documentation page, distribution/STINFO markings) and back-matter ordering. Use when the deliverable documents a technical decision or evaluation for engineers who will build or maintain the result.
-version: 0.4.0
+version: 0.4.1
 ---
 
 # Genre Template: Engineering Report

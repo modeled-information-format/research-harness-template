@@ -1,6 +1,6 @@
 {
   "name": "regulatory-review",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "kind": "methodology",
   "description": "Use when the user asks to \"analyze regulations\", \"regulatory landscape\", \"compliance requirements\", \"legal considerations\", \"regulatory risk\", \"industry regulations\", \"compliance analysis\", \"regulatory trends\", or needs guidance on regulato",
   "license": "MIT",

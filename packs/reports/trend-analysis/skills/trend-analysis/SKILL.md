@@ -1,7 +1,7 @@
 ---
 name: trend-analysis
 description: Genre template for a trajectory report (trajectory, signals, scenarios over time), with an optional STEEP/PESTLE environmental scan and a methodology appendix. Use when the deliverable tracks how something is changing and projects forward under uncertainty. Anchored to a foresight convention, not a codified standard.
-version: 0.4.0
+version: 0.4.1
 ---
 
 # Genre Template: Trend Analysis

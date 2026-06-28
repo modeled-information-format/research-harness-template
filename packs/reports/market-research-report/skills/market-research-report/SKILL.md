@@ -1,7 +1,7 @@
 ---
 name: market-research-report
 description: Genre template for a full ESOMAR/ISO 20252-style market research report (background and objectives, methodology, findings, conclusions and recommendations, technical appendix). Use when the deliverable is a complete market-research study write-up for clients or stakeholders who need traceable evidence, an explicit methodology, and a documented sampling and fieldwork basis.
-version: 0.4.0
+version: 0.4.1
 ---
 
 # Genre Template: Market Research Report

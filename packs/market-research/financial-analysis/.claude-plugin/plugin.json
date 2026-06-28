@@ -1,6 +1,6 @@
 {
   "name": "financial-analysis",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "kind": "methodology",
   "description": "Use when the user asks to \"analyze financials\", \"revenue model\", \"unit economics\", \"pricing analysis\", \"cost structure\", \"profitability analysis\", \"financial projections\", \"business model economics\", or needs financial-metric, revenue-analy",
   "license": "MIT",

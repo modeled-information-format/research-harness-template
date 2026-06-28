@@ -1,7 +1,7 @@
 ---
 name: market-sizing
 description: Use when the user asks to "calculate market size", "TAM SAM SOM analysis", "estimate market opportunity", "market sizing", "total addressable market", "serviceable market", "market potential", or needs market-size estimation methodologies, opportunity calculations, or growth projections.
-version: 0.4.0
+version: 0.4.1
 ---
 
 # Market Sizing (TAM/SAM/SOM)

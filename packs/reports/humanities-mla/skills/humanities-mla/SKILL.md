@@ -1,7 +1,7 @@
 ---
 name: humanities-mla
 description: Genre template for an argumentative humanities essay in MLA style — introduction with thesis, body argument sections, conclusion, MLA author-page in-text citations (e.g. (Author 42)), and a Works Cited list. Use when the deliverable is a humanities argument that follows MLA conventions rather than an empirical IMRaD paper. There is no Method or Results section.
-version: 0.4.0
+version: 0.4.1
 ---
 
 # Genre Template: Humanities Essay (MLA Author-Page)

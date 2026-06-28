@@ -1,6 +1,6 @@
 {
   "name": "compliance-audit",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "kind": "genre",
   "description": "Genre template for drafting/modeling a SOC 2 Type II-shaped controls report (auditor's report, management's assertion, system description, Trust Services Criteria, tests of controls & results) — never an attestation",
   "license": "MIT",

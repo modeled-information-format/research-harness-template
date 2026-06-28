@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-06-28
+
+### Added
+
+- The Reports surface now has a stable `/reports/` index page
+  (`src/pages/reports.astro`) that lists this harness's report topics from the docs
+  collection: empty-safe before the first report, the example topic in the template,
+  a clone's own reports in an instance. The splash landing gains a "Read the reports"
+  hero action and a Reports card, and the Reports sidebar group gains an "Overview"
+  link, all pointing at it.
+- Auto-redeploy: `docs.yml` fires the `source-updated` `repository_dispatch` the org
+  Pages `deploy.yml` listens for after a green build on a push to `main`
+  (authenticating as the org GitHub App, scoped to the org Pages repo), so a merge
+  republishes the live site automatically. Previously the live site only updated on a
+  manual deploy dispatch. `gate_m23` gains 23e (landing surfaced) and 23f (dispatch
+  wired; template-only).
+
 ## [0.4.0] - 2026-06-28
 
 ### Added

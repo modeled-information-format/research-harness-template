@@ -1,7 +1,7 @@
 ---
 name: notebooklm
 description: "Produce NotebookLM assets (audio deep-dive, slide deck, infographics, video, mind map) grounded in THE SOURCES — a research topic's surviving findings and the primary materials its citations point to. Adds the actual cited primary sources to the notebook (so NotebookLM synthesizes from source documents, not a pre-digested report) plus a findings digest. NEVER built from a rendered report (a simulacrum of the sources). Optional channel; depends on the external `nlm` CLI. Use when the user says 'notebooklm assets', 'audio overview', 'podcast from the research', or 'nlm assets'."
-version: 0.4.0
+version: 0.4.1
 argument-hint: "<findings-dir> [--only audio|slides|infographic|video|mindmap] [--force]"
 allowed-tools: Read, Write, Bash, Grep, Glob, Monitor
 ---

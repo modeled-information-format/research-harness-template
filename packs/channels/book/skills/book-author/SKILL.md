@@ -1,7 +1,7 @@
 ---
 name: book-author
 description: "Render surviving research findings into a book chapter through the typed findings-to-artifact contract. An OPTIONAL channel pack (enable the `book` pack to use it), supporting the full genre range. Use this skill when the user wants to author a book, write a chapter from the research, turn the corpus into long-form, or build a manuscript. Triggers on 'write a book', 'author a chapter', 'book from research', 'turn this into a chapter', 'long-form from the corpus', 'manuscript'."
-version: 0.4.0
+version: 0.4.1
 argument-hint: "[--topic <id>] [--genre <genre>] [--chapter <n>] [--out <path.md>]"
 allowed-tools: Read, Bash, Edit, Glob, Grep
 ---
