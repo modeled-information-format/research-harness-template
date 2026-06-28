@@ -62,6 +62,10 @@ topic_title:
 # and the user can run `bash scripts/site-toggle.sh primary reports` by hand.
 _tasks:
   - "bash scripts/site-toggle.sh primary reports"
+  # Copier renders symlinked directories as real dirs; re-establish the two
+  # site symlinks so the Astro content collection reaches docs/ and reports/.
+  - "ln -sfn ../reports docs/reports"
+  - "ln -sfn ../../docs src/content/docs"
 
 _message_after_copy: |
   Your research harness is ready.

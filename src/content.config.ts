@@ -29,6 +29,11 @@ export const collections = {
         '!reports/**/research-progress.md',
         '!reports/**/findings/**',
         '!reports/**/README.md',
+        // Audit/continuity artifacts (falsification verdicts, delta diffs,
+        // build specs) are logs, not pages, and carry no Starlight frontmatter.
+        '!reports/**/*-falsification-report.md',
+        '!reports/**/*-delta.md',
+        '!reports/**/*-build-spec.md',
       ],
     }),
     schema: docsSchema(),

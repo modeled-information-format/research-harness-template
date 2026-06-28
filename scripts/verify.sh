@@ -1922,10 +1922,14 @@ gate_m23() {
      && grep -qF "!reports/_meta/**" "$cc" \
      && grep -qF "!reports/**/research-progress.md" "$cc" \
      && grep -qF "!reports/**/README.md" "$cc" \
-     && [ "$(readlink docs/reports 2>/dev/null)" = "../reports" ]; then
+     && grep -qF "!reports/**/*-falsification-report.md" "$cc" \
+     && grep -qF "!reports/**/*-delta.md" "$cc" \
+     && grep -qF "!reports/**/*-build-spec.md" "$cc" \
+     && [ "$(readlink docs/reports 2>/dev/null)" = "../reports" ] \
+     && [ "$(readlink src/content/docs 2>/dev/null)" = "../../docs" ]; then
     ok "content.config.ts binds reports via glob (base src/content/docs + docs/reports symlink, report negations)"
   else
-    bad "reports binding regressed (need glob base './src/content/docs', the docs/reports->../reports symlink, and the _meta/research-progress/README negations)"
+    bad "reports binding regressed (need glob base './src/content/docs', the docs/reports->../reports and src/content/docs->../../docs symlinks, and the _meta/research-progress/README/audit negations)"
   fi
 
   # 23b. astro.config.mjs reads harness.config.json and GATES each site enhancement on

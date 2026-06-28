@@ -60,23 +60,25 @@ const primary =
 // (verified by build); a package.json `overrides` relaxes the peer to `$astro`. `collectionBase:
 // false` because the `docs` collection is served at the site root, not under /docs.
 const docContentGroups = [
-  { label: "Tutorials", items: [{ autogenerate: { directory: "tutorials" } }] },
-  { label: "How-to guides", items: [{ autogenerate: { directory: "how-to" } }] },
-  { label: "Reference", items: [{ autogenerate: { directory: "reference" } }] },
-  { label: "Explanation", items: [{ autogenerate: { directory: "explanation" } }] },
-  { label: "Decisions (ADRs)", items: [{ autogenerate: { directory: "adr" } }] },
+  { label: "Tutorials", collapsed: true, items: [{ autogenerate: { directory: "tutorials", collapsed: true } }] },
+  { label: "How-to guides", collapsed: true, items: [{ autogenerate: { directory: "how-to", collapsed: true } }] },
+  { label: "Reference", collapsed: true, items: [{ autogenerate: { directory: "reference", collapsed: true } }] },
+  { label: "Explanation", collapsed: true, items: [{ autogenerate: { directory: "explanation", collapsed: true } }] },
+  { label: "Decisions (ADRs)", collapsed: true, items: [{ autogenerate: { directory: "adr", collapsed: true } }] },
 ];
 const reportsGroup = {
   label: "Reports",
+  collapsed: true,
   items: [
     { label: "Overview", link: "/reports/" },
-    { autogenerate: { directory: "reports" } },
+    { autogenerate: { directory: "reports", collapsed: true } },
   ],
 };
 const ecosystemGroup = {
   // Bidirectional traversal: links OUT of this sub-site back to the org root
   // and the sibling ecosystem surfaces.
   label: "MIF ecosystem",
+  collapsed: true,
   items: [
     { label: "MIF home", link: "https://modeled-information-format.github.io/" },
     { label: "Ecosystem docs", link: "https://modeled-information-format.github.io/docs/" },

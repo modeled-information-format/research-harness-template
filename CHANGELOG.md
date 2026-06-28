@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- The rendered site now builds and navigates the full instance corpus, not just
+  the example. `harness-instance.md.jinja` ships Starlight frontmatter (it was
+  frontmatter-less and aborted `astro build`/`dev` in every clone); Copier
+  re-establishes the `docs/reports` and `src/content/docs` symlinks it flattens
+  on render, and `gate_m23` now asserts both; and the content glob excludes
+  audit/continuity artifacts (`*-falsification-report.md`, `*-delta.md`,
+  `*-build-spec.md`) that carry no Starlight frontmatter. (#164, #165)
+
+### Changed
+
+- Site sidebar groups collapse by default so a large corpus stays navigable.
+- ADR-0009 records the site-renders-full-corpus decision.
+
 ## [0.4.1] - 2026-06-28
 
 ### Added
