@@ -286,7 +286,7 @@ entity_types:
     prior_art: https://cwe.mitre.org/
     disposition: mint
   # ----- Controls ---------------------------------------------------------
-  - name: control
+  - name: security-control
     description: "A security control or safeguard (the security specialization of the generic engineering-base `control`)"
     base: semantic
     subtype_of:
@@ -872,7 +872,7 @@ relationships:
     from:
       - security-framework
     to:
-      - control
+      - security-control
     symmetric: false
   documents:
     description: "A threat-intelligence report documents a campaign (STIX Report object_refs)"
@@ -916,7 +916,7 @@ relationships:
   mitigates:
     description: "A control mitigates a vulnerability (RO:0000056 participates-in; OSCAL control satisfies risk)"
     from:
-      - control
+      - security-control
     to:
       - vulnerability
     symmetric: false
@@ -955,7 +955,7 @@ discovery:
       suggest_entity: weakness
       suggest_namespace: _semantic/weaknesses
     - content_pattern: "\\b(AC|AU|SC|SI|IA)-\\d+\\b"
-      suggest_entity: control
+      suggest_entity: security-control
       suggest_namespace: _semantic/controls
     - content_pattern: "\\b(APT\\d+|Lazarus Group|FIN\\d+|Sandworm|Volt Typhoon)\\b"
       suggest_entity: threat-actor
