@@ -142,6 +142,12 @@ Build the synthesis from surviving findings:
   thin, and what the decision turns on.
 - **Respect verdict nuance.** `weakened` findings carry caveats; `inconclusive`
   findings are reported as open, not asserted. Reflect this honestly.
+- **Carry the resolved ontological type.** Each surviving finding's section carries its
+  resolved ontology `entityType`, source `ontology` (id@version), and resolution `basis`
+  (joined from `reports/<topic>/ontology-map.json` by finding `@id` — the resolved truth,
+  not the raw finding's self-declaration). Frame claims with that typed/epistemic context:
+  a `discovery`-basis type is a classifier inference, a `declared` type is author-asserted —
+  say which when it bears on a claim's standing.
 
 ## Step 4 — Emit the typed synthesis (findings-to-artifact contract)
 
@@ -150,7 +156,9 @@ Produce a structured synthesis artifact under `$REPORTS_DIR` keyed to finding
 the channel adapters (blog, book, and any enabled channel pack). At minimum it
 carries: the topic and goal reference; the genre applied (or `neutral`); an
 ordered set of synthesis sections; and, per section, the supporting finding `@id`s
-and their citations.
+and their citations. The section `entityType`/`ontology`/`basis` are populated by
+`synthesize-artifact.sh` from `reports/<topic>/ontology-map.json` (the resolved map), so the
+synthesis reflects resolved ontological types, not raw finding self-typing.
 
 > The concrete synthesis-artifact schema is delivered with the output pipelines
 > (design spec §6d). Until it lands, emit a well-formed JSON artifact that is

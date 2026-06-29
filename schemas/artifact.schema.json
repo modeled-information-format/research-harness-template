@@ -93,6 +93,18 @@
           "verdict": {
             "type": "string",
             "description": "The finding's adversarial-falsification verdict (survived | weakened | inconclusive)."
+          },
+          "entityType": {
+            "type": "string",
+            "description": "The FINDING's resolved ontology entity type, joined from reports/<topic>/ontology-map.json by finding @id. Distinct from entities[].entityType (which types each referenced EntityReference). Optional — present only when the topic has a resolved ontology-map."
+          },
+          "ontology": {
+            "type": "string",
+            "description": "id@version of the ontology that resolved the finding's type (e.g. mif-generic@1.0.0)."
+          },
+          "basis": {
+            "type": "string",
+            "description": "How the finding's type was resolved, as recorded by scripts/resolve-ontology.sh: declared | resolved | discovery | untyped | unresolved | ambiguous."
           }
         }
       }

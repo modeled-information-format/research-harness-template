@@ -2219,6 +2219,67 @@ JSON
   rm -rf "$T"
 }
 
+gate_m25() {
+  info "Milestone 25 — cross-topic corpus atlas (synthesize-corpus.sh)"
+  local T; T="$(mktemp -d)"; mkdir -p "$T/reports"
+  cat > "$T/reports/concordance.json" <<'JSON'
+{"@type":"Concordance","nodes":[
+ {"id":"urn:mif:concept:a:f1","kind":"concept","label":"Claim one","topics":["a"],"entityType":"concept","ontology":"mif-generic@1.0.0","verdict":"survived","flagged":false},
+ {"id":"urn:mif:concept:b:f2","kind":"concept","label":"Disproven claim","topics":["b"],"entityType":"concept","ontology":"mif-generic@1.0.0","verdict":"falsified","flagged":true},
+ {"id":"urn:mif:entity:org:acme","kind":"entity","label":"Acme","entityType":"organization","topics":["a","b"]}
+],"edges":[
+ {"source":"urn:mif:concept:a:f1","target":"urn:mif:concept:b:f2","type":"contradicts","via":"relationship","strength":0.7},
+ {"source":"urn:mif:concept:a:f1","target":"urn:mif:entity:org:acme","type":"mentions","via":"entity","strength":null},
+ {"source":"urn:mif:concept:b:f2","target":"urn:mif:entity:org:acme","type":"mentions","via":"entity","strength":null}
+]}
+JSON
+  scripts/synthesize-corpus.sh "$T/reports" >/dev/null 2>&1
+
+  # 25a. corpus-map projects topics, verdict distribution, cross-topic entity reuse,
+  #      contradictions, and the FULL record (falsified flagged as disproven, not excluded).
+  local got
+  got=$(jq -rc '{t:(.topics|sort), v:.verdict_distribution, e:[.entity_reuse[]|{l:.label,tc:.topic_count,d:.degree}], c:[.contradictions[].type], dp:[.disproven[].label]}' "$T/reports/_corpus/corpus-map.json" 2>/dev/null)
+  if [ "$got" = '{"t":["a","b"],"v":{"falsified":1,"survived":1},"e":[{"l":"Acme","tc":2,"d":2}],"c":["contradicts"],"dp":["Disproven claim"]}' ]; then
+    ok "corpus-map projects topics, verdicts, cross-topic entity reuse, contradictions, and the disproven record"
+  else
+    bad "corpus-map projection wrong: $got"
+  fi
+
+  # 25b. The atlas keeps the WHOLE record — a falsified finding appears under What Was Disproven
+  #      (the per-topic synthesizer drops it; the atlas must not).
+  if grep -qF "## What Was Disproven" "$T/reports/_corpus/corpus-synthesis.md" \
+     && grep -qF "Disproven claim" "$T/reports/_corpus/corpus-synthesis.md"; then
+    ok "the atlas surfaces the falsified finding under 'What Was Disproven' (full-record, not survivors-only)"
+  else
+    bad "the atlas dropped the disproven finding"
+  fi
+
+  # 25c. Deterministic: two builds byte-identical (no wall-clock).
+  cp "$T/reports/_corpus/corpus-map.json" "$T/m1"; cp "$T/reports/_corpus/corpus-synthesis.md" "$T/d1"
+  scripts/synthesize-corpus.sh "$T/reports" >/dev/null 2>&1
+  if diff -q "$T/m1" "$T/reports/_corpus/corpus-map.json" >/dev/null 2>&1 \
+     && diff -q "$T/d1" "$T/reports/_corpus/corpus-synthesis.md" >/dev/null 2>&1; then
+    ok "synthesize-corpus is deterministic (two builds byte-identical)"
+  else
+    bad "synthesize-corpus is not deterministic"
+  fi
+
+  # 25d. --check is fail-closed on the seeded draft, passes once Insights are authored, and the
+  #      build fails closed when the concordance is missing.
+  local rc_draft rc_auth rc_miss
+  scripts/synthesize-corpus.sh "$T/reports" --check >/dev/null 2>&1; rc_draft=$?
+  awk '/_Draft/{print "- Authored cross-topic insight."; next} {print}' "$T/reports/_corpus/corpus-synthesis.md" > "$T/auth.md" && mv "$T/auth.md" "$T/reports/_corpus/corpus-synthesis.md"
+  scripts/synthesize-corpus.sh "$T/reports" --check >/dev/null 2>&1; rc_auth=$?
+  rm -f "$T/reports/concordance.json"; scripts/synthesize-corpus.sh "$T/reports" >/dev/null 2>&1; rc_miss=$?
+  if [ "$rc_draft" != 0 ] && [ "$rc_auth" = 0 ] && [ "$rc_miss" != 0 ]; then
+    ok "--check fails on the draft, passes once authored; build fails closed on a missing concordance"
+  else
+    bad "corpus --check/fail-closed wrong (draft=$rc_draft auth=$rc_auth miss=$rc_miss)"
+  fi
+
+  rm -rf "$T"
+}
+
 gate_versions() {
   info "Version consistency — change-driven model (ADR-0010)"
 
@@ -2268,7 +2329,7 @@ gate_versions() {
 # ---------------------------------------------------------------------------
 # Gate registry — each milestone appends its function name here.
 # ---------------------------------------------------------------------------
-GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18 gate_m19 gate_m20 gate_m21 gate_m22 gate_m23 gate_m24 gate_versions)
+GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18 gate_m19 gate_m20 gate_m21 gate_m22 gate_m23 gate_m24 gate_m25 gate_versions)
 
 for g in "${GATES[@]}"; do "$g"; done
 

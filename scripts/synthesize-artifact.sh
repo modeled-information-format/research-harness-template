@@ -18,12 +18,21 @@ OUT="${3:-$DIR/../artifact.json}"
 FILES=$(find "$DIR" -maxdepth 1 -name '*.json' | sort)
 [ -n "$FILES" ] || { echo "synthesize: no findings in $DIR" >&2; exit 2; }
 
+# Resolved ontology types live one level up (the topic root: reports/<topic>/ontology-map.json),
+# keyed by finding @id. Default to [] unless the map is present, NON-EMPTY, and a valid JSON
+# array — an empty placeholder or a corrupt map falls back to [] (the byte-identical no-map path)
+# instead of crashing jq on `--argjson map ""`. The per-section join adds no keys when there is no map.
+ONT_MAP='[]'; ONT_MAPFILE="$DIR/../ontology-map.json"
+if [ -s "$ONT_MAPFILE" ] && jq -e 'type=="array"' "$ONT_MAPFILE" >/dev/null 2>&1; then
+  ONT_MAP=$(cat "$ONT_MAPFILE")
+fi
+
 # Build the artifact from surviving findings: one section per finding, sources
 # deduplicated across the set, finding_refs collected, newsworthiness rolled up.
 # Write to a temp first so a jq failure (e.g. all findings falsified) is fatal and
 # never leaves a stale/empty artifact behind.
 # shellcheck disable=SC2086
-if ! jq -s --arg genre "$GENRE" '
+if ! jq -s --arg genre "$GENRE" --argjson map "$ONT_MAP" '
   map(select((.extensions.harness.verification.verdict // "survived") != "falsified")) as $surv
   | if ($surv | length) == 0 then error("no surviving findings to synthesize") else . end
   | {
@@ -35,7 +44,10 @@ if ! jq -s --arg genre "$GENRE" '
       namespace: ($surv[0].namespace // "harness/report"),
       mif: { conformanceLevel: 3 },
       finding_refs: [ $surv[] | .["@id"] ],
-      sections: [ $surv[] | {
+      sections: [ $surv[]
+        | (.["@id"]) as $fid
+        | (first($map[] | select(.finding_id == $fid)) // {}) as $om
+        | {
         heading: .title,
         body: (.content // .summary // .title),
         supports: [ .["@id"] ],
@@ -48,7 +60,10 @@ if ! jq -s --arg genre "$GENRE" '
                          + (if .strength then {strength: .strength} else {} end) ],
         dimension: (.extensions.harness.dimension // "general"),
         verdict: (.extensions.harness.verification.verdict // "inconclusive")
-      } ],
+      }
+      + (if $om.entity_type       then { entityType: $om.entity_type }       else {} end)
+      + (if $om.resolved_ontology then { ontology:   $om.resolved_ontology } else {} end)
+      + (if $om.basis             then { basis:      $om.basis }             else {} end) ],
       sources: ( [ $surv[] | (.citations // [])[]
                    | { title: .title, url: .url, citationType: (.citationType // "website"), citationRole: (.citationRole // "supports") } + (if .note then {note: .note} else {} end) ]
                  | group_by(.url) | map(max_by((.note // "") | length)) )

@@ -35,6 +35,9 @@ class Section(TypedDict):
     relationships: NotRequired[list[Relationship]]
     dimension: NotRequired[str]
     verdict: NotRequired[str]
+    entityType: NotRequired[str]
+    ontology: NotRequired[str]
+    basis: NotRequired[str]
 
 
 class Source1(TypedDict):

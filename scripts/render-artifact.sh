@@ -119,7 +119,10 @@ DEF='
     + (if (($s.entities // []) | length) > 0
        then [ "", ("Key entities: " + ([ $s.entities[] | .name + " (" + (.entityType // "entity") + ")" ] | join(", ")) + ".") ] else [] end)
     + (if $meta and ($s.dimension != null)
-       then [ "", ("_Dimension: " + $s.dimension + " · verification: " + ($s.verdict // "n/a") + "._") ] else [] end)
+       then [ "", ("_Dimension: " + $s.dimension + " · verification: " + ($s.verdict // "n/a")
+                   + (if $s.entityType then " · type: " + $s.entityType
+                        + (if $s.ontology then " (" + $s.ontology + ")" else "" end) else "" end)
+                   + "._") ] else [] end)
     + (if $ev and (($s.sources // []) | length) > 0
        then [ "", "Evidence:", "" ] + [ $s.sources[] | "- [" + (.title|gsub("^[ \\t]+|[ \\t]+$";"")) + "](<" + .url + ">)" ] else [] end);
 '

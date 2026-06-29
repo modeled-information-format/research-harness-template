@@ -185,6 +185,28 @@ spawned. Safe to run at any point in a session.
 
 ---
 
+## /synthesize-corpus
+
+Builds the cross-topic **corpus atlas** from the ontological spine.
+
+**Purpose:** Projects `reports/concordance.json` across every topic into the corpus atlas — what
+the whole corpus knows, including what was disproven. Distinct from a per-topic report
+(`/start` → `report-synthesizer`, survivors only). Cross-session and cross-topic, not tied to one
+`/start`. Builds the spine on demand if absent.
+
+**Usage:**
+
+```text
+/synthesize-corpus
+```
+
+**What it delegates to:** `corpus-synthesizer` (over the whole `reports/` tree).
+
+**Dependencies:** `scripts/synthesize-corpus.sh`, `scripts/build-concordance.sh`,
+`reports/concordance.json`.
+
+---
+
 ## /topics
 
 Lists the topic registry from the harness manifest.

@@ -43,7 +43,10 @@ Builds, refreshes, and queries the MIF-native knowledge graph.
 `scripts/assert-graph-mif.sh` (acceptance gate), `scripts/build-graph-viz.sh`
 (standalone HTML visualisation), and `scripts/validate-concordance.sh`.
 Query modes (`--node <urn>`, `--between <id1> <id2>`, `--kind`, `--stats`)
-read the graph directly with `jq`.
+read the graph directly with `jq`. With `--concordance`, three corpus-wide query
+verbs surface the spine's cross-topic structure: `--reuse` (entities by cross-topic
+reuse), `--contradictions` (tension edges), and `--disproven` (the falsified, full
+record) — the same projections `synthesize-corpus.sh` writes into the corpus atlas.
 
 **When it triggers:** Invoked when the user asks to build or refresh the graph,
 query entity relationships, visualise the corpus, or validate concordance.

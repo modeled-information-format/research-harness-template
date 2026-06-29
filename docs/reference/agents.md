@@ -144,6 +144,29 @@ updated `reports/<topic>/README.md`.
 
 ---
 
+## corpus-synthesizer
+
+Produces the cross-topic **corpus atlas** from the ontological spine.
+
+**Role:** Cross-topic synthesis agent. Projects `reports/concordance.json` across every topic
+into `reports/_corpus/corpus-synthesis.md` — the whole research record, including what was
+falsified (which the survivors-only `report-synthesizer` omits). Steps: build the deterministic
+backbone (`scripts/synthesize-corpus.sh`) → author synthesis-grade Cross-Corpus Insights
+(cross-topic entity reuse, converging vs. contradicting evidence, what was disproven) traced to
+concordance node ids → gate with `synthesize-corpus.sh --check`.
+
+**Spawned by:** `/synthesize-corpus` (user-invoked; cross-session, not tied to one `/start`).
+The orchestrator suggests it but does not auto-run it (the corpus spans all topics).
+
+**Inputs:** `reports/concordance.json` (assumed built + valid).
+
+**Outputs:** `reports/_corpus/corpus-map.json` (deterministic projection) and
+`reports/_corpus/corpus-synthesis.md` (the atlas).
+
+**Dependencies:** `scripts/synthesize-corpus.sh`, `scripts/build-concordance.sh`. Model: `opus`.
+
+---
+
 ## source-chunker
 
 Handles oversized source documents for dimension-analysts.

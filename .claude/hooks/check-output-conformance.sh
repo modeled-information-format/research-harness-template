@@ -22,9 +22,10 @@ CHANGED=$(git status --porcelain --untracked-files=all -- 'reports/*/*.md' 2>/de
 BAD=""
 while IFS= read -r f; do
   [ -f "$f" ] || continue
-  # reports/_meta is scaffolding; per-topic README.md is a navigation index
-  # (a MIF-exempt projection, like blog/book), not a Level-3 report of record.
-  case "$f" in reports/_meta/*|reports/*/README.md) continue ;; esac
+  # reports/_meta is scaffolding; per-topic README.md is a navigation index; reports/_corpus
+  # is the cross-topic atlas (corpus-synthesis.md) — all MIF-exempt projections (like blog/book),
+  # not Level-3 reports of record.
+  case "$f" in reports/_meta/*|reports/_corpus/*|reports/*/README.md) continue ;; esac
   scripts/mif-project.sh "$f" >/dev/null 2>&1 || BAD="${BAD}${f} "
 done <<< "$CHANGED"
 [ -z "$BAD" ] && exit 0

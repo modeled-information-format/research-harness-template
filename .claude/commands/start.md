@@ -252,4 +252,6 @@ After completion:
 - Findings as individual MIF units under `reports/<topic>/`.
 - Continuity log at `reports/<topic>/research-progress.md`.
 - Quarantined (falsified) findings under `reports/<topic>/quarantine/`.
-- Next steps: `/status`, `/start --augment [<dimension>]`, `/falsify`, `/resume`.
+- Next steps: `/status`, `/start --augment [<dimension>]`, `/falsify`, `/resume`. Once more than
+  one topic has been researched, `/synthesize-corpus` builds the cross-topic atlas (what the whole
+  corpus knows, including what was disproven) from the ontological spine.

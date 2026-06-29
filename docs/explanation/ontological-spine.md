@@ -58,3 +58,19 @@ The ontology gate (`gate_m12`) validates a finding's *own* type. The spine exten
 to the **graph**: the resolved ontology type and verdict are promoted onto concept
 nodes, and every node/edge type in the cross-topic graph is held to the ontology — so
 the knowledge graph is itself ontology-conformant, fail-closed, across the whole corpus.
+
+## The spine feeds synthesis
+
+The spine is no longer write-only — it feeds the deliverables two ways:
+
+- **Per-topic synthesis is ontology-aware.** `scripts/synthesize-artifact.sh` joins each section
+  to its finding's resolved type from `reports/<topic>/ontology-map.json` (`entityType`,
+  `ontology`, `basis`), so a report reflects the *resolved* ontological type and an epistemic
+  `basis` — a `discovery` type is a classifier inference; a `declared` type is author-asserted —
+  not the finding's raw self-typing. The report channel renders it in each section's provenance.
+- **The corpus atlas is the spine's full-record projection.** `scripts/synthesize-corpus.sh`
+  (driven by the `corpus-synthesizer` agent / `/synthesize-corpus`) turns the concordance into
+  `reports/_corpus/corpus-synthesis.md`: cross-topic entity reuse, converging vs. contradicting
+  evidence, and — unlike the survivors-only report-synthesizer — **what was disproven**
+  (falsified findings are flagged and surfaced, not dropped). `graph --concordance --reuse`,
+  `--contradictions`, and `--disproven` query the same projection ad hoc.

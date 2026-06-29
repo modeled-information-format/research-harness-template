@@ -26,6 +26,11 @@ citations are MIF Citation objects; provenance is the MIF W3C-PROV block. This
 collapses the prior schema drift into one machine-validated contract and makes
 the graph first-class instead of tag-derived.
 
+The spine is not write-only: per-topic synthesis carries each finding's resolved ontology type
+onto its report sections, and the cross-topic **corpus atlas** (`/synthesize-corpus`) projects the
+whole spine — including what was disproven — across every topic. See
+[the ontological spine](ontological-spine.md).
+
 Where the harness needs a pattern MIF core does not carry (the falsification
 lifecycle, quarantine state, session lineage), it closes the gap **locally** as
 a harness-owned MIF extension under `extensions.harness` — never by forking MIF

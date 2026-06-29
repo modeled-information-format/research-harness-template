@@ -1,8 +1,8 @@
 ---
 name: graph
 description: "Build, refresh, and query the MIF-native knowledge graph — the typed substrate of concepts and entities (all urn:mif: ids) linked by MIF relationships and mentions. Use this skill when the user asks about relationships between findings, what connects two concepts or entities, entity overlap, or wants a visual map. Triggers on 'what connects', 'how are these related', 'show graph', 'knowledge graph', 'visualize research', 'rebuild the graph', 'entity overlap', 'shared between'. With --concordance, the same verbs operate on the corpus-wide ontological spine spanning ALL topics (build/validate/query reports/concordance.json) — triggers on 'concordance', 'across topics', 'whole corpus', 'cross-topic', 'ontological spine', 'world view of knowledge'. The graph is derived from MIF entities and relations, never from tags."
-version: 0.4.2
-argument-hint: "[--concordance] [--build] [--validate] [--viz] [--stats] [--node <urn:mif:id>] [--between <id1> <id2>] [--kind concept|entity]"
+version: 0.5.0
+argument-hint: "[--concordance] [--build] [--validate] [--viz] [--stats] [--reuse [<N>]] [--contradictions] [--disproven] [--node <urn:mif:id>] [--between <id1> <id2>] [--kind concept|entity]"
 allowed-tools: Read, Bash, Grep, Glob
 ---
 
@@ -158,6 +158,39 @@ instead of a single topic's `knowledge-graph.json`; the node/edge shape is the s
   — identical jq to the per-topic verbs above, but against `reports/concordance.json`.
   Because entities are merged by @id, a `--node` neighborhood here spans every topic
   that references it (`.topics`), and `--between` reveals cross-topic links.
+
+Three concordance-only query verbs surface the corpus's cross-topic structure (the same
+projections `scripts/synthesize-corpus.sh` writes into `reports/_corpus/corpus-map.json`, which
+`/synthesize-corpus` turns into the corpus atlas):
+
+- **`--concordance --reuse [<N>]`** — entities ranked by cross-topic reuse (how many topics
+  reference them) then degree; the corpus's connective tissue. Default N=20.
+
+  ```bash
+  jq --argjson n 20 '
+    (.edges) as $e
+    | [ .nodes[] | select(.kind=="entity") | .id as $id
+        | { id, label, entityType,
+            topic_count:(.topics|length),
+            degree:([ $e[] | select(.source==$id or .target==$id) ]|length) } ]
+    | sort_by([ (- .topic_count), (- .degree), .id ]) | .[0:$n]' reports/concordance.json
+  ```
+
+- **`--concordance --contradictions`** — typed relationship edges that signal tension across the
+  corpus (contradicts / refutes / disputes):
+
+  ```bash
+  jq '[ .edges[] | select(.via=="relationship" and ((.type//"")|test("contradict|refut|disput")))
+        | { source, target, type } ]' reports/concordance.json
+  ```
+
+- **`--concordance --disproven`** — the full-record view: concept nodes flagged as falsified, kept
+  (not excluded) so you can see what the corpus ruled out alongside what held:
+
+  ```bash
+  jq '[ .nodes[] | select(.kind=="concept" and .flagged==true) | { id, label, topics } ]' \
+    reports/concordance.json
+  ```
 
 ### Coverage gaps → suggest `/ontology-review`
 
