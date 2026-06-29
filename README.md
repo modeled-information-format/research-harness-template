@@ -94,4 +94,6 @@ pinned-SHA-256 floor).
 ## Documentation
 
 See `docs/` for the merged Diataxis set: tutorials, how-to guides, reference,
-and explanation.
+and explanation. The org's shared governance, CI, and release runbooks (release,
+branch-protection, Dependabot auto-merge, labels) are cross-linked from
+[org governance & release runbooks](docs/reference/org-governance.md).

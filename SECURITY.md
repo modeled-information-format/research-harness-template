@@ -26,6 +26,11 @@ Verifying with both is the strict check; `--repo` alone would accept an
 attestation from any workflow in the repository. A non-zero exit status means
 verification failed — do not trust the artifact.
 
+The release process itself — the audit-gated, attested cutover this repository follows — is the
+org [release runbook](https://github.com/modeled-information-format/.github/blob/main/docs/runbooks/release-runbook.md);
+see [org governance & release runbooks](docs/reference/org-governance.md) for that plus the
+related branch-protection, Dependabot auto-merge, and labels runbooks.
+
 ## Reporting a Vulnerability
 
 Report security issues privately via
