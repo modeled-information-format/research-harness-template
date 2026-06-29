@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `build-topic-readme.sh`: list `*-build-spec.md` deliverables in the topic README
+  Reports table (only `*-delta.md` build logs stay excluded), and force `LC_ALL=C`
+  on the Reports-table sort so the generated README is byte-identical across build
+  hosts (a locale-sensitive `sort -k2` made the README-freshness gate flap between
+  macOS and the Linux CI runner).
+
 ## [0.5.0] - 2026-06-29
 
 ### Added

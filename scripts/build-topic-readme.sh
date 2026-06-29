@@ -301,10 +301,10 @@ build_readme() {
   # Every constituent deliverable EXCEPT this README index, listed as Type -> Title in a
   # fixed reader-consumption order (report_type): exec summary → briefing → synthesis →
   # the genre reports → falsification report → research progress. The linked title is the
-  # rendered page. Build logs (*-delta, *-build-spec) are omitted.
+  # rendered page. Build logs (*-delta) are omitted.
   local docs base meta rank label title rows
   docs=$(find "$TOPIC_DIR" -maxdepth 1 -name '*.md' \
-    ! -name 'README.md' ! -name '*-delta.md' ! -name '*-build-spec.md' 2>/dev/null)
+    ! -name 'README.md' ! -name '*-delta.md' 2>/dev/null)
   if [ -z "$docs" ]; then
     printf 'No reports rendered yet.\n\n'
   else
@@ -317,7 +317,7 @@ build_readme() {
       title=$(file_title "$f")
       rows+=$(printf '%s\t| %s | [%s](%s) |' "$rank" "$label" "$title" "$base")$'\n'
     done <<< "$docs"
-    printf '%s' "$rows" | sort -t"$(printf '\t')" -k1,1n -k2 | cut -f2-
+    printf '%s' "$rows" | LC_ALL=C sort -t"$(printf '\t')" -k1,1n -k2 | cut -f2-
     printf '\n'
   fi
 
