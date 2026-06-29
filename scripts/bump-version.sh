@@ -127,6 +127,15 @@ for i in ${PACK_NAME[@]+"${!PACK_NAME[@]}"}; do
     || die "pack '$comp' ${PACK_SKILL[$i]} has no 'version:' frontmatter"
   grep -Eq "^#{2,3} $comp\$" "${PACK_DOC[$i]}" \
     || die "pack '$comp': no '## $comp' section in ${PACK_DOC[$i]}"
+  # The section must actually contain a **Version:** row to rewrite — otherwise the
+  # awk below is a silent no-op. Validate it here so a missing row fails BEFORE any
+  # write (the post-write self-verify is the second net, not the first).
+  awk -v comp="$comp" '
+    /^#{1,6} / { insec = ($0 ~ "^#{2,3} " comp "$") }
+    insec && /^\*\*Version:\*\*/ { found=1 }
+    END { exit(found ? 0 : 1) }
+  ' "${PACK_DOC[$i]}" \
+    || die "pack '$comp': the '## $comp' section in ${PACK_DOC[$i]} has no '**Version:**' row to bump"
 done
 
 if [ "$CHECK" -eq 1 ]; then echo "bump-version: --check, no files written."; exit 0; fi
