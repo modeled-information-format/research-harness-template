@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://research-harness.dev/schema/session-state.schema.json",
   "title": "Session State Checkpoint",
-  "description": "A durable, disk-derived checkpoint for resumable research sessions (SPEC §6b continuity). scripts/reconcile-session.sh derives this purely from reports/<topic>/findings/ on disk so that /resume never reworks completed findings: a finding is DONE once it is schema-valid (validity requires extensions.harness.verification with a verdict, so a valid finding has been through the falsification gate) and not falsified. Partial/invalid findings and *.tmp partial writes are excluded from done-counts. The checkpoint carries no wall-clock field so reconcile is byte-deterministic.",
+  "description": "A durable, disk-derived checkpoint for resumable research sessions (SPEC §6b continuity). scripts/reconcile-session.sh derives this purely from reports/<topic>/findings/ on disk so that /resume never reworks completed findings: a finding is DONE once it is schema-valid (validity requires extensions.harness.verification with a verdict, so a valid finding has been through the falsification gate) and not falsified. Partial/invalid findings and *.tmp partial writes are excluded from done-counts. The checkpoint carries no wall-clock field so reconcile is byte-deterministic (the optional concordance block's wall-clock validated_at is deliberately kept out, in reports/concordance-status.json).",
   "type": "object",
   "required": ["topic", "findings", "dimensions", "checks"],
   "additionalProperties": false,
@@ -57,6 +57,19 @@
           "check": { "type": "string", "minLength": 1 },
           "passed": { "type": "boolean" }
         }
+      }
+    },
+    "concordance": {
+      "type": "object",
+      "description": "Cross-topic ontological-spine status as of the last reconcile (ADR-0011). built/valid/nodes/edges describe the corpus reports/concordance.json; untyped_shippable is THIS topic's count of survived|weakened findings lacking a valid ontology type (0 in a synthesizable state). Optional — absent when no concordance.json has been built yet. The wall-clock validated_at lives in reports/concordance-status.json, not here, so reconcile stays byte-deterministic.",
+      "required": ["built", "valid", "untyped_shippable"],
+      "additionalProperties": false,
+      "properties": {
+        "built": { "type": "boolean", "description": "reports/concordance.json exists." },
+        "valid": { "type": "boolean", "description": "validate-concordance.sh exit 0, read from reports/concordance-status.json." },
+        "nodes": { "type": "integer", "minimum": 0 },
+        "edges": { "type": "integer", "minimum": 0 },
+        "untyped_shippable": { "type": "integer", "minimum": 0, "description": "Survived|weakened findings in this topic whose ontology-map basis is untyped/unresolved or invalid, or missing from the map. >0 means the ADR-0011 gate would block synthesis." }
       }
     }
   }

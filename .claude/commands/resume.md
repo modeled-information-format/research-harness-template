@@ -70,8 +70,16 @@ Set `TOPIC=<topic>`, `REPORTS_DIR="reports/$TOPIC"`, `GOAL_FILE="$REPORTS_DIR/go
    attempted_at, verdict}`; per dimension `{total, done}`; per check
    `{check, passed}`. A finding is **done** iff it is schema-valid (validity
    requires a falsification verdict). The printed plan lists only dimensions with
-   `done < total` and failing checks. If the plan is `nothing to do`, the session
-   is already complete — tell the user and do NOT re-spawn.
+   `done < total` and failing checks. If the plan is `nothing to do`:
+
+   - **If `reports/<topic>/.synthesis-withheld` exists**, the ontology-completeness
+     gate (ADR-0011) withheld synthesis last run — synthesis IS the remaining work
+     (the findings are gated/valid, so reconcile sees nothing, but the deliverable was
+     never produced). Re-spawn the orchestrator: it re-enters Phase 4, re-runs the
+     typing gate, and synthesizes once the findings are typed (clearing the sentinel).
+     If the findings are still untyped, point the user at
+     `/ontology-review --topic <topic> --enrich` first.
+   - **Otherwise** the session is already complete — tell the user and do NOT re-spawn.
 
    **If `reconcile-session.sh` exits non-zero, STOP.** It fails safe: a non-zero
    exit means the ajv toolchain/environment is broken, not that work remains.

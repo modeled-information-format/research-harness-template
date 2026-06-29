@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TypedDict
+from typing import NotRequired, TypedDict
 
 
 class Finding(TypedDict):
@@ -23,8 +23,17 @@ class Check(TypedDict):
     passed: bool
 
 
+class Concordance(TypedDict):
+    built: bool
+    valid: bool
+    nodes: NotRequired[int]
+    edges: NotRequired[int]
+    untyped_shippable: int
+
+
 class SessionStateCheckpoint(TypedDict):
     topic: str
     findings: list[Finding]
     dimensions: dict[str, Dimensions]
     checks: list[Check]
+    concordance: NotRequired[Concordance]

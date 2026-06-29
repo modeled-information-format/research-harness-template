@@ -99,6 +99,32 @@ if [ "$partial_count" -eq 0 ]; then nptw=true; else nptw=false; fi
 state=$(jq -S --argjson nptw "$nptw" \
   '.checks += [{check:"no_partial_writes", passed:$nptw}] | .checks |= sort_by(.check)' <<<"$state")
 
+# Concordance status (ADR-0011): project the cross-topic spine's status into the
+# checkpoint WHEN it has been built. The spine + its status sidecar live one level up
+# from this topic dir (reports/concordance{,-status}.json) — a deliberate, existence-
+# guarded exception to "purely from reports/<topic>". Absent concordance.json -> no
+# concordance key (keeps temp-dir fixtures byte-identical). Deterministic: no wall-clock
+# here; validated_at lives only in the sidecar. untyped_shippable uses the SAME predicate
+# as scripts/check-shippable-typing.sh (the gate), computed from this topic's map.
+CONC="$RD/../concordance.json"; CSTAT="$RD/../concordance-status.json"
+if [ -f "$CONC" ]; then
+  uns=0
+  if [ -f "$RD/ontology-map.json" ]; then
+    while IFS= read -r f; do
+      [ -z "$f" ] && continue
+      case "$(jq -r '.extensions.harness.verification.verdict // empty' "$f" 2>/dev/null)" in survived|weakened) : ;; *) continue ;; esac
+      fid=$(jq -r '."@id" // empty' "$f" 2>/dev/null)
+      b=$(jq -r --arg id "$fid" '(map(select(.finding_id==$id))|first) as $r | if $r==null then "missing" elif ($r.valid!=true) then "invalid" elif ($r.basis=="untyped" or $r.basis=="unresolved") then $r.basis else "" end' "$RD/ontology-map.json")
+      [ -n "$b" ] && uns=$((uns+1))
+    done < <(list_findings)
+  fi
+  cvalid=false; [ -f "$CSTAT" ] && cvalid=$(jq -r 'if .valid==true then true else false end' "$CSTAT" 2>/dev/null || echo false)
+  state=$(jq -S --argjson n "$(jq '.nodes|length' "$CONC" 2>/dev/null || echo 0)" \
+               --argjson e "$(jq '.edges|length' "$CONC" 2>/dev/null || echo 0)" \
+               --argjson v "$cvalid" --argjson u "$uns" \
+    '.concordance = {built:true, valid:$v, nodes:$n, edges:$e, untyped_shippable:$u}' <<<"$state")
+fi
+
 # Write the checkpoint atomically. A failed write/rename must NOT fall through to a
 # plan computed from a stale/missing state.json — abort (callers treat non-zero as
 # "cannot determine remaining work — stop", never "everything done").

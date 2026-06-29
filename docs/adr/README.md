@@ -28,3 +28,4 @@ Start a new record from [`template.md`](template.md), numbered sequentially.
 | [0008](0008-attested-fail-closed-supply-chain.md) | Attested delivery and fail-closed supply-chain verification | accepted |
 | [0009](0009-site-renders-full-instance-corpus.md) | The Astro/Starlight site renders the full instance corpus | accepted |
 | [0010](0010-change-driven-component-versioning.md) | Change-driven component versioning | accepted |
+| [0011](0011-fail-closed-ontology-completeness-gate.md) | Fail-closed ontology-completeness gate before synthesis | accepted |

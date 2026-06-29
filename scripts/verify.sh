@@ -2046,6 +2046,77 @@ gate_m23() {
   fi
 }
 
+gate_m24() {
+  info "Milestone 24 — fail-closed ontology-completeness gate + auto-reconciled spine (ADR-0011)"
+  local T; T="$(mktemp -d)"
+  mkdir -p "$T/reports/edu/findings"
+  # A shippable (survived) but UNTYPED finding + its untyped map record.
+  cat > "$T/reports/edu/findings/f1.json" <<'JSON'
+{"@id":"urn:mif:concept:x/edu:f1","title":"Untyped survivor","extensions":{"harness":{"dimension":"d","verification":{"verdict":"survived","verdict_basis":"x"}}}}
+JSON
+  echo '[{"finding_id":"urn:mif:concept:x/edu:f1","entity_type":null,"resolved_ontology":null,"basis":"untyped","valid":true}]' > "$T/reports/edu/ontology-map.json"
+
+  # 24a. An untyped shippable finding BLOCKS synthesis (exit 1) and points to /ontology-review.
+  local msg rc
+  msg=$(scripts/check-shippable-typing.sh "$T/reports/edu" 2>&1); rc=$?
+  if [ "$rc" = 1 ] && printf '%s' "$msg" | grep -q "/ontology-review"; then
+    ok "an untyped shippable finding blocks synthesis (fail closed) and points to /ontology-review --enrich"
+  else
+    bad "untyped shippable finding did not block (rc=$rc)"
+  fi
+
+  # 24b. The SAME finding FALSIFIED does NOT block (only survived|weakened gate).
+  jq '.extensions.harness.verification.verdict="falsified"' "$T/reports/edu/findings/f1.json" > "$T/f.tmp" && mv "$T/f.tmp" "$T/reports/edu/findings/f1.json"
+  if scripts/check-shippable-typing.sh "$T/reports/edu" >/dev/null 2>&1; then
+    ok "a falsified untyped finding does not block synthesis (only shippable verdicts gate)"
+  else
+    bad "a falsified finding wrongly blocked synthesis"
+  fi
+
+  # 24c. A fully-typed shippable corpus PASSES the gate, and the spine builds + conforms
+  #      (reuse the gate_m13 catalog/cfg fixture shape: edu->edu-fixture, a 'title' belongs_to a 'program').
+  local T2; T2="$(mktemp -d)"
+  cat > "$T2/cat.json" <<JSON
+{"ontologies":[
+ {"id":"mif-generic","version":"1.0.0","source":"schemas/ontologies/mif-generic/1.0.0.yaml","core":true},
+ {"id":"mif-base","version":"1.0.0","source":"schemas/ontologies/mif-base/1.0.0.yaml","core":true},
+ {"id":"shared-traits","version":"1.0.0","source":"schemas/ontologies/shared-traits/1.0.0.yaml","core":true},
+ {"id":"edu-fixture","version":"0.1.0","source":"evals/fixtures/ontology/edu-fixture.ontology.yaml","core":false}
+]}
+JSON
+  echo '{"topics":[{"id":"edu","namespace":"x/edu","ontologies":["edu-fixture"]}]}' > "$T2/cfg.json"
+  mkdir -p "$T2/reports/edu/findings"
+  cat > "$T2/reports/edu/findings/f1.json" <<'JSON'
+{"@id":"urn:mif:concept:x/edu:f1","title":"Algebra textbook","entity":{"name":"Algebra I","entity_type":"title"},"entities":[{"@type":"EntityReference","entity":{"@id":"urn:mif:entity:prog:math"},"name":"Math","entityType":"program"}],"relationships":[{"type":"belongs_to","target":"urn:mif:entity:prog:math","strength":1}],"extensions":{"harness":{"dimension":"d","verification":{"verdict":"survived","verdict_basis":"x"}}}}
+JSON
+  echo '[{"finding_id":"urn:mif:concept:x/edu:f1","entity_type":"title","resolved_ontology":"edu-fixture@0.1.0","basis":"declared","valid":true}]' > "$T2/reports/edu/ontology-map.json"
+  scripts/build-concordance.sh "$T2/reports" "$T2/concordance.json" >/dev/null 2>&1
+  if scripts/check-shippable-typing.sh "$T2/reports/edu" >/dev/null 2>&1 \
+     && [ -f "$T2/concordance.json" ] && ajv_plain schemas/concordance.schema.json "$T2/concordance.json" \
+     && scripts/validate-concordance.sh "$T2/concordance.json" --config "$T2/cfg.json" --catalog "$T2/cat.json" >/dev/null 2>&1; then
+    ok "a fully-typed shippable corpus passes the gate and its concordance builds + conforms"
+  else
+    bad "typed corpus path failed (gate/build/validate-concordance)"
+  fi
+  rm -rf "$T2"
+
+  # 24d. Wiring (static): orchestrator Phase 4 runs the typing gate + builds/validates the
+  #      spine BEFORE spawning the synthesizer (the gate is useless if synthesis can bypass it).
+  local lg lb lv lsynth
+  lg=$(grep -n 'check-shippable-typing.sh' .claude/agents/orchestrator.md | head -1 | cut -d: -f1)
+  lb=$(grep -n 'build-concordance.sh' .claude/agents/orchestrator.md | head -1 | cut -d: -f1)
+  lv=$(grep -n 'validate-concordance.sh' .claude/agents/orchestrator.md | head -1 | cut -d: -f1)
+  lsynth=$(grep -n 'subagent_type: "report-synthesizer"' .claude/agents/orchestrator.md | head -1 | cut -d: -f1)
+  if [ -n "$lg" ] && [ -n "$lb" ] && [ -n "$lv" ] && [ -n "$lsynth" ] \
+     && [ "$lg" -lt "$lsynth" ] && [ "$lb" -lt "$lsynth" ] && [ "$lv" -lt "$lsynth" ]; then
+    ok "orchestrator Phase 4 runs the typing gate + concordance build/validate before spawning the synthesizer"
+  else
+    bad "orchestrator does not wire the typing gate + spine before synthesis (gate=$lg build=$lb val=$lv synth=$lsynth)"
+  fi
+
+  rm -rf "$T"
+}
+
 gate_versions() {
   info "Version consistency — change-driven model (ADR-0010)"
 
@@ -2095,7 +2166,7 @@ gate_versions() {
 # ---------------------------------------------------------------------------
 # Gate registry — each milestone appends its function name here.
 # ---------------------------------------------------------------------------
-GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18 gate_m19 gate_m20 gate_m21 gate_m22 gate_m23 gate_versions)
+GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18 gate_m19 gate_m20 gate_m21 gate_m22 gate_m23 gate_m24 gate_versions)
 
 for g in "${GATES[@]}"; do "$g"; done
 

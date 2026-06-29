@@ -575,8 +575,65 @@ Append to the progress file:
    goal-writer set, so newly gathered findings join `members[]` while deliberately
    out-of-scope ones stay out.
 
-1. **Synthesize.** First `scripts/run-lock.sh refresh "$REPORTS_DIR"` (synthesis can
-   be long — keep the lock fresh so it is not stolen before you release it in step 4),
+1. **Pre-synthesis ontology gate + concordance reconciliation (ADR-0011) —
+   fail-closed.** Synthesis must not ship a corpus whose surviving claims are not
+   ontology-typed, and the cross-topic spine (the ontological concordance) is rebuilt
+   every run so synthesis draws on a current corpus. Refresh the lock (this is a phase
+   boundary), rebuild THIS topic's ontology-map deterministically, then gate the
+   shippable findings. Run these **strictly sequentially** — NEVER concurrently with
+   another `ontology-review`/`verify` (they race on the shared catalog + per-topic map
+   files):
+
+   ```bash
+   scripts/run-lock.sh refresh "$REPORTS_DIR"
+   bash scripts/ontology-review.sh --topic "$TOPIC_SLUG"   # rebuild ONLY this topic's ontology-map.json
+   bash scripts/check-shippable-typing.sh "$REPORTS_DIR"   # FAIL-CLOSED: untyped/unresolved/invalid shippable finding -> exit 1
+   ```
+
+   A bare `ontology-review.sh` (no `--topic`) rewrites *every* topic's map and races
+   other runs; `--topic` also self-heals the gitignored catalog if missing.
+
+   **If the gate FAILS (non-zero):** synthesis is withheld. Drop the
+   `.synthesis-withheld` sentinel, record it, release the lock, and **STOP Phase 4 —
+   do NOT run the reconciliation below and do NOT spawn the synthesizer.** `/resume`
+   re-enters here after enrichment (it reads the sentinel as the remaining work):
+
+   ```bash
+   : > "$REPORTS_DIR/.synthesis-withheld"
+   {
+     echo "## $(date -u +%Y-%m-%dT%H:%M:%SZ) — Synthesis WITHHELD (ontology-completeness gate)"
+     echo "- A shippable finding has no valid ontology type (see the gate output above)."
+     echo "- Unblock: \`/ontology-review --topic $TOPIC_SLUG --enrich\` then \`/resume --topic $TOPIC_SLUG\`."
+   } >> "$REPORTS_DIR/research-progress.md"
+   scripts/run-lock.sh release "$REPORTS_DIR"   # a stopped run frees the topic
+   ```
+
+   **If the gate PASSES:** clear any stale sentinel, reconcile the cross-topic spine
+   (build + fail-closed validate), record its status, and project that into the
+   checkpoint:
+
+   ```bash
+   rm -f "$REPORTS_DIR/.synthesis-withheld"
+   bash scripts/build-concordance.sh                           # reports/ -> reports/concordance.json (all topics)
+   if bash scripts/validate-concordance.sh reports/concordance.json; then cval=true; else cval=false; fi
+   jq -n --argjson valid "$cval" \
+         --argjson nodes "$(jq '.nodes|length' reports/concordance.json)" \
+         --argjson edges "$(jq '.edges|length' reports/concordance.json)" \
+         --arg at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+     '{built:true, valid:$valid, nodes:$nodes, edges:$edges, validated_at:$at}' \
+     > reports/concordance-status.json
+   [ "$cval" = true ] || echo "NOTE: concordance non-conformant — /ontology-review --enrich the named topic(s) and rebuild. Per-topic synthesis is NOT blocked by this (per-topic isolation)."
+   bash scripts/reconcile-session.sh "$REPORTS_DIR" >/dev/null  # projects the concordance block into state.json
+   ```
+
+   `check-shippable-typing.sh` is deterministic conformance, **not** a second
+   adversarial gate — the falsification gate remains the only adversarial step
+   (ADR-0004). Concordance non-conformance is surfaced as a NOTE, not a hard block for
+   this topic: the per-topic typing gate above is the authoritative shippable-output
+   block (a cross-topic `@id`-merge violation must not strand an unrelated topic).
+
+2. **Synthesize.** First `scripts/run-lock.sh refresh "$REPORTS_DIR"` (synthesis can
+   be long — keep the lock fresh so it is not stolen before you release it in step 6),
    then spawn the `report-synthesizer` as a **nameless subagent** over the active
    (surviving + downgraded) findings:
 
@@ -596,7 +653,7 @@ Append to the progress file:
    )
    ```
 
-2. **Render the progress view.** APPEND a dated summary section to
+3. **Render the progress view.** APPEND a dated summary section to
    `research-progress.md` (never overwrite — the phase log is an audit trail; and
    never re-emit the `# Research Progress` H1, which exists once from file
    creation). Use a **date-qualified** H2 so repeated sessions never collide — a
@@ -612,7 +669,7 @@ Append to the progress file:
    - **Next steps:** `/start --augment [<dimension>]` (deepen a dimension, every goal dimension if omitted), `/start --update` (refresh with latest data), `/resume` (continue this session)
    ```
 
-3. **Update the topic status** in `harness.config.json` (single atomic jq
+4. **Update the topic status** in `harness.config.json` (single atomic jq
    write, then re-validate against `harness.config.schema.json`):
 
    ```bash
@@ -622,8 +679,8 @@ Append to the progress file:
      -s harness.config.schema.json -d harness.config.json
    ```
 
-4. **Confirm the topic README** (the navigation index — every topic-mutating run
-   leaves it current). The `report-synthesizer` you spawned in step 1 authors the
+5. **Confirm the topic README** (the navigation index — every topic-mutating run
+   leaves it current). The `report-synthesizer` you spawned in step 2 authors the
    synthesis-grade README in its Step 4c. Verify it landed and report its gate
    status — but do NOT hard-block the run on it: you have no `Skill` tool and
    cannot synthesize Key Findings yourself, so a skeleton fallback is a
@@ -644,10 +701,12 @@ Append to the progress file:
    Findings are still the auto-generated draft, which is why a fallback skeleton
    reports as needing the `readme` skill.
 
-5. **Finish.** Your worker subagents have already returned — there is no team to
-   tear down. **Release the run lock** so the topic is free for the next run:
+6. **Finish.** Your worker subagents have already returned — there is no team to
+   tear down. Clear the withheld-synthesis sentinel (a clean run owes nothing) and
+   **release the run lock** so the topic is free for the next run:
 
    ```bash
+   rm -f "$REPORTS_DIR/.synthesis-withheld"
    scripts/run-lock.sh release "$REPORTS_DIR"
    ```
 
