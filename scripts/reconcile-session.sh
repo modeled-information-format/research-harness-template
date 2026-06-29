@@ -117,17 +117,21 @@ if [ -f "$CONC" ]; then
   uns=$(
     while IFS= read -r f; do
       [ -z "$f" ] && continue
-      v=$(jq -r '.extensions.harness.verification.verdict // empty' "$f" 2>/dev/null)
+      # An UNPARSEABLE finding is blocked by the gate (its verdict/type are unknowable); count it
+      # here too (keyed by path) so the projection never reads 0 while synthesis is withheld.
+      if ! v=$(jq -er '.extensions.harness.verification.verdict // ""' "$f" 2>/dev/null); then
+        printf '%s\n' "unreadable:$f"; continue
+      fi
       [ "$v" = survived ] || [ "$v" = weakened ] || continue
       fid=$(jq -r '."@id" // empty' "$f" 2>/dev/null)
-      # A shippable finding with NO @id is blocked by the gate (its empty-id map lookup
-      # resolves to "missing"); key it by file path so it is counted here too, never dropped
-      # or deduped to a single empty key.
+      # A shippable finding with NO @id is blocked by the gate (its empty-id map lookup resolves to
+      # "missing"); key it by file path so it is counted here too, never dropped or deduped away.
       [ -z "$fid" ] && fid="noid:$f"
       printf '%s\n' "$fid"
     done < <(list_findings) | sort -u | while IFS= read -r key; do
       [ -z "$key" ] && continue
-      if [ "${key#noid:}" != "$key" ]; then echo x; continue; fi   # no-@id finding -> gate blocks -> untyped
+      # no-@id OR unparseable finding -> gate blocks it -> untyped (count, do not look up the map)
+      if [ "${key#noid:}" != "$key" ] || [ "${key#unreadable:}" != "$key" ]; then echo x; continue; fi
       if [ "$mapok" != true ]; then echo x; continue; fi
       jq -e --arg id "$key" '(map(select(.finding_id==$id))|first) as $r | ($r==null) or ($r.valid!=true) or ($r.basis=="untyped") or ($r.basis=="unresolved")' "$RD/ontology-map.json" >/dev/null 2>&1; jrc=$?
       # exit 0 = untyped (count); 1 = typed (skip); >1 = jq error -> fail closed, count as untyped

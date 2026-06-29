@@ -2190,6 +2190,32 @@ JSON
     bad "no-@id blocker did not name the file (rc=$rcj)"
   fi
 
+  # 24k. A flat-only layout (reports/<topic>/finding-*.json, NO findings/ subdir) is gated, not
+  #      rejected with exit 2 — discovery matches reconcile's list_findings (which needs no findings/).
+  rm -rf "$T/reports/edu/findings"
+  echo '[{"finding_id":"urn:mif:concept:x/edu:flat","entity_type":null,"resolved_ontology":null,"basis":"untyped","valid":true}]' > "$T/reports/edu/ontology-map.json"
+  echo '{"@id":"urn:mif:concept:x/edu:flat","extensions":{"harness":{"verification":{"verdict":"survived"}}}}' > "$T/reports/edu/finding-flat.json"
+  scripts/check-shippable-typing.sh "$T/reports/edu" >/dev/null 2>&1; rck=$?
+  if [ "$rck" = 1 ]; then
+    ok "a flat-only layout (no findings/ subdir) is gated (exit 1), not rejected with exit 2"
+  else
+    bad "flat-only layout not gated (rc=$rck; want 1)"
+  fi
+
+  # 24l. reconcile's untyped_shippable mirrors the gate: an UNPARSEABLE finding is counted (the
+  #      gate blocks it), so state.json never reports 0 while synthesis is actually withheld.
+  rm -f "$T/reports/edu/finding-flat.json"
+  mkdir -p "$T/reports/edu/findings"
+  printf '{ not valid json ' > "$T/reports/edu/findings/corrupt.json"
+  echo '[]' > "$T/reports/edu/ontology-map.json"
+  echo '{"@type":"Concordance","nodes":[],"edges":[]}' > "$T/reports/concordance.json"
+  scripts/reconcile-session.sh "$T/reports/edu" >/dev/null 2>&1
+  if [ "$(jq -r '.concordance.untyped_shippable' "$T/reports/edu/state.json" 2>/dev/null)" = "1" ]; then
+    ok "reconcile untyped_shippable counts an unparseable finding (matches the gate's fail-closed block)"
+  else
+    bad "reconcile undercounted an unparseable finding vs the gate"
+  fi
+
   rm -rf "$T"
 }
 

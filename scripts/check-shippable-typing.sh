@@ -13,7 +13,7 @@
 # Usage: check-shippable-typing.sh <reports-dir>     # e.g. reports/<topic>
 #   exit 0 = all shippable findings carry a valid ontology type
 #   exit 1 = one or more shippable findings are untyped/unresolved/invalid (synthesis BLOCKED)
-#   exit 2 = no findings dir ; exit 3 = ontology-map.json missing/unparseable (cannot prove typing)
+#   exit 2 = reports-dir does not exist ; exit 3 = ontology-map.json missing/unparseable (cannot prove typing)
 #   exit 5 = jq not found (cannot evaluate typing — fail closed)
 set -uo pipefail
 # Fail closed on a missing toolchain: every typing decision below runs through jq, and a
@@ -23,7 +23,11 @@ command -v jq >/dev/null 2>&1 || { echo "check-shippable-typing: 'jq' not found 
 RD="${1:?usage: check-shippable-typing.sh <reports-dir>}"
 case "$RD" in /*) : ;; *) RD="$(pwd)/$RD" ;; esac
 FDIR="$RD/findings"; MAP="$RD/ontology-map.json"; topic="$(basename "$RD")"
-[ -d "$FDIR" ] || { echo "check-shippable-typing: no findings dir: $FDIR" >&2; exit 2; }
+# Guard the reports-dir, NOT $RD/findings: discovery (below) scans both the findings/ subdir
+# AND a flat reports/<topic>/finding-*.json, matching reconcile-session.sh's list_findings — so
+# a flat-only/legacy layout (or a topic without a findings/ subdir) must reach the scan, not be
+# rejected here. A genuinely empty topic yields no blockers (nothing to gate), which is correct.
+[ -d "$RD" ] || { echo "check-shippable-typing: reports dir does not exist: $RD" >&2; exit 2; }
 # Fail closed: without a map we cannot prove typing (never pass vacuously). Print the SAME
 # operator unblock path the exit-1 blocker prints — a missing/unreadable map is exactly when
 # the operator needs to know how to regenerate it.
