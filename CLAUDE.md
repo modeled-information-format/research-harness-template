@@ -133,9 +133,15 @@ must merge cleanly.
   **`git grep <old-version>` must show only the CHANGELOG history line** — that
   grep is the completeness proof. Component versions are therefore heterogeneous by
   design (e.g. `.claude/skills/readme/SKILL.md` and `packs/ontologies/**` carry
-  their own `version`s) — do **not** force them to match the release. `gate_versions`
-  in `scripts/verify.sh` enforces the real invariants (catalog == template; every
-  stamp is well-formed semver); it does **not** require uniformity. CHANGELOG
+  their own `version`s) — do **not** force them to match the release. Two gates
+  back this: `gate_versions` in `scripts/verify.sh` enforces the consistency
+  invariants (catalog == template; every stamp is well-formed semver; no
+  uniformity required), and the PR-only `version-bump` CI job
+  (`scripts/check-version-bump.sh`) enforces **bump-on-change** — a changed
+  pack/core-skill must move its own version and any change must move the release
+  pointer, else CI fails naming the un-bumped component. A change that warrants no
+  release puts `[skip-version-check]` in the commit (waives the pointer rule only).
+  CHANGELOG
   follows Keep a Changelog: a new `## [X.Y.Z] - YYYY-MM-DD` header is inserted under
   `## [Unreleased]` (the script does this); leave prior dated sections and CHANGELOG
   history lines alone. Then author the new section's Added/Changed bullets by hand.

@@ -99,6 +99,25 @@ jobs:
         # cli2's implicit config discovery.
         run: markdownlint-cli2 --config .markdownlint-cli2.jsonc "**/*.md"
 
+  version-bump:
+    # Change-driven versioning enforcement (ADR-0010): a changed pack or core skill
+    # must move its own version, and any change must move the release pointer
+    # (harness.config.json). PR-only — it diffs against the base branch. A change
+    # that warrants no release bypasses the pointer rule with `[skip-version-check]`
+    # in the commit message; a changed pack/skill must still bump regardless.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Fetch base branch
+        run: git fetch --no-tags origin "${{ github.base_ref }}"
+
+      - name: Versions bumped as required (change-driven, ADR-0010)
+        run: bash scripts/check-version-bump.sh "origin/${{ github.base_ref }}"
+
   pin-check:
     # Supply-chain gate: every GitHub Actions `uses:` across all workflow files
     # must be pinned to a full 40-char commit SHA (a tag/branch ref is mutable

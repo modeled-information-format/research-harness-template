@@ -126,6 +126,16 @@ This is realized by:
   `plugin.json` stamp is well-formed semver (catching a botched bump). It does
   **not** require uniformity, because independent versions (`readme@2.0.0`,
   ontology packs) are legitimate under this model.
+- **`scripts/check-version-bump.sh` + the `version-bump` CI job** — enforces
+  *bump-on-change* (the binding half of the requirement). On every pull request it
+  diffs against the base and fails when a changed pack or core skill did not move
+  its own version, or when any change left the `harness.config.json` release
+  pointer unmoved — naming the offending component and the fix. A change that
+  warrants no release uses `[skip-version-check]` in the commit (waiving the
+  pointer rule only; a changed pack or skill must always bump). Ontology packs are
+  exempt. `gate_versions` checks versions are *consistent*; this gate checks they
+  were *moved when required* — together they close the gap the old, fictional
+  drift gate only pretended to.
 - **Completeness proof** — after a bump, `git grep <old-version>` returns only the
   CHANGELOG history line; `git diff --name-only` is the exact, enumerable change
   set. This independent check is what makes any bump — including the first run of a
@@ -139,8 +149,10 @@ This is realized by:
    introduced this model touches three version files, not eighty.
 2. Version numbers carry information again: a pack at `0.4.2` in a `0.4.3` harness
    genuinely has not changed since `0.4.2`.
-3. The safety net is real and satisfiable: a script that self-verifies plus a gate
-   that enforces the true invariants.
+3. The safety net is real and satisfiable: a self-verifying bump tool, a
+   consistency gate (`gate_versions`), and a PR-only bump-on-change gate
+   (`scripts/check-version-bump.sh`) that fails a change which forgot to move its
+   version — the binding enforcement the old drift gate only claimed to provide.
 
 ### Negative
 
@@ -158,8 +170,9 @@ This is realized by:
 
 The harness now versions by change. The churn and corruption risk of lockstep
 stamping are gone, replaced by a single release pointer, a self-verifying tool,
-and a consistency gate. The one cost — heterogeneous component versions — is the
-honest consequence of letting version numbers mean what they are supposed to mean.
+a consistency gate, and a CI bump-on-change gate. The one cost — heterogeneous
+component versions — is the considered consequence of letting version numbers mean
+what they are supposed to mean.
 
 ## Related Decisions
 
@@ -169,7 +182,7 @@ honest consequence of letting version numbers mean what they are supposed to mea
 ## More Information
 
 - **Date:** 2026-06-29
-- **Source:** `scripts/bump-version.sh`, `scripts/verify.sh` (`gate_versions`), `CLAUDE.md`
+- **Source:** `scripts/bump-version.sh`, `scripts/check-version-bump.sh`, `scripts/verify.sh` (`gate_versions`), `.github/workflows/ci.yml` (`version-bump` job), `CLAUDE.md`
 
 ## Audit
 
@@ -183,7 +196,8 @@ honest consequence of letting version numbers mean what they are supposed to mea
 | No unchanged pack stamp moved in the 0.4.3 bump | `packs/**`, `.claude/skills/**` | compliant |
 | Consistency gate enforces the real invariants | `scripts/verify.sh` | compliant |
 | Bump tool self-verifies and supports dry run | `scripts/bump-version.sh` | compliant |
+| Bump-on-change enforced on PRs (changed component must move its version) | `scripts/check-version-bump.sh`, `.github/workflows/ci.yml` | compliant |
 
-**Summary:** The 0.4.3 release was performed change-driven and verified by `git grep` completeness and `gate_versions`.
+**Summary:** The 0.4.3 release was performed change-driven and verified by `git grep` completeness, `gate_versions`, and the `version-bump` CI gate (tested: a changed pack without a bump fails).
 
 **Action Required:** None
