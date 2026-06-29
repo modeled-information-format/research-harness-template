@@ -149,7 +149,7 @@ run_check() {
   [ -f "$MAP_OUT" ] || { echo "FAIL: corpus-map missing: $MAP_OUT" >&2; return 1; }
   [ -f "$MD_OUT" ]  || { echo "FAIL: corpus-synthesis missing: $MD_OUT" >&2; return 1; }
   local errs=0 sec
-  for sec in "$INSIGHTS_HDR" "## Entity Reuse" "## What Was Disproven" "## Topics"; do
+  for sec in "$INSIGHTS_HDR" "## Entity Reuse" "## Contradictions" "## What Was Disproven" "## Topics"; do
     grep -qF "$sec" "$MD_OUT" || { echo "FAIL: missing section: $sec" >&2; errs=$((errs+1)); }
   done
   # Synthesis gate: the Insights must be AUTHORED, not the seeded draft.

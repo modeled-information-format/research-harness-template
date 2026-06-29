@@ -19,10 +19,13 @@ FILES=$(find "$DIR" -maxdepth 1 -name '*.json' | sort)
 [ -n "$FILES" ] || { echo "synthesize: no findings in $DIR" >&2; exit 2; }
 
 # Resolved ontology types live one level up (the topic root: reports/<topic>/ontology-map.json),
-# keyed by finding @id. Default to [] when absent so a standalone findings dir (verify.sh gate,
-# publish evals) still synthesizes BYTE-IDENTICALLY — the per-section join below adds no keys
-# when there is no map.
-ONT_MAP='[]'; ONT_MAPFILE="$DIR/../ontology-map.json"; [ -f "$ONT_MAPFILE" ] && ONT_MAP=$(cat "$ONT_MAPFILE")
+# keyed by finding @id. Default to [] unless the map is present, NON-EMPTY, and a valid JSON
+# array — an empty placeholder or a corrupt map falls back to [] (the byte-identical no-map path)
+# instead of crashing jq on `--argjson map ""`. The per-section join adds no keys when there is no map.
+ONT_MAP='[]'; ONT_MAPFILE="$DIR/../ontology-map.json"
+if [ -s "$ONT_MAPFILE" ] && jq -e 'type=="array"' "$ONT_MAPFILE" >/dev/null 2>&1; then
+  ONT_MAP=$(cat "$ONT_MAPFILE")
+fi
 
 # Build the artifact from surviving findings: one section per finding, sources
 # deduplicated across the set, finding_refs collected, newsworthiness rolled up.
