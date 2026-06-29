@@ -646,7 +646,13 @@ Append to the progress file:
      non-conformant) echo "NOTE: concordance non-conformant — /ontology-review --enrich the named topic(s) and rebuild. Per-topic synthesis is NOT blocked (per-topic isolation)." ;;
      unvalidated)    echo "NOTE: concordance could NOT be validated (validate-concordance exit $vrc — catalog/config/toolchain). Investigate; per-topic synthesis is NOT blocked." ;;
    esac
-   bash scripts/reconcile-session.sh "$REPORTS_DIR" >/dev/null  # projects the concordance block into state.json
+   # Guard reconcile's exit (do not ignore it): a non-zero reconcile is the documented
+   # broken-toolchain signal (same as Phase 3). It does NOT block synthesis here — the deliverable
+   # is built from the findings, not state.json — but the stale checkpoint must be surfaced, not
+   # silently swallowed, so /resume and /status are not trusted against an unrefreshed state.json.
+   if ! bash scripts/reconcile-session.sh "$REPORTS_DIR" >/dev/null; then
+     echo "NOTE: reconcile-session failed (toolchain?) — state.json checkpoint was NOT refreshed; concordance status is unprojected. Synthesis input (the findings) is unaffected; investigate before relying on /resume or /status."
+   fi
    ```
 
    `check-shippable-typing.sh` is deterministic conformance, **not** a second
