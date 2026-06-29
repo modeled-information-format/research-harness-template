@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-06-29
+
+### Added
+
+- **Fail-closed ontology-completeness gate + auto-reconciled spine** (Epic 1). The
+  research loop now reconciles the cross-topic concordance as a first-class
+  pre-synthesis stage. `scripts/check-shippable-typing.sh` blocks synthesis until
+  every shippable (`survived`/`weakened`) finding resolves to a valid ontology type,
+  and the orchestrator builds + validates `reports/concordance.json` before spawning
+  the report-synthesizer. Falsified, quarantined, and inconclusive findings never
+  block; `/ontology-review --enrich` then `/resume` is the unblock path. New
+  ADR-0011 records the decision and `gate_m24` enforces it.
+- **Ontology-aware synthesis** (Epic 2). `scripts/synthesize-artifact.sh` joins each
+  report section to its finding's resolved type (`entityType`/`ontology`/`basis`)
+  from `ontology-map.json`, and the `report` channel renders the resolved type in
+  its provenance line. The no-map path stays byte-identical, so existing renders are
+  unaffected.
+- **Cross-topic corpus atlas** (Epic 2). New `scripts/synthesize-corpus.sh`,
+  `corpus-synthesizer` agent, and `/synthesize-corpus` command project the spine
+  (`reports/concordance.json`) into `reports/_corpus/corpus-synthesis.md` — the whole
+  research record across every topic, **including what was falsified or weakened**
+  (which the survivors-only report-synthesizer omits). `gate_m25` covers it.
+- **Concordance scale-query verbs** in the `graph` skill: `--reuse`,
+  `--contradictions`, and `--disproven` over `reports/concordance.json` (graph skill
+  bumped to `0.5.0`).
+- **Org governance reference** (`docs/reference/org-governance.md`) cross-linking the
+  org release, branch-protection, Dependabot auto-merge, and labels runbooks plus the
+  reusable-workflow CI architecture, reachable from `SECURITY.md` and `README.md`.
+
+### Fixed
+
+- `copier update` now re-runs `sync-packs.sh` (added to copier `_tasks`), so the
+  derived ontology catalog (`.claude/enabled-packs.json`) never goes stale after an
+  update — a stale catalog missing an `extends` target would otherwise make the
+  fail-closed resolver mark the whole bound corpus invalid.
+- `evals/copier-update.sh` now surfaces copier's stderr instead of swallowing it and
+  retries the transient local-clone hardlink race, so a genuine failure is
+  diagnosable rather than an undiagnosable "flake."
+
 ## [0.4.3] - 2026-06-29
 
 ### Added
@@ -319,6 +358,13 @@ First release of the domain-general research harness template.
 - **Distribution** as a Copier living template and a Claude Code plugin
   marketplace.
 
-[Unreleased]: https://github.com/modeled-information-format/research-harness-template/compare/v0.1.2...HEAD
-[0.1.2]: https://github.com/modeled-information-format/research-harness-template/releases/tag/v0.1.2
+[Unreleased]: https://github.com/modeled-information-format/research-harness-template/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/modeled-information-format/research-harness-template/compare/v0.4.3...v0.5.0
+[0.4.3]: https://github.com/modeled-information-format/research-harness-template/compare/v0.4.2...v0.4.3
+[0.4.2]: https://github.com/modeled-information-format/research-harness-template/compare/v0.4.1...v0.4.2
+[0.4.1]: https://github.com/modeled-information-format/research-harness-template/compare/v0.4.0...v0.4.1
+[0.4.0]: https://github.com/modeled-information-format/research-harness-template/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/modeled-information-format/research-harness-template/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/modeled-information-format/research-harness-template/compare/v0.1.2...v0.2.0
+[0.1.2]: https://github.com/modeled-information-format/research-harness-template/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/modeled-information-format/research-harness-template/releases/tag/v0.1.1

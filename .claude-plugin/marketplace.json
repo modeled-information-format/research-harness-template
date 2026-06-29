@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Bundled plugins for the research harness. Each SKILL is its own plugin under packs/<pack>/<skill>/ (one plugin per skill), so a clone enables exactly the skills it wants without adopting a whole pack. The harness.config.json packs[] control plane toggles each.",
-    "version": "0.4.3"
+    "version": "0.5.0"
   },
   "plugins": [
     {
