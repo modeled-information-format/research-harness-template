@@ -104,20 +104,29 @@ state=$(jq -S --argjson nptw "$nptw" \
 # from this topic dir (reports/concordance{,-status}.json) — a deliberate, existence-
 # guarded exception to "purely from reports/<topic>". Absent concordance.json -> no
 # concordance key (keeps temp-dir fixtures byte-identical). Deterministic: no wall-clock
-# here; validated_at lives only in the sidecar. untyped_shippable uses the SAME predicate
-# as scripts/check-shippable-typing.sh (the gate), computed from this topic's map.
+# here; validated_at lives only in the sidecar. untyped_shippable mirrors the ship gate
+# (scripts/check-shippable-typing.sh): count UNIQUE shippable (survived|weakened) findings
+# whose ontology-map record is missing/invalid/untyped/unresolved. Dedupe by @id so a finding
+# present in both the canonical findings/ path and a flat finding-*.json counts once; a
+# missing/unparseable map means EVERY shippable finding is untyped (fail-closed, mirroring the
+# gate's exit 3), not zero.
 CONC="$RD/../concordance.json"; CSTAT="$RD/../concordance-status.json"
 if [ -f "$CONC" ]; then
-  uns=0
-  if [ -f "$RD/ontology-map.json" ]; then
+  mapok=false
+  [ -f "$RD/ontology-map.json" ] && jq -e 'type=="array"' "$RD/ontology-map.json" >/dev/null 2>&1 && mapok=true
+  uns=$(
     while IFS= read -r f; do
       [ -z "$f" ] && continue
-      case "$(jq -r '.extensions.harness.verification.verdict // empty' "$f" 2>/dev/null)" in survived|weakened) : ;; *) continue ;; esac
-      fid=$(jq -r '."@id" // empty' "$f" 2>/dev/null)
-      b=$(jq -r --arg id "$fid" '(map(select(.finding_id==$id))|first) as $r | if $r==null then "missing" elif ($r.valid!=true) then "invalid" elif ($r.basis=="untyped" or $r.basis=="unresolved") then $r.basis else "" end' "$RD/ontology-map.json")
-      [ -n "$b" ] && uns=$((uns+1))
-    done < <(list_findings)
-  fi
+      v=$(jq -r '.extensions.harness.verification.verdict // empty' "$f" 2>/dev/null)
+      [ "$v" = survived ] || [ "$v" = weakened ] || continue
+      jq -r '."@id" // empty' "$f" 2>/dev/null
+    done < <(list_findings) | sort -u | while IFS= read -r fid; do
+      [ -z "$fid" ] && continue
+      if [ "$mapok" != true ]; then echo x; continue; fi
+      jq -e --arg id "$fid" '(map(select(.finding_id==$id))|first) as $r | ($r==null) or ($r.valid!=true) or ($r.basis=="untyped") or ($r.basis=="unresolved")' "$RD/ontology-map.json" >/dev/null 2>&1 && echo x
+    done | grep -c x
+  )
+  [ -z "$uns" ] && uns=0
   cvalid=false; [ -f "$CSTAT" ] && cvalid=$(jq -r 'if .valid==true then true else false end' "$CSTAT" 2>/dev/null || echo false)
   state=$(jq -S --argjson n "$(jq '.nodes|length' "$CONC" 2>/dev/null || echo 0)" \
                --argjson e "$(jq '.edges|length' "$CONC" 2>/dev/null || echo 0)" \

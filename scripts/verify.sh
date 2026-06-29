@@ -2127,6 +2127,47 @@ JSON
     bad "an unparseable finding did not block — fail-open hole in the fail-closed gate"
   fi
 
+  # 24f. A present-but-UNPARSEABLE ontology-map.json fails closed (cannot prove typing), not
+  #      vacuously pass. Without the map-parse guard, every per-finding lookup errors to "" so a
+  #      shippable survivor would PASS — the exact vacuous-pass class this gate exists to refuse.
+  cat > "$T/reports/edu/findings/f1.json" <<'JSON'
+{"@id":"urn:mif:concept:x/edu:f1","title":"survivor","extensions":{"harness":{"verification":{"verdict":"survived"}}}}
+JSON
+  rm -f "$T/reports/edu/findings/corrupt.json"
+  printf '[ { not valid json ' > "$T/reports/edu/ontology-map.json"
+  if ! scripts/check-shippable-typing.sh "$T/reports/edu" >/dev/null 2>&1; then
+    ok "a present-but-unparseable ontology-map fails closed (cannot prove typing), not vacuously pass"
+  else
+    bad "a corrupt ontology-map passed the gate vacuously — fail-open hole in the fail-closed gate"
+  fi
+
+  # 24g. Discovery scans the flat reports/<topic>/finding-*.json layout too (matching
+  #      reconcile-session.sh's list_findings) — a flat untyped survivor is gated, not bypassed.
+  rm -f "$T/reports/edu/findings/f1.json"
+  echo '[{"finding_id":"urn:mif:concept:x/edu:flat","entity_type":null,"resolved_ontology":null,"basis":"untyped","valid":true}]' > "$T/reports/edu/ontology-map.json"
+  cat > "$T/reports/edu/finding-flat.json" <<'JSON'
+{"@id":"urn:mif:concept:x/edu:flat","title":"flat untyped survivor","extensions":{"harness":{"verification":{"verdict":"survived"}}}}
+JSON
+  if ! scripts/check-shippable-typing.sh "$T/reports/edu" >/dev/null 2>&1; then
+    ok "a flat reports/<topic>/finding-*.json is gated too (union discovery; cannot bypass)"
+  else
+    bad "a flat finding-*.json bypassed the typing gate (discovery divergence from reconcile)"
+  fi
+  rm -f "$T/reports/edu/finding-flat.json"
+
+  # 24h. A valid-JSON but wrong-SHAPE ontology-map (not a record array) fails closed too —
+  #      a `type=="array"` guard, not just a parse check, since a non-array errors every lookup.
+  echo '{"not":"an array"}' > "$T/reports/edu/ontology-map.json"
+  cat > "$T/reports/edu/findings/f1.json" <<'JSON'
+{"@id":"urn:mif:concept:x/edu:f1","title":"survivor","extensions":{"harness":{"verification":{"verdict":"survived"}}}}
+JSON
+  scripts/check-shippable-typing.sh "$T/reports/edu" >/dev/null 2>&1; rc=$?
+  if [ "$rc" = 3 ]; then
+    ok "a wrong-shape (non-array) ontology-map fails closed (exit 3), not vacuously pass"
+  else
+    bad "a wrong-shape ontology-map did not fail closed (rc=$rc)"
+  fi
+
   rm -rf "$T"
 }
 

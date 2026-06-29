@@ -36,7 +36,7 @@ The load-bearing defect is a **vacuous pass**. `scripts/validate-concordance.sh`
 filters its node checks with `select(.entityType != null and (.external != true))`
 (validate-concordance.sh:139). A concept node for an *untyped* finding is stamped
 `entityType: null` by `scripts/build-concordance.sh`
-(`entity_type // .entity.entity_type // null`, build-concordance.sh:48). An
+(`entity_type // .entity.entity_type // null`, build-concordance.sh:47). An
 untyped shippable finding therefore passes concordance validation by being
 skipped — the conformance validator structurally cannot see the gap. Meanwhile
 `.claude/agents/orchestrator.md` Phase 4 ran membership reconciliation and spawned
