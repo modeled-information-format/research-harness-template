@@ -27,3 +27,7 @@
 - name: "research/synthesize"
   color: "5319E7"
   description: "Report synthesis stage"
+
+- name: "research/concordance"
+  color: "5319E7"
+  description: "Cross-topic concordance: composed finding types (reports/concordance.json)"
