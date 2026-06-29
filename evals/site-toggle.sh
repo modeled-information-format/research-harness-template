@@ -55,9 +55,12 @@ for neg in "!reports/**/README.md" "!reports/**/*-falsification-report.md" \
 done
 [ "$(readlink docs/reports 2>/dev/null)" = "../reports" ] || fail "docs/reports symlink (-> ../reports) missing"
 
-# 5. copier activates reports-primary in a clone.
-grep -A3 '_tasks:' copier.yml | grep -qF "site-toggle.sh primary reports" \
-  || fail "copier.yml _tasks does not run 'site-toggle.sh primary reports'"
+# 5. copier activates reports-primary in a clone (template-only check: copier.yml
+#    ships only in the template, so skip it in an instantiated clone).
+if [ -f copier.yml ]; then
+  grep -A3 '_tasks:' copier.yml | grep -qF "site-toggle.sh primary reports" \
+    || fail "copier.yml _tasks does not run 'site-toggle.sh primary reports'"
+fi
 
 echo "site-toggle-eval: PASS"
 exit 0
