@@ -317,7 +317,7 @@ build_readme() {
       title=$(file_title "$f")
       rows+=$(printf '%s\t| %s | [%s](%s) |' "$rank" "$label" "$title" "$base")$'\n'
     done <<< "$docs"
-    printf '%s' "$rows" | sort -t"$(printf '\t')" -k1,1n -k2 | cut -f2-
+    printf '%s' "$rows" | LC_ALL=C sort -t"$(printf '\t')" -k1,1n -k2 | cut -f2-
     printf '\n'
   fi
 
