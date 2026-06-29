@@ -614,22 +614,34 @@ Append to the progress file:
 
    ```bash
    rm -f "$REPORTS_DIR/.synthesis-withheld"
-   bash scripts/build-concordance.sh                           # reports/ -> reports/concordance.json (all topics)
-   # Distinguish validate-concordance's outcomes: exit 0 = conformant; exit 1 = it RAN and
-   # found a violation; exit >1 = it could NOT validate (missing catalog/config, jq/yq error).
-   # Conflating "non-conformant" with "couldn't validate" would record a tooling failure as a
-   # clean valid:false — keep them distinct in the status and the operator NOTE.
-   if bash scripts/validate-concordance.sh reports/concordance.json; then vrc=0; else vrc=$?; fi
-   if   [ "$vrc" -eq 0 ]; then cval=true;  cstate=conformant
-   elif [ "$vrc" -eq 1 ]; then cval=false; cstate=non-conformant
-   else                        cval=false; cstate=unvalidated
+   # Build the spine, then record status. Every step is guarded: a build failure, an unreadable
+   # graph, or a validate error must NOT crash Phase 4 or leave a truncated status file — the
+   # per-topic typing gate above is the authoritative shippable block, so a cross-topic build/
+   # validate problem is a NOTE that never strands this topic.
+   if bash scripts/build-concordance.sh && [ -s reports/concordance.json ]; then
+     # validate-concordance outcomes: exit 0 = conformant; exit 1 = RAN and found a violation;
+     # exit >1 = could NOT validate (missing catalog/config, jq/yq error). Keep them distinct so
+     # a tooling failure is never recorded as a clean "non-conformant".
+     if bash scripts/validate-concordance.sh reports/concordance.json; then vrc=0; else vrc=$?; fi
+     if   [ "$vrc" -eq 0 ]; then cval=true;  cstate=conformant
+     elif [ "$vrc" -eq 1 ]; then cval=false; cstate=non-conformant
+     else                        cval=false; cstate=unvalidated
+     fi
+     nodes=$(jq '.nodes|length' reports/concordance.json 2>/dev/null || echo 0)
+     edges=$(jq '.edges|length' reports/concordance.json 2>/dev/null || echo 0)
+   else
+     cval=false; cstate=unbuilt; nodes=0; edges=0
+     echo "NOTE: build-concordance failed or produced no graph — the cross-topic spine was not rebuilt this run. Per-topic synthesis is NOT blocked."
    fi
-   jq -n --argjson valid "$cval" --arg state "$cstate" \
-         --argjson nodes "$(jq '.nodes|length' reports/concordance.json)" \
-         --argjson edges "$(jq '.edges|length' reports/concordance.json)" \
-         --arg at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-     '{built:true, valid:$valid, state:$state, nodes:$nodes, edges:$edges, validated_at:$at}' \
-     > reports/concordance-status.json
+   # Atomic write (temp -> mv); never leave a stray temp or a truncated status file.
+   if jq -n --argjson valid "$cval" --arg state "$cstate" --argjson nodes "$nodes" --argjson edges "$edges" \
+            --arg at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+        '{built:($state != "unbuilt"), valid:$valid, state:$state, nodes:$nodes, edges:$edges, validated_at:$at}' \
+        > reports/concordance-status.json.tmp; then
+     mv reports/concordance-status.json.tmp reports/concordance-status.json
+   else
+     rm -f reports/concordance-status.json.tmp
+   fi
    case "$cstate" in
      non-conformant) echo "NOTE: concordance non-conformant — /ontology-review --enrich the named topic(s) and rebuild. Per-topic synthesis is NOT blocked (per-topic isolation)." ;;
      unvalidated)    echo "NOTE: concordance could NOT be validated (validate-concordance exit $vrc — catalog/config/toolchain). Investigate; per-topic synthesis is NOT blocked." ;;
