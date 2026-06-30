@@ -611,8 +611,11 @@ prose report. Pair with a spec-genre pack (`architecture-spec`, `kiro-spec`, or 
 
 ### What it provides
 
-The `ai-spec` skill; output `reports/<topic>/<topic>-build-spec.md` carrying MIF frontmatter +
-the genre markers (`genre`, `audience: implementer`, `status`, `evidence_base`).
+The `ai-spec` skill; output written to the `<out.md>` path passed to `render-artifact.sh`. The
+architecture-spec default is `reports/<topic>/<topic>-build-spec.md`; non-architecture genres take
+a genre-qualified path (`<topic>-kiro-build-spec.md`, `<topic>-feature-build-spec.md`) so changing
+genre does not overwrite a sibling spec. Each carries MIF frontmatter + the genre markers
+(`genre`, `audience: implementer`, `status`, `evidence_base`).
 
 ### Dependencies
 

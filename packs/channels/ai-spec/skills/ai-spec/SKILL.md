@@ -36,9 +36,12 @@ pack (`architecture-spec` / `kiro-spec` / `feature-spec`) owns **shape**. Build 
    - when an ontology pack is bound, render its entity inventory as a grounded entity-catalog
      section and its inter-type relationships as a relationship-model section, each row naming
      its source vocabulary.
-4. **Render** — deterministically write `reports/<topic>/<topic>-build-spec.md` (same findings
-   -> byte-identical Markdown). Carry MIF frontmatter + the genre markers (`genre`, `audience:
-   implementer`, `status`, `evidence_base`).
+4. **Render** — deterministically write the spec to the `<out.md>` path passed to
+   `render-artifact.sh` (same findings -> byte-identical Markdown). The architecture-spec default
+   is `reports/<topic>/<topic>-build-spec.md`; qualify other genres with the genre so switching
+   `--genre` does not overwrite a sibling spec (`<topic>-kiro-build-spec.md`,
+   `<topic>-feature-build-spec.md`). Carry MIF frontmatter + the genre markers (`genre`,
+   `audience: implementer`, `status`, `evidence_base`).
 5. **Gate** — the spec must pass `markdownlint-cli2` with zero errors; every evidence row must
    carry a citation; the body carries no internal `urn:mif:` identity.
 
@@ -50,9 +53,11 @@ taxonomy, `status` and the objective framing differ.
 
 ## Output
 
-`reports/<topic>/<topic>-build-spec.md` — the agent-consumable spec. A companion **worked
-specimen** (the genre rendered end-to-end for a concrete subject) proves the genre is real
-output, not just described.
+The agent-consumable spec, written to the `<out.md>` path given to `render-artifact.sh`. The
+architecture-spec default is `reports/<topic>/<topic>-build-spec.md`; non-architecture genres take
+a genre-qualified path (`<topic>-kiro-build-spec.md`, `<topic>-feature-build-spec.md`) so changing
+genre does not overwrite a sibling spec. A companion **worked specimen** (the genre rendered
+end-to-end for a concrete subject) proves the genre is real output, not just described.
 
 ## Dependencies
 
