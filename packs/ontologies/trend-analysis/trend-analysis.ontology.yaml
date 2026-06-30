@@ -45,11 +45,9 @@ ontology:
   extends:
     - mif-base
     - shared-traits
-
 # ===========================================================================
 # CUSTOM NAMESPACES (nested under the mif-base cognitive triad)
 # ===========================================================================
-
 namespaces:
   semantic:
     children:
@@ -80,11 +78,9 @@ namespaces:
       roadmaps:
         description: "Time-sequenced strategic and technology roadmaps"
         type_hint: procedural
-
 # ===========================================================================
 # ENTITY TYPES
 # ===========================================================================
-
 entity_types:
   # ----- Signals, drivers, trends (IFTF / EU JRC K4P) ---------------------
   - name: signal
@@ -92,11 +88,8 @@ entity_types:
     base: semantic
     # Signal / Weak Signal
     traits:
-      - tagged
-      - measured
-      - scored
-      - auditable
-      - categorized
+      - cited
+      - dated
     schema:
       required:
         - name
@@ -130,17 +123,16 @@ entity_types:
           type: string
         related_driver:
           type: string
-
+    source_vocab: IFTF Foresight / EU JRC K4P
+    source_class: Signal / Weak Signal
+    prior_art: https://www.iftf.org/foresight-tools/
+    disposition: mint
   - name: driver
     description: "A driver of change: a broad long-term force shaping the future"
     base: semantic
     # Driver of Change
     traits:
-      - categorized
-      - tagged
-      - measured
-      - auditable
-      - reviewed
+      - cited
     schema:
       required:
         - name
@@ -176,17 +168,17 @@ entity_types:
             - low
             - medium
             - high
-
+    source_vocab: IFTF / EU JRC
+    source_class: Driver of Change
+    prior_art: https://knowledge4policy.ec.europa.eu/foresight/glossary_en
+    disposition: mint
   - name: trend
     description: "A trend: a currently visible direction of change (the canonical generic)"
     base: semantic
     # Trend
     traits:
-      - measured
-      - scored
-      - tagged
-      - categorized
-      - auditable
+      - cited
+      - dated
     schema:
       required:
         - name
@@ -224,17 +216,17 @@ entity_types:
         first_observed:
           type: string
           format: date
-
+    source_vocab: IFTF / Gartner / EU JRC
+    source_class: Trend
+    prior_art: https://www.iftf.org/foresight-tools/
+    disposition: mint
   - name: megatrend
     description: "A megatrend: a long-term structural transformation operating over a decade or more"
     base: semantic
     # Megatrend (long-term structural driver >10yr)
     traits:
-      - categorized
-      - measured
-      - tagged
-      - auditable
-      - reviewed
+      - cited
+      - dated
     schema:
       required:
         - name
@@ -263,17 +255,17 @@ entity_types:
         last_reviewed:
           type: string
           format: date
-
+    source_vocab: EU JRC Global Trends / IFTF
+    source_class: Megatrend (long-term structural driver >10yr)
+    prior_art: https://joint-research-centre.ec.europa.eu/scientific-activities-z/foresight/jrc-global-trends_en
+    disposition: mint
   - name: emerging-issue
     description: "An emerging issue: a novel phenomenon gaining recognition before it becomes a trend"
     base: semantic
     # Emerging Issue (novel phenomenon gaining recognition)
     traits:
-      - measured
-      - scored
-      - categorized
-      - tagged
-      - reviewed
+      - cited
+      - dated
     schema:
       required:
         - name
@@ -306,17 +298,17 @@ entity_types:
           type: string
         policy_relevance:
           type: string
-
+    source_vocab: Molitor / EU JRC K4P Foresight
+    source_class: Emerging Issue
+    prior_art: https://knowledge4policy.ec.europa.eu/foresight/glossary_en
+    disposition: mint
   - name: wild-card
     description: "A wild card: a low-probability, high-impact rupture event"
     base: semantic
     # Wild Card (low-probability, high-impact event)
     traits:
-      - scored
-      - categorized
-      - tagged
-      - auditable
-      - measured
+      - cited
+      - dated
     schema:
       required:
         - name
@@ -353,17 +345,17 @@ entity_types:
           type: string
         preparedness_notes:
           type: string
-
+    source_vocab: EU JRC K4P Foresight / IFTF
+    source_class: Wild Card (low-probability, high-impact event)
+    prior_art: https://knowledge4policy.ec.europa.eu/foresight/glossary_en
+    disposition: mint
   - name: critical-uncertainty
     description: "A critical uncertainty: a high-impact factor that is genuinely unpredictable, used as a scenario axis"
     base: semantic
     # Critical Uncertainty (high-impact, genuinely unpredictable factor)
     traits:
-      - measured
-      - scored
-      - categorized
-      - auditable
-      - reviewed
+      - cited
+      - dated
     schema:
       required:
         - name
@@ -397,7 +389,10 @@ entity_types:
           type: array
           items:
             type: string
-
+    source_vocab: Shell / GBN Scenario Planning
+    source_class: Critical Uncertainty
+    prior_art: https://www.shell.com/news-and-insights/scenarios.html
+    disposition: mint
   # ----- Analytical foresight artifacts ----------------------------------
   - name: adoption-curve
     # inventory base 'analytical' remapped to semantic (no _analytical triad root)
@@ -405,11 +400,8 @@ entity_types:
     base: semantic
     # S-Curve / Technology Maturity Level
     traits:
-      - measured
-      - scored
-      - categorized
-      - auditable
-      - tagged
+      - cited
+      - dated
     schema:
       required:
         - subject
@@ -438,18 +430,19 @@ entity_types:
           type: boolean
         evidence:
           type: string
-
+    source_vocab: Rogers Diffusion of Innovations / Gartner Hype Cycle
+    source_class: S-Curve / Technology Maturity Level
+    prior_art: https://en.wikipedia.org/wiki/Diffusion_of_innovations
+    disposition: mint
   - name: forecast
     # inventory base 'analytical' remapped to semantic (no _analytical triad root)
     description: "A forecast: a projected future outcome grounded in signals, drivers, and trends"
     base: semantic
     # Forecast
     traits:
-      - auditable
-      - scored
-      - reviewed
-      - tagged
-      - bounded
+      - cited
+      - dated
+      - timeline
     schema:
       required:
         - statement
@@ -484,18 +477,18 @@ entity_types:
           format: date
         author:
           type: string
-
+    source_vocab: IFTF Foresight
+    source_class: Forecast
+    prior_art: https://www.iftf.org/foresight-tools/
+    disposition: mint
   - name: scenario
     # inventory base 'analytical' remapped to semantic (no _analytical triad root)
     description: "A scenario: a plausible, internally consistent future narrative"
     base: semantic
     # Scenario (plausible future narrative)
     traits:
-      - auditable
-      - reviewed
-      - tagged
-      - categorized
-      - bounded
+      - cited
+      - versioned
     schema:
       required:
         - name
@@ -526,18 +519,18 @@ entity_types:
           type: string
         world_state:
           type: string
-
+    source_vocab: Shell Scenario Planning / EU JRC
+    source_class: Scenario (plausible future narrative)
+    prior_art: https://www.shell.com/what-we-do/scenarios.html
+    disposition: mint
   - name: horizon
     # inventory base 'analytical' remapped to semantic (no _analytical triad root)
     description: "A horizon: a Three-Horizons temporal planning zone (H1/H2/H3)"
     base: semantic
     # Horizon (temporal planning zone H1/H2/H3)
     traits:
-      - bounded
-      - categorized
-      - scheduled
-      - measured
-      - tagged
+      - cited
+      - dated
     schema:
       required:
         - label
@@ -567,18 +560,17 @@ entity_types:
           type: array
           items:
             type: string
-
+    source_vocab: Three Horizons (Sharpe/Curry/Leicester)
+    source_class: Horizon (H1/H2/H3)
+    prior_art: https://en.wikipedia.org/wiki/Three_Horizons
+    disposition: mint
   - name: implication
     # inventory base 'analytical' remapped to semantic (no _analytical triad root)
     description: "An implication: a cascading consequence of a change (futures wheel ring)"
     base: semantic
     # Implication (cascading consequence of change)
     traits:
-      - measured
-      - scored
-      - categorized
-      - tagged
-      - auditable
+      - cited
     schema:
       required:
         - name
@@ -615,18 +607,18 @@ entity_types:
             - low
             - medium
             - high
-
+    source_vocab: Futures Wheel (Jerome Glenn)
+    source_class: Implication / Consequence Ring
+    prior_art: https://www.toolshero.com/decision-making/futures-wheel-jerome-glenn/
+    disposition: mint
   - name: vision
     # inventory base 'analytical' remapped to semantic (no _analytical triad root)
     description: "A vision: a desired or preferred future state used as a backcasting anchor"
     base: semantic
     # Vision (desired/preferred future state)
     traits:
-      - auditable
-      - reviewed
-      - tagged
-      - bounded
-      - owned
+      - cited
+      - stakeholders
     schema:
       required:
         - name
@@ -654,19 +646,19 @@ entity_types:
           type: array
           items:
             type: string
-
+    source_vocab: OECD-OPSI Futures / Backcasting (Robinson)
+    source_class: Vision / Preferred Future State
+    prior_art: https://oecd-opsi.org/guide/futures-and-foresight/
+    disposition: mint
   # ----- Roadmap (procedural) --------------------------------------------
   - name: roadmap
     description: "A roadmap: a time-sequenced action plan working backward from a vision"
     base: procedural
     # Technology/Strategic Roadmap (time-sequenced action plan)
     traits:
-      - scheduled
-      - auditable
+      - cited
       - versioned
-      - measured
-      - reviewed
-      - owned
+      - timeline
     schema:
       required:
         - name
@@ -697,29 +689,13 @@ entity_types:
         last_updated:
           type: string
           format: date
-
-# ===========================================================================
-# LOCAL TRAITS
-# ===========================================================================
-# `versioned` is not part of shared-traits; it is copied locally from the
-# software-engineering pack so the `roadmap` type can reference it.
-
-traits:
-  versioned:
-    description: "Adds version tracking fields"
-    fields:
-      version:
-        type: string
-        pattern: "^\\d+\\.\\d+\\.\\d+.*$"
-      changelog:
-        type: array
-        items:
-          type: object
-
+    source_vocab: Technology Roadmapping (Phaal/Farrukh)
+    source_class: Technology / Strategic Roadmap
+    prior_art: https://en.wikipedia.org/wiki/Technology_roadmap
+    disposition: mint
 # ===========================================================================
 # RELATIONSHIPS  (grounded in named foresight methodologies + W3C RDFS)
 # ===========================================================================
-
 relationships:
   constrains:
     description: "A critical-uncertainty constrains and differentiates the scenario space (Shell/GBN 2x2 axis)"
@@ -798,11 +774,9 @@ relationships:
     to:
       - critical-uncertainty
     symmetric: false
-
 # ===========================================================================
 # DISCOVERY PATTERNS
 # ===========================================================================
-
 discovery:
   enabled: true
   confidence_threshold: 0.8

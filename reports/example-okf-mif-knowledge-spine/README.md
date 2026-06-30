@@ -1,7 +1,7 @@
 # Example: OKF+MIF as a foundational research knowledge spine
 
 **Research ID:** example-okf-mif-knowledge-spine
-**Created:** 2026-06-28 | **Updated:** 2026-06-28
+**Created:** 2026-06-28 | **Updated:** 2026-06-30
 **Findings:** 36 (survived 31, weakened 5) | **Sources:** 84 unique URLs
 **Falsification:** 2026-06-28 — survived 31, weakened 5 ([report](2026-06-28-falsification-report.md))
 **Status:** archived
@@ -47,6 +47,9 @@ Decide whether MIF should serve as the modeling, provenance, and temporal spine 
 | Computing Paper | [Toward a Layered Knowledge Spine: MIF Provenance/Temporal Semantics over OKF Markdown Packaging](report-computing-paper.md) |
 | Falsification Report | [Falsification Report — example-okf-mif-knowledge-spine](2026-06-28-falsification-report.md) |
 | Research Progress | [Research Progress: Example: OKF+MIF as a foundational research knowledge spine](research-progress.md) |
+| Document | [MIF Provenance Layer over OKF — Kiro spec (requirements → design → tasks)](example-okf-mif-knowledge-spine-kiro-build-spec.md) |
+| Document | [OKF+MIF Extension Seam — feature spec](example-okf-mif-knowledge-spine-feature-build-spec.md) |
+| Document | [OKF+MIF Knowledge-Spine Build Spec — an AI-ready architecture spec for layering MIF's modeling/provenance/temporal spine on OKF packaging](example-okf-mif-knowledge-spine-build-spec.md) |
 
 ## Findings by Dimension
 

@@ -1,0 +1,9 @@
+{
+  "name": "feature-spec",
+  "version": "0.1.0",
+  "kind": "genre",
+  "description": "Genre template for a GitHub Spec Kit single-capability feature spec authored for a coding agent",
+  "license": "MIT",
+  "author": { "name": "zircote" },
+  "provides": { "skills": ["feature-spec"], "genres": ["feature-spec"] }
+}

@@ -26,7 +26,7 @@ REPO = Path(__file__).resolve().parent.parent
 PACKS = REPO / "packs"
 PACK_DOCS = REPO / "docs" / "reference" / "packs"
 INDEX = PACK_DOCS / "index.md"
-FAMILIES = ["channels", "market-research", "ontologies", "reports", "trend-modeling"]
+FAMILIES = ["channels", "genres", "market-research", "ontologies", "reports", "trend-modeling"]
 DOC_URL_SUBSTR = "modeled-information-format.github.io/research-harness-template/reference/packs"
 
 

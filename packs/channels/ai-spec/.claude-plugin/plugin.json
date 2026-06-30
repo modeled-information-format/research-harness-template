@@ -1,0 +1,13 @@
+{
+  "name": "ai-spec",
+  "version": "0.1.0",
+  "kind": "channel",
+  "mif": {
+    "exempt": true,
+    "reason": "The AI-ready architecture spec is an agent-consumable build artifact rendered to a markdown dialect (frontmatter section-index + EARS acceptance criteria) for a downstream coding agent to execute; the MIF Level-3 source of truth remains the generic report channel plus the architecture-spec genre."
+  },
+  "description": "Render surviving findings into an AI-ready, agent-executable architecture spec (genre-shaping of the artifact -> markdown pipeline; finding_refs -> evidence sections, goal checks -> EARS criteria, sections -> structure)",
+  "license": "MIT",
+  "author": { "name": "zircote" },
+  "provides": { "skills": ["ai-spec"], "channels": ["ai-spec"] }
+}

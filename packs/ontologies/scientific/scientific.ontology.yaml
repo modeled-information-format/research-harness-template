@@ -33,11 +33,9 @@ ontology:
   extends:
     - mif-base
     - shared-traits
-
 # ===========================================================================
 # CUSTOM NAMESPACES (nested under the mif-base cognitive triad)
 # ===========================================================================
-
 namespaces:
   semantic:
     children:
@@ -69,11 +67,9 @@ namespaces:
       protocols:
         description: "Methods and protocol applications"
         type_hint: procedural
-
 # ===========================================================================
 # ENTITY TYPES
 # ===========================================================================
-
 entity_types:
   # ----- Studies & investigations -----------------------------------------
   - name: study
@@ -81,10 +77,9 @@ entity_types:
     base: episodic
     # OBI:0000066 investigation (study design sub-type)
     traits:
-      - lifecycle
-      - auditable
-      - scheduled
-      - reviewed
+      - cited
+      - dated
+      - stakeholders
     schema:
       required:
         - study_id
@@ -121,17 +116,18 @@ entity_types:
           type: string
         principal_investigator:
           type: string
-
+    source_vocab: OBI
+    source_class: study design
+    prior_art: obi:StudyDesign / IAO investigation
+    disposition: mint
   - name: research-investigation
     description: "A research investigation spanning planning, execution and reporting"
     base: episodic
     # OBI:0000066 investigation
     traits:
-      - lifecycle
-      - auditable
-      - scheduled
-      - budgeted
-      - reviewed
+      - cited
+      - dated
+      - stakeholders
     schema:
       required:
         - investigation_id
@@ -165,16 +161,17 @@ entity_types:
           type: array
           items:
             type: string
-
+    source_vocab: OBI
+    source_class: investigation
+    prior_art: obi:Investigation / schema.org MedicalStudy
+    disposition: mint
   - name: cohort
     description: "A defined study population (subjects of an investigation)"
     base: episodic
     # OBI:0000070 planned process (study population sub-type) / NCIt cohort C61410
     traits:
-      - lifecycle
-      - measured
-      - inventoried
-      - bounded
+      - cited
+      - dated
     schema:
       required:
         - cohort_id
@@ -193,16 +190,18 @@ entity_types:
           type: string
         demographics_summary:
           type: string
-
+    source_vocab: OBI
+    source_class: study population
+    prior_art: obi:StudyPopulation / NCIt cohort
+    disposition: mint
   # ----- Methods & protocols ----------------------------------------------
   - name: method
     description: "A scientific method or assay"
     base: procedural
     # OBI:0000070 assay (planned process)
     traits:
-      - auditable
-      - reviewed
-      - quality_controlled
+      - cited
+      - versioned
     schema:
       required:
         - method_name
@@ -222,16 +221,18 @@ entity_types:
             type: string
         output_type:
           type: string
-
+    source_vocab: OBI
+    source_class: assay
+    prior_art: obi:Assay / IAO plan specification
+    disposition: mint
   - name: protocol-application
     description: "The execution of a protocol (distinct from the method specification)"
     base: procedural
     # OBI:0000272 protocol (the application/execution thereof)
     traits:
-      - auditable
-      - lifecycle
-      - quality_controlled
-      - reviewed
+      - cited
+      - versioned
+      - dated
     schema:
       required:
         - protocol_name
@@ -253,17 +254,18 @@ entity_types:
           format: uri
         instrument_requirements:
           type: string
-
+    source_vocab: OBI
+    source_class: OBI:0000070 protocol application
+    prior_art: obi:ProtocolApplication / schema.org StudyAction
+    disposition: mint
   # ----- Samples & measurements -------------------------------------------
   - name: sample-organism
     description: "A material sample (organism, tissue, or specimen)"
     base: semantic
     # OBI:0000747 material sample (current, non-deprecated; corrected from "specimen")
     traits:
-      - located
-      - lifecycle
-      - inventoried
-      - measured
+      - cited
+      - dated
     schema:
       required:
         - sample_id
@@ -284,15 +286,17 @@ entity_types:
           type: string
         collection_site:
           type: string
-
+    source_vocab: OBI
+    source_class: specimen
+    prior_art: obi:Specimen / obi:Organism
+    disposition: mint
   - name: measurement
     description: "A measurement datum (a value specification)"
     base: semantic
     # OBI:0001938 value specification / IAO:0000109 measurement datum
     traits:
-      - measured
-      - quality_controlled
-      - auditable
+      - cited
+      - dated
     schema:
       required:
         - measurement_id
@@ -313,15 +317,16 @@ entity_types:
         timestamp:
           type: string
           format: date-time
-
+    source_vocab: OBI
+    source_class: measurement datum
+    prior_art: obi:MeasurementDatum / schema.org Observation
+    disposition: mint
   - name: hypothesis
     description: "A falsifiable scientific hypothesis"
     base: semantic
     # IAO:0000415 hypothesis textual entity (corrected from IAO:0000015 information carrier)
     traits:
-      - lifecycle
-      - reviewed
-      - categorized
+      - cited
     schema:
       required:
         - statement
@@ -350,18 +355,18 @@ entity_types:
             - inconclusive
         derived_from:
           type: string
-
+    source_vocab: IAO
+    source_class: IAO:0000415 hypothesis
+    prior_art: obi:ObjectiveSpecification / IAO hypothesis
+    disposition: mint
   # ----- Instruments ------------------------------------------------------
   - name: research-instrument
     description: "A research instrument or device"
     base: semantic
     # COB:0001300 device (OBI:0000968 obsolete, replaced per OBI->COB reconciliation)
     traits:
-      - lifecycle
-      - maintainable
-      - located
-      - inventoried
-      - quality_controlled
+      - cited
+      - versioned
     schema:
       required:
         - instrument_id
@@ -391,18 +396,19 @@ entity_types:
           format: date
         location:
           type: string
-
+    source_vocab: OBI
+    source_class: device
+    prior_art: obi:Device / IAO:0000070 device
+    disposition: mint
   # ----- Publications & funding -------------------------------------------
   - name: research-publication
     description: "A research publication or scholarly output"
     base: semantic
     # IAO:0000311 publication / schema.org ScholarlyArticle
     traits:
-      - lifecycle
-      - reviewed
-      - auditable
-      - categorized
-      - tagged
+      - cited
+      - versioned
+      - documented
     schema:
       required:
         - title
@@ -434,17 +440,17 @@ entity_types:
           type: string
         open_access:
           type: boolean
-
+    source_vocab: IAO
+    source_class: IAO:0000311 publication
+    prior_art: IAO publication / schema.org ScholarlyArticle
+    disposition: mint
   - name: research-funding
     description: "A grant providing monetary support for research"
     base: semantic
     # schema.org MonetaryGrant (extended with research-linkage facets)
     traits:
-      - lifecycle
-      - budgeted
-      - owned
-      - auditable
-      - renewable
+      - cited
+      - dated
     schema:
       required:
         - grant_id
@@ -468,19 +474,19 @@ entity_types:
           type: string
         investigation_ref:
           type: string
-
+    source_vocab: schema.org
+    source_class: MonetaryGrant
+    prior_art: schema.org/MonetaryGrant
+    disposition: extend
   # ----- Datasets, catalogs, distributions, services (DCAT 3) -------------
   - name: dataset
     description: "A published dataset"
     base: semantic
     # dcat:Dataset (W3C DCAT 3) / schema.org Dataset
     traits:
-      - lifecycle
-      - auditable
-      - owned
-      - reviewed
-      - categorized
-      - tagged
+      - cited
+      - versioned
+      - documented
     schema:
       required:
         - title
@@ -506,15 +512,18 @@ entity_types:
           type: array
           items:
             type: string
-
+    source_vocab: W3C DCAT 3
+    source_class: dcat:Dataset
+    prior_art: dcat:Dataset / schema.org Dataset
+    disposition: reuse
   - name: data-distribution
     description: "A specific representation of a dataset (a downloadable/accessible form)"
     base: semantic
     # dcat:Distribution (W3C DCAT 3)
     traits:
-      - lifecycle
-      - auditable
-      - owned
+      - cited
+      - versioned
+      - documented
     schema:
       required:
         - access_url
@@ -538,16 +547,18 @@ entity_types:
           type: string
         dataset_ref:
           type: string
-
+    source_vocab: W3C DCAT 3
+    source_class: dcat:Distribution
+    prior_art: https://www.w3.org/TR/vocab-dcat-3/
+    disposition: reuse
   - name: data-service
     description: "A data access service (an endpoint serving datasets)"
     base: semantic
     # dcat:DataService (W3C DCAT 3)
     traits:
-      - lifecycle
-      - auditable
-      - maintainable
-      - quality_controlled
+      - cited
+      - versioned
+      - documented
     schema:
       required:
         - endpoint_url
@@ -573,16 +584,18 @@ entity_types:
             - embargoed
         service_type:
           type: string
-
+    source_vocab: W3C DCAT 3
+    source_class: dcat:DataService
+    prior_art: https://www.w3.org/TR/vocab-dcat-3/
+    disposition: reuse
   - name: dataset-series
     description: "A collection of datasets published as a series"
     base: semantic
     # dcat:DatasetSeries (W3C DCAT 3)
     traits:
-      - lifecycle
-      - auditable
-      - scheduled
-      - categorized
+      - cited
+      - versioned
+      - documented
     schema:
       required:
         - title
@@ -603,17 +616,18 @@ entity_types:
           type: string
         license:
           type: string
-
+    source_vocab: W3C DCAT 3
+    source_class: dcat:DatasetSeries
+    prior_art: https://www.w3.org/TR/vocab-dcat-3/
+    disposition: reuse
   - name: data-catalog
     description: "A curated catalog of datasets and services"
     base: semantic
     # dcat:Catalog (W3C DCAT 3) / schema.org DataCatalog
     traits:
-      - auditable
-      - owned
-      - reviewed
-      - lifecycle
-      - categorized
+      - cited
+      - versioned
+      - documented
     schema:
       required:
         - title
@@ -640,15 +654,17 @@ entity_types:
             - open
             - restricted
             - embargoed
-
+    source_vocab: W3C DCAT 3
+    source_class: dcat:Catalog
+    prior_art: dcat:Catalog / schema.org DataCatalog
+    disposition: reuse
   - name: data-provenance
     description: "A provenance record tracing how a data artifact was generated and derived"
     base: episodic
     # W3C PROV-O: prov:Entity + prov:Activity + prov:Agent derivation graph
     traits:
-      - auditable
-      - lifecycle
-      - reviewed
+      - cited
+      - dated
     schema:
       required:
         - entity_ref
@@ -669,11 +685,13 @@ entity_types:
           type: string
         revision_of:
           type: string
-
+    source_vocab: W3C PROV-O
+    source_class: prov:Entity + prov:Activity
+    prior_art: prov:Entity / prov:Activity / prov:wasDerivedFrom
+    disposition: mint
 # ===========================================================================
 # RELATIONSHIPS  (grounded in OBO RO, PROV-O, DCAT 3, IAO, schema.org)
 # ===========================================================================
-
 relationships:
   uses_method:
     description: "A study uses a method (RO:0000056 participates-in)"
@@ -752,11 +770,9 @@ relationships:
     to:
       - dataset
     symmetric: false
-
 # ===========================================================================
 # DISCOVERY PATTERNS
 # ===========================================================================
-
 discovery:
   enabled: true
   confidence_threshold: 0.8

@@ -41,27 +41,9 @@ ontology:
   extends:
     - mif-base
     - shared-traits
-
-# ===========================================================================
-# LOCAL TRAITS (not provided by shared-traits; referenced by some entity types)
-# ===========================================================================
-
-traits:
-  versioned:
-    description: "Adds version tracking fields"
-    fields:
-      version:
-        type: string
-        pattern: "^\\d+\\.\\d+\\.\\d+.*$"
-      changelog:
-        type: array
-        items:
-          type: object
-
 # ===========================================================================
 # CUSTOM NAMESPACES (nested under the mif-base cognitive triad)
 # ===========================================================================
-
 namespaces:
   semantic:
     children:
@@ -81,11 +63,9 @@ namespaces:
       research:
         description: "Win-loss analyses and research episodes"
         type_hint: episodic
-
 # ===========================================================================
 # ENTITY TYPES
 # ===========================================================================
-
 entity_types:
   # ----- Market structure -------------------------------------------------
   - name: segment
@@ -93,13 +73,7 @@ entity_types:
     base: semantic
     # market segment taxon (Umbrex universe-of-entities taxonomy)
     traits:
-      - measured
-      - categorized
-      - bounded
-      - scored
-      - tagged
-      - located
-      - seasonal
+      - cited
     schema:
       required:
         - name
@@ -114,20 +88,17 @@ entity_types:
           type: string
         identifier:
           type: string
-
+    source_vocab: Umbrex market-mapping
+    source_class: market segment taxon
+    prior_art: Umbrex universe-of-entities taxonomy
+    disposition: mint
   - name: competitor
     description: "A competing organization in a market (EXTENDS schema:Organization)"
     base: semantic
     # Organization (schema.org/Organization / GoodRelations BusinessEntity)
     traits:
-      - located
-      - owned
-      - contactable
-      - measured
-      - scored
-      - tagged
-      - categorized
-      - reviewed
+      - cited
+      - dated
     schema:
       required:
         - legal_name
@@ -148,18 +119,16 @@ entity_types:
           type: array
           items:
             type: string
-
+    source_vocab: schema.org
+    source_class: Organization
+    prior_art: schema.org/Organization / GoodRelations BusinessEntity
+    disposition: extend
   - name: brand
     description: "A brand maintained by a competitor (REUSES schema:Brand)"
     base: semantic
     # Brand (schema.org/Brand — Thing > Intangible > Brand)
     traits:
-      - owned
-      - categorized
-      - scored
-      - reviewed
-      - tagged
-      - measured
+      - cited
     schema:
       required:
         - name
@@ -180,17 +149,16 @@ entity_types:
         url:
           type: string
           format: uri
-
+    source_vocab: schema.org
+    source_class: schema:Brand
+    prior_art: https://schema.org/Brand
+    disposition: reuse
   - name: buyer-persona
     description: "A target buyer audience or ideal-customer profile (REUSES schema:Audience)"
     base: semantic
     # Audience (schema.org/Audience / schema.org/PeopleAudience)
     traits:
-      - categorized
-      - scored
-      - tagged
-      - located
-      - measured
+      - cited
     schema:
       required:
         - audience_type
@@ -205,17 +173,16 @@ entity_types:
           type: integer
         required_max_age: # aliases schema:requiredMaxAge
           type: integer
-
+    source_vocab: schema.org
+    source_class: Audience
+    prior_art: schema.org/Audience / schema.org/PeopleAudience
+    disposition: reuse
   - name: respondent-segment
     description: "A survey-respondent cohort defined by screening criteria"
     base: semantic
     # respondent cohort (Pollfish market-research survey methodology)
     traits:
-      - measured
-      - categorized
-      - scored
-      - bounded
-      - tagged
+      - cited
     schema:
       required:
         - name
@@ -230,19 +197,18 @@ entity_types:
           type: integer
         required_max_age: # aliases schema:requiredMaxAge
           type: integer
-
+    source_vocab: Market research practice
+    source_class: respondent cohort
+    prior_art: Pollfish market-research survey methodology
+    disposition: mint
   # ----- Sizing & competitive analysis ------------------------------------
   - name: sizing-estimate
     description: "A market-sizing estimate (TAM/SAM/SOM)"
     base: semantic
     # total-addressable-market (HubSpot TAM/SAM/SOM sizing methodology)
     traits:
-      - measured
-      - scored
-      - auditable
-      - bounded
-      - reviewed
-      - seasonal
+      - cited
+      - dated
     schema:
       required:
         - name
@@ -258,17 +224,17 @@ entity_types:
           type: string
         description:
           type: string
-
+    source_vocab: TAM/SAM/SOM practice
+    source_class: total-addressable-market
+    prior_art: HubSpot TAM/SAM/SOM sizing methodology
+    disposition: mint
   - name: competitive-force
     description: "A Porter competitive force shaping competitive intensity"
     base: semantic
     # competitive-force (Porter Five Forces framework, HBR 1979/2008)
     traits:
-      - scored
-      - measured
-      - categorized
-      - reviewed
-      - seasonal
+      - cited
+      - dated
     schema:
       required:
         - force_type
@@ -299,21 +265,17 @@ entity_types:
             - increasing
             - stable
             - decreasing
-
+    source_vocab: Porter Five Forces
+    source_class: competitive-force
+    prior_art: Porter Five Forces framework (HBR 1979/2008)
+    disposition: mint
   # ----- Offerings, demand & value ----------------------------------------
   - name: service-offering
     description: "A service offering provided into a market (EXTENDS schema:Service)"
     base: semantic
     # Service (schema.org/Service — Thing > Intangible > Service)
     traits:
-      - categorized
-      - measured
-      - scored
-      - located
-      - auditable
-      - reviewed
-      - tagged
-      - seasonal
+      - cited
     schema:
       required:
         - name
@@ -334,18 +296,17 @@ entity_types:
           type: array
           items:
             type: string
-
+    source_vocab: schema.org
+    source_class: schema:Service
+    prior_art: https://schema.org/Service
+    disposition: reuse
   - name: market-demand
     description: "Market demand for an offered item (REUSES schema:Demand)"
     base: semantic
     # Demand (schema.org/Demand — Thing > Intangible > Demand, inverse of Offer)
     traits:
-      - measured
-      - bounded
-      - seasonal
-      - categorized
-      - scored
-      - located
+      - cited
+      - dated
     schema:
       required:
         - item_offered
@@ -364,17 +325,16 @@ entity_types:
         valid_through: # aliases schema:validThrough
           type: string
           format: date
-
+    source_vocab: schema.org
+    source_class: schema:Demand
+    prior_art: https://schema.org/Demand
+    disposition: reuse
   - name: value-proposition
     description: "A value proposition mapping offerings to customer jobs, pains and gains"
     base: semantic
     # value-proposition (Osterwalder Value Proposition Canvas methodology)
     traits:
-      - scored
-      - reviewed
-      - tagged
-      - categorized
-      - measured
+      - cited
     schema:
       required:
         - name
@@ -389,19 +349,19 @@ entity_types:
           type: string
         slogan:
           type: string
-
+    source_vocab: Strategyzer Value Proposition Canvas
+    source_class: value-proposition
+    prior_art: Osterwalder Value Proposition Canvas methodology
+    disposition: mint
   # ----- Intelligence, data sources & instruments -------------------------
   - name: market-intelligence-report
     description: "A market-intelligence report or analysis"
     base: semantic
     # Report (schema.org/Report / IAO:0000311 publication)
     traits:
-      - auditable
-      - reviewed
+      - cited
       - versioned
-      - categorized
-      - tagged
-      - measured
+      - documented
     schema:
       required:
         - name
@@ -423,18 +383,17 @@ entity_types:
           type: array
           items:
             type: string
-
+    source_vocab: schema.org
+    source_class: Report
+    prior_art: schema.org/Report / IAO:0000311 publication
+    disposition: mint
   - name: market-data-source
     description: "A catalog of market-intelligence data (REUSES schema:DataCatalog)"
     base: semantic
     # DataCatalog (schema.org/DataCatalog / W3C DCAT 3 dcat:Catalog)
     traits:
-      - auditable
-      - reviewed
+      - cited
       - versioned
-      - categorized
-      - measured
-      - tagged
     schema:
       required:
         - name
@@ -455,17 +414,17 @@ entity_types:
         date_modified: # aliases schema:dateModified
           type: string
           format: date
-
+    source_vocab: schema.org
+    source_class: DataCatalog
+    prior_art: schema.org/DataCatalog / W3C DCAT 3 dcat:Catalog
+    disposition: reuse
   - name: survey-instrument
     description: "A survey instrument — a research plan specification"
     base: procedural
     # plan-specification (IAO plan-specification / OBI protocol)
     traits:
+      - cited
       - versioned
-      - auditable
-      - reviewed
-      - scheduled
-      - tagged
     schema:
       required:
         - name
@@ -480,19 +439,18 @@ entity_types:
           type: string
         audience:
           type: string
-
+    source_vocab: IAO
+    source_class: plan-specification
+    prior_art: IAO plan-specification / OBI protocol
+    disposition: mint
   # ----- Research episodes ------------------------------------------------
   - name: win-loss-analysis
     description: "A win-loss analysis episode — post-decision interviews with won/lost prospects"
     base: episodic
     # win-loss artifact (Clozd / Corporate Visions win-loss methodology)
     traits:
-      - auditable
-      - reviewed
-      - measured
-      - scored
-      - tagged
-      - seasonal
+      - cited
+      - dated
     schema:
       required:
         - name
@@ -510,11 +468,13 @@ entity_types:
             type: string
         description:
           type: string
-
+    source_vocab: Competitive intelligence practice
+    source_class: win-loss artifact
+    prior_art: Clozd / Corporate Visions win-loss methodology
+    disposition: mint
 # ===========================================================================
 # RELATIONSHIPS  (grounded in schema.org / GoodRelations)
 # ===========================================================================
-
 relationships:
   analyzes-competitor:
     description: "A win-loss-analysis analyzes a competitor (schema:about)"
@@ -579,11 +539,9 @@ relationships:
     to:
       - competitive-force
     symmetric: false
-
 # ===========================================================================
 # DISCOVERY PATTERNS
 # ===========================================================================
-
 discovery:
   enabled: true
   confidence_threshold: 0.8

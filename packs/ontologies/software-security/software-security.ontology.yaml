@@ -42,11 +42,9 @@ ontology:
   description: "Software-security domain ontology — the software-facing slice of security: threats, vulnerabilities, controls, actors, indicators, supply-chain, incidents, frameworks"
   extends:
     - engineering-base
-
 # ===========================================================================
 # CUSTOM NAMESPACES (nested under the mif-base cognitive triad)
 # ===========================================================================
-
 namespaces:
   semantic:
     children:
@@ -84,12 +82,10 @@ namespaces:
       policies:
         description: "Security policies and plans of action"
         type_hint: procedural
-
 # ===========================================================================
 # ENTITY TYPES  (16 mint types; the 3 extend types live in software-engineering)
 # Each type's schema.properties == its inventory schema_fields (snake-cased).
 # ===========================================================================
-
 entity_types:
   # ----- Threats: tactics, techniques, malware ----------------------------
   - name: attack-tactic
@@ -97,10 +93,7 @@ entity_types:
     base: semantic
     # MITRE ATT&CK Tactic (x-mitre-tactic)
     traits:
-      - auditable
-      - categorized
-      - tagged
-      - measured
+      - cited
     schema:
       required:
         - tactic_id
@@ -120,17 +113,16 @@ entity_types:
             type: string
         techniques_count:
           type: integer
-
+    source_vocab: MITRE ATT&CK
+    source_class: Tactic
+    prior_art: https://attack.mitre.org/tactics/
+    disposition: mint
   - name: attack-mitigation
     description: "A course of action that mitigates one or more ATT&CK techniques"
     base: procedural
     # MITRE ATT&CK Mitigation (course-of-action, M-prefixed)
     traits:
-      - auditable
-      - reviewed
-      - measured
-      - categorized
-      - inventoried
+      - cited
     schema:
       required:
         - mitigation_id
@@ -150,17 +142,18 @@ entity_types:
           type: array
           items:
             type: string
-
+    source_vocab: MITRE ATT&CK
+    source_class: Mitigation (course-of-action)
+    prior_art: https://attack.mitre.org/mitigations/
+    disposition: mint
   - name: malware
     description: "A malicious software family or instance"
     base: semantic
     # STIX 2.1 Malware SDO / MITRE ATT&CK Software
     traits:
-      - auditable
-      - tagged
-      - categorized
-      - measured
-      - scored
+      - cited
+      - dated
+      - versioned
     schema:
       required:
         - name
@@ -173,7 +166,7 @@ entity_types:
           type: array
           items:
             type: string
-          # STIX malware-type-ov (open)
+            # STIX malware-type-ov (open)
         aliases:
           type: array
           items:
@@ -200,19 +193,18 @@ entity_types:
         last_seen:
           type: string
           format: date-time
-
+    source_vocab: MITRE ATT&CK / STIX 2.1
+    source_class: Software (ATT&CK - malware and tool subtypes) / malware SDO (STIX 2.1)
+    prior_art: STIX 2.1 malware SDO
+    disposition: mint
   # ----- Vulnerabilities & weaknesses -------------------------------------
   - name: vulnerability
     description: "A CVE vulnerability instance in a product or component"
     base: semantic
     # CVE / NVD vulnerability instance (chains CVE -> CWE -> CAPEC -> ATT&CK)
     traits:
-      - auditable
-      - measured
-      - scored
-      - tagged
-      - inventoried
-      - reviewed
+      - cited
+      - dated
     schema:
       required:
         - cve_id
@@ -237,17 +229,17 @@ entity_types:
           format: date
         remediation:
           type: string
-
+    source_vocab: CVE/CWE/NVD
+    source_class: CVE Vulnerability Instance
+    prior_art: https://cve.mitre.org/
+    disposition: mint
   - name: weakness
     description: "A CWE weakness class (a flaw type, distinct from a CVE instance)"
     base: semantic
     # MITRE CWE Weakness (abstraction levels Pillar > Class > Base > Variant)
     traits:
-      - auditable
-      - categorized
-      - tagged
-      - measured
-      - scored
+      - cited
+      - versioned
     schema:
       required:
         - cwe_id
@@ -289,7 +281,10 @@ entity_types:
           type: array
           items:
             type: string
-
+    source_vocab: MITRE CWE
+    source_class: Weakness
+    prior_art: https://cwe.mitre.org/
+    disposition: mint
   # ----- Controls ---------------------------------------------------------
   - name: security-control
     description: "A security control or safeguard (the security specialization of the generic engineering-base `control`)"
@@ -298,12 +293,7 @@ entity_types:
       - control
     # NIST SP 800-53 Rev.5 Security Control (20 families / ~1,196 controls) + OSCAL
     traits:
-      - auditable
-      - certified
-      - regulated
-      - inventoried
-      - reviewed
-      - quality_controlled
+      - cited
       - versioned
     schema:
       required:
@@ -332,18 +322,18 @@ entity_types:
           type: array
           items:
             type: string
-
+    source_vocab: NIST SP 800-53 Rev.5
+    source_class: Security Control
+    prior_art: https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final
+    disposition: mint
   # ----- Actors, campaigns, indicators ------------------------------------
   - name: threat-actor
     description: "A threat actor or intrusion set"
     base: semantic
     # MITRE ATT&CK Group / Intrusion Set (STIX intrusion-set SDO)
     traits:
-      - auditable
-      - tagged
-      - categorized
-      - measured
-      - scored
+      - cited
+      - attributed
     schema:
       required:
         - name
@@ -358,12 +348,12 @@ entity_types:
           type: array
           items:
             type: string
-          # STIX threat-actor-type-ov (open)
+            # STIX threat-actor-type-ov (open)
         roles:
           type: array
           items:
             type: string
-          # STIX threat-actor-role-ov (open)
+            # STIX threat-actor-role-ov (open)
         goals:
           type: array
           items:
@@ -383,17 +373,17 @@ entity_types:
         last_seen:
           type: string
           format: date-time
-
+    source_vocab: MITRE ATT&CK
+    source_class: Group / Intrusion Set
+    prior_art: https://attack.mitre.org/groups/
+    disposition: mint
   - name: attack-campaign
     description: "A grouping of adversarial behaviour over a period of time"
     base: episodic
     # MITRE ATT&CK Campaign (STIX Campaign SDO, ATT&CK v14.0+)
     traits:
-      - auditable
-      - tagged
-      - measured
-      - reviewed
-      - scored
+      - timeline
+      - cited
     schema:
       required:
         - campaign_name
@@ -416,17 +406,17 @@ entity_types:
           type: array
           items:
             type: string
-
+    source_vocab: MITRE ATT&CK
+    source_class: Campaign
+    prior_art: https://attack.mitre.org/campaigns/
+    disposition: mint
   - name: indicator-of-compromise
     description: "An observable pattern that indicates malicious activity"
     base: semantic
     # STIX 2.1 Indicator SDO; MISP indicator sharing format
     traits:
-      - auditable
-      - measured
-      - tagged
-      - scored
-      - reviewed
+      - cited
+      - dated
     schema:
       required:
         - name
@@ -451,23 +441,21 @@ entity_types:
           type: array
           items:
             type: string
-          # STIX indicator-type-ov (open)
+            # STIX indicator-type-ov (open)
         kill_chain_phases:
           type: array
           items:
             type: string
-
+    source_vocab: STIX 2.1 / OASIS CTI
+    source_class: Indicator (STIX Domain Object)
+    prior_art: https://oasis-open.github.io/cti-documentation/stix/intro
+    disposition: mint
   - name: security-infrastructure
     description: "Adversary or defensive infrastructure (servers, domains, hosting)"
     base: semantic
     # STIX 2.1 Infrastructure SDO
     traits:
-      - auditable
-      - located
-      - owned
-      - measured
-      - inventoried
-      - tagged
+      - cited
     schema:
       required:
         - name
@@ -478,7 +466,7 @@ entity_types:
           type: array
           items:
             type: string
-          # STIX infrastructure-type-ov (open)
+            # STIX infrastructure-type-ov (open)
         aliases:
           type: array
           items:
@@ -495,17 +483,17 @@ entity_types:
           format: date-time
         description:
           type: string
-
+    source_vocab: CIS / NIST
+    source_class: Security Infrastructure Component
+    prior_art: https://www.cisecurity.org/controls/
+    disposition: mint
   - name: security-tool
     description: "A legitimate tool that can be used by adversaries or defenders"
     base: semantic
     # STIX 2.1 Tool SDO
     traits:
-      - auditable
+      - cited
       - versioned
-      - inventoried
-      - categorized
-      - measured
     schema:
       required:
         - name
@@ -516,7 +504,7 @@ entity_types:
           type: array
           items:
             type: string
-          # STIX tool-type-ov (open)
+            # STIX tool-type-ov (open)
         aliases:
           type: array
           items:
@@ -529,17 +517,18 @@ entity_types:
           type: string
         description:
           type: string
-
+    source_vocab: NIST
+    source_class: Security Tool / Capability
+    prior_art: https://csrc.nist.gov/
+    disposition: mint
   - name: threat-intelligence-report
     description: "A curated threat-intelligence report grouping related CTI objects"
     base: episodic
     # STIX 2.1 Report SDO
     traits:
-      - auditable
-      - versioned
-      - reviewed
-      - tagged
-      - categorized
+      - cited
+      - dated
+      - documented
     schema:
       required:
         - name
@@ -559,19 +548,18 @@ entity_types:
             type: string
         description:
           type: string
-
+    source_vocab: STIX 2.1 / OASIS CTI
+    source_class: Report (STIX Domain Object)
+    prior_art: https://oasis-open.github.io/cti-documentation/stix/intro
+    disposition: mint
   # ----- Supply chain -----------------------------------------------------
   - name: supply-chain-risk
     description: "A cyber supply-chain (C-SCRM) supplier or component risk"
     base: semantic
     # NIST SP 800-161r1 C-SCRM Risk / Supplier Risk (SR control overlays, SBOM)
     traits:
-      - auditable
-      - measured
-      - scored
-      - reviewed
-      - regulated
-      - inventoried
+      - cited
+      - versioned
     schema:
       required:
         - risk_id
@@ -616,19 +604,19 @@ entity_types:
           type: array
           items:
             type: string
-
+    source_vocab: NIST SP 800-161r1
+    source_class: C-SCRM Risk / Supplier Risk
+    prior_art: https://csrc.nist.gov/pubs/sp/800/161/r1/final
+    disposition: mint
   # ----- Policies, assessments, plans of action ---------------------------
   - name: security-policy
     description: "A security policy grounded in an OSCAL system security plan / profile"
     base: procedural
     # NIST OSCAL System Security Plan (SSP) + Profile layer
     traits:
-      - auditable
-      - certified
-      - regulated
       - versioned
-      - reviewed
-      - owned
+      - documented
+      - cited
     schema:
       required:
         - policy_name
@@ -653,18 +641,18 @@ entity_types:
           type: array
           items:
             type: string
-
+    source_vocab: NIST OSCAL
+    source_class: System Security Plan / Profile
+    prior_art: https://pages.nist.gov/OSCAL/
+    disposition: mint
   - name: security-assessment
     description: "A security assessment, audit, or test of a system"
     base: episodic
     # NIST OSCAL Assessment Layer (Assessment Plan + Assessment Results)
     traits:
-      - auditable
-      - certified
-      - scheduled
-      - reviewed
-      - measured
-      - quality_controlled
+      - timeline
+      - cited
+      - documented
     schema:
       required:
         - assessment_id
@@ -693,18 +681,18 @@ entity_types:
           type: array
           items:
             type: string
-
+    source_vocab: NIST OSCAL
+    source_class: Assessment Plan / Assessment Results
+    prior_art: https://pages.nist.gov/OSCAL/learn/concepts/layer/assessment/
+    disposition: mint
   - name: poam
     description: "A plan of action and milestones tracking risks to remediation"
     base: procedural
     # NIST OSCAL Plan of Action and Milestones (POA&M) model
     traits:
-      - auditable
-      - scheduled
-      - regulated
-      - reviewed
-      - measured
-      - owned
+      - cited
+      - dated
+      - documented
     schema:
       required:
         - poam_id
@@ -734,7 +722,10 @@ entity_types:
           type: string
         status:
           type: string
-
+    source_vocab: NIST OSCAL
+    source_class: Plan of Action and Milestones (POA&M)
+    prior_art: https://pages.nist.gov/OSCAL/
+    disposition: mint
   # ===========================================================================
   # SDLC-FACING SUPERTYPES (0.2.0 ontology-spine-relayering — moved here from
   # software-engineering under fork-b). These coarse, SDLC-facing types are the
@@ -747,6 +738,7 @@ entity_types:
     base: semantic
     traits:
       - cited
+      - versioned
     schema:
       required:
         - threat_name
@@ -776,11 +768,17 @@ entity_types:
         adversary:
           type: string
           description: "Intrusion set / ATT&CK Group"
+    source_vocab: MITRE ATT&CK
+    source_class: Technique (attack-pattern)
+    prior_art: https://attack.mitre.org/
+    disposition: extend
   - name: security-framework
     description: "A security or assurance framework, taxonomy, or standard (e.g. OWASP Top 10, MITRE ATLAS, SLSA, NIST SSDF/CSF)"
     base: semantic
     traits:
       - cited
+      - versioned
+      - documented
     schema:
       required:
         - framework_name
@@ -803,6 +801,10 @@ entity_types:
         structure:
           type: string
           description: "Framework structure (e.g. CSF: 6 functions / 22 categories / 106 subcategories)"
+    source_vocab: NIST CSF / OWASP
+    source_class: Security Framework
+    prior_art: https://www.nist.gov/cyberframework
+    disposition: extend
   - name: security-incident
     description: "A security breach/incident carrying the VERIS four A's (Actor + Action + Asset + Attribute)"
     base: episodic
@@ -839,7 +841,10 @@ entity_types:
         attribute:
           type: string
           description: "VERIS Attribute — how affected (CIA)"
-
+    source_vocab: VERIS
+    source_class: Incident (Actor+Action+Asset+Attribute)
+    prior_art: https://verisframework.org/
+    disposition: extend
 # ===========================================================================
 # RELATIONSHIPS  (12, grounded in STIX 2.1 SROs, NIST OSCAL, MITRE CWE, OBO RO)
 # ===========================================================================
@@ -847,7 +852,6 @@ entity_types:
 # security-framework / security-incident supertypes were moved here in 0.2.0
 # (fork-b), so the formerly cross-pack edges (defines, mitigates_threat, realizes)
 # are local.
-
 relationships:
   attributed_to:
     description: "A campaign is attributed to a threat actor (stix:attributed-to)"
@@ -937,64 +941,9 @@ relationships:
     to:
       - security-tool
     symmetric: false
-
-# ===========================================================================
-# LOCAL TRAITS
-# ===========================================================================
-# `versioned` is not provided by shared-traits; defined locally (copied from the
-# software-engineering pack) for the types that reference it (control,
-# security-policy, security-tool, threat-intelligence-report).
-
-traits:
-  versioned:
-    description: "Adds version tracking fields"
-    fields:
-      version:
-        type: string
-        pattern: "^\\d+\\.\\d+\\.\\d+.*$"
-      changelog:
-        type: array
-        items:
-          type: object
-  # Added in 0.2.0 for the SDLC-facing supertypes moved here from software-engineering.
-  cited:
-    description: "Requires citations/sources"
-    requires:
-      - citations
-  timeline:
-    description: "Adds incident timeline"
-    fields:
-      timeline:
-        type: array
-        items:
-          type: object
-          properties:
-            timestamp:
-              type: string
-              format: date-time
-            event:
-              type: string
-            actor:
-              type: string
-  stakeholders:
-    description: "Adds stakeholder tracking"
-    fields:
-      stakeholders:
-        type: array
-        items:
-          type: object
-          properties:
-            name:
-              type: string
-            role:
-              type: string
-            contact:
-              type: string
-
 # ===========================================================================
 # DISCOVERY PATTERNS
 # ===========================================================================
-
 discovery:
   enabled: true
   confidence_threshold: 0.8

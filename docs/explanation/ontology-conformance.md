@@ -47,7 +47,10 @@ to whatever `yq` version produced the json.
 ## Per-topic binding, with an always-on core
 
 `mif-generic` + `mif-base` are **always enabled for every topic** (cataloged as core),
-so any finding can be typed generically even with no domain ontology. The example domain
+so any finding can be typed generically even with no domain ontology. Every entity type's
+`base` is one of `mif-base`'s three cognitive-triad roots — `_semantic` / `_procedural` /
+`_episodic`, a closed set grounded in Tulving's memory systems; see
+[The cognitive triad](cognitive-triad.md). The example domain
 ontologies are optional **data packs** (`packs/ontologies/<id>/`, `kind: ontology`) —
 not Claude Code plugins, so they never touch `gate_m5`. They are disabled by default;
 `harness.config.json` `ontologies[]` enables them, `sync-packs.sh` catalogs the enabled

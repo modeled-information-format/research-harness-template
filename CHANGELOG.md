@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-06-29
+
+### Added
+
+- **`ai-spec` channel + spec-genre packs.** A new `ai-spec` channel pack renders a
+  topic's surviving findings into an AI-ready, agent-executable architecture spec — a
+  genre-shaping of the `artifact.json` → Markdown pipeline (`finding_refs[]` → grounded
+  evidence sections, the goal's `completion_condition.checks[]` → EARS acceptance
+  criteria, `artifact.sections[]` → structure). It pairs with a new `packs/genres/`
+  family carrying one pack per spec genre: `architecture-spec` (arc42/C4 §1–§12 +
+  EARS), `kiro-spec` (requirements → design → tasks), and `feature-spec` (Spec Kit
+  single capability). All optional and toggle-ready (`enabled:false`), registered in
+  `harness.config.json` and the marketplace.
+- **Cognitive-triad explanation** (`docs/explanation/cognitive-triad.md`). Codifies why
+  an entity type's `base` is the closed set `_semantic`/`_procedural`/`_episodic`
+  (Tulving's memory systems, cited as MIF `Citation` objects), the base-vs-namespace
+  distinction, and why a derivation method such as "analytical" is never a base — its
+  outputs (`forecast`/`scenario`/`adoption-curve`) are `_semantic`.
+- **Worked specimens.** One worked example per genre in the bundled
+  `example-okf-mif-knowledge-spine` topic (`*-build-spec.md`), each a MIF Level-1
+  deliverable grounded in surviving findings with EARS criteria drawn from the goal checks.
+
+### Changed
+
+- **Five domain ontology packs conformed to the build-spec.** `software-security`,
+  `regulatory-legal`, `scientific`, `market-research`, and `trend-analysis` now carry
+  prior-art grounding (`source_vocab`/`source_class`/`prior_art`/`disposition`) on every
+  entity type and provenance traits resolved from `shared-traits` (seven generic
+  provenance traits promoted there). All shipped types preserved; `regulatory-legal`
+  gains the missing `compliance-regulation`; `analytical`-rooted types conformed to
+  `_semantic`. Packs validate and resolve fail-closed through the catalog.
+- The output-conformance hook exempts `*-build-spec.md` (the `ai-spec` channel's
+  Level-1 agent-consumable spec) from the Level-3 write-time check.
+
 ### Fixed
 
 - `build-topic-readme.sh`: list `*-build-spec.md` deliverables in the topic README
@@ -366,7 +400,8 @@ First release of the domain-general research harness template.
 - **Distribution** as a Copier living template and a Claude Code plugin
   marketplace.
 
-[Unreleased]: https://github.com/modeled-information-format/research-harness-template/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/modeled-information-format/research-harness-template/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/modeled-information-format/research-harness-template/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/modeled-information-format/research-harness-template/compare/v0.4.3...v0.5.0
 [0.4.3]: https://github.com/modeled-information-format/research-harness-template/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/modeled-information-format/research-harness-template/compare/v0.4.1...v0.4.2

@@ -1,0 +1,9 @@
+{
+  "name": "architecture-spec",
+  "version": "0.1.0",
+  "kind": "genre",
+  "description": "Genre template for an AI-ready architecture specification (arc42/C4): cross-cutting types, relationships, namespaces, decisions-with-alternatives, and EARS acceptance criteria an AI coding agent can execute",
+  "license": "MIT",
+  "author": { "name": "zircote" },
+  "provides": { "skills": ["architecture-spec"], "genres": ["architecture-spec"] }
+}

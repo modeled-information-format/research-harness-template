@@ -592,3 +592,40 @@ single prose document.
 ```sh
 scripts/pack-toggle.sh ectd on
 ```
+
+## ai-spec
+
+**Source:** [`packs/channels/ai-spec/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/channels/ai-spec)
+
+### Purpose
+
+Render a topic's surviving findings into an AI-ready, agent-executable **architecture spec** — a
+genre-shaping of the `artifact.json` → Markdown pipeline (not a parallel mechanism). The three
+mappings: `finding_refs[]` → grounded evidence sections; the goal's `completion_condition.checks[]`
+→ **EARS** acceptance criteria; `artifact.sections[]` → document structure.
+
+### When to use
+
+When research should produce a *buildable spec* a downstream coding agent executes, rather than a
+prose report. Pair with a spec-genre pack (`architecture-spec`, `kiro-spec`, or `feature-spec`).
+
+### What it provides
+
+The `ai-spec` skill; output written to the `<out.md>` path passed to `render-artifact.sh`. The
+architecture-spec default is `reports/<topic>/<topic>-build-spec.md`; non-architecture genres take
+a genre-qualified path (`<topic>-kiro-build-spec.md`, `<topic>-feature-build-spec.md`) so changing
+genre does not overwrite a sibling spec. Each carries MIF frontmatter + the genre markers
+(`genre`, `audience: implementer`, `status`, `evidence_base`).
+
+### Dependencies
+
+`scripts/synthesize-artifact.sh`, `scripts/render-artifact.sh`, a bound spec-genre pack,
+`schemas/artifact.schema.json`, `reports/<topic>/goal.json`.
+
+### Enable
+
+```bash
+bash scripts/pack-toggle.sh ai-spec on
+bash scripts/pack-toggle.sh architecture-spec on   # plus a spec-genre pack
+bash scripts/sync-packs.sh
+```

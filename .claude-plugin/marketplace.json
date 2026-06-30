@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Bundled plugins for the research harness. Each SKILL is its own plugin under packs/<pack>/<skill>/ (one plugin per skill), so a clone enables exactly the skills it wants without adopting a whole pack. The harness.config.json packs[] control plane toggles each.",
-    "version": "0.5.0"
+    "version": "0.6.0"
   },
   "plugins": [
     {
@@ -172,6 +172,26 @@
       "name": "nist-sp",
       "source": "./packs/reports/nist-sp",
       "description": "[reports/genre] Genre template for a NIST Special Publication (SP 800-series) standards/guidance report (authority, abstract, keywords, numbered normative sections, definitions, references, appendices)"
+    },
+    {
+      "name": "architecture-spec",
+      "source": "./packs/genres/architecture-spec",
+      "description": "[genres/genre] Genre template for an AI-ready architecture specification (arc42/C4): cross-cutting entity types, relationships, namespaces, decisions-with-alternatives, and EARS acceptance criteria an AI coding agent can execute"
+    },
+    {
+      "name": "kiro-spec",
+      "source": "./packs/genres/kiro-spec",
+      "description": "[genres/genre] Genre template for a Kiro three-file spec (requirements -> design -> tasks): a single-feature, task-decomposed build spec for an AI coding agent"
+    },
+    {
+      "name": "feature-spec",
+      "source": "./packs/genres/feature-spec",
+      "description": "[genres/genre] Genre template for a GitHub Spec Kit single-capability feature spec authored for a coding agent"
+    },
+    {
+      "name": "ai-spec",
+      "source": "./packs/channels/ai-spec",
+      "description": "[channels/channel] Render surviving findings into an AI-ready, agent-executable architecture spec (genre-shaping of the artifact -> markdown pipeline; finding_refs -> evidence, goal checks -> EARS, sections -> structure)"
     }
   ]
 }

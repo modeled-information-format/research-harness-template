@@ -1,0 +1,9 @@
+{
+  "name": "kiro-spec",
+  "version": "0.1.0",
+  "kind": "genre",
+  "description": "Genre template for a Kiro three-file spec (requirements -> design -> tasks): a single-feature, task-decomposed build spec for an AI coding agent",
+  "license": "MIT",
+  "author": { "name": "zircote" },
+  "provides": { "skills": ["kiro-spec"], "genres": ["kiro-spec"] }
+}
