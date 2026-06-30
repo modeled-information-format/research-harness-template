@@ -83,7 +83,7 @@ jobs:
             --signer-workflow "${GITHUB_REPOSITORY}/.github/workflows/release.yml"
 
       - name: Mint release app token (publish identity)
-        id: release-token
+        id: release_token
         if: github.event_name == 'release'
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
@@ -95,7 +95,7 @@ jobs:
       - name: Upload attested artifact to the release
         if: github.event_name == 'release'
         env:
-          GH_TOKEN: ${{ steps.release-token.outputs.token }}
+          GH_TOKEN: ${{ steps.release_token.outputs.token }}
         run: |
           set -euo pipefail
           gh release upload "${GITHUB_REF_NAME}" \
