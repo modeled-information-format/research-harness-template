@@ -38,7 +38,7 @@ jobs:
     permissions:
       id-token: write       # OIDC token for keyless signing
       attestations: write   # write the provenance attestation
-      contents: write       # upload the artifact to the release (tag runs only)
+      contents: read        # checkout + verify; the release upload now uses the release App token
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
