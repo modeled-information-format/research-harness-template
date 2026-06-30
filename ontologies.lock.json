@@ -1,5 +1,5 @@
 {
-  "index_sha256": "d63053f61817aff3a2a6ed861835eedadf64506e041b24ccc07e9dd3698ea516",
+  "index_sha256": "00c2899edf798a465ca305dd7e00db2ac51125c51493c549d6dca0d355378ac3",
   "ontologies": {
     "data-engineering": {
       "sha256": "15e5edac8f212859cecb1af363f5b6d9ec0edbf19fb4650cd2534a3307cb874c",
@@ -10,8 +10,8 @@
       "version": "0.2.0"
     },
     "scientific": {
-      "sha256": "41791b6cf14eb964762b76c56a4f5b4b2d096782fcfc51dbba8857d38c432868",
-      "version": "0.2.0"
+      "sha256": "91efe7a7d4d2f3952cc63fa9af1c47de6e763be585cf7ba83edb5e729bd79ac9",
+      "version": "0.2.1"
     },
     "software-engineering": {
       "sha256": "cdd425d3b25133b443f65f910ffdb7191172533fcf2969c4145858fcc81f5b0a",

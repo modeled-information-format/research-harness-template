@@ -24,28 +24,28 @@
     "basis": "discovery",
     "entity_type": "data-provenance",
     "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-pkm-tools-obsidian-logseq-roam",
-    "resolved_ontology": "scientific@0.2.0",
+    "resolved_ontology": "scientific@0.2.1",
     "valid": true
   },
   {
     "basis": "discovery",
     "entity_type": "data-provenance",
     "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-prov-o-provenance-alternative",
-    "resolved_ontology": "scientific@0.2.0",
+    "resolved_ontology": "scientific@0.2.1",
     "valid": true
   },
   {
     "basis": "discovery",
     "entity_type": "data-provenance",
     "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-rdf-owl-semantic-alternative",
-    "resolved_ontology": "scientific@0.2.0",
+    "resolved_ontology": "scientific@0.2.1",
     "valid": true
   },
   {
     "basis": "discovery",
     "entity_type": "data-provenance",
     "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-skos-taxonomy-thesaurus-standard",
-    "resolved_ontology": "scientific@0.2.0",
+    "resolved_ontology": "scientific@0.2.1",
     "valid": true
   },
   {
@@ -73,7 +73,7 @@
     "basis": "discovery",
     "entity_type": "data-provenance",
     "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-institutional-memory-loss-pain",
-    "resolved_ontology": "scientific@0.2.0",
+    "resolved_ontology": "scientific@0.2.1",
     "valid": true
   },
   {
@@ -129,7 +129,7 @@
     "basis": "discovery",
     "entity_type": "data-provenance",
     "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-mif-provenance-block",
-    "resolved_ontology": "scientific@0.2.0",
+    "resolved_ontology": "scientific@0.2.1",
     "valid": true
   },
   {
@@ -143,7 +143,7 @@
     "basis": "discovery",
     "entity_type": "dataset",
     "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-mif-typed-relationships",
-    "resolved_ontology": "scientific@0.2.0",
+    "resolved_ontology": "scientific@0.2.1",
     "valid": true
   },
   {
@@ -157,7 +157,7 @@
     "basis": "discovery",
     "entity_type": "data-provenance",
     "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-okf-informal-provenance",
-    "resolved_ontology": "scientific@0.2.0",
+    "resolved_ontology": "scientific@0.2.1",
     "valid": true
   },
   {
@@ -192,7 +192,7 @@
     "basis": "discovery",
     "entity_type": "data-provenance",
     "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-agent-memory-provenance-demand",
-    "resolved_ontology": "scientific@0.2.0",
+    "resolved_ontology": "scientific@0.2.1",
     "valid": true
   },
   {
@@ -206,21 +206,21 @@
     "basis": "discovery",
     "entity_type": "data-provenance",
     "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-git-native-markdown-km",
-    "resolved_ontology": "scientific@0.2.0",
+    "resolved_ontology": "scientific@0.2.1",
     "valid": true
   },
   {
     "basis": "discovery",
     "entity_type": "data-provenance",
     "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-graphrag-hybrid-dominance",
-    "resolved_ontology": "scientific@0.2.0",
+    "resolved_ontology": "scientific@0.2.1",
     "valid": true
   },
   {
     "basis": "discovery",
     "entity_type": "data-provenance",
     "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-llm-wiki-karpathy-adoption",
-    "resolved_ontology": "scientific@0.2.0",
+    "resolved_ontology": "scientific@0.2.1",
     "valid": true
   },
   {
@@ -241,14 +241,14 @@
     "basis": "discovery",
     "entity_type": "data-provenance",
     "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-semantic-web-failure-lessons",
-    "resolved_ontology": "scientific@0.2.0",
+    "resolved_ontology": "scientific@0.2.1",
     "valid": true
   },
   {
     "basis": "discovery",
     "entity_type": "data-provenance",
     "finding_id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-w3c-rdf-star-provenance",
-    "resolved_ontology": "scientific@0.2.0",
+    "resolved_ontology": "scientific@0.2.1",
     "valid": true
   }
 ]
