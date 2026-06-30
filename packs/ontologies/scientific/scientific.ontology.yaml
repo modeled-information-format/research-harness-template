@@ -356,7 +356,7 @@ entity_types:
         derived_from:
           type: string
     source_vocab: IAO
-    source_class: IAO:0000015 hypothesis
+    source_class: IAO:0000415 hypothesis
     prior_art: obi:ObjectiveSpecification / IAO hypothesis
     disposition: mint
   # ----- Instruments ------------------------------------------------------

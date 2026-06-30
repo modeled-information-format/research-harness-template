@@ -48,6 +48,10 @@ For control-plane mechanics — enabling, disabling, and listing packs — see
 | nist-sp | reports | genre | NIST Special Publication (SP 800-series) standards/guidance report | none |
 | xbrl | channels | channel | Renders surviving findings into an inline XBRL (iXBRL) regulatory disclosure | jq |
 | ectd | channels | channel | Packages findings into the FDA eCTD module tree (M1-M5) plus the XML backbone | jq |
+| ai-spec | channels | channel | Renders surviving findings into an AI-ready, agent-executable architecture spec | none |
+| architecture-spec | genres | genre | AI-ready architecture spec (arc42/C4 §1–§12 + EARS acceptance criteria) | none |
+| kiro-spec | genres | genre | Kiro three-file spec (requirements → design → tasks) for a single feature | none |
+| feature-spec | genres | genre | GitHub Spec Kit single-capability feature spec for a coding agent | none |
 | trend-modeling | trend-modeling | methodology | Three-valued logic (INC/DEC/CONST) scenario modeling | @mermaid-js/mermaid-cli (optional) |
 | biology-research-lab | ontologies | ontology | Full research lab lifecycle entity vocabulary | none |
 | data-engineering | ontologies | ontology | Data engineering domain entity vocabulary | none |
@@ -64,8 +68,9 @@ For control-plane mechanics — enabling, disabling, and listing packs — see
 
 ## Family pages
 
-- [Channel packs](channels.md) — output delivery channels (book, diataxis, github-discuss, github-issues, jats, notebooklm, pdf, xbrl, ectd)
+- [Channel packs](channels.md) — output delivery channels (book, diataxis, github-discuss, github-issues, jats, notebooklm, pdf, xbrl, ectd, ai-spec)
 - [Market-research packs](market-research.md) — research methodology dimensions
 - [Report packs](reports.md) — deliverable genre templates
+- [Genre packs](genres.md) — AI-ready, agent-executable specification templates
 - [Trend-modeling pack](trend-modeling.md) — three-valued logic scenario framework
 - [Ontology packs](ontologies.md) — domain entity vocabularies
