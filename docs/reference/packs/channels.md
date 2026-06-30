@@ -595,6 +595,8 @@ scripts/pack-toggle.sh ectd on
 
 ## ai-spec
 
+**Source:** [`packs/channels/ai-spec/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/channels/ai-spec)
+
 ### Purpose
 
 Render a topic's surviving findings into an AI-ready, agent-executable **architecture spec** — a
