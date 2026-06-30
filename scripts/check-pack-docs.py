@@ -18,6 +18,7 @@ Run from the repository root. Prints a report and exits non-zero on any gap.
 
 from __future__ import annotations
 
+import json
 import re
 import sys
 from pathlib import Path
@@ -30,14 +31,35 @@ FAMILIES = ["channels", "genres", "market-research", "ontologies", "reports", "t
 DOC_URL_SUBSTR = "modeled-information-format.github.io/research-harness-template/reference/packs"
 
 
-def components() -> dict[str, list[str]]:
-    """Map each family to its sorted list of component directory names.
+def declared_ontologies() -> list[str]:
+    """Ontology packs are vendored on demand (ADR-0012/#224): they are NOT committed
+    under packs/ontologies/, so their authoritative component set is the declared list
+    in harness.config.json ``ontologies[]`` (union any locally-vendored copies)."""
+    ids: set[str] = set()
+    cfg = REPO / "harness.config.json"
+    if cfg.is_file():
+        data = json.loads(cfg.read_text(encoding="utf-8"))
+        ids = {o["id"] for o in data.get("ontologies", []) if isinstance(o, dict) and "id" in o}
+    local = PACKS / "ontologies"
+    if local.is_dir():
+        ids |= {p.name for p in local.iterdir() if p.is_dir()}
+    return sorted(ids)
 
-    A missing family directory yields an empty list rather than raising, so the
-    caller can report it as a normal validation error and still print the rest.
+
+def components() -> dict[str, list[str]]:
+    """Map each family to its sorted list of component names.
+
+    Committed families enumerate their on-disk component directories. The
+    ``ontologies`` family is vendored on demand (#224), so it enumerates the declared
+    registry set instead of an (empty) on-disk directory. A missing committed family
+    directory yields an empty list rather than raising, so the caller can report it as
+    a normal validation error and still print the rest.
     """
     out: dict[str, list[str]] = {}
     for fam in FAMILIES:
+        if fam == "ontologies":
+            out[fam] = declared_ontologies()
+            continue
         fam_dir = PACKS / fam
         out[fam] = (
             sorted(p.name for p in fam_dir.iterdir() if p.is_dir())
@@ -80,6 +102,10 @@ def main() -> int:
 
     # A missing family directory is a real error, not a crash.
     for fam in FAMILIES:
+        # ontologies is vendored on demand (#224): packs/ontologies/ may be absent in a
+        # fresh clone before the first fetch, so its directory is not required.
+        if fam == "ontologies":
+            continue
         if not (PACKS / fam).is_dir():
             errors.append(f"missing pack family directory: packs/{fam}")
 
@@ -137,9 +163,14 @@ def main() -> int:
                 f"[index.md] inventory names non-existent components: {sorted(set(idx_phantom))}"
             )
 
-    # Inbound: each component dir has a README.md linking to the doc site.
+    # Inbound: each component dir has a README.md linking to the doc site. The
+    # ontologies family is vendored on demand (#224) — its packs are not committed, so
+    # there is no in-repo README to back-link; the registry copy carries provenance.
     inbound_total = 0
+    inbound_expected = total - len(comps.get("ontologies", []))
     for fam, names in comps.items():
+        if fam == "ontologies":
+            continue
         for n in names:
             readme = PACKS / fam / n / "README.md"
             if not readme.is_file():
@@ -156,7 +187,7 @@ def main() -> int:
     print("\n=== Cross-link tallies ===")
     print(f"Documented components (section present): {documented_total}/{total}")
     print(f"Outbound doc -> pack source links:       {outbound_total}/{total}")
-    print(f"Inbound pack -> doc back-links:          {inbound_total}/{total}")
+    print(f"Inbound pack -> doc back-links:          {inbound_total}/{inbound_expected} (ontologies vendored on demand)")
 
     print("\n=== Result ===")
     if errors:
