@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-06-30
+
+### Fixed
+
+- **Project hooks skip cleanly when their script is absent.** Each `.claude/settings.json`
+  PreToolUse, PostToolUse, and Stop hook command now guards on the script's presence
+  (`[ -f "$CLAUDE_PROJECT_DIR/.claude/hooks/…" ] || exit 0`) before invoking it, so a
+  partial checkout or any context without the harness hook scripts no-ops the hook
+  instead of failing the tool call.
+
 ## [0.6.0] - 2026-06-29
 
 ### Added
@@ -400,7 +410,8 @@ First release of the domain-general research harness template.
 - **Distribution** as a Copier living template and a Claude Code plugin
   marketplace.
 
-[Unreleased]: https://github.com/modeled-information-format/research-harness-template/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/modeled-information-format/research-harness-template/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/modeled-information-format/research-harness-template/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/modeled-information-format/research-harness-template/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/modeled-information-format/research-harness-template/compare/v0.4.3...v0.5.0
 [0.4.3]: https://github.com/modeled-information-format/research-harness-template/compare/v0.4.2...v0.4.3
