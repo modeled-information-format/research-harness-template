@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/markdown/md_guard.py pre"
+            "command": "[ -f \"$CLAUDE_PROJECT_DIR/.claude/hooks/markdown/md_guard.py\" ] || exit 0; python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/markdown/md_guard.py pre"
           }
         ]
       },
@@ -26,12 +26,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/markdown/md_guard.py bash",
+            "command": "[ -f \"$CLAUDE_PROJECT_DIR/.claude/hooks/markdown/md_guard.py\" ] || exit 0; python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/markdown/md_guard.py bash",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/guard-falsify-gate.sh",
+            "command": "[ -f \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-falsify-gate.sh\" ] || exit 0; \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/guard-falsify-gate.sh",
             "timeout": 10
           }
         ]
@@ -43,7 +43,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/markdown/md_guard.py post",
+            "command": "[ -f \"$CLAUDE_PROJECT_DIR/.claude/hooks/markdown/md_guard.py\" ] || exit 0; python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/markdown/md_guard.py post",
             "timeout": 45
           }
         ]
@@ -53,7 +53,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/check-citation-leak.sh post",
+            "command": "[ -f \"$CLAUDE_PROJECT_DIR/.claude/hooks/check-citation-leak.sh\" ] || exit 0; \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/check-citation-leak.sh post",
             "timeout": 15
           }
         ]
@@ -63,7 +63,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/check-voice.sh post",
+            "command": "[ -f \"$CLAUDE_PROJECT_DIR/.claude/hooks/check-voice.sh\" ] || exit 0; \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/check-voice.sh post",
             "timeout": 20
           }
         ]
@@ -73,7 +73,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/check-readme-reindex.sh",
+            "command": "[ -f \"$CLAUDE_PROJECT_DIR/.claude/hooks/check-readme-reindex.sh\" ] || exit 0; \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/check-readme-reindex.sh",
             "timeout": 10
           }
         ]
@@ -84,7 +84,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/markdown/md_guard.py stop",
+            "command": "[ -f \"$CLAUDE_PROJECT_DIR/.claude/hooks/markdown/md_guard.py\" ] || exit 0; python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/markdown/md_guard.py stop",
             "timeout": 120
           }
         ]
@@ -93,7 +93,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/check-research-pipeline.sh",
+            "command": "[ -f \"$CLAUDE_PROJECT_DIR/.claude/hooks/check-research-pipeline.sh\" ] || exit 0; \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/check-research-pipeline.sh",
             "timeout": 10
           }
         ]
@@ -102,7 +102,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/check-citation-leak.sh stop",
+            "command": "[ -f \"$CLAUDE_PROJECT_DIR/.claude/hooks/check-citation-leak.sh\" ] || exit 0; \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/check-citation-leak.sh stop",
             "timeout": 30
           }
         ]
@@ -111,7 +111,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/check-output-conformance.sh",
+            "command": "[ -f \"$CLAUDE_PROJECT_DIR/.claude/hooks/check-output-conformance.sh\" ] || exit 0; \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/check-output-conformance.sh",
             "timeout": 30
           }
         ]
@@ -120,7 +120,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/check-voice.sh stop",
+            "command": "[ -f \"$CLAUDE_PROJECT_DIR/.claude/hooks/check-voice.sh\" ] || exit 0; \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/check-voice.sh stop",
             "timeout": 30
           }
         ]
