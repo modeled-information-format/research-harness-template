@@ -103,11 +103,12 @@ jobs:
         run: markdownlint-cli2 --config .markdownlint-cli2.jsonc "**/*.md"
 
   version-bump:
-    # Change-driven versioning enforcement (ADR-0010): a changed pack or core skill
-    # must move its own version, and any change must move the release pointer
-    # (harness.config.json). PR-only — it diffs against the base branch. A change
-    # that warrants no release bypasses the pointer rule with `[skip-version-check]`
-    # in the commit message; a changed pack/skill must still bump regardless.
+    # Change-driven versioning enforcement (ADR-0010, amended): a changed pack or
+    # core skill must move its own version (per-PR, diffed against the base
+    # branch), and the release pointer (harness.config.json) must stay strictly
+    # ahead of the last git tag release — a per-release invariant, not a per-PR
+    # one, so two PRs opened off the same base never collide over who bumps it.
+    # PR-only.
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:

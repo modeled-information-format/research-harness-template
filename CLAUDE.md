@@ -157,11 +157,15 @@ must merge cleanly.
   back this: `gate_versions` in `scripts/verify.sh` enforces the consistency
   invariants (catalog == template; every stamp is well-formed semver; no
   uniformity required), and the PR-only `version-bump` CI job
-  (`scripts/check-version-bump.sh`) enforces **bump-on-change** — a changed
-  pack/core-skill must move its own version and any change must move the release
-  pointer, else CI fails naming the un-bumped component. A change that warrants no
-  release puts `[skip-version-check]` on its own line in a commit (waives the
-  pointer rule only).
+  (`scripts/check-version-bump.sh`) enforces two rules: a changed pack/core-skill
+  must move its own version (per-PR — CI fails naming the un-bumped component),
+  and the release pointer must stay strictly ahead of the last actual git tag
+  release (a per-release invariant, **not** a per-PR one — a PR that changes
+  files without touching the pointer is fine as long as the pointer is already
+  ahead of the last release; something just has to bump it before the next
+  release is cut, closing the exact race where two PRs off the same base used
+  to collide over who moved it — ADR-0010's 2026-07-01 amendment; `[skip-version-check]`
+  is retired along with the per-PR pointer obligation it used to waive).
   CHANGELOG
   follows Keep a Changelog: a new `## [X.Y.Z] - YYYY-MM-DD` header is inserted under
   `## [Unreleased]` (the script does this); leave prior dated sections and CHANGELOG

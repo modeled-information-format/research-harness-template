@@ -6,7 +6,7 @@ category: architecture
 tags: [versioning, release, packs, tooling, semver]
 status: accepted
 created: 2026-06-29
-updated: 2026-06-29
+updated: 2026-07-01
 author: zircote
 project: research-harness-template
 technologies: [Bash, jq, Semantic Versioning]
@@ -137,6 +137,11 @@ This is realized by:
   exempt. `gate_versions` checks versions are *consistent*; this gate checks they
   were *moved when required* — together they close the gap the old, fictional
   drift gate only pretended to.
+  > **Superseded in part — see the [2026-07-01 amendment](#amendment-2026-07-01-the-release-pointer-is-not-a-per-pr-obligation)
+  > below.** The release-pointer half of this rule (comparing against a PR's own
+  > base) is replaced: the pointer must stay ahead of the last actual release, not
+  > move on every individual PR. Rule A (per-pack/skill bump-on-change) is
+  > unchanged.
 - **Completeness proof** — after a bump, `git grep <old-version>` returns only the
   CHANGELOG history line; `git diff --name-only` is the exact, enumerable change
   set. This independent check is what makes any bump — including the first run of a
@@ -200,5 +205,54 @@ what they are supposed to mean.
 | Bump-on-change enforced on PRs (changed component must move its version) | `scripts/check-version-bump.sh`, `.github/workflows/ci.yml` | compliant |
 
 **Summary:** The 0.4.3 release was performed change-driven and verified by `git grep` completeness, `gate_versions`, and the `version-bump` CI gate (tested: a changed pack without a bump fails).
+
+**Action Required:** None
+
+## Amendment (2026-07-01): the release pointer is not a per-PR obligation
+
+The original Rule B required *every* pull request to move `harness.config.json`
+`.version` relative to its own merge-base, or carry `[skip-version-check]`. In
+practice this meant two PRs opened against the same `main` commit — a routine
+situation, not a mistake by either author — collided: whichever merged first
+bumped the pointer; the second's own diff then showed the pointer "unchanged"
+against its stale base and failed CI, even though `main` itself was already
+ahead. This happened twice on 2026-07-01 (PRs #241/#242, then #243), each
+requiring a manual rebase and re-bump to unblock, and does not scale: a project
+with parallel work in flight should not force N PRs to fight over the same
+version number.
+
+**The requirement was never actually "every PR bumps the pointer."** The real
+requirement — the one semantic versioning and a release process both actually
+need — is *the pointer must have moved since the last release by the time the
+next release is cut*, not that any specific PR be the one to move it. Rule B is
+changed accordingly: `check-version-bump.sh` now compares `harness.config.json`
+`.version` against the **last git tag release** (`git tag --list 'v*'`, highest
+semver), not the PR's own base, and fails only if the pointer has regressed to
+or below that tag. A PR that changes files without touching the pointer now
+passes as long as *something* — this PR, an earlier one, or a later one before
+the next release — keeps the pointer ahead of the last release. `[skip-version-check]`
+is removed: there is no longer a per-PR pointer obligation to waive.
+
+Rule A (a changed pack or core skill must move its own version) is **unchanged**
+— that is a real per-component omission, not a race condition, and stays
+per-PR.
+
+This does not weaken the release-pointer invariant; it makes it match what was
+actually true: the pointer is a release-time property of the repository, not a
+per-commit property of any one PR.
+
+### 2026-07-01
+
+**Status:** Compliant
+
+| Finding | Files | Assessment |
+| --- | --- | --- |
+| Rule B compares against the last release tag, not a PR's own base | `scripts/check-version-bump.sh` | compliant |
+| Two PRs racing off the same base no longer collide on the pointer | tested: a file change with no version bump, base at v0.11.1 vs last tag v0.8.1, passes | compliant |
+| A real regression (pointer at or below the last tag) still fails | tested: pointer forced to the last tag's value fails with a named message | compliant |
+| Rule A (per-pack/skill bump-on-change) unchanged and still enforced | tested: a changed pack with no version bump still fails | compliant |
+| Portable semver compare (no `sort -V`) | `scripts/check-version-bump.sh` | compliant — this session already hit one GNU-only-flag portability break (`realpath -m`) on this same template; `sort -V` is BSD-absent the same way |
+
+**Summary:** The release-pointer rule was relaxed from a per-PR obligation to a per-release invariant, closing the exact collision this repository hit twice in one day. Verified locally against three scenarios (unbumped-but-ahead passes, regression fails, per-component rule unaffected) before landing.
 
 **Action Required:** None
