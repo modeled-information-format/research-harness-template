@@ -38,7 +38,7 @@ jobs:
     permissions:
       id-token: write       # OIDC token for keyless signing
       attestations: write   # write the provenance attestation
-      contents: write       # upload the artifact to the release (tag runs only)
+      contents: read        # checkout + verify; the release upload now uses the release App token
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
@@ -82,10 +82,22 @@ jobs:
             --repo "${GITHUB_REPOSITORY}" \
             --signer-workflow "${GITHUB_REPOSITORY}/.github/workflows/release.yml"
 
+      - name: Mint release app token (publish identity)
+        id: release_token
+        if: github.event_name == 'release'
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.RELEASE_CLIENT_APP_ID }}
+          private-key: ${{ secrets.RELEASE_CLIENT_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          # Down-scope the minted token: the release upload only needs contents:write.
+          permission-contents: write
+
       - name: Upload attested artifact to the release
         if: github.event_name == 'release'
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.release_token.outputs.token }}
         run: |
           set -euo pipefail
           gh release upload "${GITHUB_REF_NAME}" \
