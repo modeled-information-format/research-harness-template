@@ -18,7 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `humanities-mla`, `humanities-chicago`, `clinical-submission`, `nist-sp`,
   `regulatory-disclosure`, `compliance-audit`, `security-pentest`,
   `legal-memo`, `market-research-report`, `sustainability-report`,
-  `trend-analysis`, `competitive-quadrant`, `briefing`, `exec-summary`. There
+  `trend-analysis`, `competitive-quadrant`, `systematic-review`,
+  `exec-summary`. There
   is no longer a `packs/reports/` directory — all 18 report genres now
   resolve via `harness.config.json` `packs[].source` `marketplace-ref`
   entries against the shared `mif-docs` marketplace declaration. Genre

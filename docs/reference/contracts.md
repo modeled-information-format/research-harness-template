@@ -61,7 +61,7 @@ plugin's skills. The bundled plugins are listed in
 **One plugin per skill** (see [pack-structure](../explanation/pack-structure.md)):
 each skill is its own plugin under `packs/<pack>/<skill>/`, so a clone enables
 exactly the skills it wants without adopting a whole pack. The pack directory
-(`packs/reports/`, `packs/market-research/`, …) is a *family container*, not a
+(`packs/channels/`, `packs/market-research/`, …) is a *family container*, not a
 plugin; the plugins are its `<skill>/` subdirectories.
 
 ## Structured Data Protocol

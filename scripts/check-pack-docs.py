@@ -189,7 +189,8 @@ def main() -> int:
             continue
         if not (PACKS / fam).is_dir():
             names = comps.get(fam, [])
-            if names and all(n in ext for n in names):
+            fam_ext = ext_by_fam.get(fam, set())
+            if names and all(n in fam_ext for n in names):
                 continue
             errors.append(f"missing pack family directory: packs/{fam}")
 
