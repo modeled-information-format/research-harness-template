@@ -1,6 +1,6 @@
 {
   "$schema": "./harness.config.schema.json",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "mifConformanceLevel": 3,
   "features": {
     "internalCitations": false
@@ -88,7 +88,7 @@
     {
       "name": "mif-docs",
       "url": "https://github.com/modeled-information-format/mif-docs-plugin",
-      "ref": "bfe16b9d1901876fe69367a9d2658effcc29371a"
+      "ref": "7b6ecb5390c7958bef1d455d63eb32774099821b"
     }
   ],
   "packs": [
@@ -155,17 +155,26 @@
     {
       "name": "academic",
       "enabled": true,
-      "source": "bundled"
+      "source": {
+        "type": "marketplace-ref",
+        "marketplace": "mif-docs"
+      }
     },
     {
       "name": "briefing",
       "enabled": true,
-      "source": "bundled"
+      "source": {
+        "type": "marketplace-ref",
+        "marketplace": "mif-docs"
+      }
     },
     {
       "name": "computing-paper",
       "enabled": true,
-      "source": "bundled"
+      "source": {
+        "type": "marketplace-ref",
+        "marketplace": "mif-docs"
+      }
     },
     {
       "name": "engineering",
@@ -178,22 +187,34 @@
     {
       "name": "exec-summary",
       "enabled": true,
-      "source": "bundled"
+      "source": {
+        "type": "marketplace-ref",
+        "marketplace": "mif-docs"
+      }
     },
     {
       "name": "sustainability-report",
       "enabled": false,
-      "source": "bundled"
+      "source": {
+        "type": "marketplace-ref",
+        "marketplace": "mif-docs"
+      }
     },
     {
       "name": "trend-analysis",
       "enabled": true,
-      "source": "bundled"
+      "source": {
+        "type": "marketplace-ref",
+        "marketplace": "mif-docs"
+      }
     },
     {
       "name": "legal-memo",
       "enabled": false,
-      "source": "bundled"
+      "source": {
+        "type": "marketplace-ref",
+        "marketplace": "mif-docs"
+      }
     },
     {
       "name": "trend-modeling",
@@ -203,52 +224,82 @@
     {
       "name": "regulatory-disclosure",
       "enabled": false,
-      "source": "bundled"
+      "source": {
+        "type": "marketplace-ref",
+        "marketplace": "mif-docs"
+      }
     },
     {
       "name": "clinical-submission",
       "enabled": false,
-      "source": "bundled"
+      "source": {
+        "type": "marketplace-ref",
+        "marketplace": "mif-docs"
+      }
     },
     {
       "name": "humanities-chicago",
       "enabled": false,
-      "source": "bundled"
+      "source": {
+        "type": "marketplace-ref",
+        "marketplace": "mif-docs"
+      }
     },
     {
       "name": "humanities-mla",
       "enabled": false,
-      "source": "bundled"
+      "source": {
+        "type": "marketplace-ref",
+        "marketplace": "mif-docs"
+      }
     },
     {
       "name": "security-pentest",
       "enabled": false,
-      "source": "bundled"
+      "source": {
+        "type": "marketplace-ref",
+        "marketplace": "mif-docs"
+      }
     },
     {
       "name": "market-research-report",
       "enabled": true,
-      "source": "bundled"
+      "source": {
+        "type": "marketplace-ref",
+        "marketplace": "mif-docs"
+      }
     },
     {
       "name": "systematic-review",
       "enabled": false,
-      "source": "bundled"
+      "source": {
+        "type": "marketplace-ref",
+        "marketplace": "mif-docs"
+      }
     },
     {
       "name": "compliance-audit",
       "enabled": false,
-      "source": "bundled"
+      "source": {
+        "type": "marketplace-ref",
+        "marketplace": "mif-docs"
+      }
     },
     {
       "name": "competitive-quadrant",
       "enabled": true,
-      "source": "bundled"
+      "source": {
+        "type": "marketplace-ref",
+        "marketplace": "mif-docs"
+      }
     },
     {
       "name": "nist-sp",
       "enabled": false,
-      "source": "bundled"
+      "source": {
+        "type": "marketplace-ref",
+        "marketplace": "mif-docs"
+      }
     },
     {
       "name": "xbrl",

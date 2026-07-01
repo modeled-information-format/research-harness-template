@@ -13,16 +13,10 @@ plugin boundary is the individual skill:
 
 ```text
 packs/
-├── reports/                      # family: deliverable genres (container, NOT a plugin)
-│   ├── exec-summary/             #   a plugin
-│   │   ├── .claude-plugin/plugin.json
-│   │   └── skills/exec-summary/SKILL.md
-│   ├── academic/                 #   a plugin
-│   ├── trend-analysis/
-│   └── briefing/                 #   `engineering` is consumed externally from
-│                                  #   mif-docs-plugin instead, not bundled here
 ├── market-research/              # family: methodology
 │   ├── competitive-analysis/     #   a plugin
+│   │   ├── .claude-plugin/plugin.json
+│   │   └── skills/competitive-analysis/SKILL.md
 │   ├── customer-research/
 │   ├── financial-analysis/
 │   ├── market-sizing/
@@ -35,6 +29,12 @@ packs/
 └── trend-modeling/
     └── trend-modeling/
 ```
+
+There is no `packs/reports/` directory: every report genre (`academic`,
+`engineering`, `exec-summary`, and the rest — see
+[Report packs](../reference/packs/reports.md)) is consumed externally from
+`mif-docs-plugin` rather than bundled, so the "reports" family has no local
+plugin directory to illustrate here.
 
 Each `packs/<family>/<skill>/` is a self-contained Claude Code plugin: its
 `.claude-plugin/plugin.json` (validated against `schemas/pack.schema.json`) plus

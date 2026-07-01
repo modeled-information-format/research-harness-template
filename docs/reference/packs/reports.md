@@ -22,9 +22,14 @@ For control-plane mechanics see [Packs and Plugins](../packs-and-plugins.md).
 
 ## academic
 
-**Version:** 0.4.2 | **Kind:** genre
+**Kind:** genre
 
-**Source:** [`packs/reports/academic/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/academic)
+**Source:** external — consumed from [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)'s
+`academic` skill (SHA-pinned via `harness.config.json` `marketplaces[]`), not a bundled
+`packs/reports/` directory. Migrated as part of the genre-consolidation effort
+([discussion #228](https://github.com/modeled-information-format/research-harness-template/discussions/228));
+its MIF frontmatter authoring and conformance now go through `mif-docs`' shared
+`mif-frontmatter` / `mif-validate` substrate.
 
 ### Purpose
 
@@ -85,9 +90,14 @@ scripts/pack-toggle.sh academic on
 
 ## briefing
 
-**Version:** 0.2.1 | **Kind:** genre
+**Kind:** genre
 
-**Source:** [`packs/reports/briefing/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/briefing)
+**Source:** external — consumed from [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)'s
+`briefing` skill (SHA-pinned via `harness.config.json` `marketplaces[]`), not a bundled
+`packs/reports/` directory. Migrated as part of the genre-consolidation effort
+([discussion #228](https://github.com/modeled-information-format/research-harness-template/discussions/228));
+its MIF frontmatter authoring and conformance now go through `mif-docs`' shared
+`mif-frontmatter` / `mif-validate` substrate.
 
 ### Purpose
 
@@ -147,9 +157,14 @@ scripts/pack-toggle.sh briefing on
 
 ## computing-paper
 
-**Version:** 0.4.2 | **Kind:** genre | **Disabled by default (opt-in).**
+**Kind:** genre | **Disabled by default (opt-in).**
 
-**Source:** [`packs/reports/computing-paper/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/computing-paper)
+**Source:** external — consumed from [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)'s
+`computing-paper` skill (SHA-pinned via `harness.config.json` `marketplaces[]`), not a bundled
+`packs/reports/` directory. Migrated as part of the genre-consolidation effort
+([discussion #228](https://github.com/modeled-information-format/research-harness-template/discussions/228));
+its MIF frontmatter authoring and conformance now go through `mif-docs`' shared
+`mif-frontmatter` / `mif-validate` substrate.
 
 ### Purpose
 
@@ -283,9 +298,14 @@ scripts/pack-toggle.sh engineering on
 
 ## exec-summary
 
-**Version:** 0.4.2 | **Kind:** genre
+**Kind:** genre
 
-**Source:** [`packs/reports/exec-summary/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/exec-summary)
+**Source:** external — consumed from [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)'s
+`exec-summary` skill (SHA-pinned via `harness.config.json` `marketplaces[]`), not a bundled
+`packs/reports/` directory. Migrated as part of the genre-consolidation effort
+([discussion #228](https://github.com/modeled-information-format/research-harness-template/discussions/228));
+its MIF frontmatter authoring and conformance now go through `mif-docs`' shared
+`mif-frontmatter` / `mif-validate` substrate.
 
 ### Purpose
 
@@ -366,9 +386,14 @@ scripts/pack-toggle.sh exec-summary on
 
 ## legal-memo
 
-**Version:** 0.4.2 | **Kind:** genre | **Disabled by default (opt-in).**
+**Kind:** genre | **Disabled by default (opt-in).**
 
-**Source:** [`packs/reports/legal-memo/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/legal-memo)
+**Source:** external — consumed from [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)'s
+`legal-memo` skill (SHA-pinned via `harness.config.json` `marketplaces[]`), not a bundled
+`packs/reports/` directory. Migrated as part of the genre-consolidation effort
+([discussion #228](https://github.com/modeled-information-format/research-harness-template/discussions/228));
+its MIF frontmatter authoring and conformance now go through `mif-docs`' shared
+`mif-frontmatter` / `mif-validate` substrate.
 
 ### Purpose
 
@@ -436,9 +461,14 @@ scripts/pack-toggle.sh legal-memo on
 
 ## regulatory-disclosure
 
-**Version:** 0.4.2 | **Kind:** genre | **Disabled by default (opt-in).**
+**Kind:** genre | **Disabled by default (opt-in).**
 
-**Source:** [`packs/reports/regulatory-disclosure/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/regulatory-disclosure)
+**Source:** external — consumed from [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)'s
+`regulatory-disclosure` skill (SHA-pinned via `harness.config.json` `marketplaces[]`), not a bundled
+`packs/reports/` directory. Migrated as part of the genre-consolidation effort
+([discussion #228](https://github.com/modeled-information-format/research-harness-template/discussions/228));
+its MIF frontmatter authoring and conformance now go through `mif-docs`' shared
+`mif-frontmatter` / `mif-validate` substrate.
 
 ### Purpose
 
@@ -504,9 +534,14 @@ scripts/pack-toggle.sh regulatory-disclosure on
 
 ## clinical-submission
 
-**Version:** 0.4.2 | **Kind:** genre | **Disabled by default (opt-in).**
+**Kind:** genre | **Disabled by default (opt-in).**
 
-**Source:** [`packs/reports/clinical-submission/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/clinical-submission)
+**Source:** external — consumed from [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)'s
+`clinical-submission` skill (SHA-pinned via `harness.config.json` `marketplaces[]`), not a bundled
+`packs/reports/` directory. Migrated as part of the genre-consolidation effort
+([discussion #228](https://github.com/modeled-information-format/research-harness-template/discussions/228));
+its MIF frontmatter authoring and conformance now go through `mif-docs`' shared
+`mif-frontmatter` / `mif-validate` substrate.
 
 ### Purpose
 
@@ -566,9 +601,14 @@ scripts/pack-toggle.sh clinical-submission on
 
 ## sustainability-report
 
-**Version:** 0.4.2 | **Kind:** genre | **Disabled by default (opt-in).**
+**Kind:** genre | **Disabled by default (opt-in).**
 
-**Source:** [`packs/reports/sustainability-report/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/sustainability-report)
+**Source:** external — consumed from [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)'s
+`sustainability-report` skill (SHA-pinned via `harness.config.json` `marketplaces[]`), not a bundled
+`packs/reports/` directory. Migrated as part of the genre-consolidation effort
+([discussion #228](https://github.com/modeled-information-format/research-harness-template/discussions/228));
+its MIF frontmatter authoring and conformance now go through `mif-docs`' shared
+`mif-frontmatter` / `mif-validate` substrate.
 
 ### Purpose
 
@@ -628,9 +668,14 @@ scripts/pack-toggle.sh sustainability-report on
 
 ## humanities-chicago
 
-**Version:** 0.4.2 | **Kind:** genre | **Disabled by default (opt-in).**
+**Kind:** genre | **Disabled by default (opt-in).**
 
-**Source:** [`packs/reports/humanities-chicago/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/humanities-chicago)
+**Source:** external — consumed from [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)'s
+`humanities-chicago` skill (SHA-pinned via `harness.config.json` `marketplaces[]`), not a bundled
+`packs/reports/` directory. Migrated as part of the genre-consolidation effort
+([discussion #228](https://github.com/modeled-information-format/research-harness-template/discussions/228));
+its MIF frontmatter authoring and conformance now go through `mif-docs`' shared
+`mif-frontmatter` / `mif-validate` substrate.
 
 ### Purpose
 
@@ -697,9 +742,14 @@ scripts/pack-toggle.sh humanities-chicago on
 
 ## humanities-mla
 
-**Version:** 0.4.2 | **Kind:** genre | **Disabled by default (opt-in).**
+**Kind:** genre | **Disabled by default (opt-in).**
 
-**Source:** [`packs/reports/humanities-mla/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/humanities-mla)
+**Source:** external — consumed from [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)'s
+`humanities-mla` skill (SHA-pinned via `harness.config.json` `marketplaces[]`), not a bundled
+`packs/reports/` directory. Migrated as part of the genre-consolidation effort
+([discussion #228](https://github.com/modeled-information-format/research-harness-template/discussions/228));
+its MIF frontmatter authoring and conformance now go through `mif-docs`' shared
+`mif-frontmatter` / `mif-validate` substrate.
 
 ### Purpose
 
@@ -762,9 +812,14 @@ scripts/pack-toggle.sh humanities-mla on
 
 ## security-pentest
 
-**Version:** 0.4.2 | **Kind:** genre | **Disabled by default (opt-in).**
+**Kind:** genre | **Disabled by default (opt-in).**
 
-**Source:** [`packs/reports/security-pentest/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/security-pentest)
+**Source:** external — consumed from [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)'s
+`security-pentest` skill (SHA-pinned via `harness.config.json` `marketplaces[]`), not a bundled
+`packs/reports/` directory. Migrated as part of the genre-consolidation effort
+([discussion #228](https://github.com/modeled-information-format/research-harness-template/discussions/228));
+its MIF frontmatter authoring and conformance now go through `mif-docs`' shared
+`mif-frontmatter` / `mif-validate` substrate.
 
 ### Purpose
 
@@ -828,9 +883,14 @@ scripts/pack-toggle.sh security-pentest on
 
 ## market-research-report
 
-**Version:** 0.4.2 | **Kind:** genre | **Disabled by default (opt-in).**
+**Kind:** genre | **Disabled by default (opt-in).**
 
-**Source:** [`packs/reports/market-research-report/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/market-research-report)
+**Source:** external — consumed from [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)'s
+`market-research-report` skill (SHA-pinned via `harness.config.json` `marketplaces[]`), not a bundled
+`packs/reports/` directory. Migrated as part of the genre-consolidation effort
+([discussion #228](https://github.com/modeled-information-format/research-harness-template/discussions/228));
+its MIF frontmatter authoring and conformance now go through `mif-docs`' shared
+`mif-frontmatter` / `mif-validate` substrate.
 
 ### Purpose
 
@@ -911,9 +971,14 @@ scripts/pack-toggle.sh market-research-report on
 
 ## systematic-review
 
-**Version:** 0.4.2 | **Kind:** genre | **Disabled by default (opt-in).**
+**Kind:** genre | **Disabled by default (opt-in).**
 
-**Source:** [`packs/reports/systematic-review/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/systematic-review)
+**Source:** external — consumed from [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)'s
+`systematic-review` skill (SHA-pinned via `harness.config.json` `marketplaces[]`), not a bundled
+`packs/reports/` directory. Migrated as part of the genre-consolidation effort
+([discussion #228](https://github.com/modeled-information-format/research-harness-template/discussions/228));
+its MIF frontmatter authoring and conformance now go through `mif-docs`' shared
+`mif-frontmatter` / `mif-validate` substrate.
 
 ### Purpose
 
@@ -992,9 +1057,14 @@ scripts/pack-toggle.sh systematic-review on
 
 ## compliance-audit
 
-**Version:** 0.4.2 | **Kind:** genre | **Disabled by default (opt-in).**
+**Kind:** genre | **Disabled by default (opt-in).**
 
-**Source:** [`packs/reports/compliance-audit/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/compliance-audit)
+**Source:** external — consumed from [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)'s
+`compliance-audit` skill (SHA-pinned via `harness.config.json` `marketplaces[]`), not a bundled
+`packs/reports/` directory. Migrated as part of the genre-consolidation effort
+([discussion #228](https://github.com/modeled-information-format/research-harness-template/discussions/228));
+its MIF frontmatter authoring and conformance now go through `mif-docs`' shared
+`mif-frontmatter` / `mif-validate` substrate.
 
 ### Purpose
 
@@ -1066,9 +1136,14 @@ scripts/pack-toggle.sh compliance-audit on
 
 ## competitive-quadrant
 
-**Version:** 0.4.2 | **Kind:** genre | **Disabled by default (opt-in).**
+**Kind:** genre | **Disabled by default (opt-in).**
 
-**Source:** [`packs/reports/competitive-quadrant/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/competitive-quadrant)
+**Source:** external — consumed from [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)'s
+`competitive-quadrant` skill (SHA-pinned via `harness.config.json` `marketplaces[]`), not a bundled
+`packs/reports/` directory. Migrated as part of the genre-consolidation effort
+([discussion #228](https://github.com/modeled-information-format/research-harness-template/discussions/228));
+its MIF frontmatter authoring and conformance now go through `mif-docs`' shared
+`mif-frontmatter` / `mif-validate` substrate.
 
 ### Purpose
 
@@ -1144,9 +1219,14 @@ scripts/pack-toggle.sh competitive-quadrant on
 
 ## nist-sp
 
-**Version:** 0.4.2 | **Kind:** genre | **Disabled by default (opt-in).**
+**Kind:** genre | **Disabled by default (opt-in).**
 
-**Source:** [`packs/reports/nist-sp/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/nist-sp)
+**Source:** external — consumed from [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)'s
+`nist-sp` skill (SHA-pinned via `harness.config.json` `marketplaces[]`), not a bundled
+`packs/reports/` directory. Migrated as part of the genre-consolidation effort
+([discussion #228](https://github.com/modeled-information-format/research-harness-template/discussions/228));
+its MIF frontmatter authoring and conformance now go through `mif-docs`' shared
+`mif-frontmatter` / `mif-validate` substrate.
 
 ### Purpose
 
@@ -1217,9 +1297,14 @@ scripts/pack-toggle.sh nist-sp on
 
 ## trend-analysis
 
-**Version:** 0.4.2 | **Kind:** genre
+**Kind:** genre
 
-**Source:** [`packs/reports/trend-analysis/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/trend-analysis)
+**Source:** external — consumed from [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)'s
+`trend-analysis` skill (SHA-pinned via `harness.config.json` `marketplaces[]`), not a bundled
+`packs/reports/` directory. Migrated as part of the genre-consolidation effort
+([discussion #228](https://github.com/modeled-information-format/research-harness-template/discussions/228));
+its MIF frontmatter authoring and conformance now go through `mif-docs`' shared
+`mif-frontmatter` / `mif-validate` substrate.
 
 ### Purpose
 

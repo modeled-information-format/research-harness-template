@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Bundled plugins for the research harness. Each SKILL is its own plugin under packs/<pack>/<skill>/ (one plugin per skill), so a clone enables exactly the skills it wants without adopting a whole pack. The harness.config.json packs[] control plane toggles each.",
-    "version": "0.10.0"
+    "version": "0.11.0"
   },
   "plugins": [
     {
@@ -79,94 +79,9 @@
       "description": "[market-research/methodology] Use when the user asks to \"analyze regulations\", \"regulatory landscape\", \"compliance requirements\", \"legal considerations\", \"regulatory risk\", \"industry regulations\", \"compliance analysis\", \"regulatory trends\", or needs guidance on regulato"
     },
     {
-      "name": "academic",
-      "source": "./packs/reports/academic",
-      "description": "[reports/genre] Genre template for a formal research report (abstract, background, method, findings, discussion, references) with a selectable citation style — author-date (APA) or numbered (Vancouver/IMRaD) — and optional APA Method sub-sections"
-    },
-    {
-      "name": "briefing",
-      "source": "./packs/reports/briefing",
-      "description": "[reports/genre] Genre template for a one-page briefing or standup update (what's new, why it matters, what's next)"
-    },
-    {
-      "name": "computing-paper",
-      "source": "./packs/reports/computing-paper",
-      "description": "[reports/genre] Genre template for an ACM/IEEE computing conference or journal paper (related work, approach/system design, evaluation, conclusion & future work) with IEEE numbered citations"
-    },
-    {
-      "name": "exec-summary",
-      "source": "./packs/reports/exec-summary",
-      "description": "[reports/genre] Genre template for a 1-2 page decision-oriented executive summary (BLUF, key findings, recommendation, risks)"
-    },
-    {
-      "name": "sustainability-report",
-      "source": "./packs/reports/sustainability-report",
-      "description": "[reports/genre] Genre template for a GRI-Standards sustainability/ESG report (GRI 1 Foundation, GRI 2 General Disclosures, GRI 3 Material Topics, GRI 200/300/400 topic standards, GRI content index)"
-    },
-    {
-      "name": "trend-analysis",
-      "source": "./packs/reports/trend-analysis",
-      "description": "[reports/genre] Genre template for a trajectory report (trajectory, signals, scenarios over time)"
-    },
-    {
-      "name": "legal-memo",
-      "source": "./packs/reports/legal-memo",
-      "description": "[reports/genre] Genre template for a predictive legal memorandum (Question Presented, Brief Answer, Statement of Facts, IRAC Discussion, Conclusion) with Bluebook practitioner citations"
-    },
-    {
       "name": "trend-modeling",
       "source": "./packs/trend-modeling/trend-modeling",
       "description": "[trend-modeling/methodology] Use when the user asks to \"model trends with limited data\", \"three-valued logic analysis\", \"scenario generation\", \"transitional graphs\", \"qualitative trend analysis\", \"uncertain data analysis\", \"minimal-information modeling\", or needs trend"
-    },
-    {
-      "name": "regulatory-disclosure",
-      "source": "./packs/reports/regulatory-disclosure",
-      "description": "[reports/genre] Genre template for an SEC-style annual disclosure report in Regulation S-K / Form 10-K item order (Business, Risk Factors, MD&A, Financial Statements, Controls & Procedures)"
-    },
-    {
-      "name": "clinical-submission",
-      "source": "./packs/reports/clinical-submission",
-      "description": "[reports/genre] Genre template for a clinical study report on the ICH E3 CSR skeleton (Synopsis, Objectives, Methods, Results, Discussion) situated in the CTD five-module frame"
-    },
-    {
-      "name": "humanities-chicago",
-      "source": "./packs/reports/humanities-chicago",
-      "description": "[reports/genre] Genre template for an argumentative humanities essay in Chicago Notes-Bibliography style (thesis introduction, thematic argument sections, conclusion, numbered footnotes, Bibliography)"
-    },
-    {
-      "name": "humanities-mla",
-      "source": "./packs/reports/humanities-mla",
-      "description": "[reports/genre] Genre template for an argumentative humanities essay in MLA style (thesis introduction, body argument sections, conclusion, author-page in-text citations, Works Cited)"
-    },
-    {
-      "name": "security-pentest",
-      "source": "./packs/reports/security-pentest",
-      "description": "[reports/genre] Genre template for a dual-audience PTES penetration-test report: an Executive Summary (posture, risk profile, recommendations, strategic roadmap) plus a Technical Report (information gathering, vulnerability assessment, exploitation, post-exploitation, risk/remediation per finding)"
-    },
-    {
-      "name": "market-research-report",
-      "source": "./packs/reports/market-research-report",
-      "description": "[reports/genre] Genre template for a full ESOMAR/ISO 20252-style market research report (background, methodology, findings, conclusions/recommendations, technical appendix); the ESOMAR/ICC structure is conventional practice, not a codified format standard"
-    },
-    {
-      "name": "systematic-review",
-      "source": "./packs/reports/systematic-review",
-      "description": "[reports/genre] Genre template for a PRISMA 2020 systematic review (structured abstract, methods, results with PRISMA flow diagram, discussion, registration)"
-    },
-    {
-      "name": "compliance-audit",
-      "source": "./packs/reports/compliance-audit",
-      "description": "[reports/genre] Genre template for drafting/modeling a SOC 2 Type II-shaped controls report (auditor's report, management's assertion, system description, Trust Services Criteria, tests of controls & results) — never an attestation"
-    },
-    {
-      "name": "competitive-quadrant",
-      "source": "./packs/reports/competitive-quadrant",
-      "description": "[reports/genre] Genre template for a two-axis competitive-quadrant report (Completeness of Vision x Ability to Execute, four quadrants, per-vendor strengths/cautions)"
-    },
-    {
-      "name": "nist-sp",
-      "source": "./packs/reports/nist-sp",
-      "description": "[reports/genre] Genre template for a NIST Special Publication (SP 800-series) standards/guidance report (authority, abstract, keywords, numbered normative sections, definitions, references, appendices)"
     },
     {
       "name": "architecture-spec",

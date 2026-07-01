@@ -147,6 +147,13 @@ def main() -> int:
     # page must exist and carry the `## <name>` section — checked below like any
     # other component), then fold it into that family's component list.
     ext_unresolved = set(ext)
+    # Which family EACH external name actually resolved into — not just "is this
+    # name a key in ext", since a pack name can collide with an unrelated
+    # component of the same name in another family (e.g. a report genre and an
+    # ontology id both called "trend-analysis"). Only the family it resolved
+    # into treats it as external; every other family's same-named component
+    # (if any) is left alone.
+    ext_by_fam: dict[str, set[str]] = {}
     for fam in FAMILIES:
         if fam == "ontologies":
             continue
@@ -157,6 +164,7 @@ def main() -> int:
         for name in list(ext_unresolved):
             if name in heads and name not in comps[fam]:
                 comps[fam] = sorted([*comps[fam], name])
+                ext_by_fam.setdefault(fam, set()).add(name)
                 ext_unresolved.discard(name)
     for name in sorted(ext_unresolved):
         errors.append(
@@ -171,13 +179,18 @@ def main() -> int:
     for fam, names in comps.items():
         print(f"  {fam}: {len(names)}")
 
-    # A missing family directory is a real error, not a crash.
+    # A missing family directory is a real error UNLESS every one of that
+    # family's components is external (ontologies is vendored on demand,
+    # #224; a genre family can end up fully externalized the same way once
+    # every one of its packs moves to a marketplace-ref source, #228) — then
+    # there is nothing to commit under packs/<family>/ and absence is expected.
     for fam in FAMILIES:
-        # ontologies is vendored on demand (#224): packs/ontologies/ may be absent in a
-        # fresh clone before the first fetch, so its directory is not required.
         if fam == "ontologies":
             continue
         if not (PACKS / fam).is_dir():
+            names = comps.get(fam, [])
+            if names and all(n in ext for n in names):
+                continue
             errors.append(f"missing pack family directory: packs/{fam}")
 
     documented_total = 0
@@ -208,9 +221,12 @@ def main() -> int:
         documented_total += len(documented)
 
         # Outbound link per component section: an external pack must link its
-        # declared source url instead of an (absent) in-repo packs/ path.
+        # declared source url instead of an (absent) in-repo packs/ path. Only
+        # names this family actually resolved as external take the ext[] url —
+        # a same-named component in another family is never external here.
+        fam_ext = ext_by_fam.get(fam, set())
         for n in names:
-            target = ext.get(n, f"packs/{fam}/{n}")
+            target = ext[n] if n in fam_ext else f"packs/{fam}/{n}"
             if target not in text:
                 errors.append(f"[{fam}] section '{n}' missing source link to {target}")
             else:
@@ -246,7 +262,7 @@ def main() -> int:
         if fam == "ontologies":
             continue
         for n in names:
-            if n in ext:
+            if n in ext_by_fam.get(fam, set()):
                 continue
             readme = PACKS / fam / n / "README.md"
             if not readme.is_file():

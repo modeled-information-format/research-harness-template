@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-07-01
+
+### Changed
+
+- The 17 remaining bundled report-genre packs are retired in favor of
+  external consumption from `mif-docs-plugin`, completing the
+  genre-consolidation migration piloted by `engineering`
+  (research-harness-template#228): `academic`, `briefing`, `computing-paper`,
+  `humanities-mla`, `humanities-chicago`, `clinical-submission`, `nist-sp`,
+  `regulatory-disclosure`, `compliance-audit`, `security-pentest`,
+  `legal-memo`, `market-research-report`, `sustainability-report`,
+  `trend-analysis`, `competitive-quadrant`, `briefing`, `exec-summary`. There
+  is no longer a `packs/reports/` directory — all 18 report genres now
+  resolve via `harness.config.json` `packs[].source` `marketplace-ref`
+  entries against the shared `mif-docs` marketplace declaration. Genre
+  capability is unchanged; each genre's MIF frontmatter authoring and
+  conformance now go through `mif-docs`' shared substrate.
+- `scripts/check-pack-docs.py`'s external-pack resolution now tracks which
+  family each external name actually resolved into, fixing a name-collision
+  bug where a report genre and an unrelated ontology sharing the same name
+  (`trend-analysis`) could cross-contaminate each other's outbound-link and
+  README-exemption checks.
+
 ## [0.10.0] - 2026-07-01
 
 ### Added
