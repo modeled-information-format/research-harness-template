@@ -229,8 +229,11 @@ file_title() {
 }
 
 # Extract a deliverable's genre: the frontmatter `genre:` top-level key (stamped
-# by render-artifact.sh's report channel and the blog/build-spec channels), else a
-# filename-derived fallback for files rendered before that stamp existed — the
+# by render-artifact.sh's report channel only — its blog and book channels never
+# write a genre frontmatter key, and this script has no separate "build-spec
+# channel"; other genre-authoring tooling stamps its own genre: key directly),
+# else a filename-derived fallback for files rendered before/without that
+# stamp — the
 # final dot-delimited segment before ".md" in a "<slug>.<genre>.md" filename
 # (${g##*.} strips everything up to and including the last remaining dot, so a
 # "my.slug.genre.md" filename yields "genre", not a literal middle segment), or

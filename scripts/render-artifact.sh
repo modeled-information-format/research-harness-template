@@ -46,7 +46,11 @@ CREATED=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 # $OUT itself may be passed absolute (report-synthesizer.md's own examples use
 # an absolute $REPORTS_DIR) or relative; normalize with realpath -m (works even
 # though the target file/dir doesn't exist yet) before stripping the repo root,
-# so SLUGPATH is always repo-root-relative regardless of how the caller passed it.
+# so SLUGPATH is repo-root-relative for every current caller (all of which
+# resolve $OUT under the repo root). If $OUT ever resolves OUTSIDE the repo
+# root (an absolute path elsewhere, or a symlink escape), the prefix-strip
+# below is a silent no-op and SLUGPATH falls back to the full absolute path —
+# no caller does this today, but a future one that does would need a guard here.
 REPO_ROOT="$(pwd -P)"
 OUT_ABS="$(realpath -m "$OUT")"
 OUT_REL="${OUT_ABS#"$REPO_ROOT"/}"
