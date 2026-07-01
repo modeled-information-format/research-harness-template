@@ -418,6 +418,52 @@ gate_m5() {
   fi
   rm -rf "$T"
 
+  # 5d3. An unresolvable marketplace-ref name (typo, renamed, removed) surfaces
+  #      an explicit error in BOTH sync-packs.sh's sidecar and
+  #      check-pack-docs.py's external_packs(), instead of silently producing
+  #      url:null/ref:null with no diagnostic or a misleading downstream
+  #      "cannot resolve its family" message (regression test for the arbiter
+  #      review fix on research-harness-template#240).
+  T=$(mktemp -d)
+  cp .claude/settings.json "$T/settings-typo.json"
+  jq '.marketplaces = [{"name":"demo-mkt","url":"https://example.com/demo-mkt.git","ref":"main-sha"}]
+      | .packs += [
+          {"name":"typo-demo","enabled":true,"source":{"type":"marketplace-ref","marketplace":"demo-mktz"}}
+        ]' harness.config.json > "$T/typo.cfg.json"
+  sync_ok=false
+  if scripts/sync-packs.sh "$T/typo.cfg.json" "$T/typo.json" "$T/settings-typo.json" >/dev/null 2>&1 \
+     && [ "$(jq -r '.packs[]|select(.name=="typo-demo")|.url' "$T/typo.json")" = "null" ] \
+     && [ "$(jq -r '.packs[]|select(.name=="typo-demo")|.error' "$T/typo.json")" != "null" ]; then
+    sync_ok=true
+  fi
+  # check-pack-docs.py hardcodes REPO relative to its own file location (no
+  # config-path argument), so exercise external_packs() directly against a
+  # synthetic REPO via importlib rather than running the whole script.
+  check_ok=$(python3 - "$T" <<'PY'
+import importlib.util, json, sys
+from pathlib import Path
+T = Path(sys.argv[1])
+(T / "harness.config.json").write_text(json.dumps({
+    "marketplaces": [{"name": "demo-mkt", "url": "https://example.com/demo-mkt.git"}],
+    "packs": [{"name": "typo-demo", "enabled": True,
+               "source": {"type": "marketplace-ref", "marketplace": "demo-mktz"}}],
+}))
+spec = importlib.util.spec_from_file_location("check_pack_docs", "scripts/check-pack-docs.py")
+m = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(m)
+m.REPO = T
+ids, errors = m.external_packs()
+ok = "typo-demo" not in ids and any("demo-mktz" in e and "typo-demo" in e for e in errors)
+print("true" if ok else "false")
+PY
+)
+  if [ "$sync_ok" = "true" ] && [ "$check_ok" = "true" ]; then
+    ok "an unresolvable marketplace-ref name surfaces an explicit error, not a silent null"
+  else
+    bad "unresolved marketplace-ref regression (sync_ok=$sync_ok check_ok=$check_ok)"
+  fi
+  rm -rf "$T"
+
   # 5e. Every bundled per-skill plugin is registered in the marketplace, and its
   #     source path resolves to a real plugin.json.
   local reg_ok
