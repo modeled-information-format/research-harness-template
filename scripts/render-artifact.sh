@@ -35,6 +35,27 @@ VERIF="${4:-}"
 NS=$(jq -r '.namespace // "harness/report"' "$ART")
 SLUG=$(basename "$OUT"); SLUG="${SLUG%.md}"
 CREATED=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+# astro-rehype-relative-markdown-links (the site's cross-link rewriter) slugifies
+# each path segment with github-slugger, which is a HEADING-anchor algorithm: it
+# strips embedded "." without inserting a separator. Any genre-suffixed filename
+# (e.g. "<slug>.engineering.md") therefore gets a mismatched, 404ing rewritten
+# href, even though Astro's own content-collection route (which keeps the dot)
+# resolves fine. The plugin honors an explicit `slug:` frontmatter field over its
+# own computation, so stamp one here — the file's own path relative to the repo
+# root, which is exactly the route the content collection already resolves to.
+SLUGPATH="$(dirname "$OUT")/$SLUG"
+
+# Version indicator: a genre re-rendered for the same topic overwrites its file
+# in place (this harness keeps no automatic history), so a real, extractable
+# `version:` field is the only on-disk record that this is revision N, not the
+# first pass. Read the file's OWN prior version (if $OUT already exists) and
+# increment; otherwise this is version 1.
+VERSION=1
+if [ -f "$OUT" ]; then
+  PREV=$(sed -n '/^---$/,/^---$/p' "$OUT" 2>/dev/null \
+    | grep -m1 -E '^[[:space:]]*version:[[:space:]]*[0-9]+' | grep -oE '[0-9]+')
+  [ -n "$PREV" ] && VERSION=$((PREV + 1))
+fi
 
 # Shared per-section renderer: every finding's section carries its full body, key
 # entities, optional dimension/verdict provenance ($meta), and its own evidence
@@ -140,11 +161,13 @@ case "$CHANNEL" in
         + [ .sources[] | "- [" + (.title|gsub("^[ \\t]+|[ \\t]+$";"")) + "](<" + .url + ">)" ]
       ) | .[]
     ' "$ART")
-    CONCEPT=$(jq --arg ns "$NS" --arg slug "$SLUG" --arg created "$CREATED" '
+    CONCEPT=$(jq --arg ns "$NS" --arg slug "$SLUG" --arg created "$CREATED" --arg slugpath "$SLUGPATH" --argjson version "$VERSION" '
       {
         "@context": "https://mif-spec.dev/schema/context.jsonld",
         "@type": "Concept",
         "@id": ("urn:mif:report:" + $ns + ":" + $slug),
+        slug: $slugpath,
+        version: $version,
         conceptType: "semantic",
         namespace: $ns,
         title: .title,
@@ -178,6 +201,8 @@ case "$CHANNEL" in
           "\"@context\": https://mif-spec.dev/schema/context.jsonld",
           "\"@type\": Concept",
           ("\"@id\": urn:mif:blog:" + $ns + ":" + $slug),
+          ("slug: " + $slugpath),
+          ("version: " + ($version|tostring)),
           "conceptType: semantic",
           ("created: \"" + $created + "\""),
           ("namespace: " + $ns),
@@ -188,7 +213,7 @@ case "$CHANNEL" in
         + [ "", "## Sources", "" ]
         + [ .sources[] | "- [" + (.title|gsub("^[ \\t]+|[ \\t]+$";"")) + "](<" + .url + ">)" ]
       ) | .[]
-    ' --arg ns "$NS" --arg slug "$SLUG" --arg created "$CREATED" "$ART" > "$OUT"
+    ' --arg ns "$NS" --arg slug "$SLUG" --arg created "$CREATED" --arg slugpath "$SLUGPATH" --argjson version "$VERSION" "$ART" > "$OUT"
     ;;
   book)
     # A book chapter at MIF Level 1: base-concept frontmatter (the chapter's own
@@ -199,6 +224,8 @@ case "$CHANNEL" in
           "\"@context\": https://mif-spec.dev/schema/context.jsonld",
           "\"@type\": Concept",
           ("\"@id\": urn:mif:book:" + $ns + ":" + $slug),
+          ("slug: " + $slugpath),
+          ("version: " + ($version|tostring)),
           "conceptType: semantic",
           ("created: \"" + $created + "\""),
           ("namespace: " + $ns),
@@ -211,7 +238,7 @@ case "$CHANNEL" in
         + [ "", "## Endnotes", "" ]
         + [ .sources | to_entries[] | "[" + ((.key + 1) | tostring) + "] " + (.value.title|gsub("^[ \\t]+|[ \\t]+$";"")) + " — <" + .value.url + ">" ]
       ) | .[]
-    ' --arg ns "$NS" --arg slug "$SLUG" --arg created "$CREATED" "$ART" > "$OUT"
+    ' --arg ns "$NS" --arg slug "$SLUG" --arg created "$CREATED" --arg slugpath "$SLUGPATH" --argjson version "$VERSION" "$ART" > "$OUT"
     ;;
   *)
     echo "render: channel must be report|blog|book (got '$CHANNEL')" >&2

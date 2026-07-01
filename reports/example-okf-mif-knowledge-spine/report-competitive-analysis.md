@@ -1,4 +1,6 @@
 ---
+slug: reports/example-okf-mif-knowledge-spine/report-competitive-analysis
+version: 1
 '@context': https://mif-spec.dev/schema/context.jsonld
 '@type': Concept
 '@id': urn:mif:report:harness/example-okf-mif-knowledge-spine:report-competitive-analysis

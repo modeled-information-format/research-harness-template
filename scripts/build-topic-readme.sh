@@ -228,6 +228,37 @@ file_title() {
   printf '%s' "$t"
 }
 
+# Extract a deliverable's genre: the frontmatter `genre:` key at any nesting depth
+# (e.g. top-level on a report, or nested under extensions.harness.genre), else the
+# middle segment of a "<slug>.<genre>.md" filename (this harness's real naming
+# convention — report_type()'s literal "report-<genre>.md" patterns do not match
+# it, so most deliverables fall through to the generic "Document" label; this is
+# the actual genre a reader wants to see). Empty when neither source has one.
+file_genre() {
+  local fp="$1" base g
+  g=$(sed -n '/^---$/,/^---$/p' "$fp" 2>/dev/null | grep -m1 -E '^[[:space:]]*genre:[[:space:]]*[^[:space:]]' \
+        | sed -E 's/^[[:space:]]*genre:[[:space:]]*//; s/^["'\'']//; s/["'\'']$//')
+  if [ -z "$g" ]; then
+    base=$(basename "$fp")
+    case "$base" in
+      *.*.md) g="${base%.md}"; g="${g##*.}" ;;
+    esac
+  fi
+  printf '%s' "$g"
+}
+
+# Extract a deliverable's version: the frontmatter `version:` integer (stamped by
+# render-artifact.sh, incremented every time the same genre is re-rendered for
+# this topic, since a re-render overwrites its file in place with no automatic
+# history). Empty on a file with no version field (not yet backfilled, or a
+# non-genre deliverable like a falsification report).
+file_version() {
+  local fp="$1" v
+  v=$(sed -n '/^---$/,/^---$/p' "$fp" 2>/dev/null | grep -m1 -E '^[[:space:]]*version:[[:space:]]*[0-9]+' \
+        | grep -oE '[0-9]+')
+  printf '%s' "$v"
+}
+
 artifact_type() {
   case "$1" in
     *infographic*) echo "Infographic" ;;
@@ -298,24 +329,33 @@ build_readme() {
   fi
 
   printf '## Reports\n\n'
-  # Every constituent deliverable EXCEPT this README index, listed as Type -> Title in a
-  # fixed reader-consumption order (report_type): exec summary → briefing → synthesis →
-  # the genre reports → falsification report → research progress. The linked title is the
-  # rendered page. Build logs (*-delta) are omitted.
-  local docs base meta rank label title rows
+  # Every constituent deliverable EXCEPT this README index, listed as Type -> Genre ->
+  # Title in a fixed reader-consumption order (report_type): exec summary → briefing →
+  # synthesis → the genre reports → falsification report → research progress. Genre
+  # (file_genre) is the deliverable's actual genre/template (engineering, arc42,
+  # exec-summary, ...), distinct from Type's coarse structural bucket. The linked title
+  # is the rendered page. Build logs (*-delta) are omitted.
+  local docs base meta rank label title genre version rows
   docs=$(find "$TOPIC_DIR" -maxdepth 1 -name '*.md' \
     ! -name 'README.md' ! -name '*-delta.md' 2>/dev/null)
   if [ -z "$docs" ]; then
     printf 'No reports rendered yet.\n\n'
   else
-    printf '| Type | Title |\n| --- | --- |\n'
+    printf '| Type | Genre | Title |\n| --- | --- | --- |\n'
     rows=""
     while IFS= read -r f; do
       [ -n "$f" ] || continue
       base=$(basename "$f")
       meta=$(report_type "$base"); rank=${meta%%$'\t'*}; label=${meta#*$'\t'}
       title=$(file_title "$f")
-      rows+=$(printf '%s\t| %s | [%s](%s) |' "$rank" "$label" "$title" "$base")$'\n'
+      genre=$(file_genre "$f")
+      if [ -n "$genre" ]; then
+        version=$(file_version "$f")
+        [ -n "$version" ] && genre="$genre (v$version)"
+      else
+        genre="—"
+      fi
+      rows+=$(printf '%s\t| %s | %s | [%s](%s) |' "$rank" "$label" "$genre" "$title" "$base")$'\n'
     done <<< "$docs"
     printf '%s' "$rows" | LC_ALL=C sort -t"$(printf '\t')" -k1,1n -k2 | cut -f2-
     printf '\n'

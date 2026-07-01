@@ -1,4 +1,6 @@
 ---
+slug: reports/example-okf-mif-knowledge-spine/synthesis-okf-mif-knowledge-spine
+version: 1
 "@context": "https://mif-spec.dev/context/v1.jsonld"
 "@type": "Concept"
 "@id": "urn:mif:blog:harness/example-okf-mif-knowledge-spine:synthesis"
