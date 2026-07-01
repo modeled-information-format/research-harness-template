@@ -10,6 +10,18 @@ permissions:
   contents: read
 
 jobs:
+  # SCA: OSV-Scanner + dependency-review, as a thin caller of the org central
+  # reusable (consume, never reinvent).
+  sca:
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+      pull-requests: write
+    uses: modeled-information-format/.github/.github/workflows/reusable-sca-osv.yml@f83ee8058630235396f7242580570b26cf3617fa
+    with:
+      fail-on-severity: high
+
   verify:
     runs-on: ubuntu-latest
     steps:
