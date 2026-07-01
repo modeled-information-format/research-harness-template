@@ -29,3 +29,5 @@ Start a new record from [`template.md`](template.md), numbered sequentially.
 | [0009](0009-site-renders-full-instance-corpus.md) | The Astro/Starlight site renders the full instance corpus | accepted |
 | [0010](0010-change-driven-component-versioning.md) | Change-driven component versioning | accepted |
 | [0011](0011-fail-closed-ontology-completeness-gate.md) | Fail-closed ontology-completeness gate before synthesis | accepted |
+| [0012](0012-on-demand-ontology-vendoring.md) | On-demand ontology vendoring from a canonical registry | accepted |
+| [0013](0013-configurable-site-base-path.md) | Configurable site base path | accepted |

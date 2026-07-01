@@ -36,6 +36,7 @@ with [`site-toggle.sh`](scripts.md) or [`/configure`](commands.md) — see
 
 ```jsonc
 "site": {
+  "base": "/",                     // deploy base path, default "/" (site root)
   "primarySurface": "docs",        // "reports" | "docs" | "auto"
   "plugins": {
     "llmsTxt": true,               // installed, default ON
@@ -46,6 +47,13 @@ with [`site-toggle.sh`](scripts.md) or [`/configure`](commands.md) — see
 }
 ```
 
+- **`base`** — the site's deploy base path (Astro's `base` config). Default
+  `/` (site root) — correct for local dev, a custom domain, or a GitHub Pages
+  user/org root site. Set it to `/<repo-name>` only when deploying as a
+  GitHub Pages **project** site (`https://<org>.github.io/<repo-name>/`).
+  `astro.config.mjs` reads this at build time, same as every other `.site.*`
+  control — never hand-edit the constant into that file (see
+  [ADR-0013](../adr/0013-configurable-site-base-path.md)).
 - **`primarySurface`** — which surface leads the sidebar. `reports` puts the
   Reports group on top; `docs` keeps the docs groups on top with Reports after
   them; `auto` resolves to reports when any rendered report exists, else docs. The

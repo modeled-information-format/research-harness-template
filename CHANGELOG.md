@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **The site's deploy base path was a hardcoded literal (`/research-harness-template`)
+  in `astro.config.mjs`, contradicting that file's own stated design** ("neither the
+  template nor a clone hand-edits THIS file"). Every clone actually deploys somewhere
+  different (site root, a GitHub Pages project page, a custom sub-path), so a clone
+  serving from `/` had every internal link 404 unless it hand-patched the supposedly
+  byte-identical engine file.
+- Added `harness.config.json` `.site.base` (schema + `astro.config.mjs` now reads
+  `siteCfg.base ?? "/"`). Default is site root (`/`); the template's own
+  `harness.config.json` sets it explicitly to `/research-harness-template` to
+  preserve its real GitHub Pages deployment.
+- `docs/index.mdx` (the splash page) had every internal link hardcoded with the
+  template's own `/research-harness-template` prefix, a literal string independent
+  of any config — the only place in the docs tree with this anomaly. Links are now
+  base-relative (`/reports/`, `/tutorials/getting-started/`, ...), letting Starlight
+  inject the configured base like every other internal link already does.
+- `scripts/verify.sh` gate_m23's reports-landing check updated to match (asserts
+  the base-relative `link: /reports/`, not the old hardcoded literal).
+
 ## [0.8.2] - 2026-07-01
 
 > This entry collapses five version-bump commits (0.9.0, 0.10.0, 0.11.0,
