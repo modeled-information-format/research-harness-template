@@ -12,14 +12,17 @@ import rehypeRelativeMarkdownLinks from "astro-rehype-relative-markdown-links";
 // clone edits) so neither the template nor a clone hand-edits THIS file —
 // astro.config.mjs stays byte-identical across instances and `copier update`
 // never conflicts on it. We read the manifest at config-eval time and branch on
-// it. Absent/partial `.site` falls back to: llms-txt + mermaid ON, the two
-// optional plugins OFF, primarySurface "auto".
+// it. Absent/partial `.site` falls back to: base "/" (site root), llms-txt +
+// mermaid ON, the two optional plugins OFF, primarySurface "auto". `.site.base`
+// is NOT a template constant — every clone's deploy target differs (site root,
+// a GitHub Pages project page under /<repo>, a custom sub-path), so it MUST be
+// set per instance in harness.config.json, never hand-edited into this file.
 // ---------------------------------------------------------------------------
-const BASE = "/research-harness-template";
 const cfg = existsSync("./harness.config.json")
   ? JSON.parse(readFileSync("./harness.config.json", "utf8"))
   : {};
 const siteCfg = cfg.site ?? {};
+const BASE = siteCfg.base ?? "/";
 const plugins = {
   llmsTxt: true,
   mermaid: true,

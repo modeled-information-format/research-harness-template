@@ -227,6 +227,12 @@
       "description": "Optional Astro/Starlight site-projection controls. The site renders the harness's reports/ outputs (and the Di\u00e1taxis docs/) for human reading: in the template it stays a docs site that demonstrates the example report; a clone activates reports-primary on instantiation (copier _tasks runs site-toggle.sh). Read by astro.config.mjs at build time so neither the template nor a clone hand-edits astro.config.mjs. Absent \u21d2 all defaults.",
       "additionalProperties": false,
       "properties": {
+        "base": {
+          "type": "string",
+          "pattern": "^/([a-zA-Z0-9._~%-]+(/[a-zA-Z0-9._~%-]+)*)?/?$",
+          "default": "/",
+          "description": "The Astro/Starlight site's deploy base path (astro.config.mjs `base`). Every clone's own deployment target is different (site root, a GitHub Pages project page under /<repo>, a custom sub-path) so this is NOT a template constant — it must be set here, per instance, never hand-edited into astro.config.mjs. Default '/' (site root). Set to e.g. '/my-repo' only when actually deploying as a GitHub Pages PROJECT site (not a user/org root site or a custom domain)."
+        },
         "primarySurface": {
           "type": "string",
           "enum": ["reports", "docs", "auto"],

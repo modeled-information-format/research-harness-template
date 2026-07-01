@@ -82,7 +82,8 @@
       "mermaid": true,
       "imageZoom": false,
       "linksValidator": false
-    }
+    },
+    "base": "/research-harness-template"
   },
   "marketplaces": [
     {
