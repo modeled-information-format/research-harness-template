@@ -7,8 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.8.3] - 2026-07-01
-
 ### Fixed
 
 - **The site's deploy base path was a hardcoded literal (`/research-harness-template`)
