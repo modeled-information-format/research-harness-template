@@ -28,16 +28,21 @@ site plugins, see [How to configure the reports site](configure-the-site.md).
    npm run dev          # `npm run reports` is an alias for the same thing
    ```
 
-2. The terminal prints a local URL. The site is served under the
-   `/research-harness-template/` base path, so the address to open is:
+2. The terminal prints a local URL. The site is served under whatever base path
+   `harness.config.json` `.site.base` is set to (default `/`, the site root; see
+   [Reference: configuration](../reference/configuration.md) and
+   [ADR-0013](../adr/0013-configurable-site-base-path.md)) — in this template it
+   is pinned to `/research-harness-template`, so the address to open is:
 
    ```text
    http://localhost:4321/research-harness-template/
    ```
 
-   The port is `4321` unless it is taken, in which case Astro picks the next free
-   port and prints it. Opening the bare `http://localhost:4321/` redirects to the
-   base path.
+   A clone with the default `base: "/"` opens the bare `http://localhost:4321/`
+   instead. The port is `4321` unless it is taken, in which case Astro picks the
+   next free port and prints it. Opening the bare `http://localhost:4321/` when
+   your base is a non-root sub-path returns a **404**, not a redirect — open the
+   base-pathed URL directly.
 
 3. Open that URL. The left sidebar carries the **Reports** group (its position
    depends on `site.primarySurface`); expand it and click a topic's report to read
