@@ -9,10 +9,10 @@ so a clone is self-documenting (design spec §4a, "Diataxis docs — KEEP → bu
 
 | Quadrant | For | Start here |
 | --- | --- | --- |
-| [Tutorials](tutorials/) | Learning by doing | [getting-started.md](tutorials/getting-started.md) |
-| [How-to guides](how-to/) | Achieving a task | [run-a-research-session.md](how-to/run-a-research-session.md), [adopt-packs.md](how-to/adopt-packs.md), [verify-a-release.md](how-to/verify-a-release.md) |
-| [Reference](reference/) | Looking up facts | [contracts.md](reference/contracts.md), [dependencies.md](reference/dependencies.md), [coverage.md](reference/coverage.md) |
-| [Explanation](explanation/) | Understanding why | [reading-the-research.md](explanation/reading-the-research.md) (start here — what you get & how to read it), [architecture.md](explanation/architecture.md), [pack-structure.md](explanation/pack-structure.md), [living-corpus.md](explanation/living-corpus.md) |
+| [Tutorials](tutorials/getting-started.md) | Learning by doing | [getting-started.md](tutorials/getting-started.md) |
+| [How-to guides](how-to/run-a-research-session.md) | Achieving a task | [run-a-research-session.md](how-to/run-a-research-session.md), [adopt-packs.md](how-to/adopt-packs.md), [verify-a-release.md](how-to/verify-a-release.md) |
+| [Reference](reference/contracts.md) | Looking up facts | [contracts.md](reference/contracts.md), [dependencies.md](reference/dependencies.md), [coverage.md](reference/coverage.md) |
+| [Explanation](explanation/reading-the-research.md) | Understanding why | [reading-the-research.md](explanation/reading-the-research.md) (start here — what you get & how to read it), [architecture.md](explanation/architecture.md), [pack-structure.md](explanation/pack-structure.md), [living-corpus.md](explanation/living-corpus.md) |
 
 ## Adopting the harness
 

@@ -362,7 +362,14 @@ build_readme() {
       else
         genre="—"
       fi
-      rows+=$(printf '%s\t| %s | %s | [%s](%s) |' "$rank" "$label" "$genre" "$title" "$base")$'\n'
+      case "$base" in
+        # *-build-spec.md is intentionally excluded from the site's rendered
+        # collection (content.config.ts) so re-rendering it never breaks
+        # copier-update (see ADR/#204, #217, #234) — linking it as a page
+        # would 404, so list the filename in code, not a page link.
+        *-build-spec.md) rows+=$(printf '%s\t| %s | %s | %s (`%s`, not site-rendered) |' "$rank" "$label" "$genre" "$title" "$base")$'\n' ;;
+        *) rows+=$(printf '%s\t| %s | %s | [%s](%s) |' "$rank" "$label" "$genre" "$title" "$base")$'\n' ;;
+      esac
     done <<< "$docs"
     printf '%s' "$rows" | LC_ALL=C sort -t"$(printf '\t')" -k1,1n -k2 | cut -f2-
     printf '\n'
