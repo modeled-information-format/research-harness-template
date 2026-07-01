@@ -7,9 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.11.2] - 2026-07-01
+## [0.8.2] - 2026-07-01
 
-## [0.11.1] - 2026-07-01
+> This entry collapses five version-bump commits (0.9.0, 0.10.0, 0.11.0,
+> 0.11.1, 0.11.2) that landed on `main` without ever being cut as a GitHub
+> Release. The actual last published release is v0.8.1; this is the next real
+> release point, carrying all of that work as a single patch step.
 
 ### Fixed
 
@@ -33,24 +36,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   required by `artifact.schema.json`); `file_genre()` also gained a
   `report-<genre>.md` filename fallback for reports rendered before the stamp
   existed.
-
-### Added
-
-- `render-artifact.sh` now stamps a `version:` frontmatter field on every
-  rendered report/blog/book, auto-incremented from the file's own prior value
-  when a genre is re-rendered for the same topic (previously silently
-  overwritten with no on-disk indicator of revision).
-- `build-topic-readme.sh`'s Reports table gained a **Genre** column (`Type |
-  Genre | Title`), extracted from the deliverable's own `genre:` frontmatter
-  (falling back to a dotted-filename convention), with the `version:` field
-  appended as `(vN)` when present. Previously every non-canonically-named
-  deliverable fell into the generic "Document" `Type` bucket with no way to
-  tell genres apart.
-
-## [0.11.0] - 2026-07-01
+- **The release-pointer version gate required every PR to move
+  `harness.config.json`'s `.version` relative to its own merge-base**, so two
+  PRs opened against the same `main` commit collided even though neither
+  author did anything wrong — whichever merged first bumped the pointer, and
+  the second PR's own diff then showed it unchanged against a now-stale base.
+  `scripts/check-version-bump.sh`'s release-pointer rule now compares against
+  the last actual git tag release instead of a PR's own base, and only fails
+  on a real regression (the pointer at or below that tag). A PR that changes
+  files without touching the pointer passes as long as the pointer is already
+  ahead of the last release. `[skip-version-check]` is retired along with the
+  per-PR pointer obligation it used to waive. Per-pack/per-skill bump-on-change
+  is unchanged. See ADR-0010's 2026-07-01 amendment.
 
 ### Changed
 
+- The `engineering` report genre is now consumed externally from
+  [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)
+  (SHA-pinned via `harness.config.json` `packs[]`) instead of the bundled
+  `packs/reports/engineering` pack, which is retired. This is the pilot genre
+  for the genre-consolidation migration onto `mif-docs` as the single genre
+  and conformance authority
+  (research-harness-template#228). The genre's capability, including the
+  optional Mermaid architecture-diagram figure, is unchanged; its MIF
+  frontmatter authoring and conformance now go through `mif-docs`' shared
+  `mif-frontmatter` / `mif-validate` substrate.
 - The 17 remaining bundled report-genre packs are retired in favor of
   external consumption from `mif-docs-plugin`, completing the
   genre-consolidation migration piloted by `engineering`
@@ -71,8 +81,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`trend-analysis`) could cross-contaminate each other's outbound-link and
   README-exemption checks.
 
-## [0.10.0] - 2026-07-01
-
 ### Added
 
 - **`harness.config.json` `marketplaces[]`** — declare an external Claude Code
@@ -85,21 +93,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The `engineering` pack's source is migrated from an inline external object
   to a `mif-docs` marketplace reference, ahead of migrating the harness's
   remaining report genres onto it.
-
-## [0.9.0] - 2026-06-30
-
-### Changed
-
-- The `engineering` report genre is now consumed externally from
-  [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)
-  (SHA-pinned via `harness.config.json` `packs[]`) instead of the bundled
-  `packs/reports/engineering` pack, which is retired. This is the pilot genre
-  for the genre-consolidation migration onto `mif-docs` as the single genre
-  and conformance authority
-  (research-harness-template#228). The genre's capability, including the
-  optional Mermaid architecture-diagram figure, is unchanged; its MIF
-  frontmatter authoring and conformance now go through `mif-docs`' shared
-  `mif-frontmatter` / `mif-validate` substrate.
+- `render-artifact.sh` now stamps a `version:` frontmatter field on every
+  rendered report/blog/book, auto-incremented from the file's own prior value
+  when a genre is re-rendered for the same topic (previously silently
+  overwritten with no on-disk indicator of revision).
+- `build-topic-readme.sh`'s Reports table gained a **Genre** column (`Type |
+  Genre | Title`), extracted from the deliverable's own `genre:` frontmatter
+  (falling back to a dotted-filename convention), with the `version:` field
+  appended as `(vN)` when present. Previously every non-canonically-named
+  deliverable fell into the generic "Document" `Type` bucket with no way to
+  tell genres apart.
 
 ## [0.8.1] - 2026-06-30
 
@@ -581,7 +584,8 @@ First release of the domain-general research harness template.
 - **Distribution** as a Copier living template and a Claude Code plugin
   marketplace.
 
-[Unreleased]: https://github.com/modeled-information-format/research-harness-template/compare/v0.8.1...HEAD
+[Unreleased]: https://github.com/modeled-information-format/research-harness-template/compare/v0.8.2...HEAD
+[0.8.2]: https://github.com/modeled-information-format/research-harness-template/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/modeled-information-format/research-harness-template/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/modeled-information-format/research-harness-template/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/modeled-information-format/research-harness-template/compare/v0.7.0...v0.7.1
