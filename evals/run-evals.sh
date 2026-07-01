@@ -86,6 +86,61 @@ run "report-verdict-from-falsify" bash -c '
   scripts/render-artifact.sh "'"$TMP"'/ra.json" report "'"$TMP"'/rr.md" "'"$TMP"'/vf.json" &&
   scripts/mif-project.sh "'"$TMP"'/rr.md"'
 
+# 5b-3. render-artifact.sh's report channel stamps the artifact's own `genre:`
+#       directly into the rendered frontmatter (schema-required by
+#       artifact.schema.json), so a genre survives even for a canonically-named
+#       report-<genre>.md deliverable that carries no dot-delimited slug.
+run "render-artifact-stamps-genre" bash -c '
+  scripts/synthesize-artifact.sh "'"$SF"'" engineering "'"$TMP"'/g.json" &&
+  scripts/render-artifact.sh "'"$TMP"'/g.json" report "'"$TMP"'/report-engineering.md" \
+    evals/fixtures/report-verification.json &&
+  grep -qx "genre: engineering" "'"$TMP"'/report-engineering.md"'
+
+# 5b-4. build-topic-readme.sh's file_genre() recognizes the canonical
+#       report-<genre>.md filename (report_type()'s OWN pattern family) as a
+#       fallback, not just the dotted <slug>.<genre>.md convention — a
+#       pre-genre-stamp deliverable with no genre: field still shows its real
+#       genre in the Reports table, not the generic "Document" bucket. Uses the
+#       bundled example topic (the only registered one) with a throwaway
+#       report-<genre>.md fixture and a disposable --out, so the real README
+#       is never touched.
+run "build-topic-readme-genre-fallback-report-dash" bash -c '
+  d=reports/example-okf-mif-knowledge-spine &&
+  trap "rm -f $d/report-_evaltmpgenre.md" EXIT &&
+  printf -- "---\ntitle: t\n---\nbody\n" > "$d/report-_evaltmpgenre.md" &&
+  scripts/build-topic-readme.sh example-okf-mif-knowledge-spine \
+    --out "'"$TMP"'/readme-genretest.md" >/dev/null &&
+  grep -qE "\| _evaltmpgenre \|" "'"$TMP"'/readme-genretest.md"'
+
+# 5b-5. version: increments on each re-render of the same $OUT (the harness keeps
+#       no automatic history, so the frontmatter counter is the only revision
+#       record).
+run "render-artifact-version-increments" bash -c '
+  scripts/synthesize-artifact.sh "'"$SF"'" general "'"$TMP"'/v.json" &&
+  scripts/render-artifact.sh "'"$TMP"'/v.json" report "'"$TMP"'/vtest.md" evals/fixtures/report-verification.json &&
+  grep -qx "version: 1" "'"$TMP"'/vtest.md" &&
+  scripts/render-artifact.sh "'"$TMP"'/v.json" report "'"$TMP"'/vtest.md" evals/fixtures/report-verification.json &&
+  grep -qx "version: 2" "'"$TMP"'/vtest.md"'
+
+# 5b-6. backfill-report-slugs.sh only stamps the key actually missing (a file
+#       with slug but no version gets ONLY version added, never a duplicate
+#       slug line), --dry-run reports ONLY the missing key (not both,
+#       unconditionally -- the reviewed misleading-output bug), and a second
+#       run is a true no-op (idempotent).
+run "backfill-slugs-partial-state-and-idempotent" bash -c '
+  trap "rm -rf reports/_evaltmp_backfill" EXIT &&
+  mkdir -p reports/_evaltmp_backfill &&
+  printf -- "---\nslug: reports/_evaltmp_backfill/foo\ntitle: t\n---\nbody\n" \
+    > reports/_evaltmp_backfill/foo.md &&
+  dryout=$(scripts/backfill-report-slugs.sh --dry-run _evaltmp_backfill) &&
+  printf "%s" "$dryout" | grep -q "version: 1" &&
+  ! printf "%s" "$dryout" | grep -q "slug:" &&
+  scripts/backfill-report-slugs.sh _evaltmp_backfill >/dev/null &&
+  grep -qx "version: 1" reports/_evaltmp_backfill/foo.md &&
+  [ "$(grep -c "^slug:" reports/_evaltmp_backfill/foo.md)" = "1" ] &&
+  out=$(scripts/backfill-report-slugs.sh _evaltmp_backfill) &&
+  printf "%s" "$out" | grep -q "0 fixed, 1 already OK"'
+
 # 5c. Inbound source-envelope: a valid envelope passes; an invalid one is refused.
 run     "source-envelope-good" ajv validate --spec=draft2020 --strict=false -c ajv-formats \
           -s schemas/mif/source-envelope.schema.json -r schemas/mif/mif.schema.json \
