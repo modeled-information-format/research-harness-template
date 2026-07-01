@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Bundled plugins for the research harness. Each SKILL is its own plugin under packs/<pack>/<skill>/ (one plugin per skill), so a clone enables exactly the skills it wants without adopting a whole pack. The harness.config.json packs[] control plane toggles each.",
-    "version": "0.8.1"
+    "version": "0.9.0"
   },
   "plugins": [
     {
@@ -92,11 +92,6 @@
       "name": "computing-paper",
       "source": "./packs/reports/computing-paper",
       "description": "[reports/genre] Genre template for an ACM/IEEE computing conference or journal paper (related work, approach/system design, evaluation, conclusion & future work) with IEEE numbered citations"
-    },
-    {
-      "name": "engineering",
-      "source": "./packs/reports/engineering",
-      "description": "[reports/genre] Genre template for a design / evaluation report (problem, options, decision, trade-offs, implementation notes)"
     },
     {
       "name": "exec-summary",

@@ -209,9 +209,16 @@ scripts/pack-toggle.sh computing-paper on
 
 ## engineering
 
-**Version:** 0.4.2 | **Kind:** genre
+**Kind:** genre
 
-**Source:** [`packs/reports/engineering/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/reports/engineering)
+**Source:** external — consumed from [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)'s
+`engineering` skill (SHA-pinned via `harness.config.json` `packs[]`), not a bundled
+`packs/reports/` directory. This is the pilot genre for the harness's
+genre-consolidation migration onto `mif-docs`
+([discussion #228](https://github.com/modeled-information-format/research-harness-template/discussions/228));
+its MIF frontmatter authoring and conformance now go through `mif-docs`'
+shared `mif-frontmatter` / `mif-validate` substrate instead of a harness-local
+implementation.
 
 ### Purpose
 

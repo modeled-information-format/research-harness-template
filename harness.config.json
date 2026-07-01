@@ -1,6 +1,6 @@
 {
   "$schema": "./harness.config.schema.json",
-  "version": "0.8.1",
+  "version": "0.9.0",
   "mifConformanceLevel": 3,
   "features": {
     "internalCitations": false
@@ -163,7 +163,11 @@
     {
       "name": "engineering",
       "enabled": true,
-      "source": "bundled"
+      "source": {
+        "type": "marketplace",
+        "url": "https://github.com/modeled-information-format/mif-docs-plugin",
+        "ref": "bfe16b9d1901876fe69367a9d2658effcc29371a"
+      }
     },
     {
       "name": "exec-summary",

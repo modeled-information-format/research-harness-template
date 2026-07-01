@@ -18,9 +18,9 @@ packs/
 │   │   ├── .claude-plugin/plugin.json
 │   │   └── skills/exec-summary/SKILL.md
 │   ├── academic/                 #   a plugin
-│   ├── engineering/
 │   ├── trend-analysis/
-│   └── briefing/
+│   └── briefing/                 #   `engineering` is consumed externally from
+│                                  #   mif-docs-plugin instead, not bundled here
 ├── market-research/              # family: methodology
 │   ├── competitive-analysis/     #   a plugin
 │   ├── customer-research/

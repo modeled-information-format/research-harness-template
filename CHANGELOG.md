@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-06-30
+
+### Changed
+
+- The `engineering` report genre is now consumed externally from
+  [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)
+  (SHA-pinned via `harness.config.json` `packs[]`) instead of the bundled
+  `packs/reports/engineering` pack, which is retired. This is the pilot genre
+  for the genre-consolidation migration onto `mif-docs` as the single genre
+  and conformance authority
+  (research-harness-template#228). The genre's capability, including the
+  optional Mermaid architecture-diagram figure, is unchanged; its MIF
+  frontmatter authoring and conformance now go through `mif-docs`' shared
+  `mif-frontmatter` / `mif-validate` substrate.
+
 ## [0.8.1] - 2026-06-30
 
 ### Changed

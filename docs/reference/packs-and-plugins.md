@@ -20,11 +20,12 @@ exactly the skills it wants without adopting a whole family.
 
 ```text
 packs/
-├── reports/            # family: deliverable genres (18 plugins)
+├── reports/            # family: deliverable genres (17 bundled plugins)
 │   ├── exec-summary/   #   a plugin (one skill)
 │   ├── academic/
 │   ├── briefing/
-│   └── …               #   15 more — see the Bundled inventory below
+│   └── …               #   14 more — see the Bundled inventory below
+│                       #   (`engineering` is consumed externally, not bundled here — see below)
 ├── market-research/    # family: methodologies (5 plugins)
 │   ├── competitive-analysis/
 │   ├── customer-research/
@@ -43,10 +44,14 @@ packs/
     └── …               #   11 more — see the Bundled inventory below
 ```
 
-The harness bundles **45 pack plugins** across five families: 9 channels,
-5 market-research methodologies, 12 ontologies, 18 report genres, and
-1 trend-modeling methodology. The [Packs reference](packs/index.md) and the
-per-family pages document every one — its use, constraints, and goals.
+The harness bundles **44 pack plugins** across five families: 9 channels,
+5 market-research methodologies, 12 ontologies, 17 report genres, and
+1 trend-modeling methodology. One additional report genre, `engineering`, is
+consumed externally from `mif-docs-plugin` rather than bundled (the pilot for
+the genre-consolidation migration in
+[discussion #228](https://github.com/modeled-information-format/research-harness-template/discussions/228)).
+The [Packs reference](packs/index.md) and the per-family pages document every
+bundled one — its use, constraints, and goals.
 
 Each `packs/<family>/<plugin>/` is self-contained: a `.claude-plugin/plugin.json`
 (validated against `schemas/pack.schema.json`), a flat `skills/<skill>/SKILL.md`,
@@ -140,7 +145,7 @@ before `harness.config.json` can reference it by name.
 
 ## Bundled inventory
 
-The harness bundles **45 pack plugins** across five families. Each family has a
+The harness bundles **44 pack plugins** across five families. Each family has a
 dedicated reference page documenting every component's purpose, constraints, and
 goals; the counts below match `ls packs/<family>/` exactly.
 
@@ -149,13 +154,16 @@ goals; the counts below match `ls packs/<family>/` exactly.
 `notebooklm`, `pdf`, `xbrl`.
 
 **Report genres** — deliverable templates ([`packs/reports/`](packs/reports.md),
-18 plugins; `academic`, `briefing`, `engineering`, `exec-summary`, and
+17 bundled plugins; `academic`, `briefing`, `exec-summary`, and
 `trend-analysis` are enabled by default, the rest are opt-in):
 `academic`, `briefing`, `clinical-submission`, `competitive-quadrant`,
-`compliance-audit`, `computing-paper`, `engineering`, `exec-summary`,
+`compliance-audit`, `computing-paper`, `exec-summary`,
 `humanities-chicago`, `humanities-mla`, `legal-memo`, `market-research-report`,
 `nist-sp`, `regulatory-disclosure`, `security-pentest`, `sustainability-report`,
-`systematic-review`, `trend-analysis`.
+`systematic-review`, `trend-analysis`. An 18th report genre, `engineering`
+(enabled by default), is consumed externally from
+[`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)
+rather than bundled here — see [Report packs](packs/reports.md#engineering).
 
 **Market-research methodologies** — research dimensions
 ([`packs/market-research/`](packs/market-research.md), 5 plugins):
