@@ -53,9 +53,14 @@ implementation and fallback throughout this proof-of-concept phase.
 
 ## Acceptance Criteria
 
-1. When the engine's `review` subcommand runs against the same real
-   4296-finding, 36-topic corpus used for this session's measurement, it
-   shall complete in under 5 minutes.
+1. When the engine's `review` subcommand runs against a synthetic fixture
+   corpus of at least 4296 findings across 36 topics (generated to match the
+   scale of the real corpus used for this session's measurement,
+   `~/Projects/zircote/research-harness`, since that corpus is a private path
+   not vendored into this repo and unreachable by CI or a future
+   implementer), it shall complete in under 5 minutes. The real corpus
+   remains the out-of-band reference measurement this bound was derived from,
+   verified by the author, not a CI-enforceable input.
 2. When any of the 144 `scripts/verify.sh` assertions or 41
    `evals/run-evals.sh` evals that currently invoke
    `scripts/ontology-review.sh` or `scripts/resolve-ontology.sh` are
@@ -63,17 +68,20 @@ implementation and fallback throughout this proof-of-concept phase.
    identical outcomes — same exit codes, same stdout table/summary format,
    same `--followup` backlog JSON shape.
 3. When an agent calls the `find_similar` MCP tool with a finding's content,
-   the engine shall return results ranked by similarity score, shall not
-   restrict results to the querying finding's own topic, and shall include
-   each result's topic and `finding_id`.
-4. When an agent calls the `suggest_type` MCP tool, the engine shall return
-   ranked candidate entity types with similarity scores and shall not write
-   anything to any finding file — the MCP server process shall have no write
-   access to `reports/`.
-5. If the engine binary is missing or fails to start, then the existing bash
+   the engine shall return results ranked by similarity score.
+4. When an agent calls the `find_similar` MCP tool with a finding's content,
+   the engine shall not restrict results to the querying finding's own topic.
+5. When an agent calls the `find_similar` MCP tool with a finding's content,
+   the engine shall include each result's topic and `finding_id`.
+6. When an agent calls the `suggest_type` MCP tool, the engine shall return
+   ranked candidate entity types with similarity scores.
+7. When an agent calls the `suggest_type` MCP tool, the engine shall not
+   write anything to any finding file — the MCP server process shall have no
+   write access to `reports/`.
+8. If the engine binary is missing or fails to start, then the existing bash
    scripts shall continue to operate correctly with no change in behavior —
    this proof-of-concept introduces no hard dependency.
-6. If two engine invocations are started against the same corpus
+9. If two engine invocations are started against the same corpus
    concurrently, then the second invocation shall fail closed with a clear
    "another review is in progress" error rather than proceeding to write.
 

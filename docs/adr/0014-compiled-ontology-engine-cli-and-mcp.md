@@ -157,10 +157,13 @@ engine (Go or Rust) + CLI + MCP server + search index, in one project.
 
 **Advantages**:
 
-- Every subsystem gets the runtime and search benefits at once, with no
-  interim period of two coexisting implementations anywhere in the harness.
-- One coherent engine design instead of a patchwork of scoped migrations
-  over time.
+- Every subsystem gets PDD-1's runtime benefit and SDD-1's cross-topic
+  recall at once, with no interim period of two coexisting implementations
+  (bash + compiled) anywhere in the harness, unlike Option 3's explicit
+  coexistence risk.
+- One coherent engine design across the whole ontology/reports/concordance/
+  synthesis subsystem, instead of a patchwork of separately-scoped
+  migrations decided one at a time over an unknown number of future ADRs.
 
 **Disadvantages**:
 
@@ -169,7 +172,9 @@ engine (Go or Rust) + CLI + MCP server + search index, in one project.
   `build-concordance.sh`, `validate-concordance.sh`, and
   `synthesize-corpus.sh`, each with their own eval coverage today.
 - Long time-to-first-value; nothing ships until the whole subsystem is
-  reimplemented and re-proven against all existing gates.
+  reimplemented and re-proven against all existing gates — PDD-1 and PDD-2
+  are not measurable until the entire rewrite is done, unlike Option 3 which
+  measures them after one bounded pair.
 
 **Risk Assessment:**
 
@@ -178,8 +183,7 @@ engine (Go or Rust) + CLI + MCP server + search index, in one project.
 - *Schedule Risk*: High — long time-to-first-value; nothing ships until the
   whole subsystem is reimplemented and re-proven.
 - *Ecosystem Risk*: Contradicts this repo's own "Surgical Changes" convention
-  (`CLAUDE.md`) and its versioning philosophy (`ADR-0010`: change-driven, not
-  big releases) — a large, all-at-once replacement is the shape of change
+  (`CLAUDE.md`) — a large, all-at-once replacement is the shape of change
   this project's own conventions actively discourage.
 
 ### Option 3: Scoped proof-of-concept on ontology-review/resolve-ontology only
@@ -246,13 +250,20 @@ agent-time use; leave every deterministic bash gate untouched.
 
 **Risk Assessment:**
 
-- *Technical Risk*: Low effort to build, but solves the wrong problem —
-  does not address PDD-1, the primary decision driver.
-- *Schedule Risk*: Low — fast to ship, but ships the wrong thing relative to
-  the primary driver.
+- *Technical Risk*: Moderate, independent of the driver mismatch — an
+  MCP-only server still carries a real embedding-model dependency choice
+  (same as Option 3's), plus a genuine index-staleness risk unique to this
+  option: with no CLI `review` step to force a rebuild, nothing re-indexes
+  the corpus as findings change unless the MCP server itself watches
+  `reports/` for changes, adding file-watching complexity this option's
+  simplicity was supposed to avoid.
+- *Schedule Risk*: Low to ship an initial version, but does not address
+  PDD-1 at all — the measured 20-minute CI/gate cost is untouched, since it
+  lives entirely in the deterministic path this option leaves alone.
 - *Ecosystem Risk*: High — the harness's four-layer design (`ADR-0001`)
-  requires the deterministic engine layer to run headless; an MCP-only
-  approach cannot be that layer, so this option can only ever be an
+  requires the deterministic harness-services layer (where
+  `resolve-ontology.sh`/`ontology-review.sh` live) to run headless; an
+  MCP-only approach cannot be that layer, so this option can only ever be an
   agent-time convenience layered on top of Option 1's unresolved cost, never
   a replacement for it.
 

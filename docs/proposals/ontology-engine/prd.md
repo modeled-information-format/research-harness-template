@@ -69,8 +69,12 @@ instrument: it either matches ambiguously (refuses to classify) or not at all,
 with no notion of "similar to" a known type. Until this session's fix
 (research-harness-template#251), its guesses were also silently miscounted as
 "typed" in coverage reports, masking real gaps — measured at 63 of 4296 findings
-corpus-wide, and as high as 62% of findings in individual topics, genuinely
-unstamped on disk.
+corpus-wide (`~/Projects/zircote/research-harness`, direct scan during this
+session, not from PR #251's own body), concentrated as high as 16 of 26 findings
+(62%) in one individual topic (`backstage-internal-developer-portal`), genuinely
+unstamped on disk. The template's own bundled example topic showed the same
+pattern at smaller scale: 15 of 36 findings discovery-only (the figure PR #251
+itself cites).
 
 ## Goals & Success Metrics
 
