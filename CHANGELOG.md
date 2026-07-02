@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **`render-artifact.sh` stamped an absolute filesystem path into `slug:` when
+  `$OUT` was passed as an absolute path** (`report-synthesizer.md`'s own
+  documented usage passes an absolute `$REPORTS_DIR`). `SLUGPATH` was derived
+  from a bare `dirname "$OUT"`, so an absolute `$OUT` leaked the caller's full
+  filesystem path into the rendered frontmatter's `slug:` key -- a route the
+  site's cross-link rewriter cannot resolve. `$OUT` is now normalized to
+  absolute and stripped of the repo root before deriving `SLUGPATH`, so
+  `slug:` is always repo-root-relative regardless of how the caller passed
+  `$OUT`.
+
 ## [0.8.3] - 2026-07-02
 
 ### Fixed

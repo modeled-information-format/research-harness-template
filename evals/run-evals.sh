@@ -112,7 +112,20 @@ run "build-topic-readme-genre-fallback-report-dash" bash -c '
     --out "'"$TMP"'/readme-genretest.md" >/dev/null &&
   grep -qE "\| _evaltmpgenre \|" "'"$TMP"'/readme-genretest.md"'
 
-# 5b-5. version: increments on each re-render of the same $OUT (the harness keeps
+# 5b-5. render-artifact.sh stamps `slug:` as a clean repo-root-relative route
+#       even when $OUT is given as an ABSOLUTE path under the repo checkout
+#       (report-synthesizer.md documents this usage via an absolute
+#       $REPORTS_DIR). A bare dirname-based SLUGPATH would stamp an absolute
+#       filesystem path into `slug:` here -- that was the reviewed bug.
+run "render-artifact-slugpath-absolute-out" bash -c '
+  trap "rm -rf reports/_evaltmp_absout" EXIT &&
+  mkdir -p reports/_evaltmp_absout &&
+  scripts/synthesize-artifact.sh "'"$SF"'" general "'"$TMP"'/abs.json" &&
+  scripts/render-artifact.sh "'"$TMP"'/abs.json" report \
+    "$(pwd)/reports/_evaltmp_absout/x.engineering.md" evals/fixtures/report-verification.json &&
+  grep -qx "slug: reports/_evaltmp_absout/x.engineering" reports/_evaltmp_absout/x.engineering.md'
+
+# 5b-6. version: increments on each re-render of the same $OUT (the harness keeps
 #       no automatic history, so the frontmatter counter is the only revision
 #       record).
 run "render-artifact-version-increments" bash -c '
@@ -122,7 +135,7 @@ run "render-artifact-version-increments" bash -c '
   scripts/render-artifact.sh "'"$TMP"'/v.json" report "'"$TMP"'/vtest.md" evals/fixtures/report-verification.json &&
   grep -qx "version: 2" "'"$TMP"'/vtest.md"'
 
-# 5b-6. backfill-report-slugs.sh only stamps the key actually missing (a file
+# 5b-7. backfill-report-slugs.sh only stamps the key actually missing (a file
 #       with slug but no version gets ONLY version added, never a duplicate
 #       slug line), --dry-run reports ONLY the missing key (not both,
 #       unconditionally -- the reviewed misleading-output bug), and a second
