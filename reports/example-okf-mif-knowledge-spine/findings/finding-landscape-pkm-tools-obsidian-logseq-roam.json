@@ -31,18 +31,23 @@
   "conceptType": "semantic",
   "content": "Obsidian, Logseq, and Roam Research are the three leading personal knowledge management (PKM) tools as of 2026. All three use markdown files with wiki-style `[[links]]` that build an implicit knowledge graph, and all three share the same fundamental limitation: links are untyped.\n\nObsidian (Obsidian.md) is document-first, locally stored, with a large plugin ecosystem. Its Graph View visualizes the network of connections between notes. As the InfraNodus team notes: 'One simple missed feature that could turn Obsidian into a full-scale Personal Knowledge Graph is typed Links — we need the ability to attach metadata to relations itself.' Third-party plugins (Juggl, Graph-Link-Types) partially address this but add complexity and performance issues at scale. Obsidian has no built-in provenance model, no confidence scoring, no formal ontology for types, and no structured citation chain — backlinks are content connections, not formal epistemic claims.\n\nLogseq is block-outliner-first, local, and open-source. Everything is a bullet point (block); blocks can be referenced and transcluded across pages. Logseq's database mode (in development as of 2025) aims to enable richer graph queries, but the core link model remains untyped. As one analysis notes: 'Note-taking tools such as Obsidian, Roam Research, and Logseq introduced bidirectional links, turning notes into graphs, but these links carry no semantic content — they record a connection but not its nature.'\n\nRoam Research pioneered networked thought and the block-level outliner concept (c. 2020) that Logseq builds on. Roam is cloud-based ($15/month or $165/year), which means no local-first ownership. Like Obsidian and Logseq, Roam links are untyped; its graph is a personal knowledge graph only in the informal sense.\n\nIn the OKF+MIF knowledge spine landscape, these PKM tools represent the closest prior art to OKF's design philosophy: human-authored markdown, wiki-style links creating an implicit graph, no formal ontology or type system. OKF v0.1 explicitly positions itself near 'LLM wiki repositories' and PKM tools like Obsidian. The gap OKF+MIF closes is: these tools are author-focused personal tools, not portable interoperable formats — they lack the vendor-neutrality, git-distributability, agent-facing export semantics, typed relationships, provenance, and temporal modeling that a foundational knowledge spine requires. MIF's typed relationships and provenance objects provide the semantic layer that PKM tools deliberately avoid.",
   "created": "2026-06-28T00:00:00Z",
+  "entity": {
+    "entity_type": "technology",
+    "name": "PKM Tools (Obsidian, Logseq, Roam)"
+  },
   "extensions": {
     "harness": {
       "dimension": "landscape",
+      "gathered_under": "gv-722bb7b64725",
       "verification": {
-        "verdict": "survived",
-        "verdict_basis": "Multiple independent sources confirm Obsidian, Logseq, and Roam all use untyped edges with no semantic extraction or typed-relationship layer; the finding's core claim is directly corroborated rather than contradicted.",
+        "attempted_at": "2026-06-28T11:42:12Z",
         "disconfirming_evidence": [],
-        "attempted_at": "2026-06-28T11:42:12Z"
-      },
-      "gathered_under": "gv-722bb7b64725"
+        "verdict": "survived",
+        "verdict_basis": "Multiple independent sources confirm Obsidian, Logseq, and Roam all use untyped edges with no semantic extraction or typed-relationship layer; the finding's core claim is directly corroborated rather than contradicted."
+      }
     }
   },
+  "namespace": "harness/example-okf-mif-knowledge-spine",
   "provenance": {
     "@type": "Provenance",
     "confidence": 0.88,
@@ -70,6 +75,5 @@
     "prior-art",
     "markdown"
   ],
-  "title": "PKM Tools (Obsidian, Logseq, Roam): Untyped-Link Markdown Graphs Without Provenance or Formal Ontology",
-  "namespace": "harness/example-okf-mif-knowledge-spine"
+  "title": "PKM Tools (Obsidian, Logseq, Roam): Untyped-Link Markdown Graphs Without Provenance or Formal Ontology"
 }
