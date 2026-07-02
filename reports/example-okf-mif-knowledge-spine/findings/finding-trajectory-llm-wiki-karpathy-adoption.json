@@ -31,17 +31,26 @@
   "conceptType": "semantic",
   "content": "On April 4, 2026, Andrej Karpathy published a GitHub Gist describing the LLM Wiki pattern: instead of re-deriving knowledge from raw documents at query time via Retrieval-Augmented Generation (RAG), an LLM should incrementally build and maintain a persistent, structured wiki composed of interlinked markdown files. The core insight is that LLMs excel at the tedious bookkeeping that causes human wikis to rot — updating cross-references, maintaining consistency, touching fifteen related files in a single pass — while humans curate sources and ask questions. The architecture has three layers: immutable raw sources, an LLM-maintained wiki, and a schema document (CLAUDE.md, AGENTS.md) that configures the LLM's maintenance behavior.\n\nThe gist accumulated 5,000+ stars and 5,000+ forks, spawning a wave of independent implementations: AutoSci, Smriti-MCP, Eidetic, Loremaester, and dozens more, each adding engineering refinements around contradiction detection, token efficiency, and knowledge drift. The Obsidian community quickly built a Karpathy-LLM-wiki plugin. AI startup Nimbalyst automated the bookkeeping layer. The open-source Hermes project adopted the format for internal operations. When Google Cloud launched OKF on June 12, 2026, it explicitly named Karpathy's gist as the foundational pattern it was formalizing.\n\nThis trajectory is significant for the OKF+MIF question in two ways. First, it demonstrates that the practitioner community has already converged on the core architectural bet that OKF encodes: markdown + git + minimal conventions as the packaging layer for AI-agent knowledge. OKF v0.1 did not create this pattern; it captured and standardized existing behavior. Second, the pattern's rapid organic growth validates the demand for an accessible, git-native knowledge format — and simultaneously exposes its current limitation: the community's implementations reveal divergent metadata conventions, untyped links, no shared provenance model, and no temporal validity mechanism. These gaps in the LLM-wiki pattern are precisely the structural problems that MIF's typed relationships, provenance objects, and temporal validity fields exist to solve. The adoption trajectory of the LLM-wiki pattern is thus a direct demand signal for the kind of semantic layering MIF provides on top of OKF's packaging foundation.",
   "created": "2026-06-28T00:00:00Z",
+  "entity": {
+    "direction": "increasing",
+    "entity_type": "trend",
+    "name": "Karpathy's LLM wiki pattern adoption"
+  },
   "extensions": {
     "harness": {
       "dimension": "trajectory",
+      "gathered_under": "gv-722bb7b64725",
       "verification": {
-        "verdict": "survived",
-        "verdict_basis": "Karpathy gist primary source confirms April 4 2026 date, 5000+ stars and 5000+ forks, and the three-layer raw-sources / LLM-maintained-wiki / schema-doc architecture as a RAG alternative; the Google Cloud OKF blog confirms OKF formalizes this pattern. 1 primary fetch plus shared blog; no disconfirmation.",
+        "attempted_at": "2026-06-28T12:20:00Z",
         "disconfirming_evidence": [],
-        "attempted_at": "2026-06-28T12:20:00Z"
-      },
-      "gathered_under": "gv-722bb7b64725"
+        "verdict": "survived",
+        "verdict_basis": "Karpathy gist primary source confirms April 4 2026 date, 5000+ stars and 5000+ forks, and the three-layer raw-sources / LLM-maintained-wiki / schema-doc architecture as a RAG alternative; the Google Cloud OKF blog confirms OKF formalizes this pattern. 1 primary fetch plus shared blog; no disconfirmation."
+      }
     }
+  },
+  "namespace": "harness/example-okf-mif-knowledge-spine",
+  "ontology": {
+    "id": "trend-analysis"
   },
   "provenance": {
     "@type": "Provenance",
@@ -68,6 +77,5 @@
     "open-source",
     "github"
   ],
-  "title": "Karpathy's LLM Wiki Pattern: 5,000+ Stars and a Wave of Implementations",
-  "namespace": "harness/example-okf-mif-knowledge-spine"
+  "title": "Karpathy's LLM Wiki Pattern: 5,000+ Stars and a Wave of Implementations"
 }
