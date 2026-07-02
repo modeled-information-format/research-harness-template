@@ -3,8 +3,8 @@ id: explanation-ontology-engine-lifecycle-swimlane
 type: semantic
 created: '2026-07-01T00:00:00Z'
 modified: '2026-07-01T00:00:00Z'
-namespace: docs/proposals/ontology-engine
-title: "Research lifecycle swimlane: current bash scripts vs. proposed Rust CLI scope"
+namespace: proposals/ontology-engine
+title: "Research lifecycle swimlane: current bash scripts vs. proposed compiled engine scope"
 diataxis_type: explanation
 tags:
   - explanation
@@ -28,11 +28,11 @@ ontology:
   version: 1.0.0
   uri: https://mif-spec.dev/ontologies/mif-docs
 entity:
-  name: 'Research lifecycle swimlane: current bash scripts vs. proposed Rust CLI scope'
+  name: 'Research lifecycle swimlane: current bash scripts vs. proposed compiled engine scope'
   entity_type: explanation-document
 ---
 
-# Research lifecycle swimlane: current bash scripts vs. proposed Rust CLI scope
+# Research lifecycle swimlane: current bash scripts vs. proposed compiled engine scope
 
 Supporting diagram for `docs/adr/0014-compiled-ontology-engine-cli-and-mcp.md`
 and the `docs/proposals/ontology-engine/` doc-set. Traces one topic's full

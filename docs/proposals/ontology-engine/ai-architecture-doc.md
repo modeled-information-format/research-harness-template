@@ -155,9 +155,13 @@ flowchart LR
 
 ## Non-Functional Requirements
 
-1. WHEN `<engine> review` runs against the same real 4296-finding, 36-topic
-   corpus used for this session's measurement, THE SYSTEM SHALL complete
-   within 5 minutes (versus the 20+ minutes measured for the bash scripts).
+1. WHEN `<engine> review` runs against a synthetic fixture corpus of at
+   least 4296 findings across 36 topics (matching the scale of the real
+   corpus used for this session's measurement — a private path, unreachable
+   by CI or a future implementer, so the CI-enforceable bound is the fixture
+   corpus, with the real corpus as the out-of-band reference this bound was
+   derived from), THE SYSTEM SHALL complete within 5 minutes (versus the
+   20+ minutes measured for the bash scripts against the real corpus).
 2. WHEN any of the 144 `scripts/verify.sh` assertions or 41
    `evals/run-evals.sh` evals covering `resolve-ontology.sh`/
    `ontology-review.sh` are re-pointed at the new CLI, THE SYSTEM SHALL

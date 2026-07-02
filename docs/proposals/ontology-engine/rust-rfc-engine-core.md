@@ -123,9 +123,11 @@ in one long-lived process.
 `entity` block against its resolved type's schema in-process, replacing the
 per-finding `ajv` subprocess call.
 
-**Full-text index** — `rusqlite` bindings to SQLite's FTS5, matching
-`ai-architecture-doc.md`'s AD-2 decision: one embedded, statically-linked
-SQLite file, no separate service, rebuilt by `hoe review` exactly like
+**Full-text index** — `rusqlite`'s `bundled` feature statically links the
+SQLite C library into the `hoe` binary (no runtime dependency on a system
+`libsqlite3`), matching `ai-architecture-doc.md`'s AD-2 decision. The FTS5
+index itself is one embedded database file on disk (not linked — stored),
+no separate database service, rebuilt by `hoe review` exactly like
 `ontology-map.json` is rebuilt today.
 
 **Embedding + similarity** — `candle-core`/`candle-transformers` for local
