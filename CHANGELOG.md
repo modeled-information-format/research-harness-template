@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.3] - 2026-07-02
+
 ### Fixed
 
 - **`ontology-review.sh` silently folded discovery-basis guesses into "typed", hiding
@@ -31,6 +33,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `check-shippable-typing.sh` and `reconcile-session.sh` now also block/count a
   shippable finding whose ontology-map record is `basis: "discovery"`, matching
   their existing treatment of `untyped`/`unresolved`.
+- Retro-classified the 15 findings in the bundled `example-okf-mif-knowledge-spine`
+  topic that the discovery-basis fix above surfaced as never durably stamped.
+  Each finding's `entity` block now carries a real `entity_type` chosen from its
+  actual content, not the original regex discovery guess (which had put all 15
+  under a W3C PROV-O provenance-record type that didn't fit). The topic now
+  reads 36/36 stamped, 0 discovery-only.
 - **The site's deploy base path was a hardcoded literal (`/research-harness-template`)
   in `astro.config.mjs`, contradicting that file's own stated design** ("neither the
   template nor a clone hand-edits THIS file"). Every clone actually deploys somewhere
