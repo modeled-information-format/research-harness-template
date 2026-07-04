@@ -4,6 +4,72 @@ description: Documentation for the MIF research-harness template — a self-docu
 template: splash
 hero:
   tagline: A research engine you clone. Source-grounded findings, MIF-conformant identity, and pluggable packs for domains, channels, and deliverables.
+  image:
+    html: |
+      <svg viewBox="0 0 560 440" width="560" height="440" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Research Harness — a machine-cyan ontological spine accreting human-amber findings, still growing left to right.">
+        <title>A living knowledge graph</title>
+        <desc>A machine-cyan typed spine of nodes ascends left to right, each tethered to a human-amber finding above it and, at two points, a small cyan entity below — the corpus growing one research session at a time, its right edge still forming (dashed).</desc>
+        <defs>
+          <linearGradient id="mif-field" x1="0" y1="0" x2="560" y2="440" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#0A0D13"/>
+            <stop offset="1" stop-color="#0E121B"/>
+          </linearGradient>
+          <radialGradient id="growGlow" cx="0.5" cy="0.5" r="0.5">
+            <stop offset="0" stop-color="#34D3E8" stop-opacity="0.22"/>
+            <stop offset="1" stop-color="#34D3E8" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <rect width="560" height="440" rx="20" fill="url(#mif-field)"/>
+        <rect x="12" y="12" width="536" height="416" rx="14" fill="none" stroke="#222C3C" stroke-width="1.5"/>
+
+        <g transform="translate(238 30) scale(1.55)" fill="none" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
+          <path d="M6 42 L6 6 L24 29" stroke="#34D3E8"/>
+          <path d="M24 29 L42 6 L42 42" stroke="#F5B642"/>
+          <path d="M24 25.6 L27.4 29 L24 32.4 L20.6 29 Z" fill="#E8EEF6" stroke="none"/>
+        </g>
+        <text x="356" y="68" font-family="ui-monospace, 'SF Mono', Menlo, monospace" font-size="26" font-weight="700" letter-spacing="0.04em" fill="#E8EEF6">MIF</text>
+        <text x="280" y="130" text-anchor="middle" font-family="ui-monospace, 'SF Mono', Menlo, monospace" font-size="12" letter-spacing="0.1em" fill="#7C8AA0">LIVING KNOWLEDGE GRAPH</text>
+
+        <g transform="translate(-421.1 -69.2) scale(0.728)" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="1168" cy="356" r="74" fill="url(#growGlow)"/>
+          <polyline points="724,500 820,484 916,492 1012,460 1108,470 1188,440"
+                    fill="none" stroke="#34D3E8" stroke-width="3.5" opacity="0.92"/>
+          <g stroke="#2E3A4D" stroke-width="1.5">
+            <line x1="772" y1="492" x2="800" y2="430"/>
+            <line x1="868" y1="488" x2="892" y2="410"/>
+            <line x1="964" y1="476" x2="980" y2="402"/>
+            <line x1="1060" y1="465" x2="1086" y2="384"/>
+            <line x1="1148" y1="455" x2="1172" y2="370"/>
+            <line x1="820" y1="484" x2="864" y2="544"/>
+            <line x1="1012" y1="460" x2="1056" y2="536"/>
+          </g>
+          <g fill="#0A2630" stroke="#34D3E8" stroke-width="2.5">
+            <rect x="717" y="493" width="14" height="14" rx="2" opacity="0.55"/>
+            <rect x="813" y="477" width="14" height="14" rx="2" opacity="0.7"/>
+            <rect x="909" y="485" width="14" height="14" rx="2" opacity="0.82"/>
+            <rect x="1005" y="453" width="14" height="14" rx="2" opacity="0.92"/>
+            <rect x="1101" y="463" width="14" height="14" rx="2"/>
+          </g>
+          <rect x="1181" y="433" width="14" height="14" rx="2" fill="#0A2630" stroke="#34D3E8"
+                stroke-width="2.5" stroke-dasharray="3 3"/>
+          <circle cx="800" cy="430" r="8" fill="#F5B642" opacity="0.6"/>
+          <circle cx="892" cy="410" r="8" fill="#F5B642" opacity="0.74"/>
+          <circle cx="980" cy="402" r="8" fill="#F5B642" opacity="0.86"/>
+          <circle cx="1086" cy="384" r="8.5" fill="#F5B642"/>
+          <circle cx="1172" cy="370" r="8.5" fill="#F5B642"/>
+          <circle cx="864" cy="544" r="5.5" fill="#34D3E8" opacity="0.55"/>
+          <circle cx="1056" cy="536" r="5.5" fill="#34D3E8" opacity="0.7"/>
+          <g font-family="Menlo, 'SF Mono', 'JetBrains Mono', monospace" font-size="15" letter-spacing="0.02em">
+            <text x="892" y="392" text-anchor="middle" fill="#7C8AA0">claim</text>
+            <text x="1004" y="446" text-anchor="middle" fill="#7C8AA0">entity</text>
+            <text x="1172" y="352" text-anchor="middle" fill="#F5B642">+new</text>
+          </g>
+        </g>
+
+        <rect x="135" y="362" width="290" height="30" rx="15" fill="#151B27" stroke="#2E3A4D"/>
+        <circle cx="155" cy="377" r="4.5" fill="#F5B642"/>
+        <text x="171" y="381" font-family="ui-monospace, 'SF Mono', Menlo, monospace" font-size="12.5" letter-spacing="0.02em" xml:space="preserve"><tspan fill="#F5B642">MIF-native</tspan><tspan fill="#AEBCCF">  ·  grows every session</tspan></text>
+      </svg>
   actions:
     - text: Get started
       link: /tutorials/getting-started/
