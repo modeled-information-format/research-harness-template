@@ -52,8 +52,11 @@ if [ -n "$CLUSTERS" ]; then
   [ -f "$CLUSTERS" ] || { echo "author-ontology: no such clusters file: $CLUSTERS" >&2; exit 1; }
   jq -e '.clusters | type == "array"' "$CLUSTERS" >/dev/null 2>&1 \
     || { echo "author-ontology: $CLUSTERS is not expansion-candidates output (no .clusters array)" >&2; exit 1; }
-  jq -e '.clusters | all(type == "object" and (.members | type == "array"))' "$CLUSTERS" >/dev/null 2>&1 \
-    || { echo "author-ontology: $CLUSTERS has malformed cluster entries (each needs an object with a members array)" >&2; exit 1; }
+  jq -e '.clusters | all(type == "object" and (.members | type == "array")
+           and (.members | all(type == "object"
+                and (.finding_id | type == "string")
+                and (.content | type == "string"))))' "$CLUSTERS" >/dev/null 2>&1 \
+    || { echo "author-ontology: $CLUSTERS has malformed cluster entries (each needs an object with a members array of {finding_id, content} objects)" >&2; exit 1; }
   ntypes=$(jq '.clusters | length' "$CLUSTERS")
   [ "$ntypes" -gt 0 ] || { echo "author-ontology: no clusters in $CLUSTERS" >&2; exit 1; }
   # basename only: ORIGIN lands in commit messages and PR bodies via
@@ -82,7 +85,7 @@ fi
   echo "---"
   if [ -n "$CLUSTERS" ]; then
     echo "# ${NEWID} ontology — DRAFT scaffolded from recurring tier-3 misses."
-    echo "# Authored by scripts/author-ontology.sh --from-clusters ${CLUSTERS}"
+    echo "# Authored by scripts/author-ontology.sh --from-clusters $(basename "$CLUSTERS")"
     echo "# (mif-rh-cli expansion-candidates output; see docs/adr/0015)."
     echo "# TODO before contributing upstream: NAME each todo-cluster-N candidate for"
     echo "#   the concept its excerpts share, define it, fill its grounding"
@@ -113,9 +116,12 @@ fi
       echo "    description: |-"
       echo "      TODO: name and define this candidate type — ${size} recurring tier-3 miss(es) across ${runs} run(s)."
       echo "      Member excerpts:"
-      jq -r '[.members[]? | .content // ""] | .[0:3][] | gsub("[\r\n\t]"; " ") | .[0:140]' <<<"$cl" \
+      # @json emits a correctly escaped double-quoted string, which is also
+      # a valid YAML scalar — embedded quotes/backslashes cannot break the
+      # generated document.
+      jq -r '[.members[]? | .content // ""] | .[0:3][] | gsub("[\r\n\t]"; " ") | .[0:140] | @json' <<<"$cl" \
         | while IFS= read -r ex; do
-        echo "      - \"${ex}\""
+        echo "      - ${ex}"
       done
       echo "      Member findings: $(jq -r '[.members[]?.finding_id] | unique | join(", ")' <<<"$cl")"
       echo "    base: semantic"
