@@ -17,6 +17,10 @@
 #   5. a config that is not valid JSON, or whose .ontologies is not an
 #      array, fails closed (non-zero exit, no mutation) rather than being
 #      silently treated as "no ontologies known yet" and blindly appended to
+#   6. a registry index declaring a malformed id (path traversal, glob
+#      metacharacters, uppercase, etc.) aborts before any mutation, rather
+#      than reaching harness.config.json or fetch-ontology.sh's own
+#      unguarded `$PACKS_DIR/$id` path construction
 #
 # Exit 0 = discovery contract holds. Exit 1 = a check failed.
 set -uo pipefail
@@ -102,5 +106,23 @@ printf '{"ontologies":"not-an-array","topics":[]}\n' > "$TMP2/harness.config.jso
 if ( cd "$TMP2" && bash scripts/sync-registry-ontologies.sh ) >/dev/null 2>&1; then
   note "FAIL: non-array .ontologies was NOT rejected"; fail=1
 else note "non-array .ontologies fails closed, no mutation attempted (ok)"; fi
+
+# 6. a malformed id in the registry (path traversal attempt) aborts before
+#    any mutation, even with a well-formed id alongside it.
+mkdir -p "$TMP2/registry"
+printf '{"ontologies":[{"id":"known-onto","enabled":true}],"topics":[]}\n' > "$TMP2/harness.config.json"
+cp "$TMP/registry/known-onto.ontology.yaml" "$TMP2/registry/" 2>/dev/null || fixture_onto known-onto
+cat > "$TMP2/registry/index.json" <<JSON
+{"schema":"mif-ontology-index/v1","source":"fixture",
+ "ontologies":{
+   "known-onto":{"version":"0.1.0","file":"known-onto.ontology.yaml","sha256":"$(sha_of "$TMP2/registry/known-onto.ontology.yaml")","extends":[]},
+   "../../evil":{"version":"0.1.0","file":"evil.ontology.yaml","sha256":"0","extends":[]}
+ }}
+JSON
+if ( cd "$TMP2" && MIF_ONTOLOGY_SOURCE="$TMP2/registry" bash scripts/sync-registry-ontologies.sh ) >/dev/null 2>&1; then
+  note "FAIL: a malformed registry id was NOT rejected"; fail=1
+elif [ "$(jq '.ontologies | length' "$TMP2/harness.config.json")" = 1 ]; then
+  note "malformed registry id aborts before any mutation (ok)"
+else note "FAIL: malformed registry id aborted but harness.config.json was still mutated"; fail=1; fi
 
 [ "$fail" = 0 ] && echo "sync-registry-ontologies: PASS" || { echo "sync-registry-ontologies: FAIL" >&2; exit 1; }

@@ -66,6 +66,14 @@ jq -e '.ontologies' "$INDEX_FILE" >/dev/null 2>&1 || die "index at $SRC is malfo
 # curates per-instance.
 is_committed_base() { [ -d "$ROOT/schemas/ontologies/$1" ]; }
 
+# A well-formed id is a bare, lowercase slug (matches harness.config.schema.json's
+# own ontologies[].id pattern). Rejecting anything else here, before it ever
+# reaches harness.config.json, is what actually matters: fetch-ontology.sh's
+# own path construction (`dest="$PACKS_DIR/$id"`) has no `*/*|*..*` guard on
+# `$id` the way it does on the index's `file` field, so an id like `../../etc`
+# would otherwise escape packs/ontologies/ once vendored.
+is_wellformed_id() { [[ "$1" =~ ^[a-z][a-z0-9-]*$ ]]; }
+
 # Newline-delimited, read via `while read` rather than an unquoted `for id in
 # $(...)`/`for id in $new_ids` — ids come from the registry index, so an
 # unquoted loop would subject them to word-splitting and pathname expansion
@@ -74,6 +82,7 @@ is_committed_base() { [ -d "$ROOT/schemas/ontologies/$1" ]; }
 new_ids=""
 while IFS= read -r id; do
   [ -n "$id" ] || continue
+  is_wellformed_id "$id" || die "registry index declares a malformed ontology id: '$id' (refusing, fail closed)"
   is_committed_base "$id" && continue
   jq -e --arg id "$id" '.ontologies[]? | select(.id==$id)' "$CFG" >/dev/null 2>&1 || new_ids="${new_ids}${id}"$'\n'
 done < <(jq -r '.ontologies | keys[]' "$INDEX_FILE")
