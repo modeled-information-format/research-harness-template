@@ -92,6 +92,11 @@ const ecosystemGroup = {
   items: [
     { label: "MIF home", link: "https://modeled-information-format.github.io/" },
     { label: "Ecosystem docs", link: "https://modeled-information-format.github.io/docs/" },
+    { label: "Ontology corpus", link: "https://modeled-information-format.github.io/ontologies/" },
+    { label: "mif-docs plugin", link: "https://modeled-information-format.github.io/mif-docs-plugin/" },
+    { label: "Plugin marketplace", link: "https://modeled-information-format.github.io/claude-code-plugins/" },
+    { label: "mif-rs", link: "https://modeled-information-format.github.io/mif-rs/" },
+    { label: "Structured MADR", link: "https://smadr.dev" },
     { label: "Specification (mif-spec.dev)", link: "https://mif-spec.dev" },
   ],
 };
