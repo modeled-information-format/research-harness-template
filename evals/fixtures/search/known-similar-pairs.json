@@ -1,0 +1,276 @@
+{
+  "description": "M3 search-eval ground truth: known-similar finding pairs curated from the latest 8 topics (by created date) of the reference corpus, 2026-07-04.",
+  "top_k_default": 5,
+  "pairs": [
+    {
+      "id": "pair-01",
+      "rationale": "Both formalize the same two-threshold, three-tier abstention policy (auto-classify / flag-for-review / trigger-expansion) from selective-prediction research.",
+      "cross_topic": false,
+      "a": {
+        "finding_id": "urn:mif:harness/ontology-semantic-classification-scoring/ontology-semantic-classification-scoring:selective-prediction-reject-option-three-tier-mapping",
+        "topic": "ontology-semantic-classification-scoring",
+        "text": "Selective-prediction / reject-option research (Chow's rule, multiple reject thresholds, SelectiveNet) directly formalizes a two-threshold, three-region policy -- exactly the auto-classify / flag-for-review / trigger-ontology-expansion structure the engine needs -- and shows per-class or dual thresholds outperform one global cutoff."
+      },
+      "b": {
+        "finding_id": "urn:mif:harness/ontology-semantic-classification-scoring/urn:mif:concept:ontology-semantic-classification-scoring:trajectory-selective-classification-multi-tier-abstention",
+        "topic": "ontology-semantic-classification-scoring",
+        "text": "2025-2026 selective-classification theory (Neyman-Pearson likelihood-ratio abstention with dual/learnable thresholds; multi-class abstention with multi-expert deferral) is generalizing from single accept/reject cutoffs to multi-tier score-band policies -- directly mirroring ADR-0014's proposed three-tier auto-classify/flag-for-review/trigger-expansion structure."
+      }
+    },
+    {
+      "id": "pair-02",
+      "rationale": "Both are post-hoc confidence-calibration techniques applied before any threshold is set; the second is explicitly the non-parametric alternative to the first.",
+      "cross_topic": false,
+      "a": {
+        "finding_id": "urn:mif:harness/ontology-semantic-classification-scoring/ontology-semantic-classification-scoring:temperature-scaling-posthoc-calibration",
+        "topic": "ontology-semantic-classification-scoring",
+        "text": "Post-hoc temperature scaling (single learned scalar dividing logits pre-softmax) is the standard, cheap calibration step that must precede any confidence-threshold gating, since raw model scores are frequently overconfident."
+      },
+      "b": {
+        "finding_id": "urn:mif:harness/ontology-semantic-classification-scoring/ontology-semantic-classification-scoring:isotonic-regression-nonparametric-calibration",
+        "topic": "ontology-semantic-classification-scoring",
+        "text": "Isotonic regression is a non-parametric, monotone calibration alternative to temperature scaling, useful when the score-to-correctness relationship is not well described by a single-parameter sigmoid, at the cost of needing more calibration data."
+      }
+    },
+    {
+      "id": "pair-03",
+      "rationale": "Both establish synonym/label-variation augmentation as a distinct structured field that improves ontology matching (TEXTO and LogMap as two independent precedents).",
+      "cross_topic": false,
+      "a": {
+        "finding_id": "urn:mif:harness/ontology-semantic-classification-scoring/ontology-semantic-classification-scoring:texto-synonym-augmented-textual-description-embedding",
+        "topic": "ontology-semantic-classification-scoring",
+        "text": "TEXTO's text-only ontology-matching approach augments each class label with synonyms before embedding, and finds this recovers more correct matches while cutting homonym false positives -- reinforcing that entity_type's description/aliases/exemplars fields should be designed as an explicitly concatenable embedding document, not independent metadata."
+      },
+      "b": {
+        "finding_id": "urn:mif:harness/ontology-semantic-classification-scoring/ontology-semantic-classification-scoring:logmap-lexical-index-synonym-field-precedent",
+        "topic": "ontology-semantic-classification-scoring",
+        "text": "LogMap's lexical index (class label + label-variations/synonyms, optionally augmented from an external lexicon like UMLS/WordNet) is precedent that synonyms/label-variations belong in their own structured field, separate from a free-text description, and that external-lexicon augmentation improves matching."
+      }
+    },
+    {
+      "id": "pair-04",
+      "rationale": "Both adjudicate the same disposition question: whether the four plasma-physics device mints should extend an existing instrument/apparatus supertype instead of minting independently.",
+      "cross_topic": false,
+      "a": {
+        "finding_id": "urn:mif:harness/health-physics-ontology-domains/urn:mif:concept:health-physics-ontology-domains:disposition-cross-check-fusion-device-entities",
+        "topic": "health-physics-ontology-domains",
+        "text": "Cross-check against scientific.ontology.yaml finds four plasma-physics mints (magnetic-confinement-configuration, laser-inertial-confinement-device, pinch-device, plasma-device) describe named research apparatus and should extend the already-shipped research-instrument type rather than mint independently, while confirming cosmology's astronomical-facility reuse and the classification-scheme-entry mint claims are correct as-is."
+      },
+      "b": {
+        "finding_id": "urn:mif:harness/health-physics-ontology-domains/urn:mif:concept:health-physics-ontology-domains:trajectory-research-instrument-adjudication",
+        "topic": "health-physics-ontology-domains",
+        "text": "Extend is directionally right, and the target should be the new apparatus supertype in research.ontology.yaml (ADR-0003, 2026-06-30), not scientific.ontology.yaml's research-instrument, which has already forked once (psycholinguistics minted its own divergent type)."
+      }
+    },
+    {
+      "id": "pair-05",
+      "rationale": "Both concern PACS classification codes as the grounding source for cosmology entity types \u2014 the mints themselves versus the scheme's frozen/discontinued-status risk.",
+      "cross_topic": false,
+      "a": {
+        "finding_id": "urn:mif:harness/health-physics-ontology-domains/urn:mif:concept:health-physics-ontology-domains:cosmology-pacs-classification",
+        "topic": "health-physics-ontology-domains",
+        "text": "5 cosmology entity types from PACS's cosmology/extragalactic codes: theoretical models (98.80.Cq), observational parameters (98.80.Es), large-scale structure (98.65.Dx/Cw), galaxy evolution (98.62.Ai), and background radiation (98.70.Vc)."
+      },
+      "b": {
+        "finding_id": "urn:mif:harness/health-physics-ontology-domains/urn:mif:concept:health-physics-ontology-domains:trajectory-pacs-discontinued-physh-successor",
+        "topic": "health-physics-ontology-domains",
+        "text": "PACS, the scheme both plasma-physics's 52.xx and cosmology's 98.xx classification-scheme-entry mints key to, was frozen at its 2010 edition and replaced by APS's PhySH in 2016 (actively maintained, 10 releases through March 2026). UAT and IVOA, cosmology's other source vocabularies, remain actively versioned."
+      }
+    },
+    {
+      "id": "pair-06",
+      "rationale": "Both describe the Delphi method's iterative anonymous multi-round convergence mechanics \u2014 the method itself and its mapping onto a harness dimension.",
+      "cross_topic": false,
+      "a": {
+        "finding_id": "urn:mif:harness/novel-research-methodology-landscape/novel-research-methodology-landscape:delphi-method",
+        "topic": "novel-research-methodology-landscape",
+        "text": "Delphi is RAND's 1950s-origin iterative anonymous expert-panel elicitation method: rounds of estimation, anonymized feedback, and revision until convergence; still actively guided (RAND, 2024)."
+      },
+      "b": {
+        "finding_id": "urn:mif:harness/novel-research-methodology-landscape/novel-research-methodology-landscape:delphi-method-maps-to-dimension",
+        "topic": "novel-research-methodology-landscape",
+        "text": "Delphi's multi-round, convergence-gated elicitation requires repeated sequential research passes with a numeric stability criterion, matching a new dimension rather than a bounded skill."
+      }
+    },
+    {
+      "id": "pair-07",
+      "rationale": "Both describe prediction markets aggregating dispersed information into priced probabilistic forecasts \u2014 the mechanism and the commercial growth of the same market type.",
+      "cross_topic": false,
+      "a": {
+        "finding_id": "urn:mif:harness/novel-research-methodology-landscape/novel-research-methodology-landscape:prediction-markets",
+        "topic": "novel-research-methodology-landscape",
+        "text": "Prediction markets aggregate dispersed information into probabilistic forecasts via priced contracts; the Iowa Electronic Markets beat 964 polls (74% closer) across 5 US elections (1988-2004)."
+      },
+      "b": {
+        "finding_id": "urn:mif:harness/novel-research-methodology-landscape/urn:mif:concept:novel-research-methodology-landscape:trajectory-prediction-markets-explosive-commercial-growth",
+        "topic": "novel-research-methodology-landscape",
+        "text": "Prediction-market volume grew >400% 2024-2025 to ~$64B; Kalshi ($11B valuation) and Polymarket ($8B, with ICE/NYSE backing) dominate 97.5% of share; CFTC moved in Jan/Feb 2026 toward formal rulemaking rather than restriction."
+      }
+    },
+    {
+      "id": "pair-08",
+      "rationale": "Both concern citation-network analysis of scientific literature \u2014 the method and scite.ai's commercialization of claim-level citation verification.",
+      "cross_topic": false,
+      "a": {
+        "finding_id": "urn:mif:harness/novel-research-methodology-landscape/novel-research-methodology-landscape:bibliometric-citation-network-analysis",
+        "topic": "novel-research-methodology-landscape",
+        "text": "Bibliometric/citation-network analysis quantitatively maps a field's literature (performance analysis, science mapping, network analysis) using tools like VOSviewer/Gephi; an established, still-evolving alternative to manual source discovery."
+      },
+      "b": {
+        "finding_id": "urn:mif:harness/novel-research-methodology-landscape/novel-research-methodology-landscape:market-scite-smart-citations",
+        "topic": "novel-research-methodology-landscape",
+        "text": "scite.ai (2M+ users, 1.6B+ indexed citations, acquired by public company Research Solutions) commercializes claim-level citation verification (supports/contrasts/mentions) with MCP-compatible integrations, evidencing market traction for citation-network/claim-verification analysis."
+      }
+    },
+    {
+      "id": "pair-09",
+      "rationale": "Both document IDP/platform-engineering adoption-growth projections positioning Backstage's market dominance, from DORA research and Gartner/market data respectively.",
+      "cross_topic": false,
+      "a": {
+        "finding_id": "urn:mif:harness/backstage-internal-developer-portal/backstage-internal-developer-portal:trajectory-platform-engineering-trend",
+        "topic": "backstage-internal-developer-portal",
+        "text": "Platform engineering has reached near-universal adoption (90% of organizations by 2025, per DORA research), and DORA data directly links high platform quality to amplified AI productivity gains \u2014 positioning Backstage as the standard open-source IDP for capturing this value."
+      },
+      "b": {
+        "finding_id": "urn:mif:harness/backstage-internal-developer-portal/urn:mif:concept:backstage-internal-developer-portal:landscape-idp-market-trends-2025",
+        "topic": "backstage-internal-developer-portal",
+        "text": "The IDP market is valued at $2.85B in 2025 and growing at 15.2% CAGR. Backstage holds approximately 89% market share with 91% of Backstage adopters self-hosting. Gartner projects 85% of platform engineering teams will have an IDP by 2028 (up from 60% in 2025)."
+      }
+    },
+    {
+      "id": "pair-10",
+      "rationale": "Both port dbt's warn_after/error_after source-freshness SLA pattern onto documentation review-freshness gates keyed on frontmatter timestamp fields.",
+      "cross_topic": false,
+      "a": {
+        "finding_id": "urn:mif:harness/mif-software-docs-plugin/mif-software-docs-plugin:landscape-dbt-freshness-sla-doc-analogy",
+        "topic": "mif-software-docs-plugin",
+        "text": "dbt's source freshness YAML syntax (warn_after / error_after with count and period fields) is the most widely deployed declarative freshness SLA mechanism in data engineering. It uses a loaded_at_field (a timestamp column) to compare data age against tiered thresholds that produce warning vs error outcomes. This pattern is directly transferable to documentation: a doc frontmatter field (e.g. last_reviewed) plays the role of loaded_at_field, and warn_after/error_after thresholds define review ..."
+      },
+      "b": {
+        "finding_id": "urn:mif:harness/mif-software-docs-plugin/mif-software-docs-plugin:doc-freshness-sla-ttl-enforcement",
+        "topic": "mif-software-docs-plugin",
+        "text": "The dbt source-freshness pattern (warn_after/error_after with non-zero exit codes) maps directly to doc freshness gates: a CI job that reads last_reviewed/review_by frontmatter fields, compares them to today, and fails the build when the TTL is exceeded. GOV.UK's tech-docs-template + tech-docs-monitor (Daniel the Manual Spaniel) demonstrates this pattern at scale with review_by and owner_slack fields and automated Slack alerting."
+      }
+    },
+    {
+      "id": "pair-11",
+      "rationale": "Both concern W3C PROV-O provenance semantics and MIF's plain-JSON PROV-O-compatible provenance block as the accessible alternative to the full RDF toolchain.",
+      "cross_topic": false,
+      "a": {
+        "finding_id": "urn:mif:harness/example-okf-mif-knowledge-spine/example-okf-mif-knowledge-spine:technical-mif-provenance-block",
+        "topic": "example-okf-mif-knowledge-spine",
+        "text": "MIF's 'provenance' object is a first-class structured JSON field on every Concept that encodes W3C PROV-O compatible attribution: sourceType enum (user_explicit, agent_inferred, external_import, system_generated, user_implicit), numeric confidence (0-1), trustLevel, agent identity, and wasGeneratedBy/wasAttributedTo/wasDerivedFrom properties. This replaces OKF's informal log.md convention with a machine-verifiable record."
+      },
+      "b": {
+        "finding_id": "urn:mif:harness/example-okf-mif-knowledge-spine/example-okf-mif-knowledge-spine:landscape-prov-o-provenance-alternative",
+        "topic": "example-okf-mif-knowledge-spine",
+        "text": "PROV-O is the W3C standard covering the same provenance semantics as MIF's provenance layer but requires the full RDF toolchain; MIF delivers PROV-O-compatible provenance at plain-JSON authoring cost without a triple store."
+      }
+    },
+    {
+      "id": "pair-12",
+      "rationale": "Both concern SKU rationalization/simplification of CPQ product catalogs \u2014 RCA's Product Catalog Management mechanism and Simplus's published rationalization framework.",
+      "cross_topic": false,
+      "a": {
+        "finding_id": "urn:mif:harness/salesforce-cpq-to-revenue-cloud-migration/urn:mif:concept:salesforce-cpq-to-revenue-cloud-migration:rca-product-catalog-pcm-sku-simplification",
+        "topic": "salesforce-cpq-to-revenue-cloud-migration",
+        "text": "RCA's Product Catalog Management (PCM) uses Product2 with reusable Product Classifications and dynamic attributes to eliminate SKU proliferation. One product record supports multiple pricing models; bundle hierarchies up to 3 levels deep replace the need for flat SKU variants."
+      },
+      "b": {
+        "finding_id": "urn:mif:harness/salesforce-cpq-to-revenue-cloud-migration/urn:mif:concept:salesforce-cpq-to-revenue-cloud-migration:landscape-simplus-sku-rationalization-cpq-framework",
+        "topic": "salesforce-cpq-to-revenue-cloud-migration",
+        "text": "Simplus documented a three-area SKU rationalization framework for CPQ: Scoping (catalog audit, 28% shorter sales cycles claimed), Governance Design (with automated SKU generation example), and Limit-Aware Implementation. Industry data cites 3-5% margin expansion from data-driven rationalization."
+      }
+    },
+    {
+      "id": "pair-13",
+      "rationale": "Both concern usage-based/consumption pricing in subscription revenue architecture \u2014 RCA's rating mechanism and the market adoption trend it serves.",
+      "cross_topic": false,
+      "a": {
+        "finding_id": "urn:mif:harness/salesforce-cpq-to-revenue-cloud-migration/urn:mif:concept:salesforce-cpq-to-revenue-cloud-migration:rca-usage-based-billing-consumption-pricing",
+        "topic": "salesforce-cpq-to-revenue-cloud-migration",
+        "text": "RCA supports usage-based billing via Rating Procedures, Rate Cards, and Product Usage Grants. The 'Price By Usage' toggle activates consumption charging on quotes. Works with evergreen subscriptions only. Mixed perpetual/subscription/consumption billing is supported in a unified invoice."
+      },
+      "b": {
+        "finding_id": "urn:mif:harness/salesforce-cpq-to-revenue-cloud-migration/urn:mif:concept:salesforce-cpq-to-revenue-cloud-migration:usage-based-hybrid-pricing-market-adoption",
+        "topic": "salesforce-cpq-to-revenue-cloud-migration",
+        "text": "Usage-based pricing appears in 43% of SaaS models in 2025, up 8pp year-over-year. Gartner predicts 70% of top SaaS vendors will offer consumption pricing by 2027 and 40% of enterprise SaaS will include outcome-based elements by 2026. The subscription billing management market is projected to grow from $8.47B (2025) to $37.36B (2035) at 16% CAGR."
+      }
+    },
+    {
+      "id": "pair-14",
+      "rationale": "Both describe GitHub Copilot's AI-native issue-creation feature \u2014 its capability landscape and its 2025 evolution trajectory toward coding-agent assignment.",
+      "cross_topic": false,
+      "a": {
+        "finding_id": "urn:mif:harness/github-ai-bug-tracking-plugin/urn:mif:concept:github-ai-bug-tracking-plugin:landscape-copilot-issue-creation",
+        "topic": "github-ai-bug-tracking-plugin",
+        "text": "GitHub Copilot's AI issue-creation feature (public preview May 2025, code-snippet support Sep 2025) lets developers draft bug reports from natural language descriptions, screenshots, and code snippets via the github.com chat surface. The feature delegates issues to the Copilot coding agent but does not auto-capture IDE diagnostics during development."
+      },
+      "b": {
+        "finding_id": "urn:mif:harness/github-ai-bug-tracking-plugin/urn:mif:concept:github-ai-bug-tracking-plugin:trajectory-copilot-issue-creation",
+        "topic": "github-ai-bug-tracking-plugin",
+        "text": "Copilot issue creation (May 2025 public preview) supports screenshot-to-bug-report and bulk creation from natural language. By December 2025 issues can be assigned to the Copilot coding agent via REST/GraphQL API, collapsing the bug-observe-to-fix SDLC loop."
+      }
+    },
+    {
+      "id": "pair-15",
+      "rationale": "Cross-topic: both document MCP's ~1000x download growth and cross-vendor adoption cementing it as the neutral industry standard for AI-to-tool integration.",
+      "cross_topic": true,
+      "a": {
+        "finding_id": "urn:mif:harness/github-ai-bug-tracking-plugin/urn:mif:concept:github-ai-bug-tracking-plugin:trajectory-mcp-linux-foundation-standard",
+        "topic": "github-ai-bug-tracking-plugin",
+        "text": "MCP joined the Linux Foundation in December 2025, cementing it as the neutral industry standard for AI-to-tool integration. 970x growth to 97M monthly downloads in 18 months; adopted by OpenAI (March 2025), Microsoft (July 2025), AWS (November 2025). Vendor-neutral MCP is the durable integration layer for a bug-capture plugin."
+      },
+      "b": {
+        "finding_id": "urn:mif:harness/mif-software-docs-plugin/mif-software-docs-plugin:traj-mcp-claude-plugin-ecosystem",
+        "topic": "mif-software-docs-plugin",
+        "text": "MCP (Model Context Protocol) grew from ~100K monthly downloads in November 2024 to 97M+ monthly downloads by December 2025 (nearly 1000x). OpenAI, Google, Microsoft, and AWS all adopted MCP by mid-2025. The Claude Code plugin ecosystem (21,600+ skills, 12,500+ MCP servers) provides the deployment substrate for cross-assistant doc plugins."
+      }
+    },
+    {
+      "id": "pair-16",
+      "rationale": "Cross-topic: both use Claude Code PostToolUse-family hooks as the extension point that inspects tool output and forces in-session action (doc-lint remediation vs bug capture).",
+      "cross_topic": true,
+      "a": {
+        "finding_id": "urn:mif:harness/github-ai-bug-tracking-plugin/urn:mif:concept:github-ai-bug-tracking-plugin:claude-code-hooks-diagnostic-capture",
+        "topic": "github-ai-bug-tracking-plugin",
+        "text": "Claude Code's 30+ hook events\u2014especially PostToolUse, PostToolUseFailure, and Stop\u2014are the primary extension points for bug capture: hooks parse tool output for diagnostics, call gh CLI to create issues, and inject context into Claude's session, all in real time."
+      },
+      "b": {
+        "finding_id": "urn:mif:harness/mif-software-docs-plugin/mif-software-docs-plugin:claude-code-hooks-doc-linting",
+        "topic": "mif-software-docs-plugin",
+        "text": "Claude Code's PostToolUse hook on Write|Edit events enables documentation plugins to run markdownlint/Vale on modified files, return violations via exit-2 stderr, and force Claude to remediate before finishing \u2014 declared in the plugin's hooks/hooks.json."
+      }
+    },
+    {
+      "id": "pair-17",
+      "rationale": "Cross-topic: both assess SKOS's W3C multi-field vocabulary model (prefLabel/altLabel, definition/scopeNote, broader/narrower) as ready-made prior art with known scope limits.",
+      "cross_topic": true,
+      "a": {
+        "finding_id": "urn:mif:harness/ontology-semantic-classification-scoring/ontology-semantic-classification-scoring:skos-altlabel-hiddenlabel-scopenote-vocabulary-precedent",
+        "topic": "ontology-semantic-classification-scoring",
+        "text": "SKOS's standardized field taxonomy (prefLabel/altLabel/hiddenLabel plus definition vs. scopeNote) is a ready-made model for extending entity_type beyond a bare description: scopeNote in particular maps closely onto the disambiguation-notes field the goal calls for, distinct from a plain definition."
+      },
+      "b": {
+        "finding_id": "urn:mif:harness/example-okf-mif-knowledge-spine/example-okf-mif-knowledge-spine:technical-skos-comparator",
+        "topic": "example-okf-mif-knowledge-spine",
+        "text": "SKOS (W3C Recommendation, 2009) provides formal term hierarchies (broader/narrower/related) for controlled vocabularies and taxonomies but lacks narrative prose bodies, typed relationship predicates beyond broader/narrower, provenance tracking, and git-native distribution. It solves the vocabulary alignment problem, not the knowledge distribution problem."
+      }
+    },
+    {
+      "id": "pair-18",
+      "rationale": "Cross-topic: both describe docs-as-code \u2014 documentation authored as Markdown beside the code with CI toolchain discipline (the philosophy vs Backstage TechDocs implementing it).",
+      "cross_topic": true,
+      "a": {
+        "finding_id": "urn:mif:harness/backstage-internal-developer-portal/urn:mif:concept:backstage-idp:techdocs",
+        "topic": "backstage-internal-developer-portal",
+        "text": "TechDocs is Backstage's built-in docs-as-code solution: engineers write Markdown alongside their code, TechDocs generates MkDocs-based sites on CI, stores generated assets in S3, and surfaces them as a Docs tab on every Backstage entity page, supporting over 5,000 documentation sites at Spotify."
+      },
+      "b": {
+        "finding_id": "urn:mif:harness/mif-software-docs-plugin/mif-software-docs-plugin:docs-as-code-philosophy",
+        "topic": "mif-software-docs-plugin",
+        "text": "Docs-as-Code treats documentation with software development discipline: Git, plain-text markup, PR review, CI linting, and issue tracking \u2014 the philosophical foundation for hook-driven documentation quality enforcement."
+      }
+    }
+  ]
+}
