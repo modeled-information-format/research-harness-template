@@ -114,7 +114,7 @@
     },
     "ontologies": {
       "type": "array",
-      "description": "Ontology control plane (SPEC \u00a78c): the enable toggle for the vendored ontology data packs under packs/ontologies/. Disabled (default) ontologies are vendored and conformance-validated but are NOT cataloged, so no topic may bind them. sync-packs.sh writes the enabled subset into the catalog (.claude/enabled-packs.json `ontologies[]`); topics[].ontologies may bind only cataloged ids.",
+      "description": "Ontology control plane (SPEC \u00a78c): the enable toggle for the vendored ontology data packs under packs/ontologies/. An ontology missing from this list, or present with enabled: false, is vendored and conformance-validated but NOT cataloged, so no topic may bind it. scripts/sync-registry-ontologies.sh adds enabled: true by default for any registry ontology this harness has never seen before; a harness owner curates further by explicitly setting enabled: false on any entry they don't want cataloged. sync-packs.sh writes the enabled subset into the catalog (.claude/enabled-packs.json `ontologies[]`); topics[].ontologies may bind only cataloged ids.",
       "items": {
         "type": "object",
         "required": [

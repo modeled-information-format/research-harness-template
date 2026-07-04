@@ -336,7 +336,7 @@
   "ontologies": [
     {
       "id": "regenerative-agriculture",
-      "enabled": false
+      "enabled": true
     },
     {
       "id": "software-engineering",
@@ -344,7 +344,7 @@
     },
     {
       "id": "biology-research-lab",
-      "enabled": false
+      "enabled": true
     },
     {
       "id": "data-engineering",
@@ -352,7 +352,7 @@
     },
     {
       "id": "regenerative-agriculture-research",
-      "enabled": false
+      "enabled": true
     },
     {
       "id": "market-research",
@@ -360,7 +360,7 @@
     },
     {
       "id": "regulatory-legal",
-      "enabled": false
+      "enabled": true
     },
     {
       "id": "scientific",
@@ -368,7 +368,7 @@
     },
     {
       "id": "software-security",
-      "enabled": false
+      "enabled": true
     },
     {
       "id": "trend-analysis",
@@ -376,11 +376,47 @@
     },
     {
       "id": "observability",
-      "enabled": false
+      "enabled": true
     },
     {
       "id": "psycholinguistics",
-      "enabled": false
+      "enabled": true
+    },
+    {
+      "id": "cardiology",
+      "enabled": true
+    },
+    {
+      "id": "clinical-health-base",
+      "enabled": true
+    },
+    {
+      "id": "cosmology",
+      "enabled": true
+    },
+    {
+      "id": "fitness",
+      "enabled": true
+    },
+    {
+      "id": "health",
+      "enabled": true
+    },
+    {
+      "id": "mif-docs",
+      "enabled": true
+    },
+    {
+      "id": "physical-science-base",
+      "enabled": true
+    },
+    {
+      "id": "plasma-physics",
+      "enabled": true
+    },
+    {
+      "id": "platform-engineering",
+      "enabled": true
     }
   ]
 }
