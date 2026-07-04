@@ -76,7 +76,10 @@ written).
 ## Phase 2: Enrich (only with `--enrich`)
 
 For each topic that is **core-only** or has many **untyped or discovery-only**
-findings (the followup backlog from Phase 1 is the worklist):
+findings (the followup backlog from Phase 1 is the worklist — plus, when the
+compiled engine has been run with `mif-rh-cli review --suggest`, the scored
+suggestion queue `reports/_meta/suggestions/<topic>.json`; see step 3 and
+ADR-0015):
 
 1. **Bind a domain ontology (optional).** Match the topic (its title + finding
    content) against the catalog (`packs/ontologies/*` entity types). If one clearly
@@ -109,7 +112,21 @@ findings (the followup backlog from Phase 1 is the worklist):
    your own fields + rename, the crash-safe write pattern). Stamp only types you
    are confident in; leave the rest untyped — do not invent mappings.
 
-3. **Re-review.** Re-run Phase 1 for the topic and confirm the new mappings resolve
+3. **Work the scored suggestion queue (if present).** When
+   `reports/_meta/suggestions/<topic>.json` exists (written by `mif-rh-cli review
+   --suggest`, ADR-0015), enrich ALSO reads it. Each entry carries a ranked list
+   of scored candidates (`{entity_type, ontology_id, score, tier, margin?,
+   calibrated}`) for one finding. For each `"pending"` entry, review its
+   candidates against the finding's content and set the entry's `status` to
+   `confirmed` or `rejected` — **never delete an entry** (the engine preserves
+   non-pending statuses across re-runs; deleting one would resurface it as
+   pending). A confirmed candidate is still a hypothesis until stamped: it goes
+   through the exact same typing edit as step 2 (stamp the finding's `entity`
+   block, atomic rewrite) and a Phase 1 re-run to re-stamp resolution — **never
+   a direct auto-write of `entity_type`**, at any tier, including tier 1
+   `auto_classify_eligible` (the ADR-0011 invariant).
+
+4. **Re-review.** Re-run Phase 1 for the topic and confirm the new mappings resolve
    (typed count up, invalid count 0).
 
 ## Phase 3: Author, expand, and enrich ontologies (the `ontology-manager` skill)
@@ -178,4 +195,5 @@ contract is rejected, not shipped.
 
 A per-topic coverage table (stamped / discovery-only / untyped / invalid), the list
 of any invalid/unresolved mappings to fix, the followup backlog under `--followup`,
-and (under `--enrich`) the bindings added and findings classified.
+and (under `--enrich`) the bindings added, findings classified, and suggestion-queue
+entries confirmed/rejected.
