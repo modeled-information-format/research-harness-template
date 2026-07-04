@@ -52,7 +52,11 @@ CREATED=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 # (ubuntu-latest ships GNU coreutils, so that alone wouldn't have caught it).
 # This script already `cd`s to the repo root above, so a plain pwd-prefix on a
 # relative $OUT is equivalent for every real call site (none pass `../`).
-REPO_ROOT="$(pwd -P)"
+# Deliberately logical `pwd`, not `pwd -P`: callers build $OUT with plain
+# $(pwd) (see the absolute-$OUT eval below), so REPO_ROOT must match that same
+# logical form -- physical would diverge on a symlinked checkout and silently
+# fail this prefix-strip, reproducing the exact bug this block fixes.
+REPO_ROOT="$(pwd)"
 case "$OUT" in
   /*) OUT_ABS="$OUT" ;;
   *)  OUT_ABS="$REPO_ROOT/$OUT" ;;

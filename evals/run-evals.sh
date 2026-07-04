@@ -125,6 +125,23 @@ run "render-artifact-slugpath-absolute-out" bash -c '
     "$(pwd)/reports/_evaltmp_absout/x.engineering.md" evals/fixtures/report-verification.json &&
   grep -qx "slug: reports/_evaltmp_absout/x.engineering" reports/_evaltmp_absout/x.engineering.md'
 
+# 5b-5b. render-artifact.sh's REPO_ROOT must resolve $(pwd) logically, not
+#        physically: callers build $OUT with plain $(pwd) (5b-5 above), so on a
+#        checkout reached through a symlink a physical REPO_ROOT would diverge
+#        from that logical $OUT prefix, the strip would silently no-op, and
+#        `slug:` would leak an absolute path -- the same bug 5b-5 fixes,
+#        reached through a different door. Reviewed in PR #255.
+run "render-artifact-slugpath-symlinked-checkout" bash -c '
+  trap "rm -rf reports/_evaltmp_symlink" EXIT &&
+  mkdir -p reports/_evaltmp_symlink &&
+  LINK="'"$TMP"'/symlinked-checkout" &&
+  ln -s "$(pwd)" "$LINK" &&
+  scripts/synthesize-artifact.sh "'"$SF"'" general "'"$TMP"'/symlink.json" &&
+  ( cd "$LINK" &&
+    scripts/render-artifact.sh "'"$TMP"'/symlink.json" report \
+      "$(pwd)/reports/_evaltmp_symlink/y.engineering.md" evals/fixtures/report-verification.json ) &&
+  grep -qx "slug: reports/_evaltmp_symlink/y.engineering" reports/_evaltmp_symlink/y.engineering.md'
+
 # 5b-6. version: increments on each re-render of the same $OUT (the harness keeps
 #       no automatic history, so the frontmatter counter is the only revision
 #       record).

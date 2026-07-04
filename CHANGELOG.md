@@ -19,7 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   site's cross-link rewriter cannot resolve. `$OUT` is now normalized to
   absolute and stripped of the repo root before deriving `SLUGPATH`, so
   `slug:` is always repo-root-relative regardless of how the caller passed
-  `$OUT`.
+  `$OUT`. `REPO_ROOT` resolves `pwd` logically, not physically (`pwd -P`):
+  callers build `$OUT` with plain `$(pwd)`, so a physical `REPO_ROOT` would
+  diverge from that prefix on a checkout reached through a symlink, silently
+  reproducing the same leak (caught in review).
 
 ## [0.8.3] - 2026-07-02
 
