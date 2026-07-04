@@ -216,6 +216,20 @@ run     "ontology-review-discovery-not-stamped" bash -c "
 run     "ontology-vendoring"        bash evals/ontology-vendoring.sh
 run     "sync-registry-ontologies"  bash evals/sync-registry-ontologies.sh
 
+# 5d-iii. author-ontology.sh --from-clusters (ADR-0015): expansion-candidates
+#         cluster JSON scaffolds one todo-cluster-N draft candidate type per
+#         cluster — quoting member excerpts and listing member finding ids —
+#         and the draft validates against the vendored ontology contract.
+run     "author-ontology-from-clusters" bash -c "
+  scripts/author-ontology.sh evaltmp-clusters --from-clusters evals/fixtures/expansion-clusters.json --out \"$TMP/clusters-draft.yaml\" >/dev/null 2>&1 &&
+  grep -q 'name: todo-cluster-2' \"$TMP/clusters-draft.yaml\" &&
+  awk '/name: todo-cluster-1/,/disposition:/' \"$TMP/clusters-draft.yaml\" > \"$TMP/cluster1-block.txt\" &&
+  awk '/name: todo-cluster-2/,/disposition:/' \"$TMP/clusters-draft.yaml\" > \"$TMP/cluster2-block.txt\" &&
+  grep -q 'Member findings: f-alpha, f-beta' \"$TMP/cluster1-block.txt\" &&
+  grep -q 'Spaced-repetition scheduling policies' \"$TMP/cluster1-block.txt\" &&
+  grep -q 'Member findings: f-delta, f-gamma' \"$TMP/cluster2-block.txt\" &&
+  bash .claude/skills/ontology-manager/scripts/validate_ontology.sh \"$TMP/clusters-draft.yaml\""
+
 # 5e. Ontological spine (concordance, SPEC §8d): build over a topic corpus and validate
 #     ontology conformance; an undeclared entityType or a from/to domain violation fails.
 WC="--config evals/fixtures/concordance/config.json --catalog evals/fixtures/concordance/catalog.json"

@@ -97,9 +97,15 @@ Reviews, enriches, and validates ontology coverage for a topic.
 **Purpose:** Three sequential phases. Phase 1 (deterministic): runs
 `scripts/ontology-review.sh` to refresh `reports/<topic>/ontology-map.json`
 and report coverage gaps. Phase 2 (enrich, optional): binds the ontology and
-retro-classifies existing findings. Phase 3 (author, optional): invokes the
-`ontology-manager` skill to create or update ontology YAML. The `--strict`
-flag fails on any unresolved type.
+retro-classifies existing findings; when the compiled engine's scored
+suggestion queue `reports/_meta/suggestions/<topic>.json` exists (written by
+`mif-rh-cli review --suggest`; ADR-0015), enrich also reviews its pending
+entries' scored candidates and sets each entry's status to confirmed or
+rejected — entries are never deleted, and a confirmed candidate still goes
+through the normal typing edit and resolve re-stamp, never a direct
+auto-write. Phase 3 (author, optional): invokes the `ontology-manager` skill
+to create or update ontology YAML. The `--strict` flag fails on any
+unresolved type.
 
 **Usage:**
 

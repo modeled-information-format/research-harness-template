@@ -1,0 +1,46 @@
+{
+  "clusters": [
+    {
+      "size": 2,
+      "runs": 2,
+      "members": [
+        {
+          "finding_id": "f-alpha",
+          "topic": "edu",
+          "content": "Spaced-repetition scheduling policies are absent from every cataloged entity type.",
+          "run_id": "run-1"
+        },
+        {
+          "finding_id": "f-beta",
+          "topic": "edu",
+          "content": "Review-interval decay curves recur across findings but map to no declared type.",
+          "run_id": "run-2"
+        }
+      ]
+    },
+    {
+      "size": 2,
+      "runs": 2,
+      "members": [
+        {
+          "finding_id": "f-gamma",
+          "topic": "eng",
+          "content": "Threshold calibration artifacts are per-instance derived data, not constants.",
+          "run_id": "run-1"
+        },
+        {
+          "finding_id": "f-delta",
+          "topic": "eng",
+          "content": "Fixed classifier thresholds fail across heterogeneous corpora.",
+          "run_id": "run-2"
+        }
+      ]
+    }
+  ],
+  "misses_considered": 7,
+  "expansion": {
+    "cluster_similarity": 0.8,
+    "min_cluster_size": 2,
+    "min_distinct_runs": 2
+  }
+}

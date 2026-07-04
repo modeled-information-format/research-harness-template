@@ -31,3 +31,5 @@ Start a new record from [`template.md`](template.md), numbered sequentially.
 | [0011](0011-fail-closed-ontology-completeness-gate.md) | Fail-closed ontology-completeness gate before synthesis | accepted |
 | [0012](0012-on-demand-ontology-vendoring.md) | On-demand ontology vendoring from a canonical registry | accepted |
 | [0013](0013-configurable-site-base-path.md) | Configurable site base path | accepted |
+| [0014](0014-compiled-ontology-engine-cli-and-mcp.md) | Compiled ontology engine as a scoped CLI+MCP proof-of-concept | accepted |
+| [0015](0015-confidence-tier-consumption-and-scored-suggestion-routing.md) | Confidence-tier consumption and scored-suggestion routing | accepted |

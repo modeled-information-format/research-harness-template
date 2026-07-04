@@ -20,6 +20,15 @@ class Namespace(TypedDict):
     children: NotRequired[dict[str, Namespace]]
 
 
+type Alias = str
+
+
+type Exemplar = str
+
+
+type NegativeExample = str
+
+
 Relationship = TypedDict(
     "Relationship",
     {
@@ -83,6 +92,9 @@ class EntityType(TypedDict):
     base: Literal["semantic", "episodic", "procedural"]
     traits: NotRequired[list[str]]
     subtype_of: NotRequired[list[str]]
+    aliases: NotRequired[list[Alias]]
+    exemplars: NotRequired[list[Exemplar]]
+    negative_examples: NotRequired[list[NegativeExample]]
     schema: NotRequired[Schema]
 
 
