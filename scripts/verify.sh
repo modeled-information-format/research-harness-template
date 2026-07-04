@@ -1898,6 +1898,10 @@ gate_m20() {
   orphans=""
   while IFS= read -r r; do
     [ -n "$r" ] || continue
+    # A literal "*" endpoint is a recognized wildcard meaning "any declared
+    # type" (e.g. mif-docs' symmetric relates-to) — not a real type name to
+    # resolve against the registry.
+    [ "$r" = "*" ] && continue
     printf '%s\n' "$types" | grep -Fxq -- "$r" || orphans="${orphans}${r} "
   done <<< "$rels"
   n=$(printf '%s\n' "$types" | grep -c .)
