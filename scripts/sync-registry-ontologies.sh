@@ -62,6 +62,9 @@ if [ -z "${new_ids// /}" ]; then
   echo "sync-registry-ontologies: no new ontologies in the registry — $(jq '.ontologies | length' "$CFG") already known"
 else
   count=0
+  # Read-modify-write on $CFG is atomic per invocation (temp file + mv) but not
+  # across concurrent invocations racing on the same file — accepted, since this
+  # is a manually-run sync script, not a concurrent service.
   for id in $new_ids; do
     jq --arg id "$id" '.ontologies += [{id: $id, enabled: true}]' "$CFG" > "$CFG.tmp" \
       && mv "$CFG.tmp" "$CFG" \
@@ -72,5 +75,5 @@ else
   echo "sync-registry-ontologies: $count new ontology(ies) added to $CFG"
 fi
 
-"$ROOT/scripts/fetch-ontology.sh" --all-enabled
-"$ROOT/scripts/sync-packs.sh"
+"$ROOT/scripts/fetch-ontology.sh" --all-enabled || die "fetch-ontology.sh failed"
+"$ROOT/scripts/sync-packs.sh" || die "sync-packs.sh failed"
