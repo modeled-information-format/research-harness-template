@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.4] - 2026-07-02
+
+### Fixed
+
+- **`render-artifact.sh` stamped an absolute filesystem path into `slug:` when
+  `$OUT` was passed as an absolute path** (`report-synthesizer.md`'s own
+  documented usage passes an absolute `$REPORTS_DIR`). `SLUGPATH` was derived
+  from a bare `dirname "$OUT"`, so an absolute `$OUT` leaked the caller's full
+  filesystem path into the rendered frontmatter's `slug:` key -- a route the
+  site's cross-link rewriter cannot resolve. `$OUT` is now normalized to
+  absolute and stripped of the repo root before deriving `SLUGPATH`, so
+  `slug:` is always repo-root-relative regardless of how the caller passed
+  `$OUT`. `REPO_ROOT` resolves `pwd` logically, not physically (`pwd -P`):
+  callers build `$OUT` with plain `$(pwd)`, so a physical `REPO_ROOT` would
+  diverge from that prefix on a checkout reached through a symlink, silently
+  reproducing the same leak (caught in review).
+
 ## [0.8.3] - 2026-07-02
 
 ### Fixed
@@ -634,7 +651,8 @@ First release of the domain-general research harness template.
 - **Distribution** as a Copier living template and a Claude Code plugin
   marketplace.
 
-[Unreleased]: https://github.com/modeled-information-format/research-harness-template/compare/v0.8.3...HEAD
+[Unreleased]: https://github.com/modeled-information-format/research-harness-template/compare/v0.8.4...HEAD
+[0.8.4]: https://github.com/modeled-information-format/research-harness-template/compare/v0.8.3...v0.8.4
 [0.8.3]: https://github.com/modeled-information-format/research-harness-template/compare/v0.8.2...v0.8.3
 [0.8.2]: https://github.com/modeled-information-format/research-harness-template/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/modeled-information-format/research-harness-template/compare/v0.8.0...v0.8.1
