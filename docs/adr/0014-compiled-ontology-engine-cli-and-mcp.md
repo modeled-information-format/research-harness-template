@@ -4,9 +4,9 @@ description: "Prove out a compiled replacement for the ontology-review/resolve-o
 type: adr
 category: architecture
 tags: [ontology, cli, mcp, performance, search-index, engine, proof-of-concept]
-status: proposed
+status: accepted
 created: 2026-07-01
-updated: 2026-07-01
+updated: 2026-07-04
 author: zircote
 project: research-harness-template
 technologies: [Bash, jq, yq, ajv, Go, Rust, SQLite, MCP]
@@ -18,7 +18,7 @@ related: [0001-four-layer-single-repository-architecture.md, 0011-fail-closed-on
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 
@@ -378,3 +378,35 @@ and the ideation discussion of a CLI+MCP engine.
 **Action Required:** zircote to review and change `status` to `accepted` (or
 open a follow-up ADR to reject/amend) before the accompanying feature-spec's
 scope is treated as authorized work.
+
+### 2026-07-04
+
+**Status:** Compliant
+
+**Findings:**
+
+| Finding | Files | Assessment |
+| --- | --- | --- |
+| PDD-1 (full-corpus review under 5 minutes) | `mif-rh-cli` (`modeled-information-format/mif-rs`) | compliant — measured 0.915s for the full 37-topic/4326-finding real `research-harness` corpus (the bash baseline had not completed 13 of 37 topics after 10+ minutes when stopped, having already matched the compiled engine exactly on every topic measured) |
+| PDD-2 (144 verify.sh / 41 run-evals.sh unchanged) | `scripts/verify.sh`, `evals/run-evals.sh` re-pointed at `mif-rh-cli` via wrapper scripts | compliant — 169/169 assertions passing under the compiled engine matched the bash baseline exactly (1 pre-existing, unrelated topic-README-staleness failure present in both); 42/42 evals passing, matching baseline |
+| MCP server (`search`, `suggest_type`, `find_similar`, `corpus_stats`) | `mif-rh-mcp` | verified against the real corpus: all four tools return correct, relevant, ranked results; read-only, no write access to `reports/` |
+| Dynamic ontology loading | `mif-rh`'s `ontology_pack` module | verified — every `resolve`/`review` invocation and every `suggest_type` call reloads the catalog, config, and vendored ontology packs fresh from disk, with no caching; a live ontology-pack schema change was observed to take effect on the very next call with no rebuild or restart |
+| One correctness bug found and fixed during measurement | `mif-rh-cli` | `review`'s `--followup` write confirmation printed after the aggregate summary line rather than before, breaking any caller (including `verify.sh`'s gate_m12) that captures only the last stdout line; fixed and covered by a regression test |
+
+**Summary:** PDD-1 and PDD-2 are measured and met against the real `research-harness`
+corpus (not just the bundled template example), using `mif-rh`/`mif-rh-cli`/
+`mif-rh-mcp` (Rust) in `modeled-information-format/mif-rs`. The proof-of-concept's
+own acceptance bar (see Decision Outcome) is satisfied. Per this ADR's stated
+mitigation, the bash scripts remain canonical and un-retired; no caller in this
+repository has been switched over yet — that cutover (re-pointing
+`.claude/commands/`, `.claude/agents/`, and `scripts/verify.sh`/`run-evals.sh`
+at the compiled engine) is separate follow-up work, not covered by this
+acceptance. The real corpus surfaced pre-existing ontology-schema drift
+(findings written against an older `grant-program` schema now missing since-
+added required fields, among other cases contributing to the corpus's
+existing invalid/unresolved count) — a data-integrity remediation item, not a
+defect in this ADR's engine.
+
+**Action Required:** None for this ADR. Follow-up: decide and execute the
+actual cutover of this repository's callers to the compiled engine binaries,
+and separately remediate the corpus's pre-existing ontology-schema drift.

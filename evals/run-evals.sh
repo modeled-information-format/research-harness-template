@@ -214,6 +214,7 @@ run     "ontology-review-discovery-not-stamped" bash -c "
   [ \"\$(jq -r '.topics.edu[0].finding_id' \"$TMP/rep2/followup.json\")\" = f-discovery-only ] &&
   [ \"\$(jq -r '.topics.edu[0].basis' \"$TMP/rep2/followup.json\")\" = discovery ]"
 run     "ontology-vendoring"        bash evals/ontology-vendoring.sh
+run     "sync-registry-ontologies"  bash evals/sync-registry-ontologies.sh
 
 # 5e. Ontological spine (concordance, SPEC §8d): build over a topic corpus and validate
 #     ontology conformance; an undeclared entityType or a from/to domain violation fails.
