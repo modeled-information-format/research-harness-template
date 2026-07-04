@@ -8,6 +8,12 @@
 #      entirely is discovered, added with enabled: true, then vendored and
 #      cataloged
 #   3. running it again is idempotent (no duplicate entries, no re-fetch churn)
+#   4. a registry id satisfied by a committed base layer under
+#      schemas/ontologies/ is never added to harness.config.json's
+#      ontologies[] — check-pack-docs.py treats every id there as a
+#      component requiring its own doc section, so toggling a base layer
+#      would spuriously demand doc coverage for infrastructure this harness
+#      never curates per-instance
 #
 # Exit 0 = discovery contract holds. Exit 1 = a check failed.
 set -uo pipefail
@@ -39,13 +45,16 @@ YAML
 }
 fixture_onto known-onto
 fixture_onto new-onto
+fixture_onto mif-base
 known_sha="$(sha_of "$TMP/registry/known-onto.ontology.yaml")"
 new_sha="$(sha_of "$TMP/registry/new-onto.ontology.yaml")"
+base_sha="$(sha_of "$TMP/registry/mif-base.ontology.yaml")"
 cat > "$TMP/registry/index.json" <<JSON
 {"schema":"mif-ontology-index/v1","source":"fixture",
  "ontologies":{
    "known-onto":{"version":"0.1.0","file":"known-onto.ontology.yaml","sha256":"$known_sha","extends":[]},
-   "new-onto":{"version":"0.1.0","file":"new-onto.ontology.yaml","sha256":"$new_sha","extends":[]}
+   "new-onto":{"version":"0.1.0","file":"new-onto.ontology.yaml","sha256":"$new_sha","extends":[]},
+   "mif-base":{"version":"0.1.0","file":"mif-base.ontology.yaml","sha256":"$base_sha","extends":[]}
  }}
 JSON
 
@@ -66,5 +75,13 @@ if run_sync >/dev/null 2>&1 \
    && [ "$(jq '[.ontologies[] | select(.id=="new-onto")] | length' "$TMP/harness.config.json")" = 1 ]; then
   note "second run is idempotent, no duplicate entries (ok)"
 else note "FAIL: second run duplicated an entry"; fail=1; fi
+
+# 4. mif-base is in the registry AND satisfied by a committed base layer
+#    (schemas/ontologies/mif-base/ exists in this fixture) — it must never
+#    be added to harness.config.json's ontologies[], and never vendored.
+if [ "$(jq '[.ontologies[] | select(.id=="mif-base")] | length' "$TMP/harness.config.json")" = 0 ] \
+   && [ ! -e "$TMP/packs/ontologies/mif-base" ]; then
+  note "committed base layer mif-base excluded from ontologies[] and never vendored (ok)"
+else note "FAIL: committed base layer mif-base was added to ontologies[] or vendored"; fail=1; fi
 
 [ "$fail" = 0 ] && echo "sync-registry-ontologies: PASS" || { echo "sync-registry-ontologies: FAIL" >&2; exit 1; }

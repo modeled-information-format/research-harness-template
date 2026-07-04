@@ -53,8 +53,20 @@ jq -e '.ontologies' "$INDEX_FILE" >/dev/null 2>&1 || die "index at $SRC is malfo
 # actual vendoring below (fetch-ontology.sh) independently re-fetches and
 # verifies the index against its own trust-pinned sha256 (ADR-0012's TOFU
 # scheme), so no trust decision is made by this read.
+#
+# A registry id satisfied by a committed base layer under schemas/ontologies/
+# (mirrors fetch-ontology.sh's own is_committed_base() check) is always
+# available regardless of harness.config.json's ontologies[] toggle — adding
+# it there is not just redundant, it is actively wrong: check-pack-docs.py
+# treats every ontologies[] id as a component requiring its own documented
+# section (scripts/check-pack-docs.py:45-46), so toggling a base layer would
+# spuriously demand doc coverage for infrastructure this harness never
+# curates per-instance.
+is_committed_base() { [ -d "$ROOT/schemas/ontologies/$1" ]; }
+
 new_ids=""
 for id in $(jq -r '.ontologies | keys[]' "$INDEX_FILE"); do
+  is_committed_base "$id" && continue
   jq -e --arg id "$id" '.ontologies[]? | select(.id==$id)' "$CFG" >/dev/null 2>&1 || new_ids="$new_ids$id "
 done
 
