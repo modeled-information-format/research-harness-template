@@ -40,6 +40,10 @@ done
 [ -n "$NEWID" ] && { [ -n "$TOPIC" ] || [ -n "$CLUSTERS" ]; } \
   || { echo "usage: author-ontology.sh <new-id> <topic> [--out f] [--open-pr]" >&2
        echo "       author-ontology.sh <new-id> --from-clusters <clusters.json> [--out f] [--open-pr]" >&2; exit 2; }
+# The two input modes are mutually exclusive: silently preferring one would
+# leave the other argument doing nothing without any signal.
+[ -n "$TOPIC" ] && [ -n "$CLUSTERS" ] \
+  && { echo "author-ontology: give either a <topic> or --from-clusters, not both" >&2; exit 2; }
 
 if [ -n "$CLUSTERS" ]; then
   # Alternate input: `mif-rh-cli expansion-candidates` output — recorded tier-3
@@ -48,9 +52,13 @@ if [ -n "$CLUSTERS" ]; then
   [ -f "$CLUSTERS" ] || { echo "author-ontology: no such clusters file: $CLUSTERS" >&2; exit 1; }
   jq -e '.clusters | type == "array"' "$CLUSTERS" >/dev/null 2>&1 \
     || { echo "author-ontology: $CLUSTERS is not expansion-candidates output (no .clusters array)" >&2; exit 1; }
+  jq -e '.clusters | all(type == "object" and (.members | type == "array"))' "$CLUSTERS" >/dev/null 2>&1 \
+    || { echo "author-ontology: $CLUSTERS has malformed cluster entries (each needs an object with a members array)" >&2; exit 1; }
   ntypes=$(jq '.clusters | length' "$CLUSTERS")
   [ "$ntypes" -gt 0 ] || { echo "author-ontology: no clusters in $CLUSTERS" >&2; exit 1; }
-  ORIGIN="tier-3 expansion clusters ($CLUSTERS)"
+  # basename only: ORIGIN lands in commit messages and PR bodies via
+  # --open-pr, and a local temp path is provenance noise in a public artifact.
+  ORIGIN="tier-3 expansion clusters ($(basename "$CLUSTERS"))"
 else
   MAP="reports/$TOPIC/ontology-map.json"
   [ -f "$MAP" ] || { echo "author-ontology: no $MAP — run /ontology-review on '$TOPIC' first" >&2; exit 1; }

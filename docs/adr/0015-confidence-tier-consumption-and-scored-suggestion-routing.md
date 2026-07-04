@@ -25,7 +25,7 @@ Accepted
 ### Background and Problem Statement
 
 The MIF specification adopted confidence-tiered entity-type classification
-(MIF ADR-020, "Confidence-Tiered Entity-Type Classification"): the ontology
+(MIF ADR-020, "Confidence-Tiered Entity-Type Classification as a MIF Ontology Capability"): the ontology
 schema (1.1.0) gives every entity type three optional classifier-facing
 fields — `aliases`, `exemplars`, and `negative_examples` — and defines a
 two-threshold, three-tier decision policy over embedding-similarity scores:
@@ -233,7 +233,7 @@ that the existing gates verify.
 
 - **Date:** 2026-07-04
 - **Source:** `schemas/mif/ontology.schema.json` (re-seeded at 1.1.0 with `aliases`/`exemplars`/`negative_examples`), `scripts/author-ontology.sh`, `.claude/commands/ontology-review.md`
-- MIF ADR-020 "Confidence-Tiered Entity-Type Classification" (the spec-side decision this consumes).
+- MIF ADR-020 "Confidence-Tiered Entity-Type Classification as a MIF Ontology Capability" (the spec-side decision this consumes).
 - The `ontology-semantic-classification-scoring` research session (39 findings, 0 falsified) and its draft "Confidence-Threshold Classification as a MIF Ontology Capability" — this ADR is that draft's "Path to Adoption" hop 2.
 
 ## Audit

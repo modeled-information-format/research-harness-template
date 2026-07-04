@@ -38,5 +38,9 @@
     }
   ],
   "misses_considered": 7,
-  "expansion": true
+  "expansion": {
+    "cluster_similarity": 0.8,
+    "min_cluster_size": 2,
+    "min_distinct_runs": 2
+  }
 }
