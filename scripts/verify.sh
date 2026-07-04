@@ -2409,6 +2409,20 @@ gate_ontology_lock() {
     bad "vendored ontology drift / missing pin (scripts/check-ontology-lock.sh)"
     printf '%s\n' "$out" | sed 's/^/      /' >&2
   fi
+
+  # Only in the template repo itself ($IS_TEMPLATE): ontologies.lock.json must
+  # never be git-tracked here. A committed lock freezes the registry's
+  # sha256 at that commit; every later `copier update` for every instance
+  # re-runs fetch-ontology.sh against this frozen pin while reconstructing
+  # the pre-update baseline, so it fails closed the moment the live registry
+  # moves even once, regardless of the instance's own actual pin state.
+  if [ "$IS_TEMPLATE" = 1 ]; then
+    if git ls-files --error-unmatch ontologies.lock.json >/dev/null 2>&1; then
+      bad "ontologies.lock.json is git-tracked in the template itself — untrack it (git rm --cached), it must stay instance-derived"
+    else
+      ok "ontologies.lock.json is not tracked in the template (instance-derived, as intended)"
+    fi
+  fi
 }
 
 gate_versions() {

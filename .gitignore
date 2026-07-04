@@ -48,3 +48,13 @@ reports/**/.synthesis-withheld
 # Domain ontology packs are vendored on demand from the canonical registry
 # (ADR-0012, #224); only base layers under schemas/ontologies/ ship committed.
 packs/ontologies/
+
+# The registry index sha256 pin is instance-derived, same as the packs it
+# protects (ADR-0012): fetch-ontology.sh bootstraps a fresh lock on first run
+# with no prior pin to conflict with. A committed lock instead freezes
+# whatever the registry's live sha256 was at that commit -- every later
+# `copier update` re-runs fetch-ontology.sh against this frozen pin as part
+# of reconstructing the pre-update baseline, so once the live registry index
+# moves even once, every future update for every instance fails closed with
+# "the trust root moved", regardless of the instance's own actual pin state.
+ontologies.lock.json
