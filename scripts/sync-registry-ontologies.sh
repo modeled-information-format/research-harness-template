@@ -28,6 +28,8 @@ CFG="$ROOT/harness.config.json"
 die() { echo "sync-registry-ontologies: $*" >&2; exit 1; }
 command -v jq >/dev/null || die "jq is required"
 [ -f "$CFG" ] || die "config not found: $CFG"
+jq -e '.ontologies | type == "array"' "$CFG" >/dev/null 2>&1 \
+  || die "$CFG is not valid JSON, or its .ontologies is not an array — refusing to guess (fail closed)"
 
 # Source resolution mirrors fetch-ontology.sh's own precedence, so a fixture
 # override (MIF_ONTOLOGY_SOURCE) used for discovery here also governs the
@@ -64,26 +66,33 @@ jq -e '.ontologies' "$INDEX_FILE" >/dev/null 2>&1 || die "index at $SRC is malfo
 # curates per-instance.
 is_committed_base() { [ -d "$ROOT/schemas/ontologies/$1" ]; }
 
+# Newline-delimited, read via `while read` rather than an unquoted `for id in
+# $(...)`/`for id in $new_ids` — ids come from the registry index, so an
+# unquoted loop would subject them to word-splitting and pathname expansion
+# (a literal `*` id would glob-expand against the current directory instead
+# of staying the single character it is).
 new_ids=""
-for id in $(jq -r '.ontologies | keys[]' "$INDEX_FILE"); do
+while IFS= read -r id; do
+  [ -n "$id" ] || continue
   is_committed_base "$id" && continue
-  jq -e --arg id "$id" '.ontologies[]? | select(.id==$id)' "$CFG" >/dev/null 2>&1 || new_ids="$new_ids$id "
-done
+  jq -e --arg id "$id" '.ontologies[]? | select(.id==$id)' "$CFG" >/dev/null 2>&1 || new_ids="${new_ids}${id}"$'\n'
+done < <(jq -r '.ontologies | keys[]' "$INDEX_FILE")
 
-if [ -z "${new_ids// /}" ]; then
+if [ -z "$new_ids" ]; then
   echo "sync-registry-ontologies: no new ontologies in the registry — $(jq '.ontologies | length' "$CFG") already known"
 else
   count=0
   # Read-modify-write on $CFG is atomic per invocation (temp file + mv) but not
   # across concurrent invocations racing on the same file — accepted, since this
   # is a manually-run sync script, not a concurrent service.
-  for id in $new_ids; do
+  while IFS= read -r id; do
+    [ -n "$id" ] || continue
     jq --arg id "$id" '.ontologies += [{id: $id, enabled: true}]' "$CFG" > "$CFG.tmp" \
       && mv "$CFG.tmp" "$CFG" \
       || { rm -f "$CFG.tmp"; die "failed to add '$id' to $CFG"; }
     echo "sync-registry-ontologies: discovered new ontology '$id' — added, enabled by default"
     count=$((count + 1))
-  done
+  done <<< "$new_ids"
   echo "sync-registry-ontologies: $count new ontology(ies) added to $CFG"
 fi
 

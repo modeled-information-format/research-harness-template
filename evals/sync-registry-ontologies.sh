@@ -14,6 +14,9 @@
 #      component requiring its own doc section, so toggling a base layer
 #      would spuriously demand doc coverage for infrastructure this harness
 #      never curates per-instance
+#   5. a config that is not valid JSON, or whose .ontologies is not an
+#      array, fails closed (non-zero exit, no mutation) rather than being
+#      silently treated as "no ontologies known yet" and blindly appended to
 #
 # Exit 0 = discovery contract holds. Exit 1 = a check failed.
 set -uo pipefail
@@ -83,5 +86,21 @@ if [ "$(jq '[.ontologies[] | select(.id=="mif-base")] | length' "$TMP/harness.co
    && [ ! -e "$TMP/packs/ontologies/mif-base" ]; then
   note "committed base layer mif-base excluded from ontologies[] and never vendored (ok)"
 else note "FAIL: committed base layer mif-base was added to ontologies[] or vendored"; fail=1; fi
+
+# 5. a malformed config fails closed: neither invalid JSON nor a non-array
+#    .ontologies is silently treated as "empty, safe to append to."
+TMP2="$(mktemp -d)"; trap 'rm -rf "$TMP" "$TMP2"' EXIT
+mkdir -p "$TMP2/scripts"
+cp "$SELF_DIR/scripts/sync-registry-ontologies.sh" "$SELF_DIR/scripts/fetch-ontology.sh" \
+   "$SELF_DIR/scripts/sync-packs.sh" "$TMP2/scripts/"
+printf 'not json at all' > "$TMP2/harness.config.json"
+if ( cd "$TMP2" && bash scripts/sync-registry-ontologies.sh ) >/dev/null 2>&1; then
+  note "FAIL: invalid JSON config was NOT rejected"; fail=1
+else note "invalid JSON config fails closed, no mutation attempted (ok)"; fi
+
+printf '{"ontologies":"not-an-array","topics":[]}\n' > "$TMP2/harness.config.json"
+if ( cd "$TMP2" && bash scripts/sync-registry-ontologies.sh ) >/dev/null 2>&1; then
+  note "FAIL: non-array .ontologies was NOT rejected"; fail=1
+else note "non-array .ontologies fails closed, no mutation attempted (ok)"; fi
 
 [ "$fail" = 0 ] && echo "sync-registry-ontologies: PASS" || { echo "sync-registry-ontologies: FAIL" >&2; exit 1; }
