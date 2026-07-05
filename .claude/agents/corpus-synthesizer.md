@@ -67,9 +67,6 @@ corpus and its `search`/`find_similar` tools locate related findings by
 meaning while you synthesize — optional accelerators; the jq projection
 above stays authoritative when they are absent.
 
-```bash
-```
-
 Write 4–10 insights that synthesize **across** topics, not one-per-topic restatements:
 
 - **Cross-topic entity reuse** — what concepts/technologies/organizations recur across topics

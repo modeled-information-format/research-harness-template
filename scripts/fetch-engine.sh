@@ -38,7 +38,7 @@ trap 'rm -rf "$tmp"' EXIT
 mkdir -p "$DEST"
 
 # Both engine binaries ship in the same release: the CLI (classification,
-# ADR-0016) and the MCP server (read-only agent surface, ADR-0020/0015).
+# ADR-0016) and the MCP server (read-only agent surface, ADR-0014/0015).
 for bin in mif-rh-cli mif-rh-mcp; do
   artifact="${bin}-${ENGINE_VERSION}-${platform}"
   echo "fetch-engine: downloading ${artifact} from ${ENGINE_REPO} v${ENGINE_VERSION}"

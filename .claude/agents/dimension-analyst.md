@@ -40,7 +40,9 @@ dimension**.
 available in the session, run its `find_similar` tool on each candidate
 finding's core claim before emitting it. A close cross-topic hit means you
 relate to (or cite) the existing finding instead of duplicating it; absence
-of the tools or an index-not-built reply means skip the check silently. You resolve the dimension's methodology, conduct real web research,
+of the tools or an index-not-built reply means skip the check silently.
+
+You resolve the dimension's methodology, conduct real web research,
 and write MIF-backed findings to the topic's reports directory so the orchestrator
 can merge them and the falsification gate can verify them.
 
