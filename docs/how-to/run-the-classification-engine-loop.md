@@ -15,23 +15,20 @@ the tier policy itself is MIF ADR-020.
 
 ## Before you begin
 
-- Install `mif-rh-cli` v0.3.0 or later from the mif-rs releases:
+- Install the engine (v0.3.1 or later). The canonical path is the
+  repo's own fetch script, which downloads the pinned release binary
+  and verifies its build provenance fail-closed before installing it
+  to `bin/mif-rh-cli` (ADR-0016):
 
   ```bash
-  gh release download v0.3.0 --repo modeled-information-format/mif-rs \
-    --pattern 'mif-rh-cli-0.3.0-*'
-  gh attestation verify mif-rh-cli-0.3.0-<platform> \
-    --repo modeled-information-format/mif-rs \
-    --signer-workflow modeled-information-format/mif-rs/.github/workflows/release.yml
+  scripts/fetch-engine.sh
   ```
 
-  Verify the attestation before trusting the binary; pinning
-  `--signer-workflow` binds trust to the release workflow itself, the
-  same strict form [verifying a release](verify-a-release.md) uses.
-  The release publishes one binary per platform plus checksums.
-  Earlier releases (v0.2.0 and before) predate `suggest-type`,
-  `calibrate` and `expansion-candidates` and will not work for this
-  loop.
+  A PATH-installed `mif-rh-cli` or an explicit `MIF_RH_CLI` override
+  (for source builds) also works. Since ADR-0016 the engine is not
+  optional: `resolve-ontology.sh` and `ontology-review.sh` delegate to
+  it. Earlier releases (v0.2.0 and before) predate `suggest-type`,
+  `calibrate` and `expansion-candidates` and will not work.
 - Run every command below from the harness instance root (the
   directory holding `reports/`, `harness.config.json` and
   `.claude/enabled-packs.json`).

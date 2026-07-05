@@ -81,6 +81,11 @@ jobs:
       - name: vendor enabled domain ontologies on demand (ADR-0012; before verify)
         run: bash scripts/fetch-ontology.sh --all-enabled  # sha256-verified; pins ontologies.lock.json
 
+      - name: fetch the mif-rh engine (ADR-0016; attested, fail-closed)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/fetch-engine.sh
+
       - name: verify.sh (build gate — schemas, citation gate, per-milestone gates, evals)
         run: bash scripts/verify.sh
 
