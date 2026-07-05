@@ -165,3 +165,5 @@ parent) should forensic comparison ever be needed.
 
 - 2026-07-05: Pending — cutover PR staged with the wrapper rewrite,
   fetch script, CI installation, and eval updates.
+- 2026-07-05: Accepted — cutover merged to `main` (PR #265); the MCP
+  server wiring landed alongside it (PR #266).
