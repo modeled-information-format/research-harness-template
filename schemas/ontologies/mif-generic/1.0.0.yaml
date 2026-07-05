@@ -12,9 +12,9 @@ ontology:
     - mif-base
 # Enrichment scope (ADR-0015 / MIF ADR-020): aliases/exemplars are added to
 # the types that carry meaningful stamped-finding volume in the reference
-# corpus (concept, technology). person/organization/file are deliberately
-# unenriched until calibration data shows they need it; authoring
-# embedding signal without corpus grounding would be guesswork.
+# corpus (concept, technology, organization). person and file are
+# deliberately unenriched until calibration data shows they need it;
+# authoring embedding signal without corpus grounding would be guesswork.
 entity_types:
   - name: concept
     base: semantic
@@ -45,6 +45,15 @@ entity_types:
   - name: organization
     base: semantic
     description: A company, institution, agency, or group.
+    aliases:
+      - "standards organization"
+      - "open-source foundation"
+      - "governing body"
+      - "industry working group"
+    exemplars:
+      - "A working group under a security foundation publishes baseline security-maturity frameworks for package registries"
+      - "A specification and tooling initiative for event-driven API contracts is hosted under a vendor-neutral open-source foundation"
+      - "A commercial sponsor stewards an open-source contract-testing ecosystem's governance in a vendor-neutral, community-directed manner"
     schema:
       required: [name]
       properties:

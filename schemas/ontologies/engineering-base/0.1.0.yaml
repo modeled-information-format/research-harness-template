@@ -43,6 +43,15 @@ namespaces:
 entity_types:
   - name: component
     description: "A software/system component, module, or service"
+    aliases:
+      - "system component"
+      - "platform module"
+      - "software subsystem"
+      - "integration component"
+    exemplars:
+      - "A platform's audit-log capability offers both a paginated query API and a continuous export stream to an external sink"
+      - "A platform's traffic, statistics, and community-profile endpoints are mature, low-effort, read-only surfaces with no write capability"
+      - "A configuration cluster spanning branch protection, rulesets, and custom properties is mature but carries no planning-substrate value on its own"
     base: semantic
     traits:
       - versioned
