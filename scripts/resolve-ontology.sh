@@ -10,19 +10,25 @@
 #   - an ambiguous type (declared by >1 bound ontology) without an explicit
 #     ontology.id -> non-zero; an ontology.id outside the topic's bound set -> non-zero;
 #   - an entity failing the resolved type's required fields -> non-zero.
-# A typed finding (entity.entity_type stamped by the analyst) is resolved + validated +
-# recorded. An UNTYPED finding falls back to deterministic classification from the bound
-# domain ontologies' OWN discovery patterns (content_pattern -> suggest_entity) before being
-# recorded untyped — so findings express a domain type instead of defaulting to generic.
+# An UNTYPED finding falls back to deterministic classification from the bound
+# domain ontologies' OWN discovery patterns before being recorded untyped.
 #
-# Usage: resolve-ontology.sh <finding.json> [--topic <id>] [--catalog <p>] [--config <p>]
+# Since ADR-0016 this script delegates to the mif-rh engine (mif-rh-cli),
+# whose byte-level output and exit-code parity with the retired bash
+# implementation is enforced fail-closed in mif-rs CI. The engine is hard
+# required: install it with scripts/fetch-engine.sh, put mif-rh-cli on
+# PATH, or set MIF_RH_CLI.
+#
+# Usage: resolve-ontology.sh <finding.json> [--topic <id>] [--catalog <p>]
+#                            [--config <p>] [--map <p>]
 #   exit 0 = resolved or untyped; non-zero = unresolvable / invalid / environment broken.
 
-set -uo pipefail
+set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-# Fail fast (not silently wrong) if a required tool is missing — a missing yq/jq/ajv
-# would otherwise read as "type not declared" and mis-resolve.
-for t in yq jq ajv; do command -v "$t" >/dev/null 2>&1 || { echo "resolve-ontology: required tool '$t' not found" >&2; exit 5; }; done
+# shellcheck source=scripts/lib/engine.sh
+. "$ROOT/scripts/lib/engine.sh"
+ENGINE="$(engine_bin "$ROOT")" || exit 5
+
 CATALOG="$ROOT/.claude/enabled-packs.json"
 CONFIG="$ROOT/harness.config.json"
 FINDING=""; TOPIC=""; MAP=""
@@ -37,252 +43,7 @@ while [ $# -gt 0 ]; do
 done
 [ -n "$FINDING" ] && [ -f "$FINDING" ] || { echo "resolve-ontology: finding not found: ${FINDING:-<none>}" >&2; exit 2; }
 
-fid=$(jq -r '."@id" // .id // empty' "$FINDING" 2>/dev/null); [ -z "$fid" ] && fid="$(basename "$FINDING")"
-# Fail closed on a finding that is not valid JSON — never let a parse error read as
-# "untyped" and pass (a corrupt finding must surface, not silently slip through).
-jq -e . "$FINDING" >/dev/null 2>&1 || { echo "resolve-ontology: $FINDING is not valid JSON — fail" >&2; exit 2; }
-et=$(jq -r '.entity.entity_type // empty' "$FINDING" 2>/dev/null)
-oid=$(jq -r '.ontology.id // empty' "$FINDING" 2>/dev/null)
-
-# Determine the topic (flag, else the reports/<topic>/ path).
-if [ -z "$TOPIC" ]; then
-  case "$FINDING" in
-    *reports/*) TOPIC=$(printf '%s' "$FINDING" | sed -E 's#.*reports/([^/]+)/.*#\1#') ;;
-  esac
-fi
-
-# Upsert one record into reports/<topic>/ontology-map.json (deterministic: sorted by
-# finding_id, no timestamps). Caller passes the absolute map path via env or we derive.
-record() { # entity_type resolved_ontology basis valid
-  local et_="$1" ro="$2" basis="$3" valid="$4"
-  local map="$MAP"
-  if [ -z "$map" ]; then
-    [ -z "$TOPIC" ] && return 0                 # nowhere to record (ad-hoc invocation)
-    [ -d "$ROOT/reports/$TOPIC" ] || return 0
-    map="$ROOT/reports/$TOPIC/ontology-map.json"
-  fi
-  # Start from the existing map only if it is readable JSON; a corrupt map is reset
-  # rather than allowed to block the upsert (and drop a valid:false record).
-  local cur='[]'; { [ -f "$map" ] && jq -e . "$map" >/dev/null 2>&1 && cur=$(cat "$map"); } || cur='[]'
-  if printf '%s' "$cur" | jq -S --arg f "$fid" --arg et "$et_" --arg ro "$ro" --arg b "$basis" --argjson v "$valid" \
-    '[ .[] | select(.finding_id != $f) ]
-     + [{finding_id:$f, entity_type:(if $et=="" then null else $et end),
-         resolved_ontology:(if $ro=="" then null else $ro end), basis:$b, valid:$v}]
-     | sort_by(.finding_id)' > "$map.tmp"; then
-    mv "$map.tmp" "$map"
-  else
-    rm -f "$map.tmp"; return 1
-  fi
-}
-
-# Portable (bash 3.2 — no associative arrays): resolve an ontology id to its cataloged
-# source path. Empty result = not cataloged/enabled. (Defined here so the discovery
-# fallback below can use it; the binding resolution further down uses it too.)
-src_of() { jq -r --arg id "$1" '.ontologies[]? | select(.id==$id) | .source' "$CATALOG" | head -1; }
-
-# Transitive CATALOGED ancestors of an ontology id via .ontology.extends (SPEC §8c
-# layered spine). Portable (bash 3.2 — no associative arrays): a worklist + a seen
-# string. Echoes each ancestor id once so the caller can fold them into `allowed`
-# (a topic that binds a child resolves types its ancestor layer declares — e.g.
-# binding software-engineering resolves engineering-base's `component`). Fail CLOSED:
-# a yq error, or an `extends` target that is named but NOT cataloged, aborts (exit 4)
-# — never silently drop an ancestor and read its types as "not declared".
-ancestors_of() {
-  local start="$1" worklist="$1" seen=" " cur csrc parents p out=""
-  while [ -n "$worklist" ]; do
-    cur="${worklist%% *}"; worklist="${worklist#"$cur"}"; worklist="${worklist# }"
-    case "$seen" in *" $cur "*) continue ;; esac
-    seen="$seen$cur "
-    csrc="$(src_of "$cur")"; [ -z "$csrc" ] && continue
-    if ! parents=$(yq -r '.ontology.extends[]?' "$ROOT/$csrc" 2>/dev/null); then
-      echo "resolve-ontology: yq failed reading extends of '$cur' ($csrc) — aborting (fail closed)" >&2; exit 4
-    fi
-    for p in $parents; do
-      [ -z "$p" ] && continue
-      if [ -z "$(src_of "$p")" ]; then
-        echo "resolve-ontology: ontology '$cur' extends '$p' which is not cataloged — fail (run sync-packs.sh)" >&2; exit 4
-      fi
-      case "$seen" in *" $p "*) ;; *) worklist="$worklist $p"; out="$out $p" ;; esac
-    done
-  done
-  printf '%s' "$out"
-}
-
-# Deterministic classification fallback — reuses the ontology's OWN discovery metadata
-# (NOT a separate classifier): apply the topic's bound DOMAIN ontologies' discovery
-# content_patterns (content_pattern -> suggest_entity) to the finding's CONTENT text.
-# Echoes "<entity_type>\t<ontology_id>\t<version>" on a single UNAMBIGUOUS match
-# (suggest_entity must be a declared type; a match spanning >1 distinct type OR ontology is
-# ambiguous -> classify nothing, mirroring the typed path's refusal to silently pick). Empty
-# otherwise. Fail CLOSED: a broken yq/jq or version-mismatched binding aborts/skips, never
-# silently mis-resolves.
-classify_from_discovery() {
-  [ -n "$TOPIC" ] && [ -f "$CATALOG" ] || return 0
-  local bound bspec bid bver cver src od disc='[]' text hit expanded anc
-  bound=$(jq -r --arg t "$TOPIC" '.topics[]? | select(.id==$t) | .ontologies[]?' "$CONFIG" 2>/dev/null | sort -u)
-  [ -n "$bound" ] || return 0
-  # Include transitive ancestor layers so discovery can classify untyped findings to
-  # inherited supertypes (e.g. engineering-base `design-pattern` under a
-  # software-engineering topic). Fails closed via ancestors_of (exit 4).
-  expanded="$bound"
-  for bspec in $bound; do
-    bid="${bspec%@*}"
-    # A bound id MUST be cataloged — fail closed on a binding/config mistake, consistent
-    # with the typed path (an untyped finding must not pass silently on a misconfigured bind).
-    if [ -z "$(src_of "$bid")" ]; then
-      echo "resolve-ontology: topic '$TOPIC' binds '$bid' which is not cataloged — fail (run sync-packs.sh)" >&2; exit 4
-    fi
-    anc=$(ancestors_of "$bid") || exit 4
-    expanded="$expanded $anc"
-  done
-  bound=$(printf '%s\n' $expanded | sed '/^$/d' | sort -u)
-  for bspec in $bound; do
-    bid="${bspec%@*}"
-    src="$(src_of "$bid")"; [ -z "$src" ] && continue   # cataloged-checked above; safety net
-    case "$bspec" in                                     # a version-pinned binding must match the catalog
-      *@*) bver="${bspec#*@}"; cver=$(jq -r --arg id "$bid" '.ontologies[]? | select(.id==$id) | .version' "$CATALOG" | head -1)
-           [ "$bver" = "$cver" ] || continue ;;
-    esac
-    if ! od=$(yq -o=json '.' "$ROOT/$src" 2>/dev/null); then
-      echo "resolve-ontology: yq failed reading '$bid' ($src) during discovery — aborting (fail closed)" >&2; exit 4
-    fi
-    if ! disc=$(jq -c --arg ont "$bid" --argjson o "$od" '
-      . + (if ($o.discovery.enabled != false) then          # respect discovery.enabled (jq // treats false as null, so test != false)
-             [ ($o.entity_types // [] | map(.name)) as $types
-               | ($o.discovery.patterns // [])[] | . as $p
-               | select($p.content_pattern and $p.suggest_entity and ($types | index($p.suggest_entity)))
-               | {pattern:$p.content_pattern, type:$p.suggest_entity, ont:$ont, ver:($o.ontology.version // "")} ]
-           else [] end)' <<<"$disc"); then
-      echo "resolve-ontology: jq failed building discovery patterns for '$bid' — aborting (fail closed)" >&2; exit 4
-    fi
-  done
-  # Match the finding's CONTENT (top-level non-@ string fields) — NOT nested citations,
-  # urls, or entity ids, which would cause incidental false positives.
-  text=$(jq -r '[ to_entries[] | select(.key | startswith("@") | not) | .value | strings ] | join(" ")' "$FINDING" 2>/dev/null)
-  [ -n "$text" ] || return 0
-  hit=$(jq -rn --arg t "$text" --argjson d "$disc" '
-    [ $d[] | . as $e | select(try ($t | test($e.pattern; "i")) catch false) ] | unique_by([.type,.ont]) as $m
-    | if (($m | map(.type) | unique | length) == 1) and (($m | map(.ont) | unique | length) == 1) and ($m[0].ver != "")
-      then "\($m[0].type)\t\($m[0].ont)\t\($m[0].ver)" else "" end' 2>/dev/null)
-  printf '%s' "$hit"
-}
-
-# 1. Untyped finding (no entity block, no ontology ref). Try a deterministic discovery-
-#    pattern classification before recording it untyped.
-has_entity=false; jq -e 'has("entity") and (.entity != null)' "$FINDING" >/dev/null 2>&1 && has_entity=true
-if [ -z "$et" ] && [ -z "$oid" ] && [ "$has_entity" != true ]; then
-  dhit=$(classify_from_discovery) || exit 4   # propagate fail-closed (uncataloged bind / yq error) out of the subshell
-  if [ -n "$dhit" ]; then
-    det=$(printf '%s' "$dhit" | cut -f1); dont=$(printf '%s' "$dhit" | cut -f2); dver=$(printf '%s' "$dhit" | cut -f3)
-    record "$det" "$dont@$dver" "discovery" true
-    echo "resolve-ontology: $fid classified as $det via $dont discovery pattern — ok"
-    exit 0
-  fi
-  record "" "" "untyped" true
-  echo "resolve-ontology: $fid is untyped (no entity/ontology, no discovery match) — ok"
-  exit 0
-fi
-# 1b. Typing intent present (entity block or ontology ref) but entity_type empty ->
-#     fail closed. An empty entity_type would otherwise match every type (empty
-#     pattern) and validate against an effectively empty schema — a false PASS.
-if [ -z "$et" ]; then
-  echo "resolve-ontology: $fid has an entity/ontology but no entity_type — fail" >&2
-  record "" "" "unresolved" false; exit 1
-fi
-
-# 2. The catalog is the source of truth for what is enabled/registered. Its absence
-#    means we cannot determine the bound set — fail closed, never pass vacuously.
-[ -f "$CATALOG" ] || { echo "resolve-ontology: catalog missing ($CATALOG) — run sync-packs.sh; refusing to resolve" >&2; exit 3; }
-
-# 3. Build the topic's BOUND set: core (always) + this topic's bound ids (each of
-#    which MUST be cataloged/enabled). An explicit binding to a non-cataloged id fails.
-core_ids=$(jq -r '.ontologies[]? | select(.core) | .id' "$CATALOG")
-allowed=""
-for c in $core_ids; do allowed="$allowed $c"; done
-if [ -n "$TOPIC" ]; then
-  while IFS= read -r b; do
-    [ -z "$b" ] && continue
-    bid="${b%@*}"
-    if [ -z "$(src_of "$bid")" ]; then
-      echo "resolve-ontology: topic '$TOPIC' binds '$bid' which is not enabled/cataloged — fail" >&2
-      record "$et" "" "unresolved" false; exit 1
-    fi
-    # A version-pinned binding (id@x.y.z) must match the cataloged version.
-    case "$b" in
-      *@*) bver="${b#*@}"
-           cver=$(jq -r --arg id "$bid" '.ontologies[]? | select(.id==$id) | .version' "$CATALOG" | head -1)
-           if [ "$bver" != "$cver" ]; then
-             echo "resolve-ontology: topic '$TOPIC' binds '$bid@$bver' but the catalog has '$cver' — fail" >&2
-             record "$et" "" "unresolved" false; exit 1
-           fi ;;
-    esac
-    # Fold in the bound id PLUS its transitive cataloged ancestor layers, so a topic
-    # binding only a child (software-engineering) resolves types declared by an
-    # ancestor layer (engineering-base). ancestors_of fails closed via exit 4.
-    anc=$(ancestors_of "$bid") || exit 4
-    allowed="$allowed $bid $anc"
-  done < <(jq -r --arg t "$TOPIC" '.topics[]? | select(.id==$t) | .ontologies[]?' "$CONFIG")
-fi
-
-# 4. Resolve entity_type against the allowed ontologies' declared entity_types.
-#    Capture yq output separately (not piped into grep): under `pipefail` a piped
-#    yq failure would be masked as a silent no-match — a transient yq error must
-#    fail closed, never be misread as "type not declared".
-matches=""
-for aid in $allowed; do
-  src="$(src_of "$aid")"; [ -z "$src" ] && continue
-  # `[]?` yields empty (not an error) for an ontology with no entity_types — e.g. a
-  # traits-only core like shared-traits — while a genuinely broken/unreadable file
-  # still makes yq fail and we abort (fail closed).
-  if ! names=$(yq -r '.entity_types[]?.name' "$ROOT/$src" 2>/dev/null); then
-    echo "resolve-ontology: yq failed reading ontology '$aid' ($src) — aborting (fail closed)" >&2
-    exit 4
-  fi
-  if printf '%s\n' "$names" | grep -Fxq -- "$et"; then
-    matches="$matches $aid"
-  fi
-done
-matches=$(printf '%s' "$matches" | tr ' ' '\n' | sed '/^$/d' | sort -u)
-mcount=$(printf '%s\n' "$matches" | grep -c . || true)
-
-resolved=""
-if [ "$mcount" -eq 0 ]; then
-  echo "resolve-ontology: entity_type '$et' is declared by no ontology bound to topic '$TOPIC' — fail" >&2
-  record "$et" "" "unresolved" false; exit 1
-elif [ "$mcount" -eq 1 ]; then
-  resolved=$(printf '%s' "$matches")
-  basis="resolved"
-  if [ -n "$oid" ]; then
-    [ "$oid" = "$resolved" ] || { echo "resolve-ontology: declared ontology.id '$oid' is not bound / does not declare '$et' — fail" >&2; record "$et" "" "unresolved" false; exit 1; }
-    basis="declared"
-  fi
-else
-  # ambiguous: require an explicit ontology.id within the matches
-  [ -n "$oid" ] || { echo "resolve-ontology: entity_type '$et' is ambiguous across [$(echo $matches)]; needs explicit ontology.id — fail" >&2; record "$et" "" "ambiguous" false; exit 1; }
-  printf '%s\n' "$matches" | grep -qx "$oid" || { echo "resolve-ontology: declared ontology.id '$oid' not among bound declarers of '$et' — fail" >&2; record "$et" "" "ambiguous" false; exit 1; }
-  resolved="$oid"; basis="declared"
-fi
-
-rsrc="$(src_of "$resolved")"
-ver=$(yq -r '.ontology.version' "$ROOT/$rsrc" 2>/dev/null)
-
-# 5. Validate the finding's entity against the resolved type's schema (additive).
-type_schema=$(et="$et" yq -o=json '.entity_types[] | select(.name == env(et)) | .schema' "$ROOT/$rsrc" 2>/dev/null \
-  | jq '{type:"object", required:(.required // []), properties:(.properties // {}), additionalProperties:true}')
-entity=$(jq -c '.entity' "$FINDING")
-# Unpredictable temp DIR (no $$ path — avoids symlink/TOCTOU and collisions); the
-# files keep a .json extension so ajv selects the JSON parser.
-vtmp=$(mktemp -d "${TMPDIR:-/tmp}/ro.XXXXXX")
-trap 'rm -rf "$vtmp"' EXIT
-sf="$vtmp/schema.json"; ef="$vtmp/entity.json"
-printf '%s' "$type_schema" > "$sf"
-printf '%s' "$entity" > "$ef"
-if ajv validate --spec=draft2020 --strict=false -c ajv-formats -s "$sf" -d "$ef" >/dev/null 2>&1; then
-  record "$et" "$resolved@$ver" "$basis" true
-  echo "resolve-ontology: $fid -> $resolved@$ver:$et ($basis) — valid"
-  exit 0
-else
-  record "$et" "$resolved@$ver" "$basis" false
-  echo "resolve-ontology: $fid entity does not satisfy $resolved:$et schema — fail" >&2
-  exit 1
-fi
+args=("$FINDING" --catalog "$CATALOG" --config "$CONFIG" --root "$ROOT")
+[ -n "$TOPIC" ] && args+=(--topic "$TOPIC")
+[ -n "$MAP" ] && args+=(--map "$MAP")
+exec "$ENGINE" resolve "${args[@]}"

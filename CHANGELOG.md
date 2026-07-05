@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Engine-only classification (ADR-0016)** — `resolve-ontology.sh` and
+  `ontology-review.sh` are now thin wrappers over the `mif-rh` engine
+  (`mif-rh-cli` v0.3.1+, hard required; byte-parity with the retired bash
+  implementations is enforced fail-closed in mif-rs CI). Provisioning:
+  `scripts/fetch-engine.sh` installs an attestation-verified release binary
+  to `bin/`; a PATH install or an explicit `MIF_RH_CLI` override also work.
+  A missing or too-old engine fails loudly with the remedy; there is no
+  silent fallback.
+
 ## [0.8.4] - 2026-07-02
 
 ### Fixed

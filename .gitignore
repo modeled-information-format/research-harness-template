@@ -58,3 +58,4 @@ packs/ontologies/
 # moves even once, every future update for every instance fails closed with
 # "the trust root moved", regardless of the instance's own actual pin state.
 ontologies.lock.json
+bin/

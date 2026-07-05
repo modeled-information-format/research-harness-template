@@ -213,6 +213,12 @@ run     "ontology-review-discovery-not-stamped" bash -c "
   [ \"\$(jq -r '.total_needs_followup' \"$TMP/rep2/followup.json\")\" = 1 ] &&
   [ \"\$(jq -r '.topics.edu[0].finding_id' \"$TMP/rep2/followup.json\")\" = f-discovery-only ] &&
   [ \"\$(jq -r '.topics.edu[0].basis' \"$TMP/rep2/followup.json\")\" = discovery ]"
+# ADR-0016: classification hard-requires the engine; a bad override must fail
+# loudly (exit 5, message naming the remedy), never fall back to a different
+# code path. Positive eval: the loud failure IS the expected behavior.
+run     "engine-missing-fails-loud"  bash -c "
+  out=\$(MIF_RH_CLI=/nonexistent/mif-rh-cli scripts/resolve-ontology.sh evals/fixtures/raw-finding.json 2>&1); rc=\$?;
+  [ \$rc -eq 5 ] && printf %s \"\$out\" | grep -q 'install it with scripts/fetch-engine.sh'"
 run     "ontology-vendoring"        bash evals/ontology-vendoring.sh
 run     "sync-registry-ontologies"  bash evals/sync-registry-ontologies.sh
 
