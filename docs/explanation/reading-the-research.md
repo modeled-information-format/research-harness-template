@@ -1,4 +1,12 @@
 ---
+id: explanation-reading-the-research
+type: semantic
+created: '2026-06-28T23:46:18-04:00'
+modified: '2026-06-28T23:46:18-04:00'
+namespace: docs/explanation
+tags:
+  - documentation
+  - explanation
 title: "Explanation: reading the research"
 diataxis_type: explanation
 ---

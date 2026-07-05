@@ -1,4 +1,12 @@
 ---
+id: how-to-adopt-packs
+type: semantic
+created: '2026-06-24T10:25:46-04:00'
+modified: '2026-06-26T09:21:24-04:00'
+namespace: docs/how-to
+tags:
+  - documentation
+  - how-to
 title: "How to adopt a pack"
 diataxis_type: how-to
 ---

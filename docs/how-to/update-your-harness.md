@@ -1,4 +1,12 @@
 ---
+id: how-to-update-your-harness
+type: semantic
+created: '2026-06-25T07:30:10-04:00'
+modified: '2026-07-05T10:10:09-04:00'
+namespace: docs/how-to
+tags:
+  - documentation
+  - how-to
 title: "How to update your harness safely"
 diataxis_type: how-to
 ---

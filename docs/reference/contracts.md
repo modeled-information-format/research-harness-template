@@ -1,4 +1,12 @@
 ---
+id: reference-contracts
+type: semantic
+created: '2026-06-19T15:19:39-04:00'
+modified: '2026-07-05T10:10:09-04:00'
+namespace: docs/reference
+tags:
+  - documentation
+  - reference
 title: "Reference: contracts"
 diataxis_type: reference
 ---

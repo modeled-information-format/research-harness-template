@@ -1,4 +1,12 @@
 ---
+id: how-to-maintain-topic-readmes
+type: semantic
+created: '2026-06-21T15:06:42-04:00'
+modified: '2026-06-26T09:21:24-04:00'
+namespace: docs/how-to
+tags:
+  - documentation
+  - how-to
 title: "How to maintain topic READMEs"
 diataxis_type: how-to
 ---

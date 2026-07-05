@@ -1,4 +1,12 @@
 ---
+id: how-to-run-the-classification-engine-loop
+type: semantic
+created: '2026-07-04T23:13:57-04:00'
+modified: '2026-07-05T09:29:04-04:00'
+namespace: docs/how-to
+tags:
+  - documentation
+  - how-to
 title: "How to run the classification engine loop"
 diataxis_type: how-to
 ---

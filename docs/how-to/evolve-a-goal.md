@@ -1,4 +1,12 @@
 ---
+id: how-to-evolve-a-goal
+type: semantic
+created: '2026-06-21T21:11:55-04:00'
+modified: '2026-06-26T09:21:24-04:00'
+namespace: docs/how-to
+tags:
+  - documentation
+  - how-to
 title: "How to evolve a research goal"
 diataxis_type: how-to
 ---

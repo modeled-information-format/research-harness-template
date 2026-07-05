@@ -1,4 +1,12 @@
 ---
+id: reference-packs-channels
+type: semantic
+created: '2026-06-24T10:25:46-04:00'
+modified: '2026-06-30T03:12:58-04:00'
+namespace: docs/reference/packs
+tags:
+  - documentation
+  - reference
 title: "Channel packs"
 diataxis_type: reference
 ---

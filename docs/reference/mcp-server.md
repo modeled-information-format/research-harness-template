@@ -1,4 +1,12 @@
 ---
+id: reference-mcp-server
+type: semantic
+created: '2026-07-05T10:16:37-04:00'
+modified: '2026-07-05T10:16:37-04:00'
+namespace: docs/reference
+tags:
+  - documentation
+  - reference
 title: "Reference: mif-rh MCP server"
 diataxis_type: reference
 ---

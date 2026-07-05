@@ -1,4 +1,12 @@
 ---
+id: reference-packs-genres
+type: semantic
+created: '2026-06-30T03:12:58-04:00'
+modified: '2026-06-30T03:12:58-04:00'
+namespace: docs/reference/packs
+tags:
+  - documentation
+  - reference
 title: "Reference: genre packs"
 diataxis_type: reference
 ---

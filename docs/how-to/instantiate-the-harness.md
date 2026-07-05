@@ -1,4 +1,12 @@
 ---
+id: how-to-instantiate-the-harness
+type: semantic
+created: '2026-06-20T05:36:47-04:00'
+modified: '2026-07-05T10:10:09-04:00'
+namespace: docs/how-to
+tags:
+  - documentation
+  - how-to
 title: "How to instantiate the harness"
 diataxis_type: how-to
 ---

@@ -1,4 +1,12 @@
 ---
+id: reference-packs-index
+type: semantic
+created: '2026-06-24T10:25:46-04:00'
+modified: '2026-07-05T10:10:09-04:00'
+namespace: docs/reference/packs
+tags:
+  - documentation
+  - reference
 title: "Packs Reference"
 diataxis_type: reference
 ---

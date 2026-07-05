@@ -1,4 +1,12 @@
 ---
+id: explanation-ontology-conformance
+type: semantic
+created: '2026-06-20T15:46:32-04:00'
+modified: '2026-06-30T15:17:07-04:00'
+namespace: docs/explanation
+tags:
+  - documentation
+  - explanation
 title: "Ontology conformance"
 diataxis_type: explanation
 ---

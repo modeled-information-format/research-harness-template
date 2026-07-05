@@ -1,4 +1,12 @@
 ---
+id: reference-core-skills
+type: semantic
+created: '2026-06-24T10:25:46-04:00'
+modified: '2026-07-05T10:16:37-04:00'
+namespace: docs/reference
+tags:
+  - documentation
+  - reference
 title: "Reference: core skills"
 diataxis_type: reference
 ---

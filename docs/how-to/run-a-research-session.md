@@ -1,4 +1,12 @@
 ---
+id: how-to-run-a-research-session
+type: semantic
+created: '2026-06-19T15:19:39-04:00'
+modified: '2026-07-05T10:10:09-04:00'
+namespace: docs/how-to
+tags:
+  - documentation
+  - how-to
 title: "How to run a research session"
 diataxis_type: how-to
 ---

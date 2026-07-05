@@ -1,4 +1,12 @@
 ---
+id: explanation-cognitive-triad
+type: semantic
+created: '2026-06-30T03:12:58-04:00'
+modified: '2026-06-30T03:12:58-04:00'
+namespace: docs/explanation
+tags:
+  - documentation
+  - explanation
 title: "The cognitive triad: why an entity type's base is a closed set"
 diataxis_type: explanation
 citations:

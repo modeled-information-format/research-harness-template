@@ -1,4 +1,12 @@
 ---
+id: explanation-update-channel-provenance
+type: semantic
+created: '2026-06-25T07:30:10-04:00'
+modified: '2026-06-26T14:18:40-04:00'
+namespace: docs/explanation
+tags:
+  - documentation
+  - explanation
 title: "The update-channel provenance model"
 diataxis_type: explanation
 ---

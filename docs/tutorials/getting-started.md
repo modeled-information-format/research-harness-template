@@ -1,4 +1,12 @@
 ---
+id: tutorials-getting-started
+type: semantic
+created: '2026-06-19T15:19:39-04:00'
+modified: '2026-07-05T10:10:09-04:00'
+namespace: docs/tutorials
+tags:
+  - documentation
+  - tutorial
 title: "Getting started"
 diataxis_type: tutorial
 ---

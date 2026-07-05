@@ -1,4 +1,12 @@
 ---
+id: explanation-architecture
+type: semantic
+created: '2026-06-19T15:19:39-04:00'
+modified: '2026-07-05T10:10:09-04:00'
+namespace: docs/explanation
+tags:
+  - documentation
+  - explanation
 title: "Explanation: architecture"
 diataxis_type: explanation
 ---

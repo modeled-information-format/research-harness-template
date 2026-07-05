@@ -1,4 +1,12 @@
 ---
+id: reference-configuration
+type: semantic
+created: '2026-06-28T03:52:14-04:00'
+modified: '2026-07-05T10:10:48-04:00'
+namespace: docs/reference
+tags:
+  - documentation
+  - reference
 title: "Reference: configuration"
 diataxis_type: reference
 ---

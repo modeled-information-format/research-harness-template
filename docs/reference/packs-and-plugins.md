@@ -1,4 +1,12 @@
 ---
+id: reference-packs-and-plugins
+type: semantic
+created: '2026-06-23T09:41:01-04:00'
+modified: '2026-07-05T10:10:09-04:00'
+namespace: docs/reference
+tags:
+  - documentation
+  - reference
 title: "Reference: packs and plugins"
 diataxis_type: reference
 ---
