@@ -19,15 +19,19 @@ the tier policy itself is MIF ADR-020.
 
   ```bash
   gh release download v0.3.0 --repo modeled-information-format/mif-rs \
-    --pattern 'mif-cli-v0.3.0-*'
-  gh attestation verify mif-cli-v0.3.0-<platform> \
-    --repo modeled-information-format/mif-rs
+    --pattern 'mif-rh-cli-0.3.0-*'
+  gh attestation verify mif-rh-cli-0.3.0-<platform> \
+    --repo modeled-information-format/mif-rs \
+    --signer-workflow modeled-information-format/mif-rs/.github/workflows/release.yml
   ```
 
-  Verify the attestation before trusting the binary; the release
-  publishes one binary per platform plus checksums. Earlier releases
-  (v0.2.0 and before) predate `suggest-type`, `calibrate` and
-  `expansion-candidates` and will not work for this loop.
+  Verify the attestation before trusting the binary; pinning
+  `--signer-workflow` binds trust to the release workflow itself, the
+  same strict form [verifying a release](verify-a-release.md) uses.
+  The release publishes one binary per platform plus checksums.
+  Earlier releases (v0.2.0 and before) predate `suggest-type`,
+  `calibrate` and `expansion-candidates` and will not work for this
+  loop.
 - Run every command below from the harness instance root (the
   directory holding `reports/`, `harness.config.json` and
   `.claude/enabled-packs.json`).
@@ -48,8 +52,9 @@ mif-rh-cli calibrate
 Calibration derives the two-threshold tier policy from your own
 stamped findings and writes
 `reports/_meta/confidence-calibration.json`. The artifact is derived
-per-corpus data: never commit it, and re-run this step whenever the
-corpus grows meaningfully (a new topic, a large review pass). If no
+per-instance data: the template does not commit it (an instance may
+choose to commit its own, per ADR-0015), and re-run this step whenever
+the corpus grows meaningfully (a new topic, a large review pass). If no
 threshold meets the precision target the command fails loudly and
 tells you to enrich entity types; do not lower
 `--target-precision` to force an artifact.
