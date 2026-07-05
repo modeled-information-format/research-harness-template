@@ -10,6 +10,11 @@ ontology:
   description: Basic generic ontology (MIF built-in entity types); always enabled for all topics.
   extends:
     - mif-base
+# Enrichment scope (ADR-0015 / MIF ADR-020): aliases/exemplars are added to
+# the types that carry meaningful stamped-finding volume in the reference
+# corpus (concept, technology). person/organization/file are deliberately
+# unenriched until calibration data shows they need it; authoring
+# embedding signal without corpus grounding would be guesswork.
 entity_types:
   - name: concept
     base: semantic
