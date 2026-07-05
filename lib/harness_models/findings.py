@@ -298,7 +298,6 @@ Mif = TypedDict(
         "summary": NotRequired[str],
         "properties": NotRequired[dict[str, str | float | bool | None]],
         "compressedAt": NotRequired[str],
-        "blocks": NotRequired[dict[str, str]],
         "extensions": NotRequired[dict[str, Any]],
     },
 )
