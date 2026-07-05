@@ -73,6 +73,18 @@ entity_types:
           description: "Team or person owning this component"
   - name: architectural-decision
     description: "An architectural decision with full context"
+    aliases:
+      - "ADR"
+      - "design decision"
+      - "technology selection"
+      - "trade-off decision"
+      - "recommendation"
+      - "adjudication"
+    exemplars:
+      - "Mandating separate instances for production and non-production with distinct trust boundaries"
+      - "Selecting which architecture fits which workload topology after weighing alternatives"
+      - "A recommended primary set of domains justified by standards trajectory and corpus evidence"
+      - "Choosing to extend an existing supertype rather than fork a new type"
     base: semantic
     traits:
       - dated
@@ -106,6 +118,17 @@ entity_types:
             - superseded
   - name: design-pattern
     description: "A design pattern or architectural pattern"
+    aliases:
+      - "architectural pattern"
+      - "integration pattern"
+      - "reusable solution"
+      - "design approach"
+      - "control pattern"
+    exemplars:
+      - "A proxy-based approach that captures behavior transparently without code changes"
+      - "A semantic control layer that routes tasks based on domain concepts"
+      - "Centralizing shared pipeline steps in one reusable workflow every repository calls"
+      - "Graduated alert levels requiring sustained deviation before escalating severity"
     base: semantic
     traits:
       - cited
@@ -132,6 +155,18 @@ entity_types:
             type: string
   - name: delivery-metric
     description: A delivery, reliability, or operations metric (e.g. DORA four/five keys, SLO/SLI, MTTR, throughput)
+    aliases:
+      - "performance metric"
+      - "benchmark result"
+      - "cost figure"
+      - "quantified measurement"
+      - "operational statistic"
+      - "KPI"
+    exemplars:
+      - "A measured failure or error rate reported across a large sample of changes"
+      - "Monthly operating costs for a production system ranging between fixed bounds"
+      - "A benchmark score surpassing the human baseline on a standard evaluation"
+      - "Survey percentages quantifying time lost to rework and remediation"
     base: semantic
     traits:
       - cited
@@ -152,6 +187,17 @@ entity_types:
           description: Originating framework or study
   - name: engineering-practice
     description: An organizational, cultural, or operating practice (e.g. blameless postmortems, you-build-it-you-run-it, data mesh, federated governance)
+    aliases:
+      - "operational practice"
+      - "team practice"
+      - "development practice"
+      - "cultural practice"
+      - "delivery practice"
+    exemplars:
+      - "Blameless postmortems focusing inquiry on contributing causes rather than individuals"
+      - "Phased rollout with pilot groups, tailored training, and continuous feedback loops"
+      - "Documentation freshness scoring in continuous integration using age deltas and expiry contracts"
+      - "Secret scanning across scripts and code at commit time and in the pipeline"
     base: semantic
     traits:
       - cited
@@ -172,6 +218,17 @@ entity_types:
           description: Originating model, study, or author
   - name: process-discipline
     description: A governance or production-readiness discipline (e.g. PRR, ORR, change enablement, acceptance criteria, stewardship cadence)
+    aliases:
+      - "governance discipline"
+      - "readiness review"
+      - "change management"
+      - "operating cadence"
+      - "stewardship process"
+    exemplars:
+      - "A production readiness review assessing a service along fixed axes before acceptance"
+      - "A maturity model promotion plan with staged assessment targets and error budgets"
+      - "A specification-first development discipline as the alternative to unstructured coding"
+      - "Structured prompts added to retrospectives and post-incident reviews for attribution"
     base: semantic
     traits:
       - cited
