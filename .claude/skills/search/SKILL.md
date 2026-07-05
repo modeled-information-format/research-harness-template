@@ -24,10 +24,14 @@ tag-derived recomputation. Rebuild it with
 
 - **lexical (`jq`)** — the default and only required backend. Filters and
   free-text matching run with `jq` over the index fields. Always available.
-- **semantic (optional)** — if an external semantic-search backend is wired in
-  for this clone, it can rank findings by meaning over the same id set, then the
-  results are looked up in the index by id. Treat it as an optional accelerator,
-  never a dependency: when absent, fall back to lexical `--lex` and say so.
+- **semantic (optional)** — the mif-rh engine's finding index (ADR-0016).
+  When the `mif-rh` MCP server is available in the session (wired by the
+  repo's `.mcp.json`; binaries installed by `scripts/fetch-engine.sh`), use
+  its `search` tool for free-text queries and `find_similar` for
+  by-meaning ranking, then look results up in the index by id. The engine
+  index is built with `bin/mif-rh-cli review --build-index`; if the MCP
+  tools are absent or reply index-not-built, fall back to lexical `--lex`
+  and say so. Treat it as an optional accelerator, never a dependency.
 
 ## Arguments
 

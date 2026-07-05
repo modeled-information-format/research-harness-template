@@ -61,6 +61,15 @@ section (edit **only** that section — the backbone is regenerated and your pro
 jq '{topics, verdict_distribution, entity_reuse: (.entity_reuse[0:12]), contradictions, disproven}' reports/_corpus/corpus-map.json
 ```
 
+When the `mif-rh` MCP server is available in the session, its
+`corpus_stats` tool gives the classification-coverage view of the same
+corpus and its `search`/`find_similar` tools locate related findings by
+meaning while you synthesize — optional accelerators; the jq projection
+above stays authoritative when they are absent.
+
+```bash
+```
+
 Write 4–10 insights that synthesize **across** topics, not one-per-topic restatements:
 
 - **Cross-topic entity reuse** — what concepts/technologies/organizations recur across topics
