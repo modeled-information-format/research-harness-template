@@ -1,4 +1,12 @@
 ---
+id: explanation-architecture
+type: semantic
+created: '2026-06-19T15:19:39-04:00'
+modified: '2026-07-05T10:10:09-04:00'
+namespace: docs/explanation
+tags:
+  - documentation
+  - explanation
 title: "Explanation: architecture"
 diataxis_type: explanation
 ---
@@ -16,6 +24,14 @@ The template unifies both halves. The boundary between engine and harness
 services is a **module boundary inside one repo**, not a repo boundary
 (§6a). The four layers — engine, contracts, harness services, outputs — all ship
 on clone.
+
+A terminology note: "engine" in this four-layer sense names the Claude Code
+plugin layer (agents, commands, skills). This is a different thing from "the
+mif-rh engine," the compiled classification binary described in ADR-0014,
+ADR-0015, ADR-0016, and
+[the classification engine explanation](classification-engine.md); the two
+share a word, not a component, and neither document renames itself to avoid
+the collision.
 
 ## MIF is the spine
 

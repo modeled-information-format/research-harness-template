@@ -51,12 +51,15 @@ markdownlint-cli2 --config .markdownlint-cli2.jsonc "**/*.md"   # must be 0 erro
   (see the `run "<name>" <cmd>` lines in `evals/run-evals.sh`).
 - **`verify.sh` gates fixtures, not an instance's imported `reports/` corpus** — in
   a clone it can pass green while real findings fail to resolve. The corpus-level
-  gate is `scripts/ontology-review.sh [--strict]` (per-finding `ajv`, so slow — run
-  it in the background). Never run `ontology-review`/`verify` **concurrently**: they
-  race on shared temp/catalog state and produce spurious failures. After any
-  ontology, pack-binding, or `copier update` change, run **both**.
+  gate is `scripts/ontology-review.sh [--strict]` (delegates to the `mif-rh-cli`
+  engine per finding, ADR-0016 — run it in the background). Never run
+  `ontology-review`/`verify` **concurrently**: they race on shared temp/catalog
+  state and produce spurious failures. After any ontology, pack-binding, or
+  `copier update` change, run **both**.
 - Toolchain: `jq`, `yq`, `ajv-cli` + `ajv-formats`, `markdownlint-cli2`, `copier`,
-  `python3`. No `make`/`npm`/`pyproject` build — scripts are invoked directly.
+  `python3`, `mif-rh-cli` (the ontology engine, installed by
+  `scripts/fetch-engine.sh`; CI installs it before `verify.sh`, ADR-0016). No
+  `make`/`npm`/`pyproject` build — scripts are invoked directly.
 
 ## Generated code — do not hand-edit
 

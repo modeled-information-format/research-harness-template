@@ -1,4 +1,12 @@
 ---
+id: explanation-ontological-spine
+type: semantic
+created: '2026-06-20T18:58:00-04:00'
+modified: '2026-06-29T13:14:53-04:00'
+namespace: docs/explanation
+tags:
+  - documentation
+  - explanation
 title: "The ontological spine — a cross-topic concordance"
 diataxis_type: explanation
 ---

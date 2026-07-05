@@ -1,4 +1,12 @@
 ---
+id: how-to-configure-the-site
+type: semantic
+created: '2026-06-28T03:52:14-04:00'
+modified: '2026-06-28T03:52:14-04:00'
+namespace: docs/how-to
+tags:
+  - documentation
+  - how-to
 title: "How to configure the reports site"
 diataxis_type: how-to
 ---

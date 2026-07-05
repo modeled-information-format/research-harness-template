@@ -92,8 +92,10 @@ at instantiation; flip the leading surface or toggle optional site plugins with
 citation-integrity gate, and each milestone's acceptance gate).
 `markdownlint-cli2 "**/*.md"` must report zero errors. Both run in CI on every
 push and pull request. Toolchain: `jq` and `yq` (the YAML analog of jq, used by
-the MIF report projector), `ajv-cli` + `ajv-formats`, and `copier` for the
-distribution gate.
+the MIF report projector), `ajv-cli` + `ajv-formats`, `copier` for the
+distribution gate, and `mif-rh-cli` (the compiled ontology engine, installed
+by `scripts/fetch-engine.sh`; its ontology-resolution gates delegate to it,
+ADR-0016).
 
 ## Supply-chain verification
 

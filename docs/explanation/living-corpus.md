@@ -1,4 +1,12 @@
 ---
+id: explanation-living-corpus
+type: semantic
+created: '2026-06-21T20:20:18-04:00'
+modified: '2026-06-26T09:21:24-04:00'
+namespace: docs/explanation
+tags:
+  - documentation
+  - explanation
 title: "Explanation: the living corpus — goal evolution and finding reuse"
 diataxis_type: explanation
 ---

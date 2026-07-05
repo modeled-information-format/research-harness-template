@@ -1,4 +1,12 @@
 ---
+id: how-to-instantiate-the-harness
+type: semantic
+created: '2026-06-20T05:36:47-04:00'
+modified: '2026-07-05T10:10:09-04:00'
+namespace: docs/how-to
+tags:
+  - documentation
+  - how-to
 title: "How to instantiate the harness"
 diataxis_type: how-to
 ---
@@ -29,6 +37,7 @@ uncommitted or lost answers file breaks future updates.
 pipx install copier            # or: pipx install copier && pipx ensurepath
 copier copy gh:modeled-information-format/research-harness-template my-harness
 cd my-harness
+bash scripts/verify.sh   # must exit 0
 ```
 
 Copier strips template-only files at generation (`copier.yml`'s `_exclude`:

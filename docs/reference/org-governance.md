@@ -1,4 +1,12 @@
 ---
+id: reference-org-governance
+type: semantic
+created: '2026-06-29T13:48:43-04:00'
+modified: '2026-06-29T13:48:43-04:00'
+namespace: docs/reference
+tags:
+  - documentation
+  - reference
 title: "Reference: org governance & release runbooks"
 diataxis_type: reference
 ---

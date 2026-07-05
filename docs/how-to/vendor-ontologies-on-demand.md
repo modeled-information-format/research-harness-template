@@ -1,4 +1,12 @@
 ---
+id: how-to-vendor-ontologies-on-demand
+type: semantic
+created: '2026-06-30T09:56:57-04:00'
+modified: '2026-07-05T10:10:09-04:00'
+namespace: docs/how-to
+tags:
+  - documentation
+  - how-to
 title: "Vendor ontologies on demand"
 description: "Fetch a domain ontology from the canonical registry, verify it against its pinned hash, and author-and-contribute a new one when none exists."
 diataxis_type: how-to
@@ -43,6 +51,26 @@ scripts/check-ontology-lock.sh    # every enabled domain ontology matches its pi
 
 Vendored copies are **not** edited in place — a fix belongs **upstream** in the
 `ontologies` repo, after which you re-fetch. The gate fails on any local drift.
+
+## When the registry index has moved (re-pinning)
+
+`ontologies.lock.json` pins the registry index's own sha256 as a trust root,
+established on first fetch. If the registry publishes a new index, for
+example after an upstream pack version bump, `scripts/fetch-ontology.sh`
+refuses the fetch instead of silently accepting a new trust root:
+
+```text
+fetch-ontology: registry index sha256 changed from the pinned value for source <source>
+  -> the trust root moved; refusing (clear .index_sha256 in ontologies.lock.json to re-pin deliberately)
+```
+
+This is expected the first time you re-vendor after an upstream registry
+change (often following an
+[update to a newer template release](update-your-harness.md)), not evidence
+of tampering. Confirm the change is legitimate against the `ontologies`
+repo's own history, then clear the `index_sha256` field in
+`ontologies.lock.json` and re-run the fetch to re-pin the new index
+deliberately.
 
 ## When no ontology exists: author one from your research
 

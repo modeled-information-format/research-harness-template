@@ -1,4 +1,12 @@
 ---
+id: reference-packs-and-plugins
+type: semantic
+created: '2026-06-23T09:41:01-04:00'
+modified: '2026-07-05T10:10:09-04:00'
+namespace: docs/reference
+tags:
+  - documentation
+  - reference
 title: "Reference: packs and plugins"
 diataxis_type: reference
 ---
@@ -26,16 +34,20 @@ packs/
 │   ├── financial-analysis/
 │   ├── market-sizing/
 │   └── regulatory-review/
-├── channels/           # family: render adapters (9 plugins)
+├── channels/           # family: render adapters (10 plugins)
 │   ├── book/
 │   ├── diataxis/
 │   ├── pdf/
-│   └── …               #   6 more — see the Bundled inventory below
+│   └── …               #   7 more — see the Bundled inventory below
+├── genres/             # family: AI-ready agent-executable specs (3 plugins)
+│   ├── architecture-spec/
+│   ├── kiro-spec/
+│   └── feature-spec/
 ├── trend-modeling/     # family: scenario methodology (1 plugin)
 │   └── trend-modeling/
-└── ontologies/         # family: MIF entity/relationship extensions (12 plugins)
+└── ontologies/         # family: MIF entity/relationship extensions (21 plugins)
     ├── scientific/
-    └── …               #   11 more — see the Bundled inventory below
+    └── …               #   20 more — see the Bundled inventory below
 ```
 
 There is no `packs/reports/` directory: all 18 report genres are consumed
@@ -45,8 +57,8 @@ migration in
 [discussion #228](https://github.com/modeled-information-format/research-harness-template/discussions/228).
 See [Report packs](packs/reports.md) for the full genre-by-genre reference.
 
-The harness bundles **27 pack plugins** across four families: 9 channels,
-5 market-research methodologies, 12 ontologies, and 1 trend-modeling
+The harness bundles **40 pack plugins** across five families: 10 channels,
+5 market-research methodologies, 3 genres, 21 ontologies, and 1 trend-modeling
 methodology. The [Packs reference](packs/index.md) and the per-family pages
 document every bundled one — its use, constraints, and goals.
 

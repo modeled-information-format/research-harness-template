@@ -1,4 +1,12 @@
 ---
+id: reference-core-skills
+type: semantic
+created: '2026-06-24T10:25:46-04:00'
+modified: '2026-07-05T10:16:37-04:00'
+namespace: docs/reference
+tags:
+  - documentation
+  - reference
 title: "Reference: core skills"
 diataxis_type: reference
 ---
@@ -200,9 +208,22 @@ Queries the MIF research index by free text or structured filters.
 projection of all MIF findings carrying `id`, `title`, `namespace`,
 `dimension`, `tags`, `verdict`, and `citations`. Supports free-text query
 (matched against title and tags), `--tag`, `--namespace`, `--dimension`,
-`--verdict`, and `--limit` filters, plus an optional semantic backend
-(`--sem`) that falls back to lexical when absent. Rebuilds the index with
+`--verdict`, and `--limit` filters. Rebuilds the index with
 `bash scripts/build-index.sh <findings-dir>` if stale.
+
+Two backends, two separate indexes. **Lexical (`jq`)** is the default and
+only required backend (`--lex`, explicit form). **Semantic (optional,
+`--sem`)** is the `mif-rh` engine's finding index — a SQLite embedding
+index, distinct from `research-index.json`. When the `mif-rh` MCP server is
+available in the session (wired by the repo's `.mcp.json`; binaries
+installed by `scripts/fetch-engine.sh`), the skill calls its `search` tool
+for free-text queries and `find_similar` for by-meaning ranking, then looks
+the results up in `research-index.json` by id. The engine's finding index is
+built separately, with `bin/mif-rh-cli review --build-index`; rebuilding
+`research-index.json` via `build-index.sh` does not build it. If the MCP
+tools are absent or reply index-not-built, the skill falls back to `--lex`
+and says so — the semantic backend is an optional accelerator, never a
+dependency. See [mcp-server.md](mcp-server.md) for the tool contracts.
 
 **When it triggers:** Invoked when the user wants to find findings, look up
 what is known about a subject, or asks "what do I have on X", "find findings
@@ -211,7 +232,8 @@ about Y", "search research for Z".
 **Benefit:** Fast, dependency-light corpus search without reading individual
 finding files.
 
-**Dependencies:** `jq`, `research-index.json`.
+**Dependencies:** `jq`, `research-index.json`; optionally the `mif-rh` MCP
+server and its finding index (`bin/mif-rh-cli review --build-index`).
 
 ---
 

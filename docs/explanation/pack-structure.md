@@ -1,4 +1,12 @@
 ---
+id: explanation-pack-structure
+type: semantic
+created: '2026-06-19T20:44:52-04:00'
+modified: '2026-07-01T07:01:43-04:00'
+namespace: docs/explanation
+tags:
+  - documentation
+  - explanation
 title: "Explanation: pack structure — one plugin per skill"
 diataxis_type: explanation
 ---

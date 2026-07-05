@@ -1,4 +1,12 @@
 ---
+id: how-to-import-a-corpus
+type: semantic
+created: '2026-06-19T17:03:52-04:00'
+modified: '2026-06-27T20:18:19-04:00'
+namespace: docs/how-to
+tags:
+  - documentation
+  - how-to
 title: "How to import an existing corpus"
 diataxis_type: how-to
 ---

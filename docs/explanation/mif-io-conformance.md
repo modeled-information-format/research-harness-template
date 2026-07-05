@@ -1,4 +1,12 @@
 ---
+id: explanation-mif-io-conformance
+type: semantic
+created: '2026-06-20T06:10:40-04:00'
+modified: '2026-06-26T09:21:24-04:00'
+namespace: docs/explanation
+tags:
+  - documentation
+  - explanation
 title: "MIF I/O conformance"
 diataxis_type: explanation
 ---

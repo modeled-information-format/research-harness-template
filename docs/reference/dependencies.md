@@ -1,4 +1,12 @@
 ---
+id: reference-dependencies
+type: semantic
+created: '2026-06-24T10:25:46-04:00'
+modified: '2026-07-05T10:16:37-04:00'
+namespace: docs/reference
+tags:
+  - documentation
+  - reference
 title: "Reference: dependencies and requirements"
 diataxis_type: reference
 ---
@@ -35,7 +43,7 @@ you enable.
 | Tool | Minimum | Required by | Check |
 | --- | --- | --- | --- |
 | `git` | any supported | Clone the template; `git grep` identity-leak gate in `verify.sh`; `git archive` release tarball (`release.yml`) | `git --version` |
-| `mif-rh-cli` | `0.3.1+` — *repo-pinned in `scripts/fetch-engine.sh`* | Ontology classification (`resolve-ontology.sh`, `ontology-review.sh` delegate to it, ADR-0016) plus the suggest/calibrate loop | `mif-rh-cli --version` |
+| `mif-rh-cli` | `0.3.1+` — *repo-pinned in `scripts/fetch-engine.sh`* | Ontology classification (`resolve-ontology.sh`, `ontology-review.sh` delegate to it, ADR-0016) plus the suggest/calibrate loop — see [engine-cli.md](engine-cli.md) for the full subcommand surface and [mcp-server.md](mcp-server.md) for its MCP server | `mif-rh-cli --version` |
 | `jq` | 1.7+ (1.8.2 verified) | The engine — index, graph, findings, render, falsify (most scripts) | `jq --version` |
 | `yq` (mikefarah) | `v4.53.3` — *repo-pinned in CI* (4.53.3 verified) | YAML frontmatter and ontology YAML in `verify.sh`, `mif-project.sh`, `validate-concordance.sh`; ontology catalog materialization in `sync-packs.sh` | `yq --version` |
 | `node` | Active LTS — *repo-declared* `lts/*` (26.x verified) | `npm` to install the validation toolchain (`ajv-cli`, `ajv-formats`, `markdownlint-cli2`); `npx` for Mermaid | `node --version` |
@@ -140,7 +148,7 @@ attestation or a pinned SHA-256 before installing.
 | Component | Needs |
 | --- | --- |
 | Core engine + most scripts | `git`, `jq`, `yq`, `ajv-cli` + `ajv-formats`, `python3` |
-| `verify.sh` conformance gate | `ajv-cli` + `ajv-formats`, plus `jq`, `yq` |
+| `verify.sh` conformance gate | `ajv-cli` + `ajv-formats`, plus `jq`, `yq`, `mif-rh-cli` (its ontology-resolution gates delegate to the engine, ADR-0016) |
 | `node` | install path for `ajv`/`markdownlint-cli2` (`npm`) and Mermaid (`npx`) |
 | Documentation lint gate | `markdownlint-cli2` |
 | Instantiate / update the template | `copier` |
@@ -150,4 +158,4 @@ attestation or a pinned SHA-256 before installing.
 | `github-discuss`, `github-issues` channels | `gh`, `jq` |
 | `diataxis` channel | `jq` |
 | `engineering`, `trend-analysis`, `competitive-analysis`, `trend-modeling` | `@mermaid-js/mermaid-cli` (optional, diagrams only) |
-| Ontology data packs | core runtime only (`yq`, `jq`, `ajv` for resolution) |
+| Ontology data packs | core runtime plus `mif-rh-cli` (finding resolution, ADR-0016); `yq`, `jq`, `ajv` for registry YAML validation |

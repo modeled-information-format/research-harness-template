@@ -1,4 +1,12 @@
 ---
+id: reference-configuration
+type: semantic
+created: '2026-06-28T03:52:14-04:00'
+modified: '2026-07-05T10:10:48-04:00'
+namespace: docs/reference
+tags:
+  - documentation
+  - reference
 title: "Reference: configuration"
 diataxis_type: reference
 ---
@@ -25,6 +33,7 @@ harness's tooling rather than by hand.
 | `site` | Astro/Starlight site-projection controls (below). |
 | `packs[]` | The pack control plane (enable/disable + source). |
 | `ontologies[]` | The ontology control plane (enable to catalog). |
+| `marketplaces[]` | External plugin sources declared once (`name`, `url`, pinned `ref`); a `packs[]` entry references one by name via `source: {type: "marketplace-ref", marketplace: <name>}` instead of repeating the source object per pack. Declaring a marketplace does not enable anything — see [Packs and Plugins](packs-and-plugins.md). |
 
 ## The `site` block
 

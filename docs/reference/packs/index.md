@@ -1,4 +1,12 @@
 ---
+id: reference-packs-index
+type: semantic
+created: '2026-06-24T10:25:46-04:00'
+modified: '2026-07-05T10:10:09-04:00'
+namespace: docs/reference/packs
+tags:
+  - documentation
+  - reference
 title: "Packs Reference"
 diataxis_type: reference
 ---
@@ -54,9 +62,18 @@ For control-plane mechanics — enabling, disabling, and listing packs — see
 | feature-spec | genres | genre | GitHub Spec Kit single-capability feature spec for a coding agent | none |
 | trend-modeling | trend-modeling | methodology | Three-valued logic (INC/DEC/CONST) scenario modeling | @mermaid-js/mermaid-cli (optional) |
 | biology-research-lab | ontologies | ontology | Full research lab lifecycle entity vocabulary | none |
+| cardiology | ontologies | ontology | Cardiovascular disease entity vocabulary (WHO ICD-11 circulatory-disease blocks, echocardiography/ECG studies, NYHA functional class); extends clinical-health-base | none |
+| clinical-health-base | ontologies | ontology | MIF-compliant intermediate layer shared by cardiology/health/fitness (FHIR Patient/Encounter/Observation, ICD-11 stem/extension-code shapes); extends research, never bound directly | none |
+| cosmology | ontologies | ontology | Astronomical object and data-product entity vocabulary (IVOA vocabularies, IAU/CDS nomenclature, cosmological theory and observation); extends physical-science-base | none |
 | data-engineering | ontologies | ontology | Data engineering domain entity vocabulary | none |
+| fitness | ontologies | ontology | Exercise physiology and wearable-device fitness entity vocabulary (ACSM fitness components, FITT-VP prescriptions, Open mHealth reading types); extends clinical-health-base | none |
+| health | ontologies | ontology | General clinical-record and functioning-classification entity vocabulary (HL7 FHIR R5 core resources, WHO ICF); extends clinical-health-base | none |
 | market-research | ontologies | ontology | Market and competitive research entity vocabulary | none |
+| mif-docs | ontologies | ontology | Discovery layer typing the mif-docs documentation suite's genres (ADRs, architecture docs, RFCs/PEPs, PRDs, feature specs, Diátaxis docs) and the relationships connecting them | none |
 | observability | ontologies | ontology | Observability-platform entity vocabulary (services, telemetry signals, capability comparisons, migrations); extends engineering-base and mif-generic | none |
+| physical-science-base | ontologies | ontology | MIF-compliant intermediate layer shared by plasma-physics/cosmology (PACS-tagged classification-scheme entry, named physical quantity with value/unit); extends research, never bound directly | none |
+| plasma-physics | ontologies | ontology | Plasma-phenomena entity vocabulary (PACS section-52 subsections, confinement devices, diagnostic/simulation techniques, plasma quantities); extends physical-science-base | none |
+| platform-engineering | ontologies | ontology | Internal-developer-platform entity vocabulary (portal, plugins, templates/golden paths, typed external-system integrations); extends engineering-base | none |
 | psycholinguistics | ontologies | ontology | Psycholinguistics and computational stylometry entity vocabulary (constructs, stylometric features, psychometric indices, elicitation protocols) | none |
 | regenerative-agriculture | ontologies | ontology | Farm business operations entity vocabulary | none |
 | regenerative-agriculture-research | ontologies | ontology | Regenerative agriculture research entity vocabulary | none |

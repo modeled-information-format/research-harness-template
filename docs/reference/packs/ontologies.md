@@ -1,4 +1,12 @@
 ---
+id: reference-packs-ontologies
+type: semantic
+created: '2026-06-24T10:25:46-04:00'
+modified: '2026-07-05T10:10:09-04:00'
+namespace: docs/reference/packs
+tags:
+  - documentation
+  - reference
 title: "Ontology packs"
 diataxis_type: reference
 ---
@@ -34,8 +42,8 @@ apply to them. Enabling an ontology is two steps:
    is what lets findings in that topic resolve to the ontology's entity types;
    per-finding classification is handled by `scripts/resolve-ontology.sh`.
 
-`resolve-ontology.sh` requires `yq`, `jq`, and `ajv` (see
-[dependencies](../dependencies.md)).
+`resolve-ontology.sh` is a thin wrapper (ADR-0016) that execs the `mif-rh-cli`
+engine, hard-required (see [dependencies](../dependencies.md)).
 
 ---
 

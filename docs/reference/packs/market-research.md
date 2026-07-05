@@ -1,4 +1,12 @@
 ---
+id: reference-packs-market-research
+type: semantic
+created: '2026-06-24T10:25:46-04:00'
+modified: '2026-06-28T22:36:14-04:00'
+namespace: docs/reference/packs
+tags:
+  - documentation
+  - reference
 title: "Market-research packs"
 diataxis_type: reference
 ---

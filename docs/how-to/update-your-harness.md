@@ -1,4 +1,12 @@
 ---
+id: how-to-update-your-harness
+type: semantic
+created: '2026-06-25T07:30:10-04:00'
+modified: '2026-07-05T10:10:09-04:00'
+namespace: docs/how-to
+tags:
+  - documentation
+  - how-to
 title: "How to update your harness safely"
 diataxis_type: how-to
 ---
@@ -57,6 +65,29 @@ To update to a specific tag, or to pass extra Copier flags:
 ```bash
 bash scripts/update.sh --target v1.2.3 -- --defaults
 ```
+
+## After updating
+
+A successful `scripts/update.sh` run applies the verified template content, but
+three things do not happen automatically.
+
+- **Confirm the update applied cleanly.** Run `bash scripts/verify.sh` and
+  confirm it exits `0`. This re-checks every contract, including the merged
+  manifest, against the version you just pulled in.
+- **Re-fetch the engine binary if its pinned version moved.** An update can
+  bring in a newer `scripts/fetch-engine.sh` with a higher pinned
+  `ENGINE_VERSION`, but it does not install the binary itself. Run
+  `scripts/fetch-engine.sh` again after every update; it is a no-op if the
+  pinned version has not changed. See
+  [Run the classification engine loop](run-the-classification-engine-loop.md).
+- **Expect a "registry index sha256 changed" refusal on the first re-vendor
+  after an upstream registry change.** If the update landed newer ontology
+  core or domain pack versions, `scripts/fetch-ontology.sh` treats the
+  registry index as a pinned trust root and refuses to fetch once that index
+  moves, naming the fix directly in its own error. This is expected after a
+  registry change, not a sign of tampering: clear the `index_sha256` field in
+  `ontologies.lock.json`, then re-run the fetch to deliberately re-pin. See
+  [Vendor ontologies on demand](vendor-ontologies-on-demand.md).
 
 ## When verification fails
 

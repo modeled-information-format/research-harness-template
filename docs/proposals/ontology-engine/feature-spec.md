@@ -36,6 +36,19 @@ entity:
 
 # Compiled Ontology Engine Proof-of-Concept (CLI + MCP)
 
+> **Status: historical proof-of-concept record (2026-07-01).** This document
+> records the original scoped proof-of-concept framing, including Acceptance
+> Criterion 8 and the "Engine binary missing or crashes on startup" edge case
+> below, both of which described a non-hard-dependency posture. See
+> `prd.md`'s status note for the full context:
+> [ADR-0016](../../adr/0016-engine-only-classification.md), accepted
+> 2026-07-05, superseded that posture, and the engine is now hard-required
+> with the bash implementations retired. Retained as historical record, not
+> as the current contract. See
+> [the classification engine explanation](../../explanation/classification-engine.md)
+> and
+> [how to run the classification engine loop](../../how-to/run-the-classification-engine-loop.md).
+
 ## Overview
 
 `scripts/ontology-review.sh` and `scripts/resolve-ontology.sh` review and

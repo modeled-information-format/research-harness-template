@@ -44,6 +44,26 @@ entity:
 
 # PRD: Compiled Ontology Engine Proof-of-Concept
 
+> **Status: historical proof-of-concept record (2026-07-01).** This document,
+> together with `feature-spec.md`, `ai-architecture-doc.md`,
+> `rust-rfc-engine-core.md`, and `lifecycle-swimlane.md`, records the original
+> scoped proof-of-concept framing for the compiled ontology engine, including
+> Requirements 4 and 5 and the "retiring the bash scripts" non-goal below,
+> which described a non-hard-dependency posture. The proof-of-concept
+> succeeded:
+> [ADR-0014](../../adr/0014-compiled-ontology-engine-cli-and-mcp.md)'s
+> 2026-07-04 audit measured Milestones M1 through M3 complete, and
+> [ADR-0016](../../adr/0016-engine-only-classification.md), accepted
+> 2026-07-05, superseded the non-hard-dependency posture: the engine (shipped
+> as `mif-rh` / `mif-rh-cli` / `mif-rh-mcp` in `modeled-information-format/mif-rs`)
+> is now hard-required, and the bash classification implementations are
+> retired. This document set is retained as the historical record of the
+> proof-of-concept phase, not as the current contract. For the operating
+> model in effect today, see
+> [the classification engine explanation](../../explanation/classification-engine.md)
+> and
+> [how to run the classification engine loop](../../how-to/run-the-classification-engine-loop.md).
+
 ## Problem Statement
 
 The research-harness-template's ontology subsystem — `scripts/resolve-ontology.sh`
@@ -163,6 +183,9 @@ authorizes proposing.
 - **M4 — Generalization decision**: a follow-up decision (out of scope for this
   PRD and for ADR-0014) on whether to extend the engine to the harness's other
   bash scripts, made only after M1-M3 are measured.
+
+M1 through M3 are now measured complete (see ADR-0014's 2026-07-04 audit). M4
+remains an open, separate decision this document does not settle.
 
 ## Open Questions
 
