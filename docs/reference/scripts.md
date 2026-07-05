@@ -56,7 +56,7 @@ floor, [engine-cli.md](engine-cli.md) for its subcommand surface, and
 | Script | Purpose | Key dependency |
 | --- | --- | --- |
 | `scripts/fetch-engine.sh` | Downloads the pinned `mif-rh-cli` and `mif-rh-mcp` release binaries for the current platform from the `mif-rs` repository, verifies each one's build provenance with `gh attestation verify` (fail-closed), and installs both to `bin/`. | `gh` |
-| `scripts/lib/engine.sh` | Sourced library, not a standalone script. Provides `engine_bin()`: resolves the `mif-rh-cli` binary (`$MIF_RH_CLI` override, then `PATH`, then `bin/mif-rh-cli`), checks its reported version against the pinned floor, and fails loudly naming `fetch-engine.sh` as the fix. Sourced by `resolve-ontology.sh` and `ontology-review.sh`. | none |
+| `scripts/lib/engine.sh` | Sourced library, not a standalone script. Provides `engine_bin()`: resolves the `mif-rh-cli` binary (`$MIF_RH_CLI` override, then `PATH`, then `bin/mif-rh-cli`), checks its reported version against the pinned floor, and fails loudly naming `fetch-engine.sh` as the fix. Sourced by `resolve-ontology.sh` and `ontology-review.sh`. | `grep`, `head`, `awk` |
 
 ---
 

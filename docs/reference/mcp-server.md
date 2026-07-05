@@ -49,7 +49,7 @@ bin/mif-rh-cli review --build-index
 ```
 
 If the index does not exist, or exists with zero indexed findings (a state
-left by miss-recording paths like `review --suggest` or
+left by mis-recording paths like `review --suggest` or
 `suggest-type --record`, which create the same database file without
 indexing anything), both tools return an `index-not-built` problem — never
 an empty result set. Rebuild the index after large review passes.
