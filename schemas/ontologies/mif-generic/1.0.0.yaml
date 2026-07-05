@@ -10,10 +10,27 @@ ontology:
   description: Basic generic ontology (MIF built-in entity types); always enabled for all topics.
   extends:
     - mif-base
+# Enrichment scope (ADR-0015 / MIF ADR-020): aliases/exemplars are added to
+# the types that carry meaningful stamped-finding volume in the reference
+# corpus (concept, technology, organization). person and file are
+# deliberately unenriched until calibration data shows they need it;
+# authoring embedding signal without corpus grounding would be guesswork.
 entity_types:
   - name: concept
     base: semantic
     description: An abstract idea, theme, method, or topic.
+    aliases:
+      - "idea"
+      - "principle"
+      - "theme"
+      - "definition"
+      - "theoretical model"
+      - "analytical distinction"
+    exemplars:
+      - "An abstract analytical distinction between two competing approaches to a problem"
+      - "A named principle or requirement drawn from a published standard or specification"
+      - "A theoretical model expressing how a quantity depends on underlying parameters"
+      - "A definitional clarification of what a specification does and does not require"
     schema:
       required: [name]
       properties:
@@ -28,6 +45,15 @@ entity_types:
   - name: organization
     base: semantic
     description: A company, institution, agency, or group.
+    aliases:
+      - "standards organization"
+      - "open-source foundation"
+      - "governing body"
+      - "industry working group"
+    exemplars:
+      - "A working group under a security foundation publishes baseline security-maturity frameworks for package registries"
+      - "A specification and tooling initiative for event-driven API contracts is hosted under a vendor-neutral open-source foundation"
+      - "A commercial sponsor stewards an open-source contract-testing ecosystem's governance in a vendor-neutral, community-directed manner"
     schema:
       required: [name]
       properties:
@@ -35,6 +61,18 @@ entity_types:
   - name: technology
     base: semantic
     description: A tool, system, framework, standard, or product.
+    aliases:
+      - "tool"
+      - "product"
+      - "platform"
+      - "library"
+      - "software system"
+      - "named framework"
+    exemplars:
+      - "An open-source command-line tool that renders declarative specifications without a browser"
+      - "A vendor product integration adding policy enforcement at the infrastructure level"
+      - "A protocol gateway enabling cost tracking across heterogeneous frameworks"
+      - "A managed service or library adopted for a specific engineering capability"
     schema:
       required: [name]
       properties:
