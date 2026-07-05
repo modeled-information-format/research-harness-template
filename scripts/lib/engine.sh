@@ -27,12 +27,20 @@ engine_bin() {
     return 5
   fi
   local version
-  version="$("$candidate" --version 2>/dev/null | awk '{print $NF}')"
+  version="$("$candidate" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)"
   if [ -z "$version" ]; then
-    echo "engine: ${candidate} did not report a version" >&2
+    echo "engine: ${candidate} did not report a semver version" >&2
     return 5
   fi
-  if [ "$(printf '%s\n%s\n' "$version" "$ENGINE_MIN_VERSION" | sort -V | head -1)" != "$ENGINE_MIN_VERSION" ]; then
+  # POSIX per-component compare; sort -V is unavailable on some BSD sorts.
+  if ! awk -v have="$version" -v need="$ENGINE_MIN_VERSION" 'BEGIN {
+        n1 = split(have, h, "."); n2 = split(need, n, ".");
+        for (i = 1; i <= 3; i++) {
+          if (h[i] + 0 > n[i] + 0) exit 0;
+          if (h[i] + 0 < n[i] + 0) exit 1;
+        }
+        exit 0;
+      }'; then
     echo "engine: mif-rh-cli v${version} is older than the required v${ENGINE_MIN_VERSION}; re-run scripts/fetch-engine.sh" >&2
     return 5
   fi
