@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **MCP server wiring** — `scripts/fetch-engine.sh` installs
+  `mif-rh-mcp` beside the CLI (same attested, fail-closed download),
+  a repo-root `.mcp.json` registers the stdio server for agent
+  sessions, and the classification-loop runbook documents the four
+  read-only tools and the `--build-index` prerequisite. The template's
+  own automation adopts the tools as optional accelerators with lexical
+  fallback: the search skill's `--sem` backend is now the engine index,
+  dimension-analyst runs a `find_similar` prior-art check before
+  emitting findings, corpus-synthesizer can lean on `corpus_stats` and
+  semantic lookup during synthesis, and the orchestrator documents the
+  ADR-0015 suggest/calibrate cadence after classification passes.
+
 ### Changed
 
 - **Engine-only classification (ADR-0016)** — `resolve-ontology.sh` and

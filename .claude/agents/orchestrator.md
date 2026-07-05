@@ -380,6 +380,13 @@ bound ontologies' discovery patterns (`content_pattern` → `suggest_entity`) wh
 unambiguously matches, else recorded untyped (core); a finding whose stamped `entity_type`
 does not resolve against the topic's bound ontologies is a real error to fix, not to ignore:
 
+After a classification pass over new findings, the engine loop (ADR-0015,
+see the classification-engine-loop how-to) can queue scored type
+suggestions for whatever stayed unstamped: `bin/mif-rh-cli review
+--suggest`, consumed later by `/ontology-review --enrich`. Re-run
+`bin/mif-rh-cli calibrate` after meaningful corpus growth so the tiers
+stay honest. Both are operator-paced steps, not orchestrator gates.
+
 ```bash
 for f in "$REPORTS_DIR"/findings/*.json; do
   [ -e "$f" ] || continue
