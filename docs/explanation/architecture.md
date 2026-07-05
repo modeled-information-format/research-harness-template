@@ -17,6 +17,14 @@ services is a **module boundary inside one repo**, not a repo boundary
 (§6a). The four layers — engine, contracts, harness services, outputs — all ship
 on clone.
 
+A terminology note: "engine" in this four-layer sense names the Claude Code
+plugin layer (agents, commands, skills). This is a different thing from "the
+mif-rh engine," the compiled classification binary described in ADR-0014,
+ADR-0015, ADR-0016, and
+[the classification engine explanation](classification-engine.md); the two
+share a word, not a component, and neither document renames itself to avoid
+the collision.
+
 ## MIF is the spine
 
 There is one authoritative interchange format for findings *and* the knowledge

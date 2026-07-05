@@ -38,6 +38,19 @@ cross-topic concordance.
 
 ---
 
+## Engine
+
+Scripts that install and locate the `mif-rh` compiled ontology engine
+(ADR-0016). See [dependencies](dependencies.md) for the `mif-rh-cli` version
+floor.
+
+| Script | Purpose | Key dependency |
+| --- | --- | --- |
+| `scripts/fetch-engine.sh` | Downloads the pinned `mif-rh-cli` and `mif-rh-mcp` release binaries for the current platform from the `mif-rs` repository, verifies each one's build provenance with `gh attestation verify` (fail-closed), and installs both to `bin/`. | `gh` |
+| `scripts/lib/engine.sh` | Sourced library, not a standalone script. Provides `engine_bin()`: resolves the `mif-rh-cli` binary (`$MIF_RH_CLI` override, then `PATH`, then `bin/mif-rh-cli`), checks its reported version against the pinned floor, and fails loudly naming `fetch-engine.sh` as the fix. Sourced by `resolve-ontology.sh` and `ontology-review.sh`. | none |
+
+---
+
 ## Findings and session
 
 Scripts that create, validate, falsify, and checkpoint findings, and that
@@ -66,8 +79,14 @@ Scripts that manage capability packs, ontology resolution, and artifact synthesi
 | --- | --- | --- |
 | `scripts/sync-packs.sh` | Materialises `harness.config.json` `packs[]` into `.claude/enabled-packs.json` and the instance-local `.claude/settings.local.json` `enabledPlugins` (gitignored; deep-merged with the template-managed `settings.json`). | `jq`, `python3` (embedded materialization), `yq` (ontology catalog) |
 | `scripts/pack-toggle.sh` | Flips a pack's `enabled` flag in `harness.config.json` then re-materialises via `sync-packs.sh`. | `jq`; plus `python3` + `yq` via `sync-packs.sh` |
-| `scripts/resolve-ontology.sh` | Topical ontology resolution for one MIF finding. Fail-closed: an unresolvable type returns non-zero. Falls back to discovery-pattern classification. | `yq`, `jq`, `ajv` |
-| `scripts/ontology-review.sh` | Reviews and validates ontology coverage across topics; refreshes `reports/<topic>/ontology-map.json`. Reports stamped (durable `entity` on disk) separately from discovery-only (a content-pattern guess never written back) and untyped; `--followup <path>` writes a JSON backlog of everything not durably stamped, grouped by topic. | `jq`, `yq`, `ajv` |
+| `scripts/resolve-ontology.sh` | Topical ontology resolution for one MIF finding. Thin wrapper (ADR-0016): execs the `mif-rh-cli` engine, hard-required, no bash fallback. Fail-closed: an unresolvable type returns non-zero. Falls back to discovery-pattern classification. | `mif-rh-cli` |
+| `scripts/ontology-review.sh` | Reviews and validates ontology coverage across topics; refreshes `reports/<topic>/ontology-map.json`. Thin wrapper (ADR-0016): execs the `mif-rh-cli` engine, hard-required, no bash fallback. Reports stamped (durable `entity` on disk) separately from discovery-only (a content-pattern guess never written back) and untyped; `--followup <path>` writes a JSON backlog of everything not durably stamped, grouped by topic. | `mif-rh-cli` |
+| `scripts/check-relationship-targets.sh` | Proves every finding's `relationships[].target` resolves to a real finding `@id` in the active corpus. Run once, corpus-wide, by `ontology-review.sh` after its per-topic loop (`--relationship-script`). | `jq` |
+| `scripts/check-shippable-typing.sh` | Fail-closed pre-synthesis gate (ADR-0011): a finding that ships (`verdict` in `survived`/`weakened`) must resolve to a valid ontology type. Blocks synthesis (exit 1) on an untyped/unresolved/invalid/unparsable shippable finding; falsified/quarantined/inconclusive findings never block. Read-only. | `jq` |
+| `scripts/check-ontology-lock.sh` | Fail-closed integrity gate: every enabled domain ontology is pinned in `ontologies.lock.json` and present under `packs/ontologies/<id>/`, and every pinned, vendored ontology's file hashes to its pinned sha256. Passes cleanly when no lock exists (on-demand vendoring not adopted). | `jq`, `sha256sum` / `shasum` |
+| `scripts/fetch-ontology.sh` | On-demand vendoring (ADR-0012) of one domain ontology pack: resolves its `extends` closure from the canonical registry index, fetches each non-committed layer, sha256-verifies every file fail-closed, materializes it under `packs/ontologies/<id>/`, and pins the result in `ontologies.lock.json`. Source precedence: `$MIF_ONTOLOGY_SOURCE`, `.ontologies.source`, then the canonical `https://mif-spec.dev/ontologies`. | `jq`, `yq`, `curl` (or a local dir source), `sha256sum` / `shasum` |
+| `scripts/sync-registry-ontologies.sh` | Pulls new domain ontologies published to the canonical registry that `harness.config.json` has never heard of, enables each by default, then vendors and catalogs everything currently enabled. Delegates to `fetch-ontology.sh` and `sync-packs.sh`. | `jq`, `curl` |
+| `scripts/author-ontology.sh` | When on-demand resolution finds no ontology for a domain, scaffolds one from the corpus's own `ontology-map.json` (or from `mif-rh-cli expansion-candidates` output via `--from-clusters`) and concierges a PR to the canonical registry. | `jq`, `git`, `gh` |
 | `scripts/check-pack-docs.py` | Verifies pack documentation is complete and bidirectionally cross-linked: every pack-family component is documented and every doc links back. Run as a CI gate (`.github/workflows/docs.yml`). | Python stdlib only |
 | `scripts/synthesize-artifact.sh` | Deterministic substrate for the report-synthesizer: consumes surviving findings (verdict ≠ `falsified`) and produces a typed `Artifact` (`schemas/artifact.schema.json`). Joins each section to its finding's resolved ontology type from `reports/<topic>/ontology-map.json` (`entityType`/`ontology`/`basis`); the no-map path stays byte-identical. Genre-neutral. | `jq` |
 | `scripts/render-artifact.sh` | Renders a typed `Artifact` to an output channel (`report`, `blog`, `book`). The `report` channel calls `mif-project.sh` for L3 validation; `blog`/`book` carry MIF L1 frontmatter. | `jq`, `scripts/mif-project.sh` |
@@ -84,6 +103,7 @@ Diátaxis `docs/`) for human reading.
 | Script | Purpose | Key dependency |
 | --- | --- | --- |
 | `scripts/site-toggle.sh` | Flips the `harness.config.json` `.site` control plane that `astro.config.mjs` reads at build time: `primary <reports\|docs\|auto>` chooses which surface leads the sidebar; `plugin <llmsTxt\|mermaid\|imageZoom\|linksValidator> <on\|off>` gates an optional Astro/Starlight enhancement. Applies on the next `npm run build`/`npm run dev`. | `jq` |
+| `scripts/backfill-report-slugs.sh` | One-time remediation for reports rendered before `render-artifact.sh` started stamping `slug:`/`version:` frontmatter, so the site's cross-link rewriter (which slugifies filenames with a HEADING-anchor algorithm) does not 404 on genre-suffixed filenames. Idempotent: a file already carrying both keys is untouched. | coreutils (`sed`, `awk`, `grep`, `find`) |
 
 ---
 

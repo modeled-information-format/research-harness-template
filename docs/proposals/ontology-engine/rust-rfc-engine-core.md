@@ -46,6 +46,16 @@ entity:
 
 # RFC: harness-ontology-engine — a Rust engine core for ontology-review/resolve-ontology
 
+> **Status: historical proof-of-concept record (2026-07-01).** This document
+> records the original design rationale for a Rust engine core. AD-1 (Go
+> versus Rust, deferred below) is now settled: the shipped engine's crate
+> paths, `crates/mif-rh` and `crates/mif-rh-cli` (named in
+> [ADR-0016](../../adr/0016-engine-only-classification.md)), confirm Rust was
+> the path taken. See `prd.md`'s status note for the full context on the
+> proof-of-concept's completion and the hard cutover. Retained as historical
+> record, not as the current contract. See
+> [the classification engine explanation](../../explanation/classification-engine.md).
+
 ## Summary
 
 Propose `harness-ontology-engine`: a Rust workspace implementing the
@@ -224,3 +234,7 @@ five scripts `ADR-0014`'s Option 2 names as generalization candidates —
 `reconcile-session.sh`, `synthesize-corpus.sh` — as additional `engine-core`
 modules behind the same two frontends, rather than a second, separate
 rewrite effort.
+
+The proof-of-concept succeeded; see ADR-0014's 2026-07-04 audit for the
+measured results. Whether to generalize to the five scripts named above
+remains an open, separate decision this document does not settle.

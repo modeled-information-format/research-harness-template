@@ -7,12 +7,15 @@ diataxis_type: reference
 
 Agents are named subagents spawned programmatically during a research session.
 They run as background Claude instances with defined inputs, outputs, and tool
-allowlists. The five listed here are core (non-pack); they ship with the
+allowlists. The seven listed here are core (non-pack); they ship with the
 template.
 
-The pipeline is: orchestrator → dimension-analyst (fan-out) →
+The session pipeline is: orchestrator → dimension-analyst (fan-out) →
 falsification-analyst → report-synthesizer. The source-chunker is spawned
-on-demand by dimension-analysts that encounter oversized documents.
+on-demand by dimension-analysts that encounter oversized documents. Two agents
+sit outside that per-session pipeline: `corpus-synthesizer` is spawned by
+`/synthesize-corpus`, cross-session and cross-topic; `harness-configurator` is
+spawned by `/configure` to edit `harness.config.json` on request.
 
 See [dependencies](dependencies.md) for tool installation requirements.
 
@@ -49,8 +52,16 @@ goal version), and `augment` (add one or more new dimensions).
 **Outputs:** `research-progress.md`, per-dimension finding sets written by
 subagents, final report from `report-synthesizer`.
 
+Once a finding lands, the orchestrator loops `scripts/resolve-ontology.sh` over
+it to write `reports/<topic>/ontology-map.json`. After a classification pass
+over new findings, it can queue scored type suggestions for whatever stayed
+unstamped via `mif-rh-cli review --suggest` (consumed later by
+`/ontology-review --enrich`) and re-run `mif-rh-cli calibrate` after
+meaningful corpus growth — both are operator-paced steps, not orchestrator
+gates (ADR-0015).
+
 **Dependencies:** `scripts/run-lock.sh`, `scripts/reconcile-session.sh`,
-`scripts/falsify.sh`. Model: `sonnet`.
+`scripts/falsify.sh`, `scripts/resolve-ontology.sh`, `mif-rh-cli`. Model: `sonnet`.
 
 ---
 
@@ -164,6 +175,34 @@ The orchestrator suggests it but does not auto-run it (the corpus spans all topi
 `reports/_corpus/corpus-synthesis.md` (the atlas).
 
 **Dependencies:** `scripts/synthesize-corpus.sh`, `scripts/build-concordance.sh`. Model: `opus`.
+
+---
+
+## harness-configurator
+
+Applies a requested configuration change to `harness.config.json`.
+
+**Role:** Configuration concierge. Drives the existing tooling
+(`scripts/pack-toggle.sh`, `scripts/site-toggle.sh`, `scripts/sync-packs.sh`,
+the `/ontology-review` command/skill) rather than hand-rolling manifest
+edits, covering packs, the site's primary surface and optional Astro/Starlight
+plugins, ontology enable/bind, and topic/dimension/output/voice/freshness
+edits. Validates the manifest against `harness.config.schema.json` and
+re-runs `scripts/verify.sh` before reporting a change done; asks before a
+destructive or ambiguous change (disabling an in-use pack, re-scoping a bound
+topic, lowering `mifConformanceLevel`).
+
+**Spawned by:** `/configure`.
+
+**Inputs:** `AREA` (`packs`/`site`/`ontologies`/`topics`/`verify`/`survey`),
+the free-form change request, `harness.config.json`.
+
+**Outputs:** The updated manifest; a before/after report; the result of the
+gates it re-ran.
+
+**Dependencies:** `scripts/pack-toggle.sh`, `scripts/site-toggle.sh`,
+`scripts/sync-packs.sh`, `scripts/verify.sh`, `harness.config.schema.json`.
+Model: `sonnet`.
 
 ---
 

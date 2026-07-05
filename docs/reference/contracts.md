@@ -154,7 +154,10 @@ resolve to exactly one of the topic's bound ontologies (0 → fail; >1 → needs
 explicit `ontology.id`), and its `entity` must satisfy that type's schema (additive —
 required fields and declared field constraints enforced, extra fields allowed). The
 mapping is recorded to `reports/<topic>/ontology-map.json`. It fails closed (a missing
-catalog aborts) and is bash-3.2 portable. Classification — stamping a finding's
+catalog aborts). Since ADR-0016 the script is a thin, bash-3.2-portable wrapper that
+execs the `mif-rh-cli` engine (`≥ 0.3.1`, installed by `scripts/fetch-engine.sh`) to
+do the actual resolution — the engine is hard-required, with no bash fallback.
+Classification — stamping a finding's
 `entity_type` — is an upstream agent step (`dimension-analyst`, topic onboarding in
 `/start`); the resolver and `gate_m12` are the deterministic floor. `gate_m12` asserts:
 the contract validates its sample; every registry ontology validates; id@version is

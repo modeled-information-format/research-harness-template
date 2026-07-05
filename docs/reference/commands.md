@@ -6,7 +6,7 @@ diataxis_type: reference
 # Reference: commands
 
 Commands are slash-command entry points invoked directly in a Claude session.
-All eight listed here are core (non-pack); they ship with the template.
+All nine listed here are core (non-pack); they ship with the template.
 
 See [dependencies](dependencies.md) for tool installation requirements.
 
@@ -116,7 +116,7 @@ unresolved type.
 **What it delegates to:** `scripts/ontology-review.sh` (Phase 1), `ontology-manager`
 skill (Phase 3 when authoring is needed).
 
-**Dependencies:** `scripts/ontology-review.sh`, `jq`, `yq`, `ajv`.
+**Dependencies:** `scripts/ontology-review.sh`, `mif-rh-cli` (the engine it delegates to, ADR-0016).
 
 ---
 

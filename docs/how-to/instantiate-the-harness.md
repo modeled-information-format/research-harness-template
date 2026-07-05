@@ -29,6 +29,7 @@ uncommitted or lost answers file breaks future updates.
 pipx install copier            # or: pipx install copier && pipx ensurepath
 copier copy gh:modeled-information-format/research-harness-template my-harness
 cd my-harness
+bash scripts/verify.sh   # must exit 0
 ```
 
 Copier strips template-only files at generation (`copier.yml`'s `_exclude`:

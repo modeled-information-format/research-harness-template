@@ -140,7 +140,7 @@ attestation or a pinned SHA-256 before installing.
 | Component | Needs |
 | --- | --- |
 | Core engine + most scripts | `git`, `jq`, `yq`, `ajv-cli` + `ajv-formats`, `python3` |
-| `verify.sh` conformance gate | `ajv-cli` + `ajv-formats`, plus `jq`, `yq` |
+| `verify.sh` conformance gate | `ajv-cli` + `ajv-formats`, plus `jq`, `yq`, `mif-rh-cli` (its ontology-resolution gates delegate to the engine, ADR-0016) |
 | `node` | install path for `ajv`/`markdownlint-cli2` (`npm`) and Mermaid (`npx`) |
 | Documentation lint gate | `markdownlint-cli2` |
 | Instantiate / update the template | `copier` |
@@ -150,4 +150,4 @@ attestation or a pinned SHA-256 before installing.
 | `github-discuss`, `github-issues` channels | `gh`, `jq` |
 | `diataxis` channel | `jq` |
 | `engineering`, `trend-analysis`, `competitive-analysis`, `trend-modeling` | `@mermaid-js/mermaid-cli` (optional, diagrams only) |
-| Ontology data packs | core runtime only (`yq`, `jq`, `ajv` for resolution) |
+| Ontology data packs | core runtime plus `mif-rh-cli` (finding resolution, ADR-0016); `yq`, `jq`, `ajv` for registry YAML validation |
