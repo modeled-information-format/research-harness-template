@@ -215,7 +215,7 @@ built separately, with `bin/mif-rh-cli review --build-index`; rebuilding
 `research-index.json` via `build-index.sh` does not build it. If the MCP
 tools are absent or reply index-not-built, the skill falls back to `--lex`
 and says so — the semantic backend is an optional accelerator, never a
-dependency.
+dependency. See [mcp-server.md](mcp-server.md) for the tool contracts.
 
 **When it triggers:** Invoked when the user wants to find findings, look up
 what is known about a subject, or asks "what do I have on X", "find findings

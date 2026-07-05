@@ -42,7 +42,8 @@ cross-topic concordance.
 
 Scripts that install and locate the `mif-rh` compiled ontology engine
 (ADR-0016). See [dependencies](dependencies.md) for the `mif-rh-cli` version
-floor.
+floor, [engine-cli.md](engine-cli.md) for its subcommand surface, and
+[mcp-server.md](mcp-server.md) for the MCP server the same install ships.
 
 | Script | Purpose | Key dependency |
 | --- | --- | --- |
