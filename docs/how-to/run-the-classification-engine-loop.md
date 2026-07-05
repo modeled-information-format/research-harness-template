@@ -103,6 +103,24 @@ similarity, they surface here as draft candidate types; the scaffold
 gives each cluster a `todo-cluster-N` entry to name, define and
 ground before contributing the ontology upstream.
 
+## 5. Expose the corpus to agents over MCP
+
+The same release ships `mif-rh-mcp`, a stdio MCP server the fetch
+script installs beside the CLI. The repo's `.mcp.json` wires it up for
+Claude Code sessions in the instance root; it exposes `search`,
+`find_similar`, `suggest_type` and `corpus_stats`, all read-only
+(suggestions over MCP are hypotheses; every write still goes through
+the enrich step, per ADR-0011 and ADR-0015). The two search tools
+need the index built first:
+
+```bash
+bin/mif-rh-cli review --build-index
+```
+
+Rebuild it after large review passes; until it exists the search
+tools fail loudly with an index-not-built error rather than returning
+empty results.
+
 ## Verify
 
 ```bash

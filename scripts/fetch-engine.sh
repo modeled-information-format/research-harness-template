@@ -33,19 +33,23 @@ case "$(uname -s)-$(uname -m)" in
   *) echo "fetch-engine: unsupported platform $(uname -s)-$(uname -m)" >&2; exit 1 ;;
 esac
 
-artifact="mif-rh-cli-${ENGINE_VERSION}-${platform}"
 tmp="$(mktemp -d "${TMPDIR:-/tmp}/fetch-engine.XXXXXX")"
 trap 'rm -rf "$tmp"' EXIT
-
-echo "fetch-engine: downloading ${artifact} from ${ENGINE_REPO} v${ENGINE_VERSION}"
-gh release download "v${ENGINE_VERSION}" --repo "$ENGINE_REPO" \
-  --pattern "$artifact" --dir "$tmp"
-
-echo "fetch-engine: verifying build provenance (fail-closed)"
-gh attestation verify "${tmp}/${artifact}" \
-  --repo "$ENGINE_REPO" \
-  --signer-workflow "$SIGNER"
-
 mkdir -p "$DEST"
-install -m 0755 "${tmp}/${artifact}" "${DEST}/mif-rh-cli"
-echo "fetch-engine: installed ${DEST}/mif-rh-cli (v${ENGINE_VERSION}, attested)"
+
+# Both engine binaries ship in the same release: the CLI (classification,
+# ADR-0016) and the MCP server (read-only agent surface, ADR-0014/0015).
+for bin in mif-rh-cli mif-rh-mcp; do
+  artifact="${bin}-${ENGINE_VERSION}-${platform}"
+  echo "fetch-engine: downloading ${artifact} from ${ENGINE_REPO} v${ENGINE_VERSION}"
+  gh release download "v${ENGINE_VERSION}" --repo "$ENGINE_REPO" \
+    --pattern "$artifact" --dir "$tmp"
+
+  echo "fetch-engine: verifying build provenance (fail-closed)"
+  gh attestation verify "${tmp}/${artifact}" \
+    --repo "$ENGINE_REPO" \
+    --signer-workflow "$SIGNER"
+
+  install -m 0755 "${tmp}/${artifact}" "${DEST}/${bin}"
+  echo "fetch-engine: installed ${DEST}/${bin} (v${ENGINE_VERSION}, attested)"
+done

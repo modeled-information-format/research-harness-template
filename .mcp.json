@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "mif-rh": {
+      "command": "bin/mif-rh-mcp",
+      "args": []
+    }
+  }
+}

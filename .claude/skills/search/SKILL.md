@@ -1,7 +1,7 @@
 ---
 name: search
 description: "Search the MIF research index — find findings by free-text query or by structured filters over the index fields (dimension, tags, namespace, verdict). Use this skill when the user wants to find research findings, look up what is known about a subject, query findings, or asks 'what do I have on X', 'find findings about Y', 'search research for Z', 'what research', 'what findings'. Reads the projected index, not raw tag files."
-version: 0.4.2
+version: 0.5.0
 argument-hint: "<query> [--lex|--sem] [--tag <tag>] [--namespace <ns>] [--dimension <dim>] [--verdict <v>] [--limit <N>]"
 allowed-tools: Read, Bash, Grep, Glob
 ---
@@ -24,10 +24,17 @@ tag-derived recomputation. Rebuild it with
 
 - **lexical (`jq`)** — the default and only required backend. Filters and
   free-text matching run with `jq` over the index fields. Always available.
-- **semantic (optional)** — if an external semantic-search backend is wired in
-  for this clone, it can rank findings by meaning over the same id set, then the
-  results are looked up in the index by id. Treat it as an optional accelerator,
-  never a dependency: when absent, fall back to lexical `--lex` and say so.
+- **semantic (optional)** — the mif-rh engine's **finding index** (a
+  SQLite embedding index, separate from `research-index.json`). When the
+  `mif-rh` MCP server is available in the session (wired by the repo's
+  `.mcp.json`; binaries installed by `scripts/fetch-engine.sh`), use its
+  `search` tool for free-text queries and `find_similar` for by-meaning
+  ranking, then look results up in `research-index.json` by id. The
+  engine's finding index is built with `bin/mif-rh-cli review
+  --build-index` (rebuilding `research-index.json` via
+  `scripts/build-index.sh` does NOT build it); if the MCP tools are
+  absent or reply index-not-built, fall back to lexical `--lex` and say
+  so. Treat it as an optional accelerator, never a dependency.
 
 ## Arguments
 
