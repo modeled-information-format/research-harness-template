@@ -118,6 +118,7 @@ Array of `TypeSuggestion`:
 | `tier` | string | `auto_classify_eligible` \| `flag_for_review` \| `trigger_expansion`. |
 | `margin` | number, optional | The top candidate's lead over the second-best candidate. Present only at rank 0 when a rival exists. |
 | `calibrated` | boolean | Whether `tier` came from a real calibration run against the embedding model in use, versus built-in uncalibrated defaults. |
+| `negative_demoted` | boolean, optional | `true` when this candidate's query similarity to one of its type's curated `negative_examples` met or exceeded its similarity to the positive embedding document, barring it from `auto_classify_eligible` regardless of raw score. Omitted from the result entirely whenever `false` (including every candidate whose type carries no curated `negative_examples`), so absence and `false` are indistinguishable on the wire. A non-reordering gate: `score` and rank are unaffected. |
 
 ### find_similar
 
@@ -209,6 +210,7 @@ Written by `mif-rh-cli calibrate`; read by `suggest-type`, `review --suggest`,
 | `tier1_margin` | number | Minimum lead the top candidate must hold over the second-best candidate. |
 | `tier2_floor` | number | Minimum score for flag-for-review; below it a score is a trigger-expansion miss. |
 | `calibrated` | boolean | Whether these values came from a real calibration run, versus built-in uncalibrated defaults. |
+| `negatives_active` | boolean | Whether curated `negative_examples` were among the candidates that scored the samples this artifact was swept from. `false` when no pack scoring a swept sample carries negatives, in which case this run's scoring is byte-identical to the pre-negatives engine. Recorded for audit only: `negative-demotion-v1` is a downstream suggestion-time gate applied regardless of this flag, and it does not affect `tier1_floor`/`tier1_margin`/`tier2_floor`, which are computed from pre-demotion raw scores. |
 | `calibrated_at` | string, optional | RFC 3339 timestamp of the calibration run. |
 | `sample_size` | integer, optional | Labeled samples the calibration run used. |
 | `method` | string, optional | Calibration method identifier (e.g. `stamped-quantile-v1`). |

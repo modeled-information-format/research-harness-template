@@ -23,7 +23,7 @@ the tier policy itself is MIF ADR-020.
 
 ## Before you begin
 
-- Install the engine (v0.3.1 or later). The canonical path is the
+- Install the engine (v0.4.0 or later). The canonical path is the
   repo's own fetch script, which downloads the pinned release binary
   and verifies its build provenance fail-closed before installing it
   to `bin/mif-rh-cli` (ADR-0016):
@@ -36,7 +36,11 @@ the tier policy itself is MIF ADR-020.
   (for source builds) also works. Since ADR-0016 the engine is not
   optional: `resolve-ontology.sh` and `ontology-review.sh` delegate to
   it. Earlier releases (v0.2.0 and before) predate `suggest-type`,
-  `calibrate` and `expansion-candidates` and will not work.
+  `calibrate` and `expansion-candidates` and will not work. Releases
+  before v0.4.0 predate `calibrate --confusions` and the
+  `negative_examples` scoring gate (step 1.5 below) and will not
+  support curating negative examples, though calibration and
+  suggestion still work.
 - Run every command below from the harness instance root (the
   directory holding `reports/`, `harness.config.json` and
   `.claude/enabled-packs.json`).
@@ -63,6 +67,32 @@ the corpus grows meaningfully (a new topic, a large review pass). If no
 threshold meets the precision target the command fails loudly and
 tells you to enrich entity types; do not lower
 `--target-precision` to force an artifact.
+
+## 1.5. Curate `negative_examples` from the confusion export
+
+```bash
+mif-rh-cli calibrate --confusions reports/_meta/confusions.json
+```
+
+Alongside the calibration artifact, this writes a ranked list of
+`(gold, top1, count, finding_ids)` confusion pairs: stamped findings whose
+true type is `gold` but scored highest against `top1` instead. For a pair
+worth curating, add a short near-miss phrase to **`top1`'s**
+`negative_examples` list in its ontology pack (never `gold`'s), grounded in
+the pair's `finding_ids`. Curation is human-only; MIF ADR-020 forbids
+auto-mining `negative_examples` from this export.
+
+A curated `negative_examples` entry demotes its type out of tier 1
+whenever a candidate's similarity to that negative example meets or exceeds
+its similarity to the positive embedding document. This is a non-reordering
+gate: it changes a candidate's confidence tier, not its rank, so curating
+`negative_examples` and re-running step 1's plain `calibrate` will not move
+`tier1_floor`, `tier1_margin`, `tier2_floor`, or the confusion-pair counts
+themselves; that is expected, not a sign curation had no effect. Re-run
+`calibrate --confusions` after enrichment (new stamped findings, corpus
+growth) the same as step 1, and confirm curated negatives are demoting the
+candidates they target with `suggest-type` (step 2), checking the
+`negative_demoted` field on the affected candidate.
 
 ## 2. Queue scored suggestions during review
 

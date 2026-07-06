@@ -98,10 +98,33 @@ mif-rh-cli calibrate [OPTIONS]
 | `--sample <SAMPLE>` | Cap the number of stamped samples used (deterministic, seed-keyed). Defaults to every stamped finding. |
 | `--seed <SEED>` | Seed for the deterministic sample selection. Default `0`. |
 | `--out <OUT>` | Where to write the calibration artifact. Defaults to `<reports-dir>/_meta/confidence-calibration.json`. |
+| `--confusions <CONFUSIONS>` | Also write the ranked confusable type pairs from the stamped samples here (`confusions-v1` JSON: per pair the gold type, the type that took top-1, the count, and representative finding ids), grounding `negative_examples` curation (MIF ADR-020). Written before the threshold sweep, so an uncalibratable corpus still gets its confusion export. Derived data: regenerate, never commit. |
 
 If no threshold meets `--target-precision`, the command fails loudly rather
 than writing an artifact. The output shape is
 [`CalibrationConfig`](mcp-server.md#confidence-calibrationjson).
+
+### Curating `negative_examples` from a confusion export
+
+Each entry in the `--confusions` output is a `(gold, top1, count, finding_ids)`
+tuple: `count` stamped findings whose true type is `gold` scored highest
+against `top1` instead. For each pair worth curating, add a short near-miss
+phrase to **`top1`'s** `negative_examples` list in its ontology pack (never
+`gold`'s), the phrase should read as genuine content about `gold`, grounded
+in the pair's `finding_ids`, while still being plausibly confusable with
+`top1`. Curation is human-only (MIF ADR-020 forbids auto-mining
+`negative_examples`); this export is the grounding input, not an automated
+curator.
+
+At runtime, a curated `negative_examples` entry demotes its type out of tier
+1 (`auto_classify_eligible`) whenever a candidate's similarity to that
+negative example meets or exceeds its similarity to the positive embedding
+document. This is a non-reordering gate: it changes a candidate's confidence
+tier, never its rank, so `negative_examples` curation does not move
+`calibrate`'s own `tier1_floor`/`tier1_margin`/`tier2_floor` numbers or the
+confusion-pair counts on a re-run. To confirm curated `negative_examples` are
+having an effect, check `negative_demoted` on the affected candidate via
+`suggest-type` (below) instead.
 
 ## suggest-type
 
