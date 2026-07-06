@@ -595,6 +595,83 @@ jq '(.ontologies[] | select(.id=="health") | .enabled) |= true' \
 
 ---
 
+## heliophysics
+
+**Version:** 0.1.0 | **Kind:** ontology
+
+**Source:** [`packs/ontologies/heliophysics/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/ontologies/heliophysics)
+
+### Purpose
+
+Provides an entity vocabulary for the space-weather domain: geomagnetic storms, solar
+flares, coronal mass ejections, solar-wind/magnetosphere coupling, the named
+geomagnetic/flare indices that measure them, geomagnetically induced currents (grid
+impact), auroral-display observations, NOAA's severity-scale alert levels, and the
+monitoring platforms that produce this data. It `extends`
+[`physical-science-base`](#physical-science-base) directly, inheriting the shared
+PACS-classification and physical-quantity primitives its own types specialize --
+mirroring `plasma-physics` and `cosmology`, the two other `physical-science-base` leaf
+packs.
+
+### Domain
+
+Space-weather phenomena, solar-terrestrial coupling, geomagnetic/flare indices, grid
+impacts, auroral observation, and space-weather severity alerting.
+
+### Entities, relationships, and traits
+
+**Namespaces (semantic):** heliophysics-phenomena (solar-terrestrial phenomenon
+classification, PACS 91.25/96.50/96.60), heliophysics-quantities (named heliophysics
+physical quantities), heliophysics-observations (observed or forecast heliophysics
+data), heliophysics-alerts (NOAA severity-scale alert levels), heliophysics-devices
+(space-weather monitoring platforms and instruments).
+
+**Entity types:** geomagnetic-storm, solar-flare-activity, coronal-mass-ejection,
+solar-terrestrial-coupling (PACS-coded classification entries), geomagnetic-index,
+solar-flare-flux, geomagnetically-induced-current (named physical-quantity
+measurements), aurora-observation (an extension of the base `observation` type),
+space-weather-alert-level (a minted NOAA G/S/R severity-scale type), and
+space-weather-observatory (an extension of the base `apparatus` type).
+
+**Key relationships:** `triggers` (a CME or solar-flare-activity event triggering a
+downstream geomagnetic storm or GIC), `measured_by` (a geomagnetic index, solar-flare
+flux, or aurora observation measured by a space-weather observatory).
+
+**Discovery patterns:** recognizes geomagnetic-storm/substorm language, solar-flare/
+X-class/M-class/active-region terminology, coronal-mass-ejection/CME/halo-CME mentions,
+solar-wind/interplanetary-magnetic-field terms, Kp/Dst/Ap-index references, GOES X-ray
+flux/flare-classification language, geomagnetically-induced-current/GIC mentions,
+aurora/northern-lights/southern-lights references, NOAA G/S/R space-weather-scale
+alerts, and named monitoring platforms (GOES, DSCOVR, ACE, INTERMAGNET).
+
+### When to bind
+
+Bind `heliophysics` when researching space-weather phenomena, solar-terrestrial
+coupling, geomagnetic or flare indices, geomagnetically induced currents in power
+grids, auroral observations, or NOAA space-weather severity alerts.
+
+### Enable
+
+```sh
+jq '(.ontologies[] | select(.id=="heliophysics") | .enabled) |= true' \
+  harness.config.json > harness.config.tmp && mv harness.config.tmp harness.config.json
+```
+
+### Constraints
+
+- Opt-in only; cataloged `core=false` -- never auto-applied to non-heliophysics topics.
+- Extends `physical-science-base` directly, which itself extends `research`; `resolve-ontology.sh` walks the full chain fail-closed -- a missing or mistyped `extends` target aborts corpus resolution.
+- Scoped to space-weather/heliophysics phenomena and observation; entity types do not apply to plasma-physics, cosmology, clinical, or engineering topics.
+
+### Goals
+
+- Provides vocabulary for space-weather phenomenon classification (geomagnetic storms, solar flares, coronal mass ejections, solar-terrestrial coupling) grounded in PACS 91.25/96.50/96.60.
+- Enables recognition of named geomagnetic and flare indices (Kp, Dst, GOES X-ray flux), geomagnetically induced currents, auroral observations, and NOAA G/S/R severity-scale alerts.
+- Resolves shared PACS-classification and physical-quantity supertypes transitively via `physical-science-base` without re-declaration.
+- Typed findings validate fail-closed against the MIF schema on binding.
+
+---
+
 ## market-research
 
 **Version:** 0.1.0 | **Kind:** ontology
@@ -730,6 +807,86 @@ jq '(.ontologies[] | select(.id=="mif-docs") | .enabled) |= true' \
 - Types every document genre the mif-docs suite emits, so a document instance in the graph resolves to the specific genre that produced it.
 - Declares the typed relationships (`realized-by`, `derived-from`, `depends-on`, `supersedes`, `relates-to`) that connect documents into a knowledge graph instead of leaving cross-document links implicit in prose.
 - Supplies four named traversal strategies (decision lineage, spec chain, Kiro traceability, ops coordination) an agent can follow to find related knowledge from a starting document.
+- Typed findings validate fail-closed against the MIF schema on binding.
+
+---
+
+## non-ionizing-radiation
+
+**Version:** 0.1.0 | **Kind:** ontology
+
+**Source:** [`packs/ontologies/non-ionizing-radiation/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/ontologies/non-ionizing-radiation)
+
+### Purpose
+
+Provides an entity vocabulary for non-ionizing electromagnetic-field (EMF) exposure:
+power-frequency fields from electrical devices, RF/microwave fields from wireless
+communications, the named field-exposure quantities that measure them (including
+specific absorption rate), regulatory/guideline exposure limits, IARC
+carcinogenicity-hazard classifications, and clinical/epidemiological findings linking
+exposure to a health outcome. It `extends` both
+[`physical-science-base`](#physical-science-base) (for the field-quantity physics) and
+[`clinical-health-base`](#clinical-health-base) (for the health-outcome/clinical-
+observation shape) directly -- the domain genuinely spans both, the same
+multi-parent-`extends` pattern `regenerative-agriculture-research` and `observability`
+already use.
+
+### Domain
+
+Non-ionizing EMF exposure dosimetry (power-frequency and RF/microwave), regulatory
+exposure limits, IARC carcinogenicity classification, and exposure/health-outcome
+findings.
+
+### Entities, relationships, and traits
+
+**Namespaces (semantic):** emf-sources (electrical and wireless EMF exposure-source
+apparatus), emf-quantities (named power-frequency and RF field-exposure physical
+quantities), emf-limits (regulatory/guideline EMF exposure limits and carcinogenicity
+classifications). **Namespaces (episodic):** emf-health-findings (clinical/
+epidemiological findings on EMF exposure and health outcomes).
+
+**Entity types:** electrical-device, wireless-transmitter (extensions of the base
+`apparatus` type), power-frequency-field-strength, rf-field-exposure,
+specific-absorption-rate (extensions of the base `physical-quantity` type),
+emf-exposure-limit, iarc-carcinogen-classification (minted -- not PACS-coded or
+ICD-11-coded), and emf-exposure-health-finding (an extension of `clinical-health-base`'s
+`clinical-observation` type).
+
+**Key relationships:** `exposes` (an electrical device or wireless transmitter
+producing a power-frequency, RF, or SAR exposure quantity), `bounded_by` (a measured
+exposure quantity compared against a named regulatory exposure limit).
+
+**Discovery patterns:** recognizes power-line/transmission-line/transformer/substation/
+appliance language paired with EMF/field mentions, cell-tower/base-station/WiFi/
+Bluetooth/mobile/radar terminology, power-frequency/50 Hz/60 Hz/ELF-field references,
+RF-exposure/power-density/electric-field-strength language, specific-absorption-rate/
+SAR mentions, ICNIRP/IEEE C95.1/FCC-MPE/reference-level terminology, IARC/Group-2B
+references, and EMF-exposure-and-health-outcome association language.
+
+### When to bind
+
+Bind `non-ionizing-radiation` when researching power-frequency or RF/microwave EMF
+exposure sources, regulatory or guideline exposure limits, IARC carcinogenicity
+classifications, or clinical/epidemiological EMF exposure-health-outcome findings.
+
+### Enable
+
+```sh
+jq '(.ontologies[] | select(.id=="non-ionizing-radiation") | .enabled) |= true' \
+  harness.config.json > harness.config.tmp && mv harness.config.tmp harness.config.json
+```
+
+### Constraints
+
+- Opt-in only; cataloged `core=false` -- never auto-applied to non-EMF topics.
+- Extends both `physical-science-base` and `clinical-health-base`, both of which themselves extend `research`; `resolve-ontology.sh` walks the full chain fail-closed -- a missing or mistyped `extends` target aborts corpus resolution.
+- Scoped to non-ionizing EMF exposure dosimetry and its health associations; entity types do not apply to ionizing-radiation, plasma-physics, or unrelated clinical topics.
+
+### Goals
+
+- Provides vocabulary for non-ionizing EMF exposure-source and exposure-quantity classification (power-frequency and RF/microwave, including SAR) grounded in ICNIRP 2010/2020 and IEEE C95.1-2019.
+- Enables recognition of regulatory/guideline exposure limits (ICNIRP, IEEE, FCC) and IARC carcinogenicity-hazard classifications.
+- Resolves shared physical-quantity and clinical-observation supertypes transitively via its two extended bases without re-declaration.
 - Typed findings validate fail-closed against the MIF schema on binding.
 
 ---
