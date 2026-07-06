@@ -19,7 +19,7 @@ repository. `scripts/resolve-ontology.sh` and `scripts/ontology-review.sh`
 delegate to it; it is hard-required, with no bash fallback. Install it with
 `scripts/fetch-engine.sh` (attested, fail-closed), put a `mif-rh-cli` on
 `PATH`, or set `MIF_RH_CLI` to an explicit binary path. Version floor:
-`0.3.1`. Flags below are the binary's own `--help` output.
+`0.4.0`. Flags below are the binary's own `--help` output.
 
 For the read-only MCP server that exposes a subset of this engine's data to
 Claude Code sessions, see [mcp-server.md](mcp-server.md). For the operator
