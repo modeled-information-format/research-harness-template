@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.1] - 2026-07-06
+
+### Added
+
+- Documented `negative_examples` scoring and the `calibrate --confusions`
+  confusion-matrix export, both shipped in mif-rh engine v0.4.0: a new
+  curation-workflow section in the engine-cli reference, a new step in
+  the classification-engine-loop how-to, a real explanation of the
+  non-reordering demotion gate in the classification-engine explanation
+  page, and the `negative_demoted`/`negatives_active` fields in the
+  mcp-server reference. Bumps the pinned engine version to 0.4.0 in
+  `scripts/fetch-engine.sh` and `docs/reference/dependencies.md`.
+  Closes #268.
+
 ## [0.10.0] - 2026-07-06
 
 ### Added

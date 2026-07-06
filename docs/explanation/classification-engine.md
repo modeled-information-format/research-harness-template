@@ -112,6 +112,35 @@ runs into expansion candidates that `scripts/author-ontology.sh
 path from a suggestion to a durable `entity_type` stamp is the same typing
 edit and resolve pass that a manually classified finding goes through.
 
+## How `negative_examples` shape the tier boundary
+
+`aliases` and `exemplars` both strengthen a type's *positive* signal: the
+engine concatenates them into that type's embedding document, so a finding
+resembling any of them scores that type higher. `negative_examples` works
+the opposite way, and does not touch scoring at all. A curated
+`negative_examples` entry is never concatenated into any embedding document;
+instead, at suggestion time, the engine separately embeds each of a
+candidate type's curated negative examples and compares them to the query.
+If the query's similarity to any curated negative example meets or exceeds
+its similarity to the type's positive embedding document, that candidate is
+barred from `auto_classify_eligible`, regardless of its raw score.
+
+This is a demotion gate, not a score penalty: it never reorders candidates
+relative to one another, only caps the confidence tier a demoted candidate
+can reach. A type with no curated `negative_examples` is never demoted by
+this mechanism. The purpose is narrower than "make the model better",
+specifically countering near-miss confusions a corpus's own confusion export
+(`mif-rh-cli calibrate --confusions`) has already surfaced: real findings
+whose true type lost to a specific, identifiable neighbor type at the
+scoring layer. Because the two mechanisms operate on different data
+(`calibrate`'s own tier1_floor/tier1_margin/tier2_floor thresholds come from
+raw pre-demotion scores), curating `negative_examples` does not move those
+calibrated numbers on a re-run; it only changes which candidates clear the
+tier they compute. MIF ADR-020 requires `negative_examples` to be
+human-curated from a real confusion export, never auto-mined, precisely
+because a badly chosen negative example demotes silently and can suppress a
+type that should legitimately win.
+
 ## Why the MCP surfaces stay read-only
 
 The engine exposes `search`, `suggest_type` (`suggest-type` at the CLI),
