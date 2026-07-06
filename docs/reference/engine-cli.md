@@ -98,7 +98,7 @@ mif-rh-cli calibrate [OPTIONS]
 | `--sample <SAMPLE>` | Cap the number of stamped samples used (deterministic, seed-keyed). Defaults to every stamped finding. |
 | `--seed <SEED>` | Seed for the deterministic sample selection. Default `0`. |
 | `--out <OUT>` | Where to write the calibration artifact. Defaults to `<reports-dir>/_meta/confidence-calibration.json`. |
-| `--confusions <CONFUSIONS>` | Also write the ranked confusable type pairs from the stamped samples here (`confusions-v1` JSON: per pair the gold type, the type that took top-1, the count, and representative finding ids), grounding `negative_examples` curation (MIF ADR-020). Written before the threshold sweep, so an uncalibratable corpus still gets its confusion export. Derived data: regenerate, never commit. |
+| `--confusions <CONFUSIONS>` | Also write the ranked confusable type pairs from the stamped samples here (`confusions-v1` JSON: per pair the gold type, the type that took top-1, the count, and representative finding IDs), grounding `negative_examples` curation (MIF ADR-020). Written before the threshold sweep, so an uncalibratable corpus still gets its confusion export. Derived data: regenerate, never commit. |
 
 If no threshold meets `--target-precision`, the command fails loudly rather
 than writing an artifact. The output shape is

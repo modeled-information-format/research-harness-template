@@ -74,13 +74,15 @@ tells you to enrich entity types; do not lower
 mif-rh-cli calibrate --confusions reports/_meta/confusions.json
 ```
 
-Alongside the calibration artifact, this writes a ranked list of
-`(gold, top1, count, finding_ids)` confusion pairs: stamped findings whose
-true type is `gold` but scored highest against `top1` instead. For a pair
-worth curating, add a short near-miss phrase to **`top1`'s**
-`negative_examples` list in its ontology pack (never `gold`'s), grounded in
-the pair's `finding_ids`. Curation is human-only; MIF ADR-020 forbids
-auto-mining `negative_examples` from this export.
+This writes a ranked list of `(gold, top1, count, finding_ids)` confusion
+pairs: stamped findings whose true type is `gold` but scored highest
+against `top1` instead. The confusion export is written before the
+threshold sweep, so it is produced even when calibration itself fails to
+find a threshold meeting `--target-precision` and writes no calibration
+artifact. For a pair worth curating, add a short near-miss phrase to
+**`top1`'s** `negative_examples` list in its ontology pack (never
+`gold`'s), grounded in the pair's `finding_ids`. Curation is human-only;
+MIF ADR-020 forbids auto-mining `negative_examples` from this export.
 
 A curated `negative_examples` entry demotes its type out of tier 1
 whenever a candidate's similarity to that negative example meets or exceeds
