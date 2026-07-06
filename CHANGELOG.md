@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-07-06
+
+### Added
+
+- Registered two new domain ontologies published to the canonical registry
+  since the last sync: `heliophysics` and `non-ionizing-radiation` (both
+  enabled by default, per `sync-registry-ontologies.sh`'s discovery pass).
+
+### Changed
+
+- Re-vendored every enabled domain ontology pack against the current
+  `mif-spec.dev/ontologies` registry index (a fresh `ontologies.lock.json`
+  is instance-derived and gitignored in the template, so nothing else here
+  is tracked).
+
 ## [0.9.0] - 2026-07-05
 
 ### Added
