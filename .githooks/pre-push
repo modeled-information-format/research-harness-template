@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# pre-push — catch the ADR-0010 change-driven versioning gate locally before
+# CI does (scripts/check-version-bump.sh, the `version-bump` CI job).
+#
+# Installed automatically by `npm install`'s postinstall via
+# `git config core.hooksPath .githooks`. Fails closed on a real version-bump
+# violation; skips (does not block the push) when the check itself cannot
+# run, since CI remains the authoritative, always-enforced gate.
+set -uo pipefail
+
+ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
+cd "$ROOT" || exit 0
+
+[ -f scripts/check-version-bump.sh ] || exit 0
+
+git fetch origin main --quiet 2>/dev/null || true
+git rev-parse --verify origin/main >/dev/null 2>&1 || exit 0
+
+if ! command -v mif-rh-cli >/dev/null 2>&1 && [ ! -x bin/mif-rh-cli ] && [ -z "${MIF_RH_CLI:-}" ]; then
+  echo "pre-push: mif-rh-cli engine not found locally, fetching it (scripts/fetch-engine.sh)..." >&2
+  bash scripts/fetch-engine.sh >/dev/null 2>&1 || true
+fi
+
+# scripts/check-version-bump.sh (via scripts/lib/engine.sh's engine_bin) exits
+# 5 when the engine itself is the problem (missing, non-executable, no
+# version, or too old) — including a stale post-fetch state or a broken
+# MIF_RH_CLI override. That is "the check could not run," not a real
+# versioning violation, so it must not block the push the way exit 1 does.
+bash scripts/check-version-bump.sh origin/main
+status=$?
+
+if [ "$status" -eq 0 ]; then
+  exit 0
+elif [ "$status" -eq 5 ]; then
+  echo "pre-push: mif-rh-cli engine unavailable, skipping the local version-bump check (CI will still enforce it)" >&2
+  exit 0
+else
+  echo "" >&2
+  echo "pre-push: change-driven versioning check failed (ADR-0010) — see output above." >&2
+  echo "  Fix: bump the changed component's own version (SKILL.md version: / plugin.json .version)," >&2
+  echo "  and/or run 'bash scripts/bump-version.sh patch' to move the release pointer." >&2
+  exit 1
+fi

@@ -19,6 +19,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `references/negative-examples-curation.md` and decision-tree entry
   codifying the corpus-regen/baseline/partition/draft steps as executable
   guidance for spinning up parallel drafting agents (#271).
+- **Local `pre-push` git hook**: enforces the ADR-0010 change-driven
+  versioning gate (`scripts/check-version-bump.sh`) before a push leaves
+  your machine, not just in CI. Installed automatically via
+  `git config core.hooksPath .githooks`, wired through `npm install`'s
+  `postinstall`.
 
 ## [0.11.0] - 2026-07-07
 
