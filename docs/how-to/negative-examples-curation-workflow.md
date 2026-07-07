@@ -77,10 +77,12 @@ step 7 — run it before any curation exists in the packs this corpus targets.
 Confirm the clean starting state:
 
 ```bash
-grep -rc negative_examples packs/ontologies/<pack>/*.ontology.yaml | grep -v ':0$'
+grep -rc negative_examples packs/ontologies/*/*.ontology.yaml | grep -v ':0$'
 ```
 
-An empty result confirms no pack in scope carries `negative_examples` yet.
+An empty result confirms no vendored ontology pack carries `negative_examples`
+yet. Narrow the glob to the specific packs this corpus targets if only some
+of the vendored packs are in scope.
 
 ## 3. Partition the ranked confusion pairs across parallel drafting agents
 
@@ -93,22 +95,30 @@ jq '.[0]' reports/_meta/confusions-060-before.json
 
 Group the pairs by which corpus topic the pairs' `gold` types live in, so
 each drafting agent works one coherent topic's real finding content instead
-of a random cross-section of unrelated ones. For example, if `finding_ids`
-embed the topic (a `reports/<topic>/findings/...` path, or a
-topic-qualified identifier):
+of a random cross-section of unrelated ones. Extract the topic as an actual
+path segment, not a loose substring match — a blind `grep -oE` over hyphenated
+tokens picks up spurious matches from every path component (`reports`,
+`findings`, the finding's own filename), not just the topic. For the standard
+`reports/<topic>/findings/...` shape:
 
 ```bash
-for topic in $(jq -r '.[].finding_ids[0]' reports/_meta/confusions-060-before.json \
-    | grep -oE '(corpus-)?[a-z0-9-]+' | sort -u); do
-  jq -c --arg t "$topic" '[.[] | select(.finding_ids[0] | test($t))]' \
+for topic in $(jq -r '.[].finding_ids[0]
+    | select(test("reports/[^/]+/findings/"))
+    | capture("reports/(?<topic>[^/]+)/findings/").topic' \
+    reports/_meta/confusions-060-before.json | sort -u); do
+  jq -c --arg t "$topic" \
+    '[.[] | select(.finding_ids[0] | test("reports/" + $t + "/findings/"))]' \
     reports/_meta/confusions-060-before.json > "batch-${topic}.json"
 done
 ```
 
-Adjust the extraction pattern to your corpus's actual `finding_ids` shape —
-the point is one batch file per topic, sized so each drafting agent gets a
-manageable, topically coherent slice. The concrete run above split 234
-pairs across 6 topics, one drafting agent per topic.
+If this corpus keys `finding_ids` a different way (e.g. a topic-qualified
+URN instead of a `reports/` path), adjust the `capture` and `select` patterns
+to that shape — the point is an exact topic-segment match, not a substring
+scan, so the batch files stay one-per-topic. One batch file per topic, sized
+so each drafting agent gets a manageable, topically coherent slice. The
+concrete run above split 234 pairs across 6 topics, one drafting agent per
+topic.
 
 ## 4. Draft negative_examples candidates on the confused (top1) type
 

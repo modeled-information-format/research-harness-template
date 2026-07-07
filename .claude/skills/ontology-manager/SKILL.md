@@ -61,11 +61,11 @@ User wants to...
 |   Use yq commands documented below.
 |
 +-> Curate negative_examples at scale from a confusion export
-    Read references/negative-examples-curation.md (corpus-regen,
-    baseline calibrate, and partition-and-draft steps for spinning up
-    parallel drafting agents). Human spot-check and curation into the
-    YAML are never delegated to an agent — MIF ADR-020 requires
-    negative_examples be human-curated, never auto-mined.
+|   Read references/negative-examples-curation.md (corpus-regen,
+|   baseline calibrate, and partition-and-draft steps for spinning up
+|   parallel drafting agents). Human spot-check and curation into the
+|   YAML are never delegated to an agent — MIF ADR-020 requires
+|   negative_examples be human-curated, never auto-mined.
 ```
 
 ## Scripts

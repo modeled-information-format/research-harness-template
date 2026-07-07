@@ -26,9 +26,15 @@ mif-rh-cli calibrate --target-precision 0.95 \
 ```bash
 jq '.[0]' reports/_meta/confusions-060-before.json   # inspect this corpus's finding_ids shape first
 
-for topic in $(jq -r '.[].finding_ids[0]' reports/_meta/confusions-060-before.json \
-    | grep -oE '(corpus-)?[a-z0-9-]+' | sort -u); do
-  jq -c --arg t "$topic" '[.[] | select(.finding_ids[0] | test($t))]' \
+# Extract the topic as an exact path segment, not a loose substring match —
+# adjust the capture/select patterns if this corpus keys finding_ids a
+# different way (e.g. a topic-qualified URN instead of a reports/ path).
+for topic in $(jq -r '.[].finding_ids[0]
+    | select(test("reports/[^/]+/findings/"))
+    | capture("reports/(?<topic>[^/]+)/findings/").topic' \
+    reports/_meta/confusions-060-before.json | sort -u); do
+  jq -c --arg t "$topic" \
+    '[.[] | select(.finding_ids[0] | test("reports/" + $t + "/findings/"))]' \
     reports/_meta/confusions-060-before.json > "batch-${topic}.json"
 done
 ```
