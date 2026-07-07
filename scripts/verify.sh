@@ -991,15 +991,26 @@ gate_m11() {
     bad "falsified finding mis-counted (technical total=$ftot done=$fdone; expected 1/0)"
   fi
 
-  # 11j (fail-safe — THE cost guard). A broken ajv toolchain must make reconcile
-  # ABORT (non-zero), not read every finding as invalid and emit a re-run-everything
-  # plan. Shim a failing `ajv` onto PATH (jq/find still work) and assert reconcile
-  # exits non-zero and prints no "need work" plan.
-  local bad_out bad_rc
-  mkdir -p "$T/badbin"; printf '#!/bin/sh\nexit 1\n' > "$T/badbin/ajv"; chmod +x "$T/badbin/ajv"
-  bad_out=$(PATH="$T/badbin:$PATH" scripts/reconcile-session.sh "$RD2" 2>/dev/null); bad_rc=$?
-  if [ "$bad_rc" -ne 0 ] && ! printf '%s' "$bad_out" | grep -q 'need work'; then
-    ok "reconcile fails safe on a broken ajv toolchain (aborts; never emits a re-run-everything plan)"
+  # 11j (fail-safe — THE cost guard). A broken validation environment must make
+  # reconcile ABORT (non-zero), not read every finding as invalid and emit a
+  # re-run-everything plan. Since research-harness-template#276 (Story #287),
+  # reconcile-session.sh delegates to the mif-rh engine, which has no external
+  # ajv/jq toolchain to shim broken — instead it proves the environment itself
+  # by validating a known-good sample finding before trusting any real result
+  # (mif-rh's ReconcileEnvironmentBroken). Corrupt an ISOLATED COPY of that
+  # sample (never the committed fixture) and call the engine directly with it.
+  local bad_out bad_rc BAD_ENGINE
+  # shellcheck source=scripts/lib/engine.sh
+  . scripts/lib/engine.sh
+  BAD_ENGINE="$(engine_bin "$(pwd)")" || exit 5
+  jq 'del(.extensions)' schemas/samples/finding.sample.json > "$T/broken-sample.json"
+  bad_out=$("$BAD_ENGINE" harness reconcile-session "$RD2" \
+    --schema "schemas/findings.schema.json" \
+    --ref "schemas/mif/mif.schema.json" \
+    --ref "schemas/mif/definitions/entity-reference.schema.json" \
+    --sample "$T/broken-sample.json" 2>/dev/null); bad_rc=$?
+  if [ "$bad_rc" -eq 3 ] && ! printf '%s' "$bad_out" | grep -qE 'nothing to do|need work'; then
+    ok "reconcile fails safe on a broken validation environment (aborts rc=3; never emits a re-run-everything plan)"
   else
     bad "reconcile did NOT fail safe (rc=$bad_rc; out: ${bad_out//$'\n'/ | })"
   fi
