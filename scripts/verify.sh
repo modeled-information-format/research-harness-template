@@ -1410,18 +1410,32 @@ JSON
     bad "scale build wrong (concept nodes $bigcount of $n, or non-deterministic)"
   fi
 
-  # 13k. The MIF-native STRUCTURAL relationship set is now harness-owned in
-  #      validate-concordance.sh (moved out of the vendored mif-generic contract). Pin it:
-  #      silently dropping a name would stop treating that link as structural (and start
-  #      from/to-enforcing it, or reject it); adding one would over-broaden the skip.
-  local expected_sc actual_sc
-  expected_sc='["contradicts","depends-on","derived-from","part-of","refines","relates-to","supersedes","supports","updates"]'
-  actual_sc=$(grep -E "^STRUCTURAL_CORE=" scripts/validate-concordance.sh | sed "s/^STRUCTURAL_CORE=//; s/^'//; s/'$//" | jq -cS 'sort' 2>/dev/null)
-  if [ "$actual_sc" = "$expected_sc" ]; then
-    ok "STRUCTURAL_CORE pinned to the 9 MIF-native structural relationships (harness-owned, not in the vendored contract)"
+  # 13k. The MIF-native STRUCTURAL relationship set is harness-owned, not in the
+  #      vendored mif-generic contract. Since research-harness-template#276 (Story #287)
+  #      it lives in the mif-rh engine (a separate repo), so this gate can no longer grep
+  #      a pinned literal out of validate-concordance.sh's own source — it proves the same
+  #      guarantee behaviorally instead: two MIF-core node types with no ontology bound (so
+  #      the ONLY way an edge between them can pass is via the STRUCTURAL skip) must PASS
+  #      for each of the 9 pinned names (silently dropping one would start from/to-enforcing
+  #      or rejecting that link) and FAIL for an unlisted made-up name (over-broadening).
+  local T13k; T13k="$(mktemp -d)"
+  echo '{"ontologies":[]}' > "$T13k/cat.json"
+  echo '{"topics":[]}' > "$T13k/cfg.json"
+  local sc_names="contradicts depends-on derived-from part-of refines relates-to supersedes supports updates"
+  local sc_all_ok=1 sc_name
+  for sc_name in $sc_names; do
+    echo "{\"nodes\":[{\"id\":\"n1\",\"entityType\":\"Concept\",\"topics\":[]},{\"id\":\"n2\",\"entityType\":\"File\",\"topics\":[]}],\"edges\":[{\"via\":\"relationship\",\"type\":\"$sc_name\",\"source\":\"n1\",\"target\":\"n2\"}]}" > "$T13k/sc.json"
+    scripts/validate-concordance.sh "$T13k/sc.json" --config "$T13k/cfg.json" --catalog "$T13k/cat.json" >/dev/null 2>&1 || sc_all_ok=0
+  done
+  echo '{"nodes":[{"id":"n1","entityType":"Concept","topics":[]},{"id":"n2","entityType":"File","topics":[]}],"edges":[{"via":"relationship","type":"not-a-structural-relation","source":"n1","target":"n2"}]}' > "$T13k/sc-bad.json"
+  scripts/validate-concordance.sh "$T13k/sc-bad.json" --config "$T13k/cfg.json" --catalog "$T13k/cat.json" >/dev/null 2>&1
+  local sc_bad_rc=$?
+  if [ "$sc_all_ok" = 1 ] && [ "$sc_bad_rc" != 0 ]; then
+    ok "STRUCTURAL_CORE: all 9 pinned MIF-native relationships skip domain-checking; an unlisted name does not"
   else
-    bad "STRUCTURAL_CORE drifted from the pinned MIF-native set: $actual_sc"
+    bad "STRUCTURAL_CORE behavior wrong (all 9 pinned passed=$sc_all_ok; unlisted-name rc=$sc_bad_rc, want nonzero)"
   fi
+  rm -rf "$T13k"
 
   rm -rf "$T"
 }

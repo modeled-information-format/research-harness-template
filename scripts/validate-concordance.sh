@@ -7,10 +7,16 @@
 # edges (via:entity) are structural and not domain-checked.
 #
 # Usage: validate-concordance.sh <concordance.json> [--config <p>] [--catalog <p>]
+#
+# Since research-harness-template#276 (Story #287, Category B cutover), the
+# ontology extends-chain resolution, subtype_of transitive closure, and the
+# node/edge conformance pass delegate to the mif-rh engine (mif-rh-cli), hard
+# required: install it with scripts/fetch-engine.sh, put mif-rh-cli on PATH,
+# or set MIF_RH_CLI. The concordance-file existence check (pure bash, never
+# used jq) stays as-is.
 
 set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-for t in yq jq; do command -v "$t" >/dev/null 2>&1 || { echo "validate-concordance: '$t' not found" >&2; exit 5; }; done
 GRAPH=""; CONFIG="$ROOT/harness.config.json"; CATALOG="$ROOT/.claude/enabled-packs.json"
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -20,153 +26,9 @@ while [ $# -gt 0 ]; do
   esac
 done
 [ -n "$GRAPH" ] && [ -f "$GRAPH" ] || { echo "validate-concordance: concordance not found: ${GRAPH:-<none>}" >&2; exit 2; }
-# Fail-safe: without the catalog OR the config we cannot determine bound ontologies — abort,
-# never validate with an empty/unknowable binding set (which could pass a domain graph vacuously).
-[ -f "$CATALOG" ] || { echo "validate-concordance: catalog missing ($CATALOG) — run sync-packs.sh; refusing to validate" >&2; exit 3; }
-[ -f "$CONFIG" ]  || { echo "validate-concordance: config missing ($CONFIG) — topic bindings unknowable; refusing to validate" >&2; exit 3; }
-# The config must be valid JSON with a .topics array. Otherwise the per-topic loop would
-# (with jq errors silenced) read NO topics and validate against core-only — a vacuous
-# pass with unknowable bindings. Fail closed instead.
-jq -e '.topics | type == "array"' "$CONFIG" >/dev/null 2>&1 || { echo "validate-concordance: config ($CONFIG) is not valid JSON with a .topics array — refusing to validate (fail closed)" >&2; exit 3; }
 
-src_of() { jq -r --arg id "$1" '.ontologies[]? | select(.id==$id) | .source' "$CATALOG" | head -1; }
-core_ids=$(jq -r '.ontologies[]? | select(.core) | .id' "$CATALOG")
+# shellcheck source=scripts/lib/engine.sh
+. "$ROOT/scripts/lib/engine.sh"
+ENGINE="$(engine_bin "$ROOT")" || exit 5
 
-# Transitive CATALOGED ancestors of an ontology id via .ontology.extends (the layered
-# spine). Mirrors resolve-ontology.sh so both agree on the bound set. Fail CLOSED: a yq
-# error or an `extends` target that is named but NOT cataloged aborts (exit 4).
-ancestors_of() {
-  local start="$1" worklist="$1" seen=" " cur csrc parents p out=""
-  while [ -n "$worklist" ]; do
-    cur="${worklist%% *}"; worklist="${worklist#"$cur"}"; worklist="${worklist# }"
-    case "$seen" in *" $cur "*) continue ;; esac
-    seen="$seen$cur "
-    csrc="$(src_of "$cur")"; [ -z "$csrc" ] && continue
-    if ! parents=$(yq -r '.ontology.extends[]?' "$ROOT/$csrc" 2>/dev/null); then
-      echo "validate-concordance: yq failed reading extends of '$cur' ($csrc) — aborting (fail closed)" >&2; exit 4
-    fi
-    for p in $parents; do
-      [ -z "$p" ] && continue
-      if [ -z "$(src_of "$p")" ]; then
-        echo "validate-concordance: ontology '$cur' extends '$p' which is not cataloged — fail (run sync-packs.sh)" >&2; exit 4
-      fi
-      case "$seen" in *" $p "*) ;; *) worklist="$worklist $p"; out="$out $p" ;; esac
-    done
-  done
-  printf '%s' "$out"
-}
-
-# Gather every relevant ontology's declared types + relationships into one JSON doc,
-# and a topic -> allowed-ontology-ids map. Reading the YAML with yq (not in jq).
-# Per-topic allowed ontology id set = core ∪ the topic's bound ids ∪ each bound id's
-# transitive cataloged ancestors (the layered spine: a topic binding software-engineering
-# also resolves engineering-base's declared types). Ancestor expansion fails closed.
-ALLOWED='{}'; all_acc="$core_ids"
-for tp in $(jq -r '.topics[].id' "$CONFIG" 2>/dev/null); do
-  tids="$core_ids"
-  for b in $(jq -r --arg t "$tp" '.topics[]? | select(.id==$t) | .ontologies[]?' "$CONFIG" 2>/dev/null | sed 's/@.*//' | sed '/^$/d'); do
-    # A bound id MUST be cataloged — fail closed on a binding/config mistake rather than
-    # silently dropping it and surfacing a confusing type/relationship violation later.
-    if [ -z "$(src_of "$b")" ]; then
-      echo "validate-concordance: topic '$tp' binds '$b' which is not cataloged — fail (run sync-packs.sh)" >&2
-      exit 4
-    fi
-    anc=$(ancestors_of "$b") || exit 4
-    tids="$tids $b $anc"
-  done
-  all_acc="$all_acc $tids"
-  ids=$(printf '%s\n' $tids | sed '/^$/d' | sort -u | jq -R . | jq -cs .)
-  ALLOWED=$(jq -c --arg t "$tp" --argjson ids "$ids" '. + {($t):$ids}' <<<"$ALLOWED")
-done
-all_ids=$(printf '%s\n' $all_acc | sed '/^$/d' | sort -u)
-# Load every relevant ontology's declared types + relationships into one doc.
-ONTO='{}'
-for oid in $all_ids; do
-  src="$(src_of "$oid")"; [ -z "$src" ] && continue
-  # yq only converts yaml->json; jq extracts the shape (robust against yq construction quirks).
-  if ! ofull=$(yq -o=json '.' "$ROOT/$src" 2>/dev/null); then
-    echo "validate-concordance: yq failed reading ontology '$oid' ($src) — aborting (fail closed)" >&2; exit 4
-  fi
-  od=$(jq -c '{types:[.entity_types[]?.name], rels:(.relationships // {}),
-              sub:[.entity_types[]? | select(.subtype_of) | {name:.name, parents:.subtype_of}]}' <<<"$ofull")
-  ONTO=$(jq -c --arg id "$oid" --argjson d "$od" '. + {($id):$d}' <<<"$ONTO")
-done
-# Transitive supertype closure (SPEC §8d entity-type subsumption): map each declared
-# type to itself + all its `subtype_of` ancestors, so a subtype node satisfies a
-# relationship endpoint written against any of its supertypes (substitutability). A
-# subtype_of parent that resolves to no declared type is caught by gate_m22.
-if ! SUP=$(jq -cn --argjson onto "$ONTO" '
-  ( [ $onto[] | .sub[]? | {key:.name, value:.parents} ] | from_entries ) as $P
-  # Cycle-safe transitive supertype closure. `$seen` is the current ancestor path; a
-  # node revisited on its own path is a subtype_of cycle (A -> B -> A) — error out so
-  # user-authored data cannot drive unbounded recursion / a jq stack failure. A diamond
-  # (shared ancestor via two paths) is NOT a cycle and is handled correctly.
-  | def supers($t; $seen):
-      if ($seen | index($t)) then error("subtype_of cycle involving \($t)")
-      else [$t] + ( ($P[$t] // []) | map(supers(.; $seen + [$t])) | add // [] ) | unique
-      end;
-  ( [ $onto[] | .types[]? ] | unique ) as $alltypes
-  | reduce $alltypes[] as $t ({}; . + {($t): supers($t; [])})'); then
-  echo "validate-concordance: subtype_of graph contains a cycle — aborting (fail closed)" >&2
-  exit 4
-fi
-# MIF core vocabulary, always valid: the built-in entity types (the entity-reference
-# enum, e.g. Concept/Person/Organization/Technology/File) and the MIF-native STRUCTURAL
-# relationship types — domain-agnostic links treated as structural (no from/to check).
-# These names are MIF spec vocabulary (schemas/mif/mif.schema.json names derived-from /
-# supersedes / relates-to; ontology.context.jsonld defines Supersedes). The set is owned
-# HERE by the harness, NOT injected into the vendored mif-generic ontology contract, and
-# is unioned with any relationship a CORE ontology itself declares (e.g. mif-base) so it
-# stays exactly what it was. Domain-ontology relationships are NOT in this set, so they
-# still get from/to-enforced.
-BUILTIN=$(jq -c '[.. | .enum? | select(.) | .[]] | map(select(type=="string" and test("^[A-Z]"))) | unique' \
-            "$ROOT/schemas/mif/definitions/entity-reference.schema.json" 2>/dev/null); [ -z "$BUILTIN" ] && BUILTIN='[]'
-core_arr=$(printf '%s\n' $core_ids | sed '/^$/d' | jq -R . | jq -cs .)
-STRUCTURAL_CORE='["supports","contradicts","derived-from","relates-to","supersedes","refines","part-of","depends-on","updates"]'
-STRUCTURAL=$(jq -cn --argjson base "$STRUCTURAL_CORE" --argjson onto "$ONTO" --argjson core "$core_arr" \
-              '($base + [ $core[] | ($onto[.].rels // {} | keys[]) ]) | unique')
-
-# All conformance logic in one jq (deterministic, portable).
-if ! viol=$(jq -rn --slurpfile W "$GRAPH" --argjson onto "$ONTO" --argjson allowed "$ALLOWED" \
-              --argjson builtin "$BUILTIN" --argjson structural "$STRUCTURAL" --argjson sup "$SUP" '
-  $W[0] as $G
-  | ($G.nodes | map({key:.id, value:.}) | from_entries) as $byid
-  # A node type satisfies a relationship domain if the type, OR any of its transitive
-  # supertypes (subtype_of), is in the domain list (Liskov substitutability).
-  | def hits($et; $domain): ( $sup[$et] // [$et] ) as $u | any($u[]; . as $x | ($domain // []) | index($x));
-    def allowed_ids($topics): [ ($topics // [])[] | $allowed[.] // [] ] | add // [] | unique;
-    ( [ $G.nodes[]
-        | select(.entityType != null and (.external != true))
-        | .entityType as $et
-        | select( ( ($builtin | index($et)) or any(allowed_ids(.topics)[]; ($onto[.].types // []) | index($et)) ) | not )
-        | "node \(.id) (topic: \((.topics // []) | join(","))): entityType \($et) not in MIF core nor declared by a bound ontology — fix: /ontology-review --topic \((.topics // [])[0] // "<id>") --enrich" ] )
-  + ( [ $G.edges[] | select(.via == "relationship")
-        | . as $e
-        | ($byid[$e.source] // {}) as $s
-        | ($byid[$e.target] // {}) as $t
-        | if ($structural | index($e.type)) then empty            # MIF-native structural link: no domain check
-          else
-            ( [ allowed_ids($s.topics // [])[] | ($onto[.].rels[$e.type] // empty) ] ) as $rels
-            | if ($rels | length) == 0
-              then "edge \($e.source) ->\($e.type)-> \($e.target) (topic: \(($s.topics // []) | join(","))): relationship type not MIF-core nor declared by a bound ontology — fix: /ontology-review --topic \(($s.topics // [])[0] // "<id>") --enrich"
-              elif any($rels[]; hits($s.entityType; .from) and hits($t.entityType; .to))
-              then empty
-              else "edge \($e.source) ->\($e.type)-> \($e.target): from/to domain violation (\($s.entityType // "null") -> \($t.entityType // "null"))"
-              end
-          end ] )
-  | .[]'); then
-  echo "validate-concordance: conformance check errored (jq) — aborting (fail closed)" >&2; exit 4
-fi
-
-if [ -z "$viol" ]; then
-  echo "validate-concordance: conformant ($(jq '.nodes|length' "$GRAPH") nodes, $(jq '.edges|length' "$GRAPH") edges)"
-  exit 0
-fi
-printf '%s\n' "$viol" >&2
-echo "validate-concordance: $(printf '%s\n' "$viol" | grep -c .) conformance violation(s) — fail" >&2
-# Only suggest /ontology-review when a violation is an undeclared TYPE (a binding gap the
-# tool can fix). A from/to domain violation is a data/modeling issue — no footer for it.
-if printf '%s\n' "$viol" | grep -q "/ontology-review"; then
-  echo "validate-concordance: bind/enrich the named topic(s) with /ontology-review --topic <id> --enrich, then rebuild." >&2
-fi
-exit 1
+exec "$ENGINE" harness validate-concordance "$GRAPH" --config "$CONFIG" --catalog "$CATALOG" --root "$ROOT"

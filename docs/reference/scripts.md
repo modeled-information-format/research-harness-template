@@ -41,7 +41,7 @@ cross-topic concordance.
 | `scripts/assert-graph-mif.sh` | Acceptance gate: asserts all node and edge IDs are `urn:mif:` URNs and that at least one typed relationship edge exists. | `mif-rh-cli` (engine) |
 | `scripts/build-graph-viz.sh` | Renders the knowledge graph as a standalone, dependency-free HTML file. | `jq` |
 | `scripts/build-concordance.sh` | Builds the cross-topic ontological spine (`reports/concordance.json`) by merging all topics' findings. Deterministic and idempotent. | `jq` |
-| `scripts/validate-concordance.sh` | Fail-closed ontology conformance check for the concordance: asserts every node `entityType` and relationship type is declared by the bound ontology and that `from`/`to` domains are consistent. | `jq`, `yq` |
+| `scripts/validate-concordance.sh` | Fail-closed ontology conformance check for the concordance: asserts every node `entityType` and relationship type is declared by the bound ontology and that `from`/`to` domains are consistent. | `mif-rh-cli` (engine) |
 | `scripts/build-index.sh` | Incremental maintenance of `research-index.json` — a flat projection of all MIF findings. Also projects goal-version membership (SPEC §11). | `jq` |
 
 ---
