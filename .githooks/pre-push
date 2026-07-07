@@ -18,13 +18,23 @@ git rev-parse --verify origin/main >/dev/null 2>&1 || exit 0
 
 if ! command -v mif-rh-cli >/dev/null 2>&1 && [ ! -x bin/mif-rh-cli ] && [ -z "${MIF_RH_CLI:-}" ]; then
   echo "pre-push: mif-rh-cli engine not found locally, fetching it (scripts/fetch-engine.sh)..." >&2
-  bash scripts/fetch-engine.sh >/dev/null 2>&1 || {
-    echo "pre-push: could not fetch mif-rh-cli, skipping the local version-bump check (CI will still enforce it)" >&2
-    exit 0
-  }
+  bash scripts/fetch-engine.sh >/dev/null 2>&1 || true
 fi
 
-if ! bash scripts/check-version-bump.sh origin/main; then
+# scripts/check-version-bump.sh (via scripts/lib/engine.sh's engine_bin) exits
+# 5 when the engine itself is the problem (missing, non-executable, no
+# version, or too old) — including a stale post-fetch state or a broken
+# MIF_RH_CLI override. That is "the check could not run," not a real
+# versioning violation, so it must not block the push the way exit 1 does.
+bash scripts/check-version-bump.sh origin/main
+status=$?
+
+if [ "$status" -eq 0 ]; then
+  exit 0
+elif [ "$status" -eq 5 ]; then
+  echo "pre-push: mif-rh-cli engine unavailable, skipping the local version-bump check (CI will still enforce it)" >&2
+  exit 0
+else
   echo "" >&2
   echo "pre-push: change-driven versioning check failed (ADR-0010) — see output above." >&2
   echo "  Fix: bump the changed component's own version (SKILL.md version: / plugin.json .version)," >&2
