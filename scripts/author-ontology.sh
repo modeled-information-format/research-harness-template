@@ -54,6 +54,11 @@ done
 [ -n "$TOPIC" ] && [ -n "$CLUSTERS" ] \
   && { echo "author-ontology: give either a <topic> or --from-clusters, not both" >&2; exit 2; }
 
+# Validate --from-clusters BEFORE creating a temp dir below: an early exit
+# here must not orphan one.
+[ -z "$CLUSTERS" ] || [ -f "$CLUSTERS" ] \
+  || { echo "author-ontology: no such clusters file: $CLUSTERS" >&2; exit 1; }
+
 # Portable temp: `mktemp -t <template>` is interpreted differently across
 # implementations (BSD/BusyBox treat a non-trailing-X template inconsistently).
 # `mktemp -d` is portable everywhere; we control the filename inside it.
@@ -64,7 +69,6 @@ if [ -n "$CLUSTERS" ]; then
   # Alternate input: `mif-rh-cli expansion-candidates` output — recorded tier-3
   # misses clustered by mutual similarity (ADR-0015). Each cluster becomes one
   # draft candidate type for a human to name, define, and ground.
-  [ -f "$CLUSTERS" ] || { echo "author-ontology: no such clusters file: $CLUSTERS" >&2; exit 1; }
   "$ENGINE" ontology author "$NEWID" --from-clusters "$CLUSTERS" --out "$OUT" || exit 1
   # basename only: ORIGIN lands in commit messages and PR bodies via
   # --open-pr, and a local temp path is provenance noise in a public artifact.
@@ -74,6 +78,11 @@ else
   ORIGIN="research topic '$TOPIC'"
 fi
 ntypes=$(grep -c '^  - name:' "$OUT" || true)
+# Defense in depth: the engine itself already fails closed on zero entity
+# types/clusters (it errors rather than writing a degenerate draft), but
+# --open-pr below concierges a real upstream PR — never proceed into that
+# on an empty draft, whatever produced it.
+[ "$ntypes" -gt 0 ] || { echo "author-ontology: drafted ontology has 0 entity types — refusing to proceed" >&2; exit 1; }
 
 if [ -n "$CLUSTERS" ]; then
   echo "author-ontology: drafted '$NEWID' with $ntypes candidate type(s) from clusters -> $OUT"

@@ -78,13 +78,16 @@ jobs:
       - name: model codegen in sync (regenerate from schemas, fail if committed models drift)
         run: CHECK=1 bash scripts/codegen/gen-models.sh  # self-provisions a pinned venv
 
-      - name: vendor enabled domain ontologies on demand (ADR-0012; before verify)
-        run: bash scripts/fetch-ontology.sh --all-enabled  # sha256-verified; pins ontologies.lock.json
-
       - name: fetch the mif-rh engine (ADR-0016; attested, fail-closed)
         env:
           GH_TOKEN: ${{ github.token }}
         run: bash scripts/fetch-engine.sh
+
+      - name: vendor enabled domain ontologies on demand (ADR-0012; before verify)
+        # Must run AFTER the engine is installed: fetch-ontology.sh now
+        # delegates to mif-rh-cli (Story #277 jq cutover) and hard-requires
+        # it, same as resolve-ontology.sh/ontology-review.sh already did.
+        run: bash scripts/fetch-ontology.sh --all-enabled  # sha256-verified; pins ontologies.lock.json
 
       - name: verify.sh (build gate — schemas, citation gate, per-milestone gates, evals)
         run: bash scripts/verify.sh
@@ -134,10 +137,14 @@ jobs:
           fetch-depth: 0
 
       - name: Fetch base branch
-        run: git fetch --no-tags origin "${{ github.base_ref }}"
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: git fetch --no-tags origin "$BASE_REF"
 
       - name: Versions bumped as required (change-driven, ADR-0010)
-        run: bash scripts/check-version-bump.sh "origin/${{ github.base_ref }}"
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: bash scripts/check-version-bump.sh "origin/$BASE_REF"
 
   pin-check:
     # Supply-chain gate: every GitHub Actions `uses:` across all workflow files

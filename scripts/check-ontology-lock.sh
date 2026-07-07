@@ -19,6 +19,18 @@
 # Usage: check-ontology-lock.sh        (exit 1 on any drift/missing pin/file)
 set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
+# Zero-dependency short-circuit, preserved from before the engine cutover:
+# a harness instance that has never adopted on-demand vendoring at all
+# (documented as the common case — no ontologies.lock.json exists) must be
+# able to answer "nothing to check" with nothing more than bash, not by
+# requiring a compiled, attested engine binary just to notice the file is
+# absent.
+if [ ! -f "$ROOT/ontologies.lock.json" ]; then
+  echo "check-ontology-lock: no ontologies.lock.json — on-demand vendoring not adopted; nothing to verify"
+  exit 0
+fi
+
 # shellcheck source=scripts/lib/engine.sh
 . "$ROOT/scripts/lib/engine.sh"
 ENGINE="$(engine_bin "$ROOT")" || exit 5
