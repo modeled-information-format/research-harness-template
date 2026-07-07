@@ -69,7 +69,7 @@ manage the session run lock.
 | --- | --- | --- |
 | `scripts/write-finding.sh` | Stage-validate-rename atomic write: a finding is visible on disk only after it passes schema validation (crash-safe). | `ajv` |
 | `scripts/wrap-source.sh` | Normalises a raw source to a MIF source-envelope at the ingestion boundary, validates at L3 before an analyst consumes it. | `jq`, `ajv` |
-| `scripts/falsify.sh` | Deterministic falsification substrate: writes an ordinal verdict into `extensions.harness.verification`, logs one `falsification-gate: run` line per invocation, enforces the one-round rule. | `jq` |
+| `scripts/falsify.sh` | Deterministic falsification substrate: writes an ordinal verdict into `extensions.harness.verification`, logs one `falsification-gate: run` line per invocation, enforces the one-round rule. | `mif-rh-cli` (engine) |
 | `scripts/reconcile-session.sh` | Derives a durable session checkpoint (`state.json`) from disk. A finding is DONE iff it validates against the full schema (which requires a `verification` block) **and** its verdict is not `falsified` — a falsified-but-valid finding is intentionally not done. Idempotent and byte-deterministic. | `jq`, `ajv` |
 | `scripts/run-lock.sh` | Topic-level mutual-exclusion lock (directory-based atomic test-and-set). Prevents concurrent writers on the same topic. Staleness window: `RUN_LOCK_STALE_MIN` (default 240 min). Operations: `acquire`, `release`, `refresh`, `steal`. | coreutils (`find`, `touch`, `mkdir`, `rm`, `cat`) |
 | `scripts/goal-version.sh` | Computes a content-hash goal version ID (`gv-<sha256[:12]>`) by normalising the goal JSON (removing lineage fields, sorting keys). | `jq`, `sha256sum` / `shasum` / `openssl` |
