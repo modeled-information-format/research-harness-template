@@ -4,84 +4,23 @@
 # findings dir and produces one typed Artifact (schemas/artifact.schema.json):
 # the genre/channel-neutral intermediate that every output channel renders.
 #
+# Since research-harness-template#276 (Story #282, Category B cutover), this
+# delegates to the mif-rh engine (mif-rh-cli), hard required: install it with
+# scripts/fetch-engine.sh, put mif-rh-cli on PATH, or set MIF_RH_CLI.
+#
 # Usage: synthesize-artifact.sh <findings-dir> [<genre>] [<out.json>]
 #        defaults: genre=general  out=<findings-dir>/../artifact.json
-
 set -uo pipefail
-cd "$(dirname "$0")/.." || exit 2
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# shellcheck source=scripts/lib/engine.sh
+. "$ROOT/scripts/lib/engine.sh"
+ENGINE="$(engine_bin "$ROOT")" || exit 5
 
 DIR="${1:?usage: synthesize-artifact.sh <findings-dir> [genre] [out.json]}"
-GENRE="${2:-general}"
-OUT="${3:-$DIR/../artifact.json}"
 [ -d "$DIR" ] || { echo "synthesize: not a directory: $DIR" >&2; exit 2; }
+GENRE="${2:-general}"
 
-FILES=$(find "$DIR" -maxdepth 1 -name '*.json' | sort)
-[ -n "$FILES" ] || { echo "synthesize: no findings in $DIR" >&2; exit 2; }
-
-# Resolved ontology types live one level up (the topic root: reports/<topic>/ontology-map.json),
-# keyed by finding @id. Default to [] unless the map is present, NON-EMPTY, and a valid JSON
-# array — an empty placeholder or a corrupt map falls back to [] (the byte-identical no-map path)
-# instead of crashing jq on `--argjson map ""`. The per-section join adds no keys when there is no map.
-ONT_MAP='[]'; ONT_MAPFILE="$DIR/../ontology-map.json"
-if [ -s "$ONT_MAPFILE" ] && jq -e 'type=="array"' "$ONT_MAPFILE" >/dev/null 2>&1; then
-  ONT_MAP=$(cat "$ONT_MAPFILE")
+if [ -n "${3:-}" ]; then
+  exec "$ENGINE" harness synthesize-artifact "$DIR" "$GENRE" "$3"
 fi
-
-# Build the artifact from surviving findings: one section per finding, sources
-# deduplicated across the set, finding_refs collected, newsworthiness rolled up.
-# Write to a temp first so a jq failure (e.g. all findings falsified) is fatal and
-# never leaves a stale/empty artifact behind.
-# shellcheck disable=SC2086
-if ! jq -s --arg genre "$GENRE" --argjson map "$ONT_MAP" '
-  map(select((.extensions.harness.verification.verdict // "survived") != "falsified")) as $surv
-  | if ($surv | length) == 0 then error("no surviving findings to synthesize") else . end
-  | {
-      "@type": "Artifact",
-      title: ($surv[0].namespace // "Research" | "Findings: " + .),
-      genre: $genre,
-      audience: "general",
-      newsworthiness: "medium",
-      namespace: ($surv[0].namespace // "harness/report"),
-      mif: { conformanceLevel: 3 },
-      finding_refs: [ $surv[] | .["@id"] ],
-      sections: [ $surv[]
-        | (.["@id"]) as $fid
-        | (first($map[] | select(.finding_id == $fid)) // {}) as $om
-        | {
-        heading: .title,
-        body: (.content // .summary // .title),
-        supports: [ .["@id"] ],
-        sources: [ (.citations // [])[]
-                   | { title: .title, url: .url, citationType: (.citationType // "website"), citationRole: (.citationRole // "supports") } + (if .note then {note: .note} else {} end) ],
-        entities: [ (.entities // [])[] | { id: .entity["@id"], name: .name, entityType: (.entityType // "entity") } ],
-        relationships: [ (.relationships // [])[]
-                         | { type: (.type // .relationshipType // "relates-to"),
-                             target: (if (.target|type)=="object" then .target["@id"] else .target end) }
-                         + (if .strength then {strength: .strength} else {} end) ],
-        dimension: (.extensions.harness.dimension // "general"),
-        verdict: (.extensions.harness.verification.verdict // "inconclusive")
-      }
-      + (if $om.entity_type       then { entityType: $om.entity_type }       else {} end)
-      + (if $om.resolved_ontology then { ontology:   $om.resolved_ontology } else {} end)
-      + (if $om.basis             then { basis:      $om.basis }             else {} end) ],
-      sources: ( [ $surv[] | (.citations // [])[]
-                   | { title: .title, url: .url, citationType: (.citationType // "website"), citationRole: (.citationRole // "supports") } + (if .note then {note: .note} else {} end) ]
-                 | group_by(.url) | map(max_by((.note // "") | length)) )
-    }
-' $FILES > "$OUT.tmp" 2>"$OUT.err"; then
-  echo "synthesize: failed —" >&2; cat "$OUT.err" >&2
-  rm -f "$OUT.tmp" "$OUT.err"; exit 1
-fi
-rm -f "$OUT.err"
-
-# Self-validate the required shape before publishing the artifact: a publishable
-# artifact must have at least one section, one finding ref, and one source. This
-# fails loud on a falsified-only or citation-less finding set rather than emitting
-# a schema-invalid (or empty) artifact a renderer would silently accept.
-if ! jq -e '(.sections | length >= 1) and (.finding_refs | length >= 1) and (.sources | length >= 1)' "$OUT.tmp" >/dev/null 2>&1; then
-  echo "synthesize: artifact has no publishable content (no surviving findings, or no citations to cite)" >&2
-  rm -f "$OUT.tmp"; exit 1
-fi
-mv "$OUT.tmp" "$OUT"
-
-echo "synthesize: wrote $OUT (genre=$GENRE, $(jq '.sections|length' "$OUT") sections, $(jq '.sources|length' "$OUT") sources)"
+exec "$ENGINE" harness synthesize-artifact "$DIR" "$GENRE"

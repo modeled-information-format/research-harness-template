@@ -17,15 +17,22 @@
 # graph over the MIF substrate. Provenance (the W3C-PROV block) travels with each
 # unit untouched.
 #
+# Since research-harness-template#276 (Story #282, Category B cutover), the
+# validate+import+register step delegates to the mif-rh engine (mif-rh-cli),
+# hard required: install it with scripts/fetch-engine.sh, put mif-rh-cli on
+# PATH, or set MIF_RH_CLI.
+#
 # Usage:
 #   import-corpus.sh <source-corpus-dir> <topic-id> [<reports-root>] [<config>]
 #     <source-corpus-dir> contains findings/*.json (MIF) and optionally a
 #                         knowledge-graph.json (the corpus's existing graph).
 #     defaults: reports-root=reports  config=harness.config.json
-
 set -uo pipefail
-cd "$(dirname "$0")/.." || exit 2
-ROOT="$(pwd)"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT" || exit 2
+# shellcheck source=scripts/lib/engine.sh
+. "$ROOT/scripts/lib/engine.sh"
+ENGINE="$(engine_bin "$ROOT")" || exit 5
 
 SRC="${1:?usage: import-corpus.sh <source-corpus-dir> <topic-id> [reports-root] [config]}"
 TOPIC="${2:?usage: import-corpus.sh <source-corpus-dir> <topic-id> [reports-root] [config]}"
@@ -51,52 +58,18 @@ if [ -f "$ROOT/copier.yml" ] && [ -f "$ROOT/COMPLETION-CRITERIA.md" ] && [ -z "$
 fi
 
 DEST="$REPORTS/$TOPIC/findings"
-mkdir -p "$DEST"
 
-# Validate + import each finding, asserting provenance is present (it must survive
-# the import). ajv resolves the vendored MIF closure.
-ajv_one() {
-  ajv validate --spec=draft2020 --strict=false -c ajv-formats \
-    -s "$ROOT/schemas/findings.schema.json" \
-    -r "$ROOT/schemas/mif/mif.schema.json" \
-    -r "$ROOT/schemas/mif/definitions/entity-reference.schema.json" \
-    -d "$1" >/dev/null 2>&1
-}
-
-imported=0 no_prov=0
-for f in "$SRC_FINDINGS"/*.json; do
-  [ -f "$f" ] || continue
-  if ! ajv_one "$f"; then
-    echo "import: finding fails MIF-backed schema, refusing to import: $f" >&2
-    exit 1
-  fi
-  # Provenance must be present and survive the import (SPEC §8a W3C-PROV).
-  if ! jq -e '.provenance.sourceType != null' "$f" >/dev/null 2>&1; then
-    no_prov=$((no_prov+1))
-  fi
-  cp "$f" "$DEST/"
-  imported=$((imported+1))
-done
-
-if [ "$no_prov" -gt 0 ]; then
-  echo "import: $no_prov finding(s) lack a provenance block; import aborted (provenance must be preserved)" >&2
+if ! "$ENGINE" harness import-corpus "$SRC_FINDINGS" "$DEST" "$TOPIC" \
+      --schema "$ROOT/schemas/findings.schema.json" \
+      --ref "$ROOT/schemas/mif/mif.schema.json" \
+      --ref "$ROOT/schemas/mif/definitions/entity-reference.schema.json" \
+      --config "$CONFIG"; then
   exit 1
-fi
-
-# Register the topic in the manifest if not already present (lossless add).
-NS="$(jq -rs '.[0].namespace // empty' "$DEST"/*.json 2>/dev/null)"
-NS="${NS:-harness/$TOPIC}"
-if [ -f "$CONFIG" ] && [ "$(jq -r --arg t "$TOPIC" '[.topics[]|select(.id==$t)]|length' "$CONFIG")" = "0" ]; then
-  tmp=$(mktemp)
-  jq --arg t "$TOPIC" --arg ns "$NS" \
-    '.topics += [{"id":$t,"title":$t,"namespace":$ns,"status":"active"}]' "$CONFIG" > "$tmp" && mv "$tmp" "$CONFIG"
-  echo "import: registered topic '$TOPIC' (namespace $NS) in $CONFIG"
 fi
 
 # Rebuild the index and graph over the imported MIF substrate.
 "$ROOT/scripts/build-index.sh" "$DEST" "$REPORTS/$TOPIC/research-index.json" >/dev/null
 "$ROOT/scripts/build-graph.sh" "$DEST" "$REPORTS/$TOPIC/knowledge-graph.json" >/dev/null
 
-NODES=$(jq '.nodes|length' "$REPORTS/$TOPIC/knowledge-graph.json")
-EDGES=$(jq '.edges|length' "$REPORTS/$TOPIC/knowledge-graph.json")
-echo "import: imported $imported finding(s) into $DEST; rebuilt graph ($NODES nodes, $EDGES edges) with provenance intact"
+read -r NODES EDGES < <("$ENGINE" harness graph-stats "$REPORTS/$TOPIC/knowledge-graph.json")
+echo "import: rebuilt graph ($NODES nodes, $EDGES edges) with provenance intact"
