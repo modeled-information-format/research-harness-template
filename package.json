@@ -10,7 +10,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "reports": "astro dev",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package && git config core.hooksPath .githooks 2>/dev/null || true"
   },
   "dependencies": {
     "@astrojs/starlight": "^0.41.0",

@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.1] - 2026-07-07
+
+### Added
+
+- **Local `pre-push` git hook**: enforces the ADR-0010 change-driven
+  versioning gate (`scripts/check-version-bump.sh`) before a push leaves
+  your machine, not just in CI. Installed automatically via
+  `git config core.hooksPath .githooks`, wired through `npm install`'s
+  `postinstall`.
+
 ## [0.11.0] - 2026-07-07
 
 ### Added
