@@ -79,6 +79,13 @@ GOAL="$TOPIC_DIR/goal.json"
 # PURPOSE/KEY_DRAFT/BY_DIM_TABLE as shell variable assignments.
 METADATA_SCRIPT=$("$ENGINE" harness topic-metadata "$TOPIC" --config "$CONFIG" --findings "$FINDINGS_DIR" --goal "$GOAL") \
   || die "topic \"$TOPIC\" is not registered in harness.config.json"
+# Fail closed before eval: reject anything that isn't valid shell syntax (e.g.
+# truncated/corrupted output from an engine crash mid-write, which would
+# otherwise leave an unterminated quote for eval to choke on unpredictably).
+# Values are already single-quote-escaped by the engine — verified empirically
+# safe against injection (`'` -> `'\''`) — so this is a syntax sanity check,
+# not the only thing standing between untrusted content and eval.
+bash -n <<<"$METADATA_SCRIPT" || die "topic-metadata emitted output that isn't valid shell syntax — refusing to eval"
 eval "$METADATA_SCRIPT"
 
 TODAY=$(date -u +%Y-%m-%d)

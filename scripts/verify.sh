@@ -1919,8 +1919,15 @@ gate_m20() {
   #
   # Since research-harness-template#276 (Story #287), this whole-registry scan
   # delegates to the mif-rh engine (mif-rh-cli harness check-ontology-registry).
-  local reg_out reg_n reg_orphans
-  reg_out=$("$ENGINE" harness check-ontology-registry --root "$(pwd)" 2>/dev/null)
+  local reg_out reg_err reg_n reg_orphans
+  reg_err="$(mktemp)"
+  reg_out=$("$ENGINE" harness check-ontology-registry --root "$(pwd)" 2>"$reg_err")
+  if [ $? -gt 1 ]; then
+    bad "check-ontology-registry errored (exit>1): $(cat "$reg_err")"
+    rm -f "$reg_err"
+    return
+  fi
+  rm -f "$reg_err"
   reg_n=$(printf '%s\n' "$reg_out" | sed -n 's/^ontology-registry: \([0-9]*\) type(s).*/\1/p')
   reg_orphans=$(printf '%s\n' "$reg_out" | sed -n 's/^ontology-registry: relationship-endpoint orphans: //p')
   if [ "$reg_orphans" = "none" ]; then
@@ -2008,8 +2015,14 @@ JSON
   # subtype_of parent integrity across the whole registry. Since
   # research-harness-template#276 (Story #287), this whole-registry scan delegates to
   # the mif-rh engine (mif-rh-cli harness check-ontology-registry).
-  local reg_out orphan
-  reg_out=$("$ENGINE" harness check-ontology-registry --root "$(pwd)" 2>/dev/null)
+  local reg_out reg_err orphan
+  reg_err="$T/m22-registry.err"
+  reg_out=$("$ENGINE" harness check-ontology-registry --root "$(pwd)" 2>"$reg_err")
+  if [ $? -gt 1 ]; then
+    bad "check-ontology-registry errored (exit>1): $(cat "$reg_err")"
+    rm -rf "$T"
+    return
+  fi
   orphan=$(printf '%s\n' "$reg_out" | sed -n 's/^ontology-registry: subtype_of-parent orphans: //p')
   if [ "$g" = 0 ] && [ "$b" != 0 ] && [ "$orphan" = "none" ]; then
     ok "subtype_of enforced: a security-control satisfies a control-typed edge; a non-subtype does not; every subtype_of parent is declared"
