@@ -62,6 +62,12 @@ _tasks:
   # site symlinks so the Astro content collection reaches docs/ and reports/.
   - "rm -rf docs/reports && ln -s ../reports docs/reports"
   - "rm -rf src/content/docs && ln -s ../../docs src/content/docs"
+  # fetch-ontology.sh/sync-packs.sh below now delegate to the mif-rh engine
+  # (mif-rh-cli, Story #277 jq cutover) and hard-require it — provision it
+  # first, same as CI does before its own ontology-vendoring step. A no-op if
+  # already installed/on PATH/MIF_RH_CLI-overridden (scripts/lib/engine.sh's
+  # own resolution order).
+  - "bash scripts/fetch-engine.sh"
   # Vendor the enabled domain ontologies on demand from the canonical registry
   # (ADR-0012): domain packs are NOT bundled — they are fetched + sha256-verified
   # into packs/ontologies/<id>/ and pinned in ontologies.lock.json before the

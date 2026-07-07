@@ -17,7 +17,21 @@ fail=0; note() { printf '  vendoring: %s\n' "$1"; }
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 mkdir -p "$TMP/scripts" "$TMP/packs/ontologies" "$TMP/schemas/ontologies/mif-base" "$TMP/registry"
 cp "$SELF_DIR/scripts/fetch-ontology.sh" "$SELF_DIR/scripts/check-ontology-lock.sh" "$TMP/scripts/"
+# Both cutover scripts source scripts/lib/engine.sh relative to their own
+# root (Story #277); the isolated copy above needs it too, or `engine_bin`
+# fails with "No such file or directory" before it ever gets to resolve
+# anything.
+cp -r "$SELF_DIR/scripts/lib" "$TMP/scripts/lib"
 printf '{"ontologies":[{"id":"eval-onto","enabled":true}]}\n' > "$TMP/harness.config.json"
+
+# Resolve the REAL installed engine (via the real repo root, where
+# engine_bin's PATH/<root>/bin/mif-rh-cli resolution actually applies) and
+# pin it as an explicit override for every isolated-copy invocation below —
+# the isolated $TMP has no bin/mif-rh-cli of its own.
+# shellcheck source=scripts/lib/engine.sh
+. "$SELF_DIR/scripts/lib/engine.sh"
+REAL_ENGINE="$(engine_bin "$SELF_DIR")" || { echo "ontology-vendoring: engine not found" >&2; exit 5; }
+export MIF_RH_CLI="$REAL_ENGINE"
 
 # fixture domain ontology (extends nothing -> closure is just itself)
 cat > "$TMP/registry/eval-onto.ontology.yaml" <<'YAML'
@@ -71,11 +85,11 @@ printf '\n# drift\n' >> "$TMP/packs/ontologies/eval-onto/eval-onto.ontology.yaml
 if run_gate >/dev/null 2>&1; then note "FAIL: lock gate missed local drift"; fail=1
 else note "local drift caught by lock gate (ok)"; fi
 
-# 4. unknown id -> fail with author-ontology pointer
+# 4. unknown id -> fail with a pointer to the `ontology author` subcommand
 # (capture first; piping a failed fetch into grep would trip pipefail)
 unk_out="$( ( cd "$TMP" && MIF_ONTOLOGY_SOURCE="$TMP/registry" bash scripts/fetch-ontology.sh no-such-onto ) 2>&1 || true )"
-if printf '%s' "$unk_out" | grep -q "author-ontology.sh"; then
-  note "unknown id fails with author-ontology pointer (ok)"
-else note "FAIL: unknown id did not point to author-ontology"; fail=1; fi
+if printf '%s' "$unk_out" | grep -q "ontology author"; then
+  note "unknown id fails with an 'ontology author' pointer (ok)"
+else note "FAIL: unknown id did not point to 'ontology author'"; fail=1; fi
 
 [ "$fail" = 0 ] && echo "ontology-vendoring: PASS" || { echo "ontology-vendoring: FAIL" >&2; exit 1; }

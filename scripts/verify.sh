@@ -14,6 +14,13 @@
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 2
 
+# gate_m20/gate_m22's whole-registry ontology-integrity scans delegate to the
+# mif-rh engine (Story #287, research-harness-template#276) rather than a hand-rolled
+# yq+jq registry walk. Resolved once here since it's used by exactly those two gates.
+# shellcheck source=scripts/lib/engine.sh
+. scripts/lib/engine.sh
+ENGINE="$(engine_bin "$(pwd)")" || exit 5
+
 # Template vs instance. The distributable template carries copier.yml; an
 # instantiated harness has it stripped at generation. Template-only self-tests
 # (Milestone 7 distribution, and 8c/8d which assert the template stays clean and
@@ -991,15 +998,26 @@ gate_m11() {
     bad "falsified finding mis-counted (technical total=$ftot done=$fdone; expected 1/0)"
   fi
 
-  # 11j (fail-safe — THE cost guard). A broken ajv toolchain must make reconcile
-  # ABORT (non-zero), not read every finding as invalid and emit a re-run-everything
-  # plan. Shim a failing `ajv` onto PATH (jq/find still work) and assert reconcile
-  # exits non-zero and prints no "need work" plan.
-  local bad_out bad_rc
-  mkdir -p "$T/badbin"; printf '#!/bin/sh\nexit 1\n' > "$T/badbin/ajv"; chmod +x "$T/badbin/ajv"
-  bad_out=$(PATH="$T/badbin:$PATH" scripts/reconcile-session.sh "$RD2" 2>/dev/null); bad_rc=$?
-  if [ "$bad_rc" -ne 0 ] && ! printf '%s' "$bad_out" | grep -q 'need work'; then
-    ok "reconcile fails safe on a broken ajv toolchain (aborts; never emits a re-run-everything plan)"
+  # 11j (fail-safe — THE cost guard). A broken validation environment must make
+  # reconcile ABORT (non-zero), not read every finding as invalid and emit a
+  # re-run-everything plan. Since research-harness-template#276 (Story #287),
+  # reconcile-session.sh delegates to the mif-rh engine, which has no external
+  # ajv/jq toolchain to shim broken — instead it proves the environment itself
+  # by validating a known-good sample finding before trusting any real result
+  # (mif-rh's ReconcileEnvironmentBroken). Corrupt an ISOLATED COPY of that
+  # sample (never the committed fixture) and call the engine directly with it.
+  local bad_out bad_rc BAD_ENGINE
+  # shellcheck source=scripts/lib/engine.sh
+  . scripts/lib/engine.sh
+  BAD_ENGINE="$(engine_bin "$(pwd)")" || exit 5
+  jq 'del(.extensions)' schemas/samples/finding.sample.json > "$T/broken-sample.json"
+  bad_out=$("$BAD_ENGINE" harness reconcile-session "$RD2" \
+    --schema "schemas/findings.schema.json" \
+    --ref "schemas/mif/mif.schema.json" \
+    --ref "schemas/mif/definitions/entity-reference.schema.json" \
+    --sample "$T/broken-sample.json" 2>/dev/null); bad_rc=$?
+  if [ "$bad_rc" -eq 3 ] && ! printf '%s' "$bad_out" | grep -qE 'nothing to do|need work'; then
+    ok "reconcile fails safe on a broken validation environment (aborts rc=3; never emits a re-run-everything plan)"
   else
     bad "reconcile did NOT fail safe (rc=$bad_rc; out: ${bad_out//$'\n'/ | })"
   fi
@@ -1399,18 +1417,32 @@ JSON
     bad "scale build wrong (concept nodes $bigcount of $n, or non-deterministic)"
   fi
 
-  # 13k. The MIF-native STRUCTURAL relationship set is now harness-owned in
-  #      validate-concordance.sh (moved out of the vendored mif-generic contract). Pin it:
-  #      silently dropping a name would stop treating that link as structural (and start
-  #      from/to-enforcing it, or reject it); adding one would over-broaden the skip.
-  local expected_sc actual_sc
-  expected_sc='["contradicts","depends-on","derived-from","part-of","refines","relates-to","supersedes","supports","updates"]'
-  actual_sc=$(grep -E "^STRUCTURAL_CORE=" scripts/validate-concordance.sh | sed "s/^STRUCTURAL_CORE=//; s/^'//; s/'$//" | jq -cS 'sort' 2>/dev/null)
-  if [ "$actual_sc" = "$expected_sc" ]; then
-    ok "STRUCTURAL_CORE pinned to the 9 MIF-native structural relationships (harness-owned, not in the vendored contract)"
+  # 13k. The MIF-native STRUCTURAL relationship set is harness-owned, not in the
+  #      vendored mif-generic contract. Since research-harness-template#276 (Story #287)
+  #      it lives in the mif-rh engine (a separate repo), so this gate can no longer grep
+  #      a pinned literal out of validate-concordance.sh's own source — it proves the same
+  #      guarantee behaviorally instead: two MIF-core node types with no ontology bound (so
+  #      the ONLY way an edge between them can pass is via the STRUCTURAL skip) must PASS
+  #      for each of the 9 pinned names (silently dropping one would start from/to-enforcing
+  #      or rejecting that link) and FAIL for an unlisted made-up name (over-broadening).
+  local T13k; T13k="$(mktemp -d)"
+  echo '{"ontologies":[]}' > "$T13k/cat.json"
+  echo '{"topics":[]}' > "$T13k/cfg.json"
+  local sc_names="contradicts depends-on derived-from part-of refines relates-to supersedes supports updates"
+  local sc_all_ok=1 sc_name
+  for sc_name in $sc_names; do
+    echo "{\"nodes\":[{\"id\":\"n1\",\"entityType\":\"Concept\",\"topics\":[]},{\"id\":\"n2\",\"entityType\":\"File\",\"topics\":[]}],\"edges\":[{\"via\":\"relationship\",\"type\":\"$sc_name\",\"source\":\"n1\",\"target\":\"n2\"}]}" > "$T13k/sc.json"
+    scripts/validate-concordance.sh "$T13k/sc.json" --config "$T13k/cfg.json" --catalog "$T13k/cat.json" >/dev/null 2>&1 || sc_all_ok=0
+  done
+  echo '{"nodes":[{"id":"n1","entityType":"Concept","topics":[]},{"id":"n2","entityType":"File","topics":[]}],"edges":[{"via":"relationship","type":"not-a-structural-relation","source":"n1","target":"n2"}]}' > "$T13k/sc-bad.json"
+  scripts/validate-concordance.sh "$T13k/sc-bad.json" --config "$T13k/cfg.json" --catalog "$T13k/cat.json" >/dev/null 2>&1
+  local sc_bad_rc=$?
+  if [ "$sc_all_ok" = 1 ] && [ "$sc_bad_rc" != 0 ]; then
+    ok "STRUCTURAL_CORE: all 9 pinned MIF-native relationships skip domain-checking; an unlisted name does not"
   else
-    bad "STRUCTURAL_CORE drifted from the pinned MIF-native set: $actual_sc"
+    bad "STRUCTURAL_CORE behavior wrong (all 9 pinned passed=$sc_all_ok; unlisted-name rc=$sc_bad_rc, want nonzero)"
   fi
+  rm -rf "$T13k"
 
   rm -rf "$T"
 }
@@ -1883,32 +1915,25 @@ gate_m20() {
   # edges (e.g. security's `realizes`/`mitigates_threat` -> software-engineering's
   # security-incident/security-threat). Assert every relationship from/to across ALL
   # registry ontologies resolves to a type declared in SOME registry ontology, so a
-  # future rename can't silently dangle an edge. (Membership via grep -Fxq, not comm
-  # — comm needs both inputs in its own byte collation, which a locale-aware `sort`
-  # does not guarantee for type names mixing `-` and `_`.)
-  local types rels orphans n r
-  # LC_ALL=C: byte collation so `sort -u` cannot treat distinct names that differ
-  # only in punctuation (e.g. `a-b` vs `a_b`) as equal and drop one as a "duplicate".
-  types=$(for y in schemas/ontologies/*/*.yaml packs/ontologies/*/*.ontology.yaml; do
-    [ -f "$y" ] && yq -o=json '.' "$y" 2>/dev/null | jq -r '.entity_types[]?.name // empty'
-  done | LC_ALL=C sort -u)
-  rels=$(for y in packs/ontologies/*/*.ontology.yaml; do
-    [ -f "$y" ] && yq -o=json '.' "$y" 2>/dev/null | jq -r '(.relationships // {}) | to_entries[] | (.value.from[]?, .value.to[]?)'
-  done | LC_ALL=C sort -u)
-  orphans=""
-  while IFS= read -r r; do
-    [ -n "$r" ] || continue
-    # A literal "*" endpoint is a recognized wildcard meaning "any declared
-    # type" (e.g. mif-docs' symmetric relates-to) — not a real type name to
-    # resolve against the registry.
-    [ "$r" = "*" ] && continue
-    printf '%s\n' "$types" | grep -Fxq -- "$r" || orphans="${orphans}${r} "
-  done <<< "$rels"
-  n=$(printf '%s\n' "$types" | grep -c .)
-  if [ -z "$orphans" ]; then
-    ok "every cross-pack relationship endpoint resolves to a declared entity type ($n types across the registry)"
+  # future rename can't silently dangle an edge.
+  #
+  # Since research-harness-template#276 (Story #287), this whole-registry scan
+  # delegates to the mif-rh engine (mif-rh-cli harness check-ontology-registry).
+  local reg_out reg_err reg_n reg_orphans
+  reg_err="$(mktemp)"
+  reg_out=$("$ENGINE" harness check-ontology-registry --root "$(pwd)" 2>"$reg_err")
+  if [ $? -gt 1 ]; then
+    bad "check-ontology-registry errored (exit>1): $(cat "$reg_err")"
+    rm -f "$reg_err"
+    return
+  fi
+  rm -f "$reg_err"
+  reg_n=$(printf '%s\n' "$reg_out" | sed -n 's/^ontology-registry: \([0-9]*\) type(s).*/\1/p')
+  reg_orphans=$(printf '%s\n' "$reg_out" | sed -n 's/^ontology-registry: relationship-endpoint orphans: //p')
+  if [ "$reg_orphans" = "none" ]; then
+    ok "every cross-pack relationship endpoint resolves to a declared entity type ($reg_n types across the registry)"
   else
-    bad "relationship endpoint(s) declared in no registry ontology: ${orphans}"
+    bad "relationship endpoint(s) declared in no registry ontology: ${reg_orphans}"
   fi
 }
 
@@ -1987,19 +2012,22 @@ JSON
   vw22() { scripts/validate-concordance.sh "$1" --config "$T/cfg.json" --catalog "$T/cat.json" >/dev/null 2>&1; }
   vw22 "$T/good.json"; local g=$?
   vw22 "$T/bad.json"; local b=$?
-  # subtype_of parent integrity across the whole registry.
-  local parents types orphan="" p
-  parents=$(for y in schemas/ontologies/*/*.yaml packs/ontologies/*/*.ontology.yaml; do
-    [ -f "$y" ] && yq -o=json '.' "$y" 2>/dev/null | jq -r '.entity_types[]?.subtype_of[]? // empty'
-  done | LC_ALL=C sort -u)
-  types=$(for y in schemas/ontologies/*/*.yaml packs/ontologies/*/*.ontology.yaml; do
-    [ -f "$y" ] && yq -o=json '.' "$y" 2>/dev/null | jq -r '.entity_types[]?.name // empty'
-  done | LC_ALL=C sort -u)
-  while IFS= read -r p; do [ -n "$p" ] || continue; printf '%s\n' "$types" | grep -Fxq -- "$p" || orphan="${orphan}${p} "; done <<< "$parents"
-  if [ "$g" = 0 ] && [ "$b" != 0 ] && [ -z "$orphan" ]; then
+  # subtype_of parent integrity across the whole registry. Since
+  # research-harness-template#276 (Story #287), this whole-registry scan delegates to
+  # the mif-rh engine (mif-rh-cli harness check-ontology-registry).
+  local reg_out reg_err orphan
+  reg_err="$T/m22-registry.err"
+  reg_out=$("$ENGINE" harness check-ontology-registry --root "$(pwd)" 2>"$reg_err")
+  if [ $? -gt 1 ]; then
+    bad "check-ontology-registry errored (exit>1): $(cat "$reg_err")"
+    rm -rf "$T"
+    return
+  fi
+  orphan=$(printf '%s\n' "$reg_out" | sed -n 's/^ontology-registry: subtype_of-parent orphans: //p')
+  if [ "$g" = 0 ] && [ "$b" != 0 ] && [ "$orphan" = "none" ]; then
     ok "subtype_of enforced: a security-control satisfies a control-typed edge; a non-subtype does not; every subtype_of parent is declared"
   else
-    bad "subsumption wrong (substitutable-good=$g should=0; non-subtype-bad=$b should!=0; orphan-parents=[${orphan:-none}])"
+    bad "subsumption wrong (substitutable-good=$g should=0; non-subtype-bad=$b should!=0; orphan-parents=[${orphan}])"
   fi
   rm -rf "$T"
 }

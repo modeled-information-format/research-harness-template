@@ -33,7 +33,18 @@ TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 mkdir -p "$TMP/scripts" "$TMP/.claude" "$TMP/packs/ontologies" "$TMP/schemas/ontologies/mif-base" "$TMP/registry"
 cp "$SELF_DIR/scripts/sync-registry-ontologies.sh" "$SELF_DIR/scripts/fetch-ontology.sh" \
    "$SELF_DIR/scripts/sync-packs.sh" "$TMP/scripts/"
+# All three cutover scripts source scripts/lib/engine.sh relative to their
+# own root (Story #277); the isolated copy above needs it too.
+cp -r "$SELF_DIR/scripts/lib" "$TMP/scripts/lib"
 printf '{"ontologies":[{"id":"known-onto","enabled":true}],"topics":[]}\n' > "$TMP/harness.config.json"
+
+# Resolve the REAL installed engine via the real repo root and pin it as an
+# explicit override for every isolated-copy invocation below — neither
+# isolated copy has its own bin/mif-rh-cli.
+# shellcheck source=scripts/lib/engine.sh
+. "$SELF_DIR/scripts/lib/engine.sh"
+REAL_ENGINE="$(engine_bin "$SELF_DIR")" || { echo "sync-registry-ontologies: engine not found" >&2; exit 5; }
+export MIF_RH_CLI="$REAL_ENGINE"
 
 fixture_onto() { # id
   cat > "$TMP/registry/$1.ontology.yaml" <<YAML
@@ -97,6 +108,7 @@ TMP2="$(mktemp -d)"; trap 'rm -rf "$TMP" "$TMP2"' EXIT
 mkdir -p "$TMP2/scripts"
 cp "$SELF_DIR/scripts/sync-registry-ontologies.sh" "$SELF_DIR/scripts/fetch-ontology.sh" \
    "$SELF_DIR/scripts/sync-packs.sh" "$TMP2/scripts/"
+cp -r "$SELF_DIR/scripts/lib" "$TMP2/scripts/lib"
 printf 'not json at all' > "$TMP2/harness.config.json"
 if ( cd "$TMP2" && bash scripts/sync-registry-ontologies.sh ) >/dev/null 2>&1; then
   note "FAIL: invalid JSON config was NOT rejected"; fail=1

@@ -27,6 +27,16 @@ jobs:
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
+      - name: Mint a CI app token (public-artifact reads — yq, mif-rh-cli)
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.CI_CLIENT_APP_ID }}
+          private-key: ${{ secrets.CI_CLIENT_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: research-harness-template
+          permission-contents: read
+
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: 'lts/*'
@@ -45,7 +55,7 @@ jobs:
 
       - name: Install yq (verified download — attestation -> checksum waterfall)
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           # Supply-chain policy: a raw binary download MUST be verified. Prefer a
           # GitHub build-provenance attestation; when upstream publishes none
@@ -78,21 +88,38 @@ jobs:
       - name: model codegen in sync (regenerate from schemas, fail if committed models drift)
         run: CHECK=1 bash scripts/codegen/gen-models.sh  # self-provisions a pinned venv
 
-      - name: vendor enabled domain ontologies on demand (ADR-0012; before verify)
-        run: bash scripts/fetch-ontology.sh --all-enabled  # sha256-verified; pins ontologies.lock.json
-
       - name: fetch the mif-rh engine (ADR-0016; attested, fail-closed)
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: bash scripts/fetch-engine.sh
 
+      - name: vendor enabled domain ontologies on demand (ADR-0012; before verify)
+        # Must run AFTER the engine is installed: fetch-ontology.sh now
+        # delegates to mif-rh-cli (Story #277 jq cutover) and hard-requires
+        # it, same as resolve-ontology.sh/ontology-review.sh already did.
+        run: bash scripts/fetch-ontology.sh --all-enabled  # sha256-verified; pins ontologies.lock.json
+
       - name: verify.sh (build gate — schemas, citation gate, per-milestone gates, evals)
+        # evals/copier-update.sh instantiates a fresh copier clone whose own
+        # `_tasks` re-runs `bash scripts/fetch-engine.sh` for that instance
+        # (real end users need this on every fresh instantiation); that
+        # nested fetch calls `gh`, which needs GH_TOKEN in Actions (a
+        # runner has no persistent gh auth the way a workstation does).
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: bash scripts/verify.sh
 
       - name: eval suite (shipped + run in CI)
         run: bash evals/run-evals.sh
 
       - name: copier update propagation
+        # Same nested-fetch-engine GH_TOKEN need as the verify.sh step above
+        # (this runs evals/copier-update.sh directly, a second time, as its
+        # own independently-reported gate — see the markdownlint job's
+        # "Defect 3" comment below for why it's a separate step from
+        # verify.sh's own internal check).
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: bash evals/copier-update.sh
 
   markdownlint:
@@ -133,11 +160,33 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Mint a CI app token (public-artifact read — mif-rh-cli)
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.CI_CLIENT_APP_ID }}
+          private-key: ${{ secrets.CI_CLIENT_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: research-harness-template
+          permission-contents: read
+
       - name: Fetch base branch
-        run: git fetch --no-tags origin "${{ github.base_ref }}"
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: git fetch --no-tags origin "$BASE_REF"
+
+      - name: fetch the mif-rh engine (ADR-0016; attested, fail-closed)
+        # check-version-bump.sh delegates to the engine (Story #298); this
+        # job runs in its own fresh checkout, so it needs its own fetch,
+        # same as the "verify" job's own step.
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: bash scripts/fetch-engine.sh
 
       - name: Versions bumped as required (change-driven, ADR-0010)
-        run: bash scripts/check-version-bump.sh "origin/${{ github.base_ref }}"
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: bash scripts/check-version-bump.sh "origin/$BASE_REF"
 
   pin-check:
     # Supply-chain gate: every GitHub Actions `uses:` across all workflow files

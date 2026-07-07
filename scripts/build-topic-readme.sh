@@ -25,11 +25,24 @@
 #   --check          structural validation gate; exits non-zero on any defect
 #   --findings <dir> override findings dir (default reports/<topic>/findings)
 #   --out <path>     override output path (default reports/<topic>/README.md)
+#
+# Since research-harness-template#276 (Story #282, Category B cutover), the
+# jq-dependent metadata rollup (topic title/status, finding counts/verdicts,
+# dimension bullets, tags, purpose, the Key-Findings draft, the
+# Findings-by-Dimension table) delegates to the mif-rh engine
+# (mif-rh-cli), hard required: install it with scripts/fetch-engine.sh, put
+# mif-rh-cli on PATH, or set MIF_RH_CLI. Everything else here — file
+# scanning, deliverable title/genre/version extraction, table assembly, the
+# structural check gate, the atomic write — never used jq and stays as-is.
 
 set -uo pipefail
 
 die() { echo "build-topic-readme: $*" >&2; exit 2; }
-command -v jq >/dev/null 2>&1 || die "jq is required"
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# shellcheck source=scripts/lib/engine.sh
+. "$ROOT/scripts/lib/engine.sh"
+ENGINE="$(engine_bin "$ROOT")" || exit 5
 
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-.}"
 CONFIG="$PROJECT_DIR/harness.config.json"
@@ -53,59 +66,28 @@ done
 [ -n "$TOPIC" ] || die "usage: build-topic-readme.sh <topic> [--check] [--findings <dir>] [--out <path>]"
 [ -f "$CONFIG" ] || die "manifest not found: $CONFIG"
 
-# Resolve the manifest entry — the topic MUST be registered.
-TOPIC_JSON=$(jq -c --arg id "$TOPIC" '.topics[] | select(.id == $id)' "$CONFIG")
-[ -n "$TOPIC_JSON" ] || die "topic \"$TOPIC\" is not registered in harness.config.json"
-
-TITLE=$(printf '%s' "$TOPIC_JSON" | jq -r '.title // empty')
-[ -n "$TITLE" ] || TITLE="$TOPIC"
-STATUS=$(printf '%s' "$TOPIC_JSON" | jq -r '.status // "active"')
-
 TOPIC_DIR="$PROJECT_DIR/reports/$TOPIC"
 [ -n "$FINDINGS_DIR" ] || FINDINGS_DIR="$TOPIC_DIR/findings"
 [ -n "$OUT" ] || OUT="$TOPIC_DIR/README.md"
 GOAL="$TOPIC_DIR/goal.json"
 
-# ----- deterministic data over the MIF substrate -------------------------------
+# ----- deterministic data over the MIF substrate (mif-rh-cli engine) -----------
+# Resolves the manifest entry (the topic MUST be registered), rolls up finding
+# counts/verdicts/sources/dimensions/tags/created, and pre-renders the dimension
+# bullets, tags, purpose, Key-Findings draft, and Findings-by-Dimension table.
+# Emits TITLE/STATUS/COUNT/SOURCES/CREATED/SURV/WEAK/INC/FALS/DIM_BULLETS/TAGS/
+# PURPOSE/KEY_DRAFT/BY_DIM_TABLE as shell variable assignments.
+METADATA_SCRIPT=$("$ENGINE" harness topic-metadata "$TOPIC" --config "$CONFIG" --findings "$FINDINGS_DIR" --goal "$GOAL") \
+  || die "topic \"$TOPIC\" is not registered in harness.config.json"
+# Fail closed before eval: reject anything that isn't valid shell syntax (e.g.
+# truncated/corrupted output from an engine crash mid-write, which would
+# otherwise leave an unterminated quote for eval to choke on unpredictably).
+# Values are already single-quote-escaped by the engine — verified empirically
+# safe against injection (`'` -> `'\''`) — so this is a syntax sanity check,
+# not the only thing standing between untrusted content and eval.
+bash -n <<<"$METADATA_SCRIPT" || die "topic-metadata emitted output that isn't valid shell syntax — refusing to eval"
+eval "$METADATA_SCRIPT"
 
-read_findings() {
-  local files
-  files=$(find "$FINDINGS_DIR" -maxdepth 1 -name '*.json' 2>/dev/null | sort)
-  if [ -z "$files" ]; then
-    echo '{"count":0,"sources":0,"dimensions":[],"tags":[],"created":null,"verdicts":{},"by_dim":[],"key":[]}'
-    return
-  fi
-  # shellcheck disable=SC2086
-  jq -s '
-    {
-      count: length,
-      sources: ([.[].citations[]?.url] | map(select(. != null)) | unique | length),
-      dimensions: ([.[].extensions.harness.dimension] | map(select(. != null)) | unique),
-      tags: ([.[].tags[]?] | map(select(. != null)) | unique),
-      created: ([.[].created] | map(select(. != null)) | sort | first),
-      verdicts: (reduce .[] as $f ({};
-        .[($f.extensions.harness.verification.verdict // "none")] += 1)),
-      by_dim: ([.[] | (.extensions.harness.dimension // "unspecified")]
-        | sort | group_by(.) | map({dim: .[0], count: length})
-        | sort_by(-.count)),
-      key: (
-        map(select((.extensions.harness.verification.verdict // "") as $v
-                   | $v == "survived" or $v == "weakened"))
-        | sort_by(.extensions.harness.verification.verdict == "survived" | not)
-        | map(.summary // .title) | map(select(. != null)) | .[0:8]
-      )
-    }' $files
-}
-
-ROLL=$(read_findings)
-COUNT=$(printf '%s' "$ROLL" | jq -r '.count')
-SOURCES=$(printf '%s' "$ROLL" | jq -r '.sources')
-SURV=$(printf '%s' "$ROLL" | jq -r '.verdicts.survived // 0')
-WEAK=$(printf '%s' "$ROLL" | jq -r '.verdicts.weakened // 0')
-INC=$(printf '%s' "$ROLL" | jq -r '.verdicts.inconclusive // 0')
-FALS=$(printf '%s' "$ROLL" | jq -r '.verdicts.falsified // 0')
-
-CREATED=$(printf '%s' "$ROLL" | jq -r '.created // empty')
 TODAY=$(date -u +%Y-%m-%d)
 [ -n "$CREATED" ] || CREATED="$TODAY"
 CREATED="${CREATED:0:10}"   # normalize ISO datetime -> date-only
@@ -117,30 +99,6 @@ if [ -d "$TOPIC_DIR/quarantine" ]; then
 fi
 [ "$QCOUNT" -eq 0 ] && QCOUNT="$FALS"
 
-# Dimensions: union of goal dimensions and dimensions seen in findings, rendered as a
-# bulleted list with each dimension's harness.config description (matching the richer
-# zircote/research per-topic READMEs) — falls back to a bare bullet when no description.
-DIM_BULLETS=$(jq -rn \
-  --argjson roll "$ROLL" \
-  --slurpfile goal_arr <(cat "$GOAL" 2>/dev/null || echo '{}') \
-  --slurpfile cfg_arr <(cat "$CONFIG") '
-  ($cfg_arr[0] // {}) as $c
-  | ($goal_arr[0] // {}) as $g
-  | ((($g.dimensions // []) + $roll.dimensions) | unique) as $dims
-  | ($c.dimensions // []) as $cd
-  | if ($dims | length) == 0 then "—"
-    else ($dims | map(
-        . as $d
-        | ([$cd[] | select(.id == $d or .name == $d) | .description]
-           | map(select(. != null)) | first) as $desc
-        | "- **" + $d + "**" + (if ($desc // "") != "" then " — " + $desc else "" end)
-      ) | join("\n"))
-    end')
-
-# Tags rendered as backtick-quoted tokens (matches the zircote/research exemplars).
-TAGS=$(printf '%s' "$ROLL" | jq -r '
-  if (.tags | length) == 0 then "—" else (.tags | map("`" + . + "`") | join(" ")) end')
-
 # Falsification audit trail: link + date of the topic's falsification report, if one exists.
 FALS_REPORT=$(find "$TOPIC_DIR" -maxdepth 1 -name '*-falsification-report.md' 2>/dev/null | sort | tail -1)
 FALS_BASE=""; FALS_DATE=""
@@ -151,12 +109,6 @@ fi
 
 # Optional hero image (a *-readme-hero.* asset), surfaced under the metadata header.
 HERO=$(find "$TOPIC_DIR/_assets" -maxdepth 1 -iname '*readme-hero*' 2>/dev/null | sort | head -1)
-
-# Purpose draft: the goal statement, else a generic line.
-PURPOSE=$(jq -rn --slurpfile goal_arr <(cat "$GOAL" 2>/dev/null || echo '{}') --arg t "$TITLE" '
-  ($goal_arr[0] // {}) as $g
-  | ($g.goal_statement // $g.research_question // $g.goal // $g.question // null) as $q
-  | if $q == null or $q == "" then ("Research session for " + $t + ".") else $q end')
 
 # ----- preservation: keep authored prose + creation date on rebuild ------------
 
@@ -331,7 +283,7 @@ build_readme() {
   else
     # Draft: surviving/weakened finding summaries. The report-synthesizer / readme
     # skill replaces these with cross-finding synthesis (see those definitions).
-    printf '%s' "$ROLL" | jq -r '.key[] | "- " + .'
+    printf '%s\n' "$KEY_DRAFT"
     printf '\n'
   fi
 
@@ -381,7 +333,7 @@ build_readme() {
   else
     printf '| Dimension | Findings |\n'
     printf '| --- | --- |\n'
-    printf '%s' "$ROLL" | jq -r '.by_dim[] | "| \(.dim) | \(.count) |"'
+    printf '%s\n' "$BY_DIM_TABLE"
     printf '\n'
   fi
 
@@ -431,10 +383,9 @@ run_check() {
   # on-disk bullets are byte-identical to a freshly-computed draft, synthesis was
   # never applied — refuse the skeleton (the floor that shipped as "shit").
   if [ "$COUNT" -gt 0 ]; then
-    local draft ondisk
-    draft=$(printf '%s' "$ROLL" | jq -r '.key[] | "- " + .')
+    local ondisk
     ondisk=$(extract_section "## Key Findings" "$OUT")
-    if [ "$ondisk" = "$draft" ]; then
+    if [ "$ondisk" = "$KEY_DRAFT" ]; then
       echo "FAIL: Key Findings are the auto-generated draft — synthesis not applied (run the readme skill / report-synthesizer Step 4c)" >&2
       errs=$((errs+1))
     fi

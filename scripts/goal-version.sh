@@ -3,32 +3,24 @@
 #
 # The id is gv-<sha256(normalized goal)[:12]>, where "normalized" is the goal JSON
 # with the lineage fields (version, supersedes, revision) removed and all keys
-# sorted (jq -S, compact). Removing the lineage fields makes the hash a stable
+# sorted, compact. Removing the lineage fields makes the hash a stable
 # function of the goal's *content* — minting a new version (which sets version/
 # supersedes/revision) never perturbs the hash of the content it describes. The id
 # is self-verifying (recompute and compare) and independent of git commit timing.
 #
+# Since research-harness-template#276 (Story #298, Category B cutover), this
+# delegates to the mif-rh engine (mif-rh-cli), hard required: install it with
+# scripts/fetch-engine.sh, put mif-rh-cli on PATH, or set MIF_RH_CLI.
+#
 # Usage: goal-version.sh <goal.json>
 #        prints e.g. gv-9f3c1a2b4d5e
-
 set -uo pipefail
-
-die() { echo "goal-version: $*" >&2; exit 2; }
-command -v jq >/dev/null 2>&1 || die "jq is required"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# shellcheck source=scripts/lib/engine.sh
+. "$ROOT/scripts/lib/engine.sh"
+ENGINE="$(engine_bin "$ROOT")" || exit 5
 
 GOAL="${1:?usage: goal-version.sh <goal.json>}"
-[ -f "$GOAL" ] || die "not a file: $GOAL"
+[ -f "$GOAL" ] || { echo "goal-version: not a file: $GOAL" >&2; exit 2; }
 
-# Portable sha256 → hex on stdout (first field).
-sha256_hex() {
-  if command -v sha256sum >/dev/null 2>&1; then sha256sum | awk '{print $1}'
-  elif command -v shasum >/dev/null 2>&1; then shasum -a 256 | awk '{print $1}'
-  elif command -v openssl >/dev/null 2>&1; then openssl dgst -sha256 | awk '{print $NF}'
-  else die "no sha256 tool (need sha256sum, shasum, or openssl)"; fi
-}
-
-NORM=$(jq -cS 'del(.version, .supersedes, .revision)' "$GOAL") \
-  || die "invalid goal JSON: $GOAL"
-
-HASH=$(printf '%s' "$NORM" | sha256_hex)
-printf 'gv-%s\n' "${HASH:0:12}"
+exec "$ENGINE" harness goal-version "$GOAL"

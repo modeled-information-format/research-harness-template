@@ -9,7 +9,7 @@
 # Usage: fetch-engine.sh [--version <X.Y.Z>] [--dest <dir>]
 set -euo pipefail
 
-ENGINE_VERSION="0.4.0"   # pinned; bump alongside docs/reference/dependencies.md
+ENGINE_VERSION="0.5.0"   # pinned; bump alongside docs/reference/dependencies.md
 ENGINE_REPO="modeled-information-format/mif-rs"
 SIGNER="modeled-information-format/mif-rs/.github/workflows/release.yml"
 

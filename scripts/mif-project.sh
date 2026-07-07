@@ -11,10 +11,20 @@
 # after writing the .md and fails non-zero if the report does not project to a
 # valid L3 finding. gate_m10 in verify.sh calls it over every emitted report.
 #
+# Since research-harness-template#276 (Category B cutover), both halves
+# delegate to the mif-rh engine (mif-rh-cli), hard required: install it with
+# scripts/fetch-engine.sh, put mif-rh-cli on PATH, or set MIF_RH_CLI. The
+# projection + schema-validation half moved in Story #298; the
+# citation-integrity half (scripts/check-citation-integrity.sh) moved in
+# Story #287 — still called as its own step below.
+#
 # Usage: mif-project.sh <report.md> [--json-out <out.json>]
 #   exit 0 = projects to a valid L3 finding; non-zero = not compliant.
-
 set -uo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# shellcheck source=scripts/lib/engine.sh
+. "$ROOT/scripts/lib/engine.sh"
+ENGINE="$(engine_bin "$ROOT")" || exit 5
 
 # Resolve the report path against the INVOKING cwd before we cd to the repo root,
 # so a caller-relative path (e.g. from an eval working dir) still resolves.
@@ -27,61 +37,25 @@ if [ "${2:-}" = "--json-out" ]; then
   case "$JSON_OUT" in /*) : ;; *) JSON_OUT="$(pwd)/$JSON_OUT" ;; esac
 fi
 
-cd "$(dirname "$0")/.." || exit 2
+TMPD="$(mktemp -d)"; TMP="$TMPD/projection.json"; trap 'rm -rf "$TMPD"' EXIT
 
-# A temp dir so the projection carries a .json extension (ajv-cli selects its
-# parser by file extension; an extensionless file is mis-parsed).
-TMPD="$(mktemp -d)"; TMP="$TMPD/projection.json"; TMPE="$TMPD/err"; trap 'rm -rf "$TMPD"' EXIT
-
-# Project frontmatter + body -> finding JSON (the JSON-LD projection of the MIF
-# concept). Split the frontmatter from the body with plain text ops (finding the
-# '---' delimiters is not YAML parsing), convert the frontmatter YAML -> JSON with
-# yq (the YAML analog of jq — consistent jq/yq tooling), and fold the body in as
-# MIF `content` unless the frontmatter already sets it.
-if [ "$(sed -n '1p' "$MD")" != "---" ]; then
-  echo "mif-project: $MD — no opening YAML frontmatter delimiter ('---' on line 1)" >&2; exit 1
-fi
-close=$(awk 'NR>1 && $0=="---"{print NR; exit}' "$MD")
-if [ -z "$close" ]; then
-  echo "mif-project: $MD — no closing frontmatter delimiter" >&2; exit 1
-fi
-sed -n "2,$((close-1))p" "$MD" > "$TMPD/fm.yaml"
-sed -n "$((close+1)),\$p" "$MD" > "$TMPD/body.md"
-
-if ! yq -p=yaml -o=json '.' "$TMPD/fm.yaml" > "$TMPD/fm.json" 2>"$TMPE"; then
-  echo "mif-project: $MD — frontmatter is not valid YAML:" >&2; sed 's/^/  /' "$TMPE" >&2; exit 1
-fi
-if ! jq -e 'type=="object"' "$TMPD/fm.json" >/dev/null 2>&1; then
-  echo "mif-project: $MD — frontmatter is not a mapping" >&2; exit 1
-fi
-# Fold the body in as `content` if the frontmatter does not set it (trim the body's
-# surrounding blank lines). --rawfile avoids any arg-escaping of the body text.
-if ! jq --rawfile body "$TMPD/body.md" '
-      (if ((.content // "") == "") then .content = ($body | sub("^\\s+";"") | sub("\\s+$";"")) else . end)
-      | (if ((.content // "") == "") then .content = (.title // "") else . end)
-    ' "$TMPD/fm.json" > "$TMP" 2>"$TMPE"; then
-  echo "mif-project: $MD — projection assembly failed:" >&2; sed 's/^/  /' "$TMPE" >&2; exit 1
-fi
-
-# Validate the projection at MIF L3 (same ajv closure as findings).
-if ! ajv validate --spec=draft2020 --strict=false -c ajv-formats \
-      -s schemas/findings.schema.json \
-      -r schemas/mif/mif.schema.json \
-      -r schemas/mif/definitions/entity-reference.schema.json \
-      -d "$TMP" >/dev/null 2>&1; then
-  echo "mif-project: $MD — projection does NOT validate against findings.schema.json (not MIF L3):" >&2
-  ajv validate --spec=draft2020 --strict=false -c ajv-formats \
-      -s schemas/findings.schema.json \
-      -r schemas/mif/mif.schema.json \
-      -r schemas/mif/definitions/entity-reference.schema.json \
-      -d "$TMP" 2>&1 | sed 's/^/  /' >&2 || true
+if ! "$ENGINE" harness project-report "$MD" \
+      --schema "$ROOT/schemas/findings.schema.json" \
+      --ref "$ROOT/schemas/mif/mif.schema.json" \
+      --ref "$ROOT/schemas/mif/definitions/entity-reference.schema.json" \
+      --json-out "$TMP"; then
+  "$ENGINE" harness project-report "$MD" \
+      --schema "$ROOT/schemas/findings.schema.json" \
+      --ref "$ROOT/schemas/mif/mif.schema.json" \
+      --ref "$ROOT/schemas/mif/definitions/entity-reference.schema.json" \
+      --json-out "$TMP" 2>&1 | sed 's/^/  /' >&2
   exit 1
 fi
 
 # Citation-integrity (rejects a falsified verdict + dead/malformed citations).
-if ! scripts/check-citation-integrity.sh "$TMP" >/dev/null 2>&1; then
+if ! "$ROOT/scripts/check-citation-integrity.sh" "$TMP" >/dev/null 2>&1; then
   echo "mif-project: $MD — fails citation-integrity gate:" >&2
-  scripts/check-citation-integrity.sh "$TMP" 2>&1 | sed 's/^/  /' >&2 || true
+  "$ROOT/scripts/check-citation-integrity.sh" "$TMP" 2>&1 | sed 's/^/  /' >&2 || true
   exit 1
 fi
 

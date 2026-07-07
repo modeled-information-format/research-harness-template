@@ -24,63 +24,25 @@
 # A finding with no fixture entry is recorded as a PLACEHOLDER `inconclusive` (it was not
 # adversarially tested) WITHOUT `attempted_at`, so a later real gate run can still overwrite
 # it. Output: the updated finding JSON on stdout.
+#
+# Since research-harness-template#276 (Story #287, Category B cutover), verdict
+# resolution (fixture lookup, the one-round rule, the merge into
+# extensions.harness.verification) delegates to the mif-rh engine (mif-rh-cli),
+# hard required: install it with scripts/fetch-engine.sh, put mif-rh-cli on
+# PATH, or set MIF_RH_CLI.
 
 set -uo pipefail
 
 FINDING="${1:?usage: falsify.sh <finding.json> [<evidence-fixture.json>]}"
 FIXTURE="${2:-}"
 
-[ -f "$FINDING" ] || { echo "falsify: finding not found: $FINDING" >&2; exit 2; }
-jq -e . "$FINDING" >/dev/null 2>&1 || { echo "falsify: finding is not valid JSON" >&2; exit 2; }
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# shellcheck source=scripts/lib/engine.sh
+. "$ROOT/scripts/lib/engine.sh"
+ENGINE="$(engine_bin "$ROOT")" || exit 5
 
-ID=$(jq -r '.["@id"] // empty' "$FINDING")
-
-# One-round rule (SPEC falsification-analyst Step 1): never falsify a finding that
-# already carries a verdict from a prior round — that recursion never terminates.
-if jq -e '.extensions.harness.verification.attempted_at? // empty | length > 0' "$FINDING" >/dev/null 2>&1; then
-  echo "falsification-gate: skipped (already falsified this session): $ID" >&2
-  cat "$FINDING"
-  exit 0
-fi
-
-# Resolve the verdict from the fixture (or a placeholder `inconclusive` if none).
-if [ -n "$FIXTURE" ] && [ -f "$FIXTURE" ]; then
-  ENTRY=$(jq -c --arg id "$ID" '.[$id] // {}' "$FIXTURE")
+if [ -n "$FIXTURE" ]; then
+  exec "$ENGINE" harness falsify "$FINDING" "$FIXTURE"
 else
-  ENTRY='{}'
+  exec "$ENGINE" harness falsify "$FINDING"
 fi
-
-# An EXPLICIT fixture verdict is recorded as-is. A finding with NO fixture entry was not
-# adversarially tested this run, so we WITHHOLD a pass: it is a PLACEHOLDER `inconclusive`
-# (never `survived`, which would be a false pass). A placeholder OMITS `attempted_at` (below)
-# so the one-round rule does NOT treat it as graded — a later REAL gate can still overwrite it.
-# (A real verdict carries `attempted_at` and the one-round rule protects it from re-grading.)
-PLACEHOLDER=
-if [ -z "$(jq -r '.verdict // empty' <<<"$ENTRY")" ]; then
-  VERDICT="inconclusive"
-  BASIS="No disconfirming-evidence entry supplied — finding was not adversarially tested this run."
-  PLACEHOLDER=1
-else
-  VERDICT=$(jq -r '.verdict' <<<"$ENTRY")
-  BASIS=$(jq -r '.basis // "Adversarial queries executed; no disconfirming evidence found."' <<<"$ENTRY")
-fi
-
-# Deterministic UTC timestamp from the fixture if provided, else a fixed marker
-# (scripts cannot call the clock in some sandboxes; the agent supplies real time).
-ATTEMPTED=$(jq -r '.attempted_at // "1970-01-01T00:00:00Z"' <<<"$ENTRY")
-
-echo "falsification-gate: run ($ID -> $VERDICT)" >&2
-
-jq --arg v "$VERDICT" --arg b "$BASIS" --arg t "$ATTEMPTED" --arg ph "$PLACEHOLDER" \
-   --argjson dis "$(jq -c '.disconfirming // []' <<<"$ENTRY")" '
-  .extensions = (.extensions // {})
-  | .extensions.harness = (.extensions.harness // {})
-  # A placeholder (no fixture entry) OMITS attempted_at, so the one-round rule does not treat
-  # it as graded and a later REAL gate can still overwrite it. A real verdict records
-  # attempted_at and is protected from re-grading.
-  | .extensions.harness.verification = ({
-      verdict: $v,
-      verdict_basis: $b,
-      disconfirming_evidence: $dis
-    } + (if $ph == "1" then {} else {attempted_at: $t} end))
-' "$FINDING"

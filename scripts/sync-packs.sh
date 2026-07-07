@@ -24,30 +24,33 @@
 
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 2
+ROOT="$(pwd)"
 
 CFG="${1:-harness.config.json}"
 OUT="${2:-.claude/enabled-packs.json}"
 SETTINGS="${3:-.claude/settings.local.json}"
 [ -f "$CFG" ] || { echo "sync-packs: config not found: $CFG" >&2; exit 2; }
 
-MARKET=$(jq -r '.name // "research-harness"' .claude-plugin/marketplace.json 2>/dev/null)
-
 # Resolve the materialized enablement (sidecar + the native enabledPlugins map)
 # in one python pass so a manifest/parse failure is fatal (no stale OUT).
-python3 - "$CFG" "$OUT" "$SETTINGS" "$MARKET" <<'PY' || { echo "sync-packs: materialization failed" >&2; exit 1; }
+python3 - "$CFG" "$OUT" "$SETTINGS" <<'PY' || { echo "sync-packs: materialization failed" >&2; exit 1; }
 import json, sys
-cfg_path, out_path, settings_path, market = sys.argv[1:5]
+cfg_path, out_path, settings_path = sys.argv[1:4]
 cfg = json.load(open(cfg_path))
 enabled = [p for p in cfg.get("packs", []) if p.get("enabled")]
 marketplaces_by_name = {m["name"]: m for m in cfg.get("marketplaces", []) if isinstance(m, dict) and "name" in m}
 
 # Each bundled plugin is one skill nested under its pack (packs/<pack>/<skill>/);
 # resolve its directory from the marketplace's source path by plugin name rather
-# than assuming packs/<name>/.
+# than assuming packs/<name>/. Also the source of the marketplace's own name
+# (used to key enabledPlugins as "<pack>@<marketplace>") — read once here
+# rather than via a second read of the same file elsewhere in this script.
 try:
     market_doc = json.load(open(".claude-plugin/marketplace.json"))
+    market = market_doc.get("name", "research-harness")
     src_by_name = {p["name"]: p.get("source", "") for p in market_doc.get("plugins", [])}
 except (OSError, ValueError):
+    market = "research-harness"
     src_by_name = {}
 
 packs, enabled_plugins = [], {}
@@ -106,34 +109,15 @@ print(f"sync-packs: {len(enabled)} pack(s) enabled -> {settings_path} enabledPlu
 PY
 
 # --- Ontology catalog (SPEC §8c) ---
-# Append the enabled ontology subset to the sidecar. Version is read from the
-# vendored YAML with yq (the python pass above is stdlib-only — no PyPI YAML).
-# Core ontologies (schemas/ontologies/) are ALWAYS cataloged; extended ontologies
-# (packs/ontologies/<id>/) only when enabled in the config's ontologies[]. A topic
-# may bind only a cataloged id (gate_m12 enforces binding -> catalog -> registry).
-# yq is required here — fail fast rather than silently emit an empty catalog (which
-# would cause confusing downstream resolver failures under `set -u`).
-command -v yq >/dev/null 2>&1 || { echo "sync-packs: yq is required to build the ontology catalog" >&2; exit 1; }
-onto='[]'
-add_onto(){ # id version source core — skip a malformed ontology (empty/null id or version)
-  { [ -z "$1" ] || [ "$1" = "null" ] || [ -z "$2" ] || [ "$2" = "null" ]; } && return 0
-  onto=$(jq -c --arg id "$1" --arg v "$2" --arg s "$3" --argjson core "$4" \
-    '. + [{id:$id, version:$v, source:$s, core:$core}]' <<<"$onto"); }
-# Only the always-on generic core is core=true; other MIF-compliant layers under
-# schemas/ontologies/ (e.g. engineering-base) are cataloged present-but-not-core
-# (core=false) so they are reachable via a descendant's `extends` chain WITHOUT being
-# bound to every topic. This keeps the upstream generic core domain-neutral.
-CORE_IDS=" mif-base mif-generic shared-traits "
-for y in schemas/ontologies/*/*.yaml; do
-  [ -e "$y" ] || continue
-  oid=$(yq -r '.ontology.id' "$y")
-  case "$CORE_IDS" in *" $oid "*) iscore=true ;; *) iscore=false ;; esac
-  add_onto "$oid" "$(yq -r '.ontology.version' "$y")" "$y" "$iscore"
-done
-while IFS= read -r oid; do
-  [ -z "$oid" ] && continue
-  y="packs/ontologies/$oid/$oid.ontology.yaml"
-  [ -f "$y" ] && add_onto "$oid" "$(yq -r '.ontology.version' "$y")" "$y" false
-done < <(jq -r '.ontologies[]? | select(.enabled) | .id' "$CFG")
-jq --argjson onto "$onto" '.ontologies = $onto' "$OUT" > "$OUT.onto.tmp" && mv "$OUT.onto.tmp" "$OUT"
-echo "sync-packs: cataloged $(jq '.ontologies | length' "$OUT") ontolog(ies) (core + enabled)"
+# Rebuilds the sidecar's `.ontologies` key: every committed base layer under
+# schemas/ontologies/ (core, if its id is mif-base/mif-generic/shared-traits)
+# plus every ontology enabled in $CFG that is vendored under packs/ontologies/.
+# A topic may bind only a cataloged id (gate_m12 enforces binding -> catalog ->
+# registry). Since research-harness-template#276 (Story #277, Category A
+# cutover), this delegates to the mif-rh engine (mif-rh-cli), hard required:
+# install it with scripts/fetch-engine.sh, put mif-rh-cli on PATH, or set
+# MIF_RH_CLI.
+# shellcheck source=scripts/lib/engine.sh
+. "$ROOT/scripts/lib/engine.sh"
+ENGINE="$(engine_bin "$ROOT")" || exit 5
+exec "$ENGINE" ontology sync --root "$ROOT" --config "$CFG" --catalog "$OUT"

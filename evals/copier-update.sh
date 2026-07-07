@@ -35,6 +35,18 @@ if ! command -v copier >/dev/null 2>&1; then
   exit 1
 fi
 
+# The instantiated harness's own copier tasks (e.g. site-toggle.sh, Story #302)
+# now hard-require the mif-rh engine. Its `engine_bin` resolves relative to
+# ITS OWN root, so a fresh copier-generated instance has no engine of its own —
+# resolve the REAL installed engine via this repo's root and pin it as an env
+# var, which propagates into copier's task subprocesses regardless of their
+# cwd (the same fix already applied to evals/ontology-vendoring.sh and
+# evals/sync-registry-ontologies.sh for the same class of scripts).
+# shellcheck source=scripts/lib/engine.sh
+. "$ROOT/scripts/lib/engine.sh"
+REAL_ENGINE="$(engine_bin "$ROOT")" || { echo "copier-update: engine not found" >&2; exit 5; }
+export MIF_RH_CLI="$REAL_ENGINE"
+
 # Run copier with its stderr CAPTURED (surfaced on failure, never swallowed — a gate that
 # hides its tool's error makes every failure an undiagnosable "flake") and a bounded retry of
 # two specific transient races on copier's LOCAL-path clone of the template, both under

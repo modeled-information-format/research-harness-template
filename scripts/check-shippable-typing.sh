@@ -14,76 +14,26 @@
 #   exit 0 = all shippable findings carry a valid ontology type
 #   exit 1 = one or more shippable findings are untyped/unresolved/invalid (synthesis BLOCKED)
 #   exit 2 = reports-dir does not exist ; exit 3 = ontology-map.json missing/unparseable (cannot prove typing)
-#   exit 5 = jq not found (cannot evaluate typing — fail closed)
+#   exit 5 = mif-rh-cli engine not found (cannot evaluate typing — fail closed)
+#
+# Since research-harness-template#276 (Story #287, Category B cutover), typing
+# resolution (discovery, verdict/basis lookup, blocker formatting) delegates to
+# the mif-rh engine (mif-rh-cli), hard required: install it with
+# scripts/fetch-engine.sh, put mif-rh-cli on PATH, or set MIF_RH_CLI. The
+# reports-dir usage/existence check (pure bash, never used jq) stays as-is.
+
 set -uo pipefail
-# Fail closed on a missing toolchain: every typing decision below runs through jq, and a
-# jq failure inside a command substitution would yield "" (no blocker) — i.e. a vacuous
-# pass. Require it up front (mirrors validate-concordance.sh) so the gate cannot fail open.
-command -v jq >/dev/null 2>&1 || { echo "check-shippable-typing: 'jq' not found — cannot evaluate typing (fail closed)" >&2; exit 5; }
 RD="${1:?usage: check-shippable-typing.sh <reports-dir>}"
 case "$RD" in /*) : ;; *) RD="$(pwd)/$RD" ;; esac
-FDIR="$RD/findings"; MAP="$RD/ontology-map.json"; topic="$(basename "$RD")"
-# Guard the reports-dir, NOT $RD/findings: discovery (below) scans both the findings/ subdir
+# Guard the reports-dir, NOT $RD/findings: discovery scans both the findings/ subdir
 # AND a flat reports/<topic>/finding-*.json, matching reconcile-session.sh's list_findings — so
 # a flat-only/legacy layout (or a topic without a findings/ subdir) must reach the scan, not be
 # rejected here. A genuinely empty topic yields no blockers (nothing to gate), which is correct.
 [ -d "$RD" ] || { echo "check-shippable-typing: reports dir does not exist: $RD" >&2; exit 2; }
-# Fail closed: without a map we cannot prove typing (never pass vacuously). Print the SAME
-# operator unblock path the exit-1 blocker prints — a missing/unreadable map is exactly when
-# the operator needs to know how to regenerate it.
-[ -f "$MAP" ] || { echo "check-shippable-typing: ontology-map.json missing — synthesis BLOCKED (fail closed). Unblock: /ontology-review --topic $topic --enrich  then  /resume --topic $topic" >&2; exit 3; }
-# Fail closed: a present-but-unparseable map cannot prove typing either. A corrupt/partial
-# map makes every per-finding `bad` lookup error to "" (no blocker) — i.e. it would PASS
-# vacuously, the exact hole this gate exists to close. Treat it like a missing map (exit 3).
-jq -e 'type=="array"' "$MAP" >/dev/null 2>&1 || { echo "check-shippable-typing: ontology-map.json unparseable or not a record array — synthesis BLOCKED (fail closed). Unblock: /ontology-review --topic $topic --enrich  then  /resume --topic $topic" >&2; exit 3; }
 
-blockers=""
-while IFS= read -r f; do
-  [ -z "$f" ] && continue
-  # Fail closed on a finding we cannot parse: its verdict and type are unknowable, so we
-  # cannot prove it is safe to ship — an unreadable shippable-or-unknown finding BLOCKS
-  # rather than being silently skipped. (-e makes jq exit non-zero on a parse error; a
-  # valid finding with no verdict yields "" and exit 0, so it is correctly not a blocker.)
-  if ! verdict=$(jq -er '.extensions.harness.verification.verdict // ""' "$f" 2>/dev/null); then
-    blockers="${blockers}  ${f} (unreadable JSON)"$'\n'
-    continue
-  fi
-  # Only findings that SHIP gate. Falsified/quarantined/inconclusive (and any other verdict)
-  # are excluded from synthesis already, so their typing never blocks.
-  case "$verdict" in
-    survived|weakened) : ;;
-    *) continue ;;
-  esac
-  id=$(jq -r '."@id" // empty' "$f" 2>/dev/null)
-  # Block if the map has no record, the record is invalid, or it resolved to no type
-  # (basis untyped/unresolved) OR to a type that is only a content-pattern GUESS never
-  # written to the finding itself (basis discovery — see resolve-ontology.sh; nothing
-  # durable exists on disk, so it must block exactly like untyped, not pass vacuously).
-  # Same predicate reconcile-session.sh uses for untyped_shippable.
-  # Exit-check the lookup: with no `set -e`, a jq failure here would yield "" and silently
-  # NOT block — fail closed by treating any lookup error itself as a blocker.
-  if ! bad=$(jq -r --arg id "$id" '
-    (map(select(.finding_id==$id)) | first) as $r
-    | if   $r == null         then "missing"
-      elif ($r.valid != true) then "invalid"
-      elif ($r.basis=="untyped" or $r.basis=="unresolved" or $r.basis=="discovery") then $r.basis
-      else "" end' "$MAP" 2>/dev/null); then
-    bad="map-lookup-error"
-  fi
-  # Identify the blocker by @id, or by file path when the finding has no @id (the empty-id
-  # case the operator most needs to locate) — never print a bare "  (missing)".
-  [ -n "$bad" ] && blockers="${blockers}  ${id:-$f} (${bad})"$'\n'
-done < <( { find "$FDIR" -maxdepth 1 -type f -name '*.json' ! -name '.*' ! -name '*.tmp'
-            find "$RD" -maxdepth 1 -type f -name 'finding-*.json' ! -name '.*' ! -name '*.tmp'; } 2>/dev/null | sort -u )
-# Discovery scans BOTH the canonical findings/ subdir AND a flat reports/<topic>/finding-*.json,
-# matching reconcile-session.sh's list_findings — so a finding in either layout is gated and none
-# can bypass the fail-closed typing check (sort -u dedupes; the two dirs do not overlap).
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# shellcheck source=scripts/lib/engine.sh
+. "$ROOT/scripts/lib/engine.sh"
+ENGINE="$(engine_bin "$ROOT")" || exit 5
 
-if [ -n "$blockers" ]; then
-  echo "check-shippable-typing: $(printf '%s' "$blockers" | grep -c .) shippable finding(s) lack a valid ontology type — synthesis BLOCKED (fail closed):" >&2
-  printf '%s' "$blockers" >&2
-  echo "check-shippable-typing: unblock with  /ontology-review --topic $topic --enrich  then  /resume --topic $topic" >&2
-  exit 1
-fi
-echo "check-shippable-typing: all shippable findings carry a valid ontology type — ok"
-exit 0
+exec "$ENGINE" harness check-shippable-typing "$RD"
