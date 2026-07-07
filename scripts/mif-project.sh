@@ -11,12 +11,12 @@
 # after writing the .md and fails non-zero if the report does not project to a
 # valid L3 finding. gate_m10 in verify.sh calls it over every emitted report.
 #
-# Since research-harness-template#276 (Story #298, Category B cutover), the
-# projection + schema-validation half delegates to the mif-rh engine
-# (mif-rh-cli), hard required: install it with scripts/fetch-engine.sh, put
-# mif-rh-cli on PATH, or set MIF_RH_CLI. The citation-integrity half
-# (scripts/check-citation-integrity.sh) is a separate, not-yet-migrated
-# concern (Story #287) — still called as its own step below.
+# Since research-harness-template#276 (Category B cutover), both halves
+# delegate to the mif-rh engine (mif-rh-cli), hard required: install it with
+# scripts/fetch-engine.sh, put mif-rh-cli on PATH, or set MIF_RH_CLI. The
+# projection + schema-validation half moved in Story #298; the
+# citation-integrity half (scripts/check-citation-integrity.sh) moved in
+# Story #287 — still called as its own step below.
 #
 # Usage: mif-project.sh <report.md> [--json-out <out.json>]
 #   exit 0 = projects to a valid L3 finding; non-zero = not compliant.
