@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-07-07
+
+### Added
+
+- **`mif-rh-cli` powers 30 scripts previously implemented in bash+jq** (#276):
+  ontology vendoring/cataloging/authoring (`fetch-ontology.sh`,
+  `sync-packs.sh`, `check-ontology-lock.sh`, `sync-registry-ontologies.sh`,
+  `author-ontology.sh`), corpus/concordance synthesis (`synthesize-corpus.sh`,
+  `import-corpus.sh`, `build-concordance.sh`, `reconcile-session.sh`,
+  `synthesize-artifact.sh`, `build-topic-readme.sh`), validation gates
+  (`assert-graph-mif.sh`, `check-citation-integrity.sh`,
+  `check-shippable-typing.sh`, `falsify.sh`, `check-relationship-targets.sh`,
+  `validate-concordance.sh`, plus `verify.sh`'s two whole-registry ontology
+  scans), graph/index/membership/rendering (`build-graph.sh`,
+  `build-graph-viz.sh`, `build-index.sh`, `resolve-membership.sh`,
+  `render-artifact.sh`), versioning/release orchestration
+  (`bump-version.sh`, `goal-version.sh`, `check-version-bump.sh`,
+  `mif-project.sh`), and feature toggles/packaging (`site-toggle.sh`,
+  `pack-toggle.sh`, `wrap-source.sh`). Requires mif-rh-cli >= 0.5.0.
+
+### Fixed
+
+- **CI**: `verify.sh`'s cross-pack relationship-reference and subtype_of
+  gates now surface the engine's actual error instead of a misleading
+  "orphans found" verdict when the engine call itself fails.
+- **CI**: the standalone `copier-update` eval and the version-bump job now
+  provision the engine correctly (a fresh copier-generated instance has no
+  engine of its own to resolve).
+- **CI**: workflow steps that read public release artifacts now mint a
+  short-lived App token instead of relying on the ambient `GITHUB_TOKEN`.
+
 ## [0.10.1] - 2026-07-06
 
 ### Added
@@ -707,7 +738,10 @@ First release of the domain-general research harness template.
 - **Distribution** as a Copier living template and a Claude Code plugin
   marketplace.
 
-[Unreleased]: https://github.com/modeled-information-format/research-harness-template/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/modeled-information-format/research-harness-template/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/modeled-information-format/research-harness-template/compare/v0.10.1...v0.11.0
+[0.10.1]: https://github.com/modeled-information-format/research-harness-template/compare/v0.10.0...v0.10.1
+[0.10.0]: https://github.com/modeled-information-format/research-harness-template/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/modeled-information-format/research-harness-template/compare/v0.8.3...v0.9.0
 [0.8.3]: https://github.com/modeled-information-format/research-harness-template/compare/v0.8.2...v0.8.3
 [0.8.2]: https://github.com/modeled-information-format/research-harness-template/compare/v0.8.1...v0.8.2
