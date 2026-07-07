@@ -113,6 +113,13 @@ jobs:
         run: bash evals/run-evals.sh
 
       - name: copier update propagation
+        # Same nested-fetch-engine GH_TOKEN need as the verify.sh step above
+        # (this runs evals/copier-update.sh directly, a second time, as its
+        # own independently-reported gate — see the markdownlint job's
+        # "Defect 3" comment below for why it's a separate step from
+        # verify.sh's own internal check).
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: bash evals/copier-update.sh
 
   markdownlint:
