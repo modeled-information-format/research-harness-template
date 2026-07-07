@@ -12,7 +12,16 @@
 # reports/) so it can't dirty the working tree or block `copier update`. Callers
 # that want an in-repo path (the sample fixture, the verify gate) pass $2.
 
+# Since research-harness-template#276 (Story #293, Category B cutover), the
+# node/edge counts delegate to the mif-rh engine (mif-rh-cli), hard required:
+# install it with scripts/fetch-engine.sh, put mif-rh-cli on PATH, or set
+# MIF_RH_CLI.
 set -uo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# shellcheck source=scripts/lib/engine.sh
+. "$ROOT/scripts/lib/engine.sh"
+ENGINE="$(engine_bin "$ROOT")" || exit 5
+
 G="${1:?usage: build-graph-viz.sh <knowledge-graph.json> [out.html]}"
 [ -f "$G" ] || { echo "build-graph-viz: not found: $G" >&2; exit 2; }
 
@@ -30,8 +39,7 @@ fi
 # when the file is opened locally). "\/" is a valid JSON string escape, so the
 # embedded payload still parses identically.
 DATA=$(sed 's#</#<\\/#g' "$G")
-NODES=$(jq '.nodes|length' "$G")
-EDGES=$(jq '.edges|length' "$G")
+read -r NODES EDGES < <("$ENGINE" harness graph-stats "$G")
 
 cat > "$OUT" <<HTML
 <!DOCTYPE html>
