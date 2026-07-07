@@ -14,6 +14,13 @@
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 2
 
+# gate_m20/gate_m22's whole-registry ontology-integrity scans delegate to the
+# mif-rh engine (Story #287, research-harness-template#276) rather than a hand-rolled
+# yq+jq registry walk. Resolved once here since it's used by exactly those two gates.
+# shellcheck source=scripts/lib/engine.sh
+. scripts/lib/engine.sh
+ENGINE="$(engine_bin "$(pwd)")" || exit 5
+
 # Template vs instance. The distributable template carries copier.yml; an
 # instantiated harness has it stripped at generation. Template-only self-tests
 # (Milestone 7 distribution, and 8c/8d which assert the template stays clean and
@@ -1908,32 +1915,18 @@ gate_m20() {
   # edges (e.g. security's `realizes`/`mitigates_threat` -> software-engineering's
   # security-incident/security-threat). Assert every relationship from/to across ALL
   # registry ontologies resolves to a type declared in SOME registry ontology, so a
-  # future rename can't silently dangle an edge. (Membership via grep -Fxq, not comm
-  # — comm needs both inputs in its own byte collation, which a locale-aware `sort`
-  # does not guarantee for type names mixing `-` and `_`.)
-  local types rels orphans n r
-  # LC_ALL=C: byte collation so `sort -u` cannot treat distinct names that differ
-  # only in punctuation (e.g. `a-b` vs `a_b`) as equal and drop one as a "duplicate".
-  types=$(for y in schemas/ontologies/*/*.yaml packs/ontologies/*/*.ontology.yaml; do
-    [ -f "$y" ] && yq -o=json '.' "$y" 2>/dev/null | jq -r '.entity_types[]?.name // empty'
-  done | LC_ALL=C sort -u)
-  rels=$(for y in packs/ontologies/*/*.ontology.yaml; do
-    [ -f "$y" ] && yq -o=json '.' "$y" 2>/dev/null | jq -r '(.relationships // {}) | to_entries[] | (.value.from[]?, .value.to[]?)'
-  done | LC_ALL=C sort -u)
-  orphans=""
-  while IFS= read -r r; do
-    [ -n "$r" ] || continue
-    # A literal "*" endpoint is a recognized wildcard meaning "any declared
-    # type" (e.g. mif-docs' symmetric relates-to) — not a real type name to
-    # resolve against the registry.
-    [ "$r" = "*" ] && continue
-    printf '%s\n' "$types" | grep -Fxq -- "$r" || orphans="${orphans}${r} "
-  done <<< "$rels"
-  n=$(printf '%s\n' "$types" | grep -c .)
-  if [ -z "$orphans" ]; then
-    ok "every cross-pack relationship endpoint resolves to a declared entity type ($n types across the registry)"
+  # future rename can't silently dangle an edge.
+  #
+  # Since research-harness-template#276 (Story #287), this whole-registry scan
+  # delegates to the mif-rh engine (mif-rh-cli harness check-ontology-registry).
+  local reg_out reg_n reg_orphans
+  reg_out=$("$ENGINE" harness check-ontology-registry --root "$(pwd)" 2>/dev/null)
+  reg_n=$(printf '%s\n' "$reg_out" | sed -n 's/^ontology-registry: \([0-9]*\) type(s).*/\1/p')
+  reg_orphans=$(printf '%s\n' "$reg_out" | sed -n 's/^ontology-registry: relationship-endpoint orphans: //p')
+  if [ "$reg_orphans" = "none" ]; then
+    ok "every cross-pack relationship endpoint resolves to a declared entity type ($reg_n types across the registry)"
   else
-    bad "relationship endpoint(s) declared in no registry ontology: ${orphans}"
+    bad "relationship endpoint(s) declared in no registry ontology: ${reg_orphans}"
   fi
 }
 
@@ -2012,19 +2005,16 @@ JSON
   vw22() { scripts/validate-concordance.sh "$1" --config "$T/cfg.json" --catalog "$T/cat.json" >/dev/null 2>&1; }
   vw22 "$T/good.json"; local g=$?
   vw22 "$T/bad.json"; local b=$?
-  # subtype_of parent integrity across the whole registry.
-  local parents types orphan="" p
-  parents=$(for y in schemas/ontologies/*/*.yaml packs/ontologies/*/*.ontology.yaml; do
-    [ -f "$y" ] && yq -o=json '.' "$y" 2>/dev/null | jq -r '.entity_types[]?.subtype_of[]? // empty'
-  done | LC_ALL=C sort -u)
-  types=$(for y in schemas/ontologies/*/*.yaml packs/ontologies/*/*.ontology.yaml; do
-    [ -f "$y" ] && yq -o=json '.' "$y" 2>/dev/null | jq -r '.entity_types[]?.name // empty'
-  done | LC_ALL=C sort -u)
-  while IFS= read -r p; do [ -n "$p" ] || continue; printf '%s\n' "$types" | grep -Fxq -- "$p" || orphan="${orphan}${p} "; done <<< "$parents"
-  if [ "$g" = 0 ] && [ "$b" != 0 ] && [ -z "$orphan" ]; then
+  # subtype_of parent integrity across the whole registry. Since
+  # research-harness-template#276 (Story #287), this whole-registry scan delegates to
+  # the mif-rh engine (mif-rh-cli harness check-ontology-registry).
+  local reg_out orphan
+  reg_out=$("$ENGINE" harness check-ontology-registry --root "$(pwd)" 2>/dev/null)
+  orphan=$(printf '%s\n' "$reg_out" | sed -n 's/^ontology-registry: subtype_of-parent orphans: //p')
+  if [ "$g" = 0 ] && [ "$b" != 0 ] && [ "$orphan" = "none" ]; then
     ok "subtype_of enforced: a security-control satisfies a control-typed edge; a non-subtype does not; every subtype_of parent is declared"
   else
-    bad "subsumption wrong (substitutable-good=$g should=0; non-subtype-bad=$b should!=0; orphan-parents=[${orphan:-none}])"
+    bad "subsumption wrong (substitutable-good=$g should=0; non-subtype-bad=$b should!=0; orphan-parents=[${orphan}])"
   fi
   rm -rf "$T"
 }
