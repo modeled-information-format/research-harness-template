@@ -77,9 +77,9 @@ written).
 
 For each topic that is **core-only** or has many **untyped or discovery-only**
 findings (the followup backlog from Phase 1 is the worklist — plus, when the
-compiled engine has been run with `mif-rh-cli review --suggest`, the scored
-suggestion queue `reports/_meta/suggestions/<topic>.json`; see step 4 and
-ADR-0015):
+compiled engine has been run with `mif-rh-cli review --topic <id> --suggest`,
+the scored suggestion queue `reports/_meta/suggestions/<topic>.json`; see
+step 4 and ADR-0015):
 
 1. **Bind a domain ontology (optional).** Match the topic (its title + finding
    content) against the catalog (`packs/ontologies/*` entity types). If one clearly
