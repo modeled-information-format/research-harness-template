@@ -77,9 +77,9 @@ written).
 
 For each topic that is **core-only** or has many **untyped or discovery-only**
 findings (the followup backlog from Phase 1 is the worklist — plus, when the
-compiled engine has been run with `mif-rh-cli review --suggest`, the scored
-suggestion queue `reports/_meta/suggestions/<topic>.json`; see step 3 and
-ADR-0015):
+compiled engine has been run with `mif-rh-cli review --topic <id> --suggest`,
+the scored suggestion queue `reports/_meta/suggestions/<topic>.json`; see
+step 4 and ADR-0015):
 
 1. **Bind a domain ontology (optional).** Match the topic (its title + finding
    content) against the catalog (`packs/ontologies/*` entity types). If one clearly
@@ -106,13 +106,36 @@ ADR-0015):
    discovery-only finding, `ontology-followup.json` already carries a guessed
    `entity_type` — treat it as a starting hypothesis to confirm or correct, not a
    fact; the guess came from a regex content-pattern match, not analyst judgment.
+   When the guess is unclear or absent, use the engine's read-only aids before
+   falling back to judgment alone: `mif-rh-cli suggest-type --finding <path>`
+   (or the always-available MCP tools `suggest_type`/`find_similar`/`search`),
+   which rank candidate types by embedding similarity against the bound
+   ontology — a hypothesis to weigh, never a type to auto-write, exactly like
+   the guessed `entity_type` above.
    If the finding clearly *is* one of the available types, stamp its MIF `entity`
    block (`{name, entity_type, …domain fields}`; add `ontology.id` to disambiguate
    a name shared by generic and domain), then atomically rewrite it (stage + ajv on
    your own fields + rename, the crash-safe write pattern). Stamp only types you
    are confident in; leave the rest untyped — do not invent mappings.
 
-3. **Work the scored suggestion queue (if present).** When
+3. **Calibrate, then (re-)queue scored suggestions.** Before trusting or
+   working the suggestion queue below, confirm
+   `reports/_meta/confidence-calibration.json` exists and reflects the current
+   corpus (re-run after meaningful growth — a new topic, a large review pass):
+
+   ```bash
+   mif-rh-cli calibrate
+   mif-rh-cli review --topic "$TOPIC" --suggest
+   ```
+
+   Skipping this is not harmless: without a calibration artifact, every
+   candidate falls back to conservative built-in thresholds
+   (`calibrated: false`), which biases scoring toward tier 3
+   (`trigger_expansion`) regardless of true fit. See
+   `docs/how-to/run-the-classification-engine-loop.md` for the full loop
+   (calibration cadence, `--confusions` curation, MCP exposure).
+
+4. **Work the scored suggestion queue (if present).** When
    `reports/_meta/suggestions/<topic>.json` exists (written by `mif-rh-cli review
    --suggest`, ADR-0015), enrich ALSO reads it. Each entry carries a ranked list
    of scored candidates (`{entity_type, ontology_id, score, tier, margin?,
@@ -126,7 +149,7 @@ ADR-0015):
    a direct auto-write of `entity_type`**, at any tier, including tier 1
    `auto_classify_eligible` (the ADR-0011 invariant).
 
-4. **Re-review.** Re-run Phase 1 for the topic and confirm the new mappings resolve
+5. **Re-review.** Re-run Phase 1 for the topic and confirm the new mappings resolve
    (typed count up, invalid count 0).
 
 ## Phase 3: Author, expand, and enrich ontologies (the `ontology-manager` skill)
@@ -151,6 +174,21 @@ re-validate, and `gate_m12` re-checks every ontology against the contract on bui
 
   Register it as an optional data pack (`ontology.pack.json` `kind: ontology`) and
   enable/bind it via `/start` Phase 2b or this command's Phase 2.
+
+- **Mine recorded tier-3 misses into a draft ontology** (when step 3 above
+  keeps recording `trigger_expansion` misses for a topic — recurring,
+  mutually-similar misses across runs, never a single miss — instead of
+  scaffolding blank):
+
+  ```bash
+  mif-rh-cli expansion-candidates --out clusters.json
+  scripts/author-ontology.sh <new-id> --from-clusters clusters.json
+  ```
+
+  Each cluster becomes a `todo-cluster-N` entry in the drafted ontology to
+  name, define, and ground before validating it the same way
+  (`validate_ontology.sh`) and enabling/binding it via `/start` Phase 2b or
+  this command's Phase 2.
 
 - **Add / expand entity types in an existing ontology:**
 
