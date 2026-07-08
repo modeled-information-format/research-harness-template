@@ -16,6 +16,12 @@ author-finding*.py
 # Hook runtime state
 .claude/hooks/markdown/state/
 
+# Session-scratch notes written by the /remember-style skill; not repo content
+# and not markdownlint's business (see .markdownlint-cli2.jsonc's matching
+# ignore) -- an active working checkout accumulates these and, uningored,
+# they make the documented "0 errors" markdownlint gate go stale.
+.remember/
+
 # Instance-local materialized config — NOT template-managed and NOT byte-identical
 # across instances. Rebuilt by scripts/sync-packs.sh from harness.config.json packs[],
 # plus any local overrides (e.g. skillOverrides). The native `enabledPlugins` map

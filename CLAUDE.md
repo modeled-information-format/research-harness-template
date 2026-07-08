@@ -36,14 +36,20 @@ same locally.
 
 ```bash
 bash scripts/verify.sh                                   # full build gate: schema validation,
-                                                         # citation-integrity, 22 per-milestone gates
+                                                         # citation-integrity, per-milestone gates
+                                                         # (see GATES=(...) array in verify.sh for
+                                                         # the current count/names, not a hardcoded number)
 CHECK=1 bash scripts/codegen/gen-models.sh               # fail if generated models drift from schemas
 bash evals/run-evals.sh                                  # eval suite (engine smoke, model authoring, lint teeth, …)
 bash evals/copier-update.sh                              # copier-update propagation
 markdownlint-cli2 --config .markdownlint-cli2.jsonc "**/*.md"   # must be 0 errors
 ```
 
-- `verify.sh` runs all gates as a fixed array (`GATES=(gate_m1 … gate_m22)`); there
+- `verify.sh` runs all gates as a fixed array (`GATES=(...)`, one `gate_mN`
+  function per milestone plus `gate_ontology_lock`/`gate_versions` — grep
+  `^gate_m[0-9]*() {` in `verify.sh` or read the `GATES=(...)` line directly
+  for the current count/names; don't hardcode a number here, it grows with
+  every milestone); there
   is **no single-gate CLI selector** — to iterate on one gate, run the whole script
   (fast) or `source` it and call the `gate_mN` function directly. It prints
   `verify.sh: N passed, 0 failed` on success and is the authoritative gate.
@@ -73,9 +79,12 @@ Runtime stays pure stdlib; the codegen toolchain is dev/build-time only.
 ## Architecture: four layers, one repo
 
 1. **Engine** — `.claude/agents/` (`orchestrator`, `dimension-analyst`,
-   `falsification-analyst`, `source-chunker`, `report-synthesizer`) and the
-   `.claude/commands/` (`start`, `falsify`, `goal-writer`, `resume`, `status`,
-   `topics`, `ontology-review`) that delegate to them.
+   `falsification-analyst`, `source-chunker`, `report-synthesizer`,
+   `harness-configurator`, `corpus-synthesizer`) and the `.claude/commands/`
+   (`start`, `falsify`, `goal-writer`, `resume`, `status`, `topics`,
+   `ontology-review`, `configure`, `synthesize-corpus`) that delegate to
+   them. `.mcp.json` also wires an optional `mif-rh` MCP server over this
+   same engine.
 2. **Contracts** — `schemas/`: findings, goal, artifact, concordance, pack,
    session-state, plus `schemas/mif/` and `harness.config.schema.json`.
 3. **Harness services** — flat skills in `.claude/skills/` (`search`, `discover`,

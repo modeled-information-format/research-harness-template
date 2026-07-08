@@ -48,8 +48,10 @@ in the version.
 The repository has four layers, all present on clone (design spec §5):
 
 1. **Engine** — `.claude/agents/` orchestrator + dimension-analyst +
-   falsification-analyst + source-chunker + report-synthesizer, and the
-   `.claude/commands/` that delegate to them.
+   falsification-analyst + source-chunker + report-synthesizer +
+   harness-configurator + corpus-synthesizer, and the `.claude/commands/`
+   that delegate to them. `.mcp.json` also wires an optional `mif-rh` MCP
+   server over this same engine.
 2. **Contracts** — `schemas/`: the MIF-backed findings schema, the
    `harness.config.json` manifest schema, the pack contract, and the
    Structured Data Protocol.
