@@ -2,7 +2,7 @@
 id: how-to-vendor-ontologies-on-demand
 type: semantic
 created: '2026-06-30T09:56:57-04:00'
-modified: '2026-07-05T10:10:09-04:00'
+modified: '2026-07-07T20:20:30-04:00'
 namespace: docs/how-to
 tags:
   - documentation
@@ -32,6 +32,38 @@ Each fetch resolves the `extends` closure, fetches every domain layer not alread
 present, verifies its `sha256` against the registry index (a mismatch aborts and
 writes nothing), materializes `packs/ontologies/<id>/`, and pins the result in
 `ontologies.lock.json`.
+
+## An already-pinned ontology does not silently advance
+
+`ontologies.lock.json` is the version pin, not just a record of the last
+fetch, on an installed `mif-rh-cli` that supports pin-holding (check
+`scripts/fetch-engine.sh` for the pinned release this repo currently
+installs; an older engine has no `--refresh` flag and does not hold a
+pinned id). On a supporting engine, re-running `scripts/fetch-ontology.sh`
+for an id already in the lock leaves it at its pinned version, even if the
+registry now offers a newer one:
+
+```text
+ontology fetch: nothing newly vendored (every requested layer is either already vendored or held at its pinned version)
+WARNING: 1 ontology pack left at the pinned version, not the registry's current one: observability (pinned 0.1.0, registry has 0.2.0). Pass --refresh to advance deliberately.
+```
+
+This is deliberate: a schema version bump can add required fields to an
+entity type, which would otherwise invalidate every already-stamped finding
+of that type the moment `copier update` re-ran vendoring underneath you
+(see [issue #270](https://github.com/modeled-information-format/research-harness-template/issues/270)
+for the incident that prompted this). Advance the pin only when you are
+ready to handle the schema change:
+
+```sh
+scripts/fetch-ontology.sh observability --refresh    # advance one id
+scripts/fetch-ontology.sh --all-enabled --refresh     # advance every enabled id that has drifted
+```
+
+After advancing, find findings the new schema may affect (any finding
+typed with an entity type the bumped ontology changed) and run
+`/ontology-review --enrich` on the affected topics to reconcile them
+against the new required fields before treating the corpus as clean again.
 
 ## Point at a source
 
