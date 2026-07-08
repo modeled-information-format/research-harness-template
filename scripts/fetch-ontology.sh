@@ -24,16 +24,35 @@
 # The engine is hard required: install it with scripts/fetch-engine.sh, put
 # mif-rh-cli on PATH, or set MIF_RH_CLI.
 #
-# Usage: fetch-ontology.sh <id> [<id> ...]
-#        fetch-ontology.sh --all-enabled        # fetch every enabled domain ontology
+# An id already pinned in ontologies.lock.json at a version older than the
+# registry's current one is left untouched (with a warning), unless
+# --refresh is passed to advance it deliberately (rht#270/#339): a corpus
+# must not have an ontology's schema silently advance underneath its
+# already-stamped findings just because the registry published a newer
+# version.
+#
+# Usage: fetch-ontology.sh <id> [<id> ...] [--refresh]
+#        fetch-ontology.sh --all-enabled [--refresh]  # fetch every enabled domain ontology
 set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 # shellcheck source=scripts/lib/engine.sh
 . "$ROOT/scripts/lib/engine.sh"
 ENGINE="$(engine_bin "$ROOT")" || exit 5
 
-if [ "${1:-}" = "--all-enabled" ]; then
-  exec "$ENGINE" ontology fetch --all-enabled --root "$ROOT" --config "$ROOT/harness.config.json"
+refresh=""
+args=()
+for arg in "$@"; do
+  case "$arg" in
+    --refresh) refresh="--refresh" ;;
+    *) args+=("$arg") ;;
+  esac
+done
+
+if [ "${args[0]:-}" = "--all-enabled" ]; then
+  exec "$ENGINE" ontology fetch --all-enabled --root "$ROOT" --config "$ROOT/harness.config.json" ${refresh:+"$refresh"}
 fi
-[ "$#" -ge 1 ] || { echo "fetch-ontology: usage: fetch-ontology.sh <id> [<id> ...] | --all-enabled" >&2; exit 2; }
-exec "$ENGINE" ontology fetch "$@" --root "$ROOT"
+[ "${#args[@]}" -ge 1 ] || {
+  echo "fetch-ontology: usage: fetch-ontology.sh <id> [<id> ...] [--refresh] | --all-enabled [--refresh]" >&2
+  exit 2
+}
+exec "$ENGINE" ontology fetch "${args[@]}" --root "$ROOT" ${refresh:+"$refresh"}
