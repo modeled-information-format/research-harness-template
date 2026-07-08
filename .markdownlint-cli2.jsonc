@@ -17,6 +17,7 @@
   },
   "ignores": [
     "node_modules/**",
-    "**/node_modules/**"
+    "**/node_modules/**",
+    ".remember/**"
   ]
 }
