@@ -24,12 +24,16 @@
 # The engine is hard required: install it with scripts/fetch-engine.sh, put
 # mif-rh-cli on PATH, or set MIF_RH_CLI.
 #
-# An id already pinned in ontologies.lock.json at a version older than the
-# registry's current one is left untouched (with a warning), unless
-# --refresh is passed to advance it deliberately (rht#270/#339): a corpus
-# must not have an ontology's schema silently advance underneath its
-# already-stamped findings just because the registry published a newer
-# version.
+# --refresh is passed through to `ontology fetch` (rht#270/#339): once the
+# installed mif-rh-cli supports pin-holding, an id already pinned in
+# ontologies.lock.json is left untouched (with a warning) when its version
+# differs from the registry's current one, unless --refresh is passed to
+# advance it deliberately, so a corpus does not have an ontology's schema
+# silently advance underneath its already-stamped findings just because the
+# registry published a newer version. An engine that predates pin-holding
+# does not have a --refresh flag at all and rejects it with a hard argument
+# error, and never holds a pinned id regardless; see scripts/fetch-engine.sh
+# for the pinned release this repo currently installs.
 #
 # Usage: fetch-ontology.sh <id> [<id> ...] [--refresh]
 #        fetch-ontology.sh --all-enabled [--refresh]  # fetch every enabled domain ontology

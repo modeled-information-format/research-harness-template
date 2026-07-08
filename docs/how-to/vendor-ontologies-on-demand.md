@@ -36,9 +36,12 @@ writes nothing), materializes `packs/ontologies/<id>/`, and pins the result in
 ## An already-pinned ontology does not silently advance
 
 `ontologies.lock.json` is the version pin, not just a record of the last
-fetch. Re-running `scripts/fetch-ontology.sh` for an id already in the lock
-leaves it at its pinned version, even if the registry now offers a newer
-one:
+fetch, on an installed `mif-rh-cli` that supports pin-holding (check
+`scripts/fetch-engine.sh` for the pinned release this repo currently
+installs; an older engine has no `--refresh` flag and does not hold a
+pinned id). On a supporting engine, re-running `scripts/fetch-ontology.sh`
+for an id already in the lock leaves it at its pinned version, even if the
+registry now offers a newer one:
 
 ```text
 ontology fetch: nothing newly vendored (every requested layer is either already vendored or held at its pinned version)
@@ -47,10 +50,10 @@ WARNING: 1 ontology pack left at the pinned version, not the registry's current 
 
 This is deliberate: a schema version bump can add required fields to an
 entity type, which would otherwise invalidate every already-stamped finding
-of that type the moment `copier update` re-ran vendoring underneath you (see
-[issue #270](https://github.com/modeled-information-format/research-harness-template/issues/270)
-for the incident this closed). Advance the pin only when you are ready to
-handle the schema change:
+of that type the moment `copier update` re-ran vendoring underneath you
+(see [issue #270](https://github.com/modeled-information-format/research-harness-template/issues/270)
+for the incident that prompted this). Advance the pin only when you are
+ready to handle the schema change:
 
 ```sh
 scripts/fetch-ontology.sh observability --refresh    # advance one id
