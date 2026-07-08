@@ -45,9 +45,10 @@ bash evals/copier-update.sh                              # copier-update propaga
 markdownlint-cli2 --config .markdownlint-cli2.jsonc "**/*.md"   # must be 0 errors
 ```
 
-- `verify.sh` runs all gates as a fixed array (`GATES=(...)`, currently 25
-  `gate_mN` functions plus `gate_ontology_lock` and `gate_versions` — check
-  the array directly rather than trusting a hardcoded count, it grows with
+- `verify.sh` runs all gates as a fixed array (`GATES=(...)`, one `gate_mN`
+  function per milestone plus `gate_ontology_lock`/`gate_versions` — grep
+  `^gate_m[0-9]*() {` in `verify.sh` or read the `GATES=(...)` line directly
+  for the current count/names; don't hardcode a number here, it grows with
   every milestone); there
   is **no single-gate CLI selector** — to iterate on one gate, run the whole script
   (fast) or `source` it and call the `gate_mN` function directly. It prints
