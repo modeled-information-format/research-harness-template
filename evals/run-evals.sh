@@ -41,6 +41,10 @@ run "engine-smoke" bash evals/smoke-test.sh
 #     (prevents the shared-findings/ corruption vector).
 run "run-lock-mutual-exclusion" bash evals/run-lock-test.sh
 
+# 1b2. Finding publish is collision-safe: two dimension-analysts converging on
+#      the same slug must not silently clobber one another (issue #357).
+run "finding-publish-collision" bash evals/finding-publish-collision.sh
+
 # 1c. Update-channel provenance gate: scripts/update.sh refuses to invoke copier on a
 #     verification miss (fail-closed), pins copier to the verified SHA on a pass, and
 #     refuses a dirty tree (issue #94).

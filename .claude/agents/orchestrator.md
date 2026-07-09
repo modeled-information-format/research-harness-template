@@ -364,6 +364,47 @@ done
   lock** (`scripts/run-lock.sh release "$REPORTS_DIR"`) so `/resume` re-acquires
   cleanly after the limit resets.
 
+**Reconcile reported counts against disk (issue #357 — a partial loss, not just a
+total one).** The zero-check above catches a dimension that produced nothing; it
+does not catch a dimension whose analyst *reported* N findings but fewer than N
+are actually readable on disk under its own `extensions.harness.dimension`. A
+CROSS-dimension slug collision is already handled at publish time
+(dimension-analyst.md Step 5 republishes the losing finding under a
+dimension-qualified slug, still stamped with its own true dimension, so it is
+NOT lost from this count) — the case this catches is a SAME-dimension internal
+collision within one analyst's own pass (Step 5 logs but still overwrites in
+that case), a genuinely failed publish, or any other reason a reported finding
+never made it to disk. For each dimension, compare its analyst's self-reported
+`finding_count` (from its return message) against the same on-disk `$n`
+computed above:
+
+```bash
+for d in $WORK_DIMS; do
+  n=$(for f in "$REPORTS_DIR"/findings/*.json; do [ -e "$f" ] || continue
+        jq -e --arg d "$d" '.extensions.harness.dimension==$d' "$f" >/dev/null 2>&1 && echo x; done | wc -l)
+  # Substitute the analyst's own reported finding_count for "$d" here (you read
+  # it from that analyst's return message, above):
+  if [ "$n" -lt "<reported_finding_count_for_$d>" ]; then
+    echo "SHORTFALL: dimension '$d' reported <reported_finding_count_for_$d> findings but only $n are on disk -- a finding may have been lost to a slug collision or a failed publish"
+  fi
+done
+```
+
+A shortfall is not automatically a rate-limit failure (the dimension is not zero,
+so the retry-up-to-2 logic above does not apply the same way) — record it in
+`research-progress.md` and `state.json` alongside this pass's results, and
+report it plainly rather than treating the analyst's self-reported count as
+ground truth.
+
+**Also read each analyst's `collisions[]` return field, every pass, regardless
+of whether a shortfall fired numerically.** A cross-dimension collision does
+not shrink `finding_count` (the losing finding republishes under a
+dimension-qualified slug, still correctly counted), so it never trips the
+SHORTFALL check above — `collisions[]` is the only signal for it. Append every
+non-empty `collisions[]` entry to `research-progress.md` (dimension, slug, and
+where it landed) so a cross-dimension collision is visible even when nothing
+was actually lost.
+
 Collect the finding file paths from the returns and from `REPORTS_DIR`.
 
 **Checkpoint.** Snapshot durable state from disk so a crash/interrupt here is

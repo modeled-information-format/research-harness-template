@@ -2,7 +2,7 @@
 id: reference-agents
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-05T10:10:09-04:00'
+modified: '2026-07-09T19:30:00-04:00'
 namespace: docs/reference
 tags:
   - documentation
@@ -100,7 +100,9 @@ falsification gate.
 
 | Field | Description |
 | --- | --- |
-| `finding_files` | List of paths written under `REPORTS_DIR/findings/` |
+| `finding_files` | Distinct paths written under `REPORTS_DIR/findings/` |
+| `finding_count` | Findings authored/attempted this run — may exceed `len(finding_files)` after a same-dimension slug collision (issue #357) |
+| `collisions` | Any Step 5 slug collisions (same- or cross-dimension), verbatim |
 | `oversized_sources` | Sources handed off to `source-chunker` |
 | `unresolved_gaps` | Coverage gaps the analyst could not close |
 
