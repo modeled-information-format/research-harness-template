@@ -9,7 +9,7 @@
 # missing or too-old binary is a loud failure naming the fix, never a
 # silently different code path.
 
-ENGINE_MIN_VERSION="0.5.0"
+ENGINE_MIN_VERSION="0.6.0"
 
 engine_bin() {
   local root="$1" candidate=""

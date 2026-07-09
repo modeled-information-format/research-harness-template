@@ -23,7 +23,7 @@ wired.
 - `ajv` (`ajv-cli`) and `ajv-formats` (`npm install -g ajv-cli ajv-formats`)
 - `markdownlint-cli2` (`npm install -g markdownlint-cli2`)
 - `python3` (the markdown enforcement hooks)
-- `mif-rh-cli` v0.4.0 or newer, the classification engine the build gate's
+- `mif-rh-cli` v0.6.0 or newer, the classification engine the build gate's
   ontology checks require (install with `scripts/fetch-engine.sh`, or provide
   it on `PATH` or via `MIF_RH_CLI`; see
   [ADR-0016](../adr/0016-engine-only-classification.md))

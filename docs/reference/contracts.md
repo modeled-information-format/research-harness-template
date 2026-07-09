@@ -163,7 +163,7 @@ explicit `ontology.id`), and its `entity` must satisfy that type's schema (addit
 required fields and declared field constraints enforced, extra fields allowed). The
 mapping is recorded to `reports/<topic>/ontology-map.json`. It fails closed (a missing
 catalog aborts). Since ADR-0016 the script is a thin, bash-3.2-portable wrapper that
-execs the `mif-rh-cli` engine (`≥ 0.4.0`, installed by `scripts/fetch-engine.sh`) to
+execs the `mif-rh-cli` engine (`≥ 0.6.0`, installed by `scripts/fetch-engine.sh`) to
 do the actual resolution — the engine is hard-required, with no bash fallback.
 Classification — stamping a finding's
 `entity_type` — is an upstream agent step (`dimension-analyst`, topic onboarding in
