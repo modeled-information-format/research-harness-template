@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.2] - 2026-07-09
+
+### Fixed
+
+- **`harness.config.schema.json`**: added the missing `"complete"` value to
+  `topics[].status`'s enum. The orchestrator's Phase 4 ("Update the topic
+  status") and `/topics`' own documented `--filter` example both already
+  used `"complete"`, but the schema only declared `active`/`paused`/`archived`,
+  so every full research session's Phase 4 step failed `ajv validate` and
+  left `harness.config.json` in an invalid state after a successful run.
+
 ## [0.11.1] - 2026-07-07
 
 ### Added

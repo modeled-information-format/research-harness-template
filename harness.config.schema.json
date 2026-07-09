@@ -95,8 +95,10 @@
           },
           "status": {
             "type": "string",
+            "description": "Topic lifecycle status: active (currently or previously researched, open to further work), complete (a session's goal completion_condition held and no further research is currently planned), paused (temporarily set aside), archived (retired/no longer relevant). /topics --filter and the orchestrator's Phase 4 status update both rely on this exact enum.",
             "enum": [
               "active",
+              "complete",
               "paused",
               "archived"
             ]
