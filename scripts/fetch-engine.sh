@@ -9,7 +9,9 @@
 # Usage: fetch-engine.sh [--version <X.Y.Z>] [--dest <dir>]
 set -euo pipefail
 
-ENGINE_VERSION="0.6.0"   # pinned; bump alongside docs/reference/dependencies.md
+ENGINE_VERSION="0.6.0"   # pinned; bump alongside scripts/lib/engine.sh's
+# ENGINE_MIN_VERSION and every stated mif-rh-cli floor: docs/reference/dependencies.md,
+# docs/reference/contracts.md, docs/tutorials/getting-started.md
 ENGINE_REPO="modeled-information-format/mif-rs"
 SIGNER="modeled-information-format/mif-rs/.github/workflows/release.yml"
 
