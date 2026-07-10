@@ -52,8 +52,12 @@ into the now-populated topic — the existing-`@id` upsert path, which
 `import.sh`'s code takes an extra digest-recheck subprocess call per
 finding on), then restores every file it touched (`harness.config.json`,
 `reports/concordance.json`) and deletes the synthetic topic directories.
-No real corpus data is read or written at any point; the benchmark
-generates and only ever touches its own synthetic topics.
+No real corpus *finding* data is read or written: the benchmark reads the
+bundled example topic's own sample finding as a clone template (read-only),
+and temporarily edits `harness.config.json` and `reports/concordance.json`
+to register/clean up its synthetic topics, restoring both from a backup
+before exiting. Nothing outside its own synthetic topic directories is
+mutated permanently.
 
 Two real runs were executed directly (not simulated): N=50 and N=500. A
 third run at N=4296 (ADR-0014's exact reference scale) was intentionally

@@ -19,8 +19,9 @@
 #      digest.sh subprocess call per finding on this path, so it is
 #      timed separately as the more expensive of the two import paths)
 #
-# Exit 0 always (this is a measurement tool, not a pass/fail gate) --
-# prints wall-clock numbers and a summary a human reads to judge AD-7.
+# Exit 0 on success; non-zero (see individual FAIL messages) if any backup,
+# generation, export, or import step fails -- prints wall-clock numbers and
+# a summary a human reads to judge AD-7 on success.
 set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT" || exit 2
@@ -31,6 +32,23 @@ IMPORT="scripts/mif-container-import.sh"
 SRC_TOPIC="mif-rh-cli-eval-bench-source"
 FRESH_TOPIC="mif-rh-cli-eval-bench-fresh"
 note() { printf '  mif-container-migration-eval-bench: %s\n' "$1"; }
+
+# Fail closed BEFORE any backup/mutation if either synthetic topic id
+# collides with a real, pre-existing topic (registered in harness.config.json
+# OR a reports/<id> directory already on disk) -- this script's cleanup does
+# an unconditional `rm -rf reports/$SRC_TOPIC reports/$FRESH_TOPIC`, which
+# would delete real corpus data on a collision instead of just synthetic
+# scratch state.
+for id in "$SRC_TOPIC" "$FRESH_TOPIC"; do
+  if jq -e --arg id "$id" '.topics[] | select(.id == $id)' harness.config.json > /dev/null 2>&1; then
+    note "FAIL: topic id '$id' is already registered in harness.config.json -- refusing to run (this script's cleanup deletes reports/$id, which would destroy real data)"
+    exit 1
+  fi
+  if [ -e "reports/$id" ]; then
+    note "FAIL: reports/$id already exists on disk -- refusing to run (this script's cleanup deletes it)"
+    exit 1
+  fi
+done
 
 T="$(mktemp -d)" || { note "FAIL: could not create scratch dir"; exit 1; }
 
@@ -63,6 +81,19 @@ trap cleanup EXIT
 
 register_topic() {
   local id="$1"
+  # Defense-in-depth: the same collision check runs up front for both
+  # topic ids before any backup/mutation, but this function is the actual
+  # dangerous operation (appends to harness.config.json, creates
+  # reports/<id>/) -- re-check here too, since a future caller of this
+  # function might not go through the up-front loop.
+  if jq -e --arg id "$id" '.topics[] | select(.id == $id)' harness.config.json > /dev/null 2>&1; then
+    note "FAIL: refusing to register '$id' -- already present in harness.config.json"
+    exit 1
+  fi
+  if [ -e "reports/$id" ]; then
+    note "FAIL: refusing to register '$id' -- reports/$id already exists on disk"
+    exit 1
+  fi
   jq --arg id "$id" '.topics += [{id: $id, title: "mif-rh-cli migration eval synthetic instance", namespace: ("harness/" + $id), status: "active", ontologies: []}]' \
     harness.config.json > "$T/harness.config.json.next" \
     && mv "$T/harness.config.json.next" harness.config.json \
@@ -134,9 +165,13 @@ fi
 note "import.sh (re-import, existing-@id): ${IMPORT2_SECS}s for $N findings (rc=$IMPORT2_RC)"
 
 echo
-note "=== SUMMARY ($N findings, matching ADR-0014's 4296-finding reference scale) ==="
+note "=== SUMMARY ($N findings) ==="
 note "export.sh:                        ${EXPORT_SECS}s"
 note "import.sh (fresh, new-@id):        ${IMPORT1_SECS}s"
 note "import.sh (re-import, existing-@id): ${IMPORT2_SECS}s"
-note "ADR-0014's own reference bottleneck: 20+ minutes for 4296 findings (ontology-review.sh, 3 subprocess tools/finding)"
-note "AD-7's PDD-1-style bar (per ADR-0014): low-single-digit-minutes-or-better"
+if [ "$N" -eq 4296 ]; then
+  note "ADR-0014's own reference bottleneck: 20+ minutes for 4296 findings (ontology-review.sh, 3 subprocess tools/finding)"
+  note "AD-7's PDD-1-style bar (per ADR-0014): low-single-digit-minutes-or-better"
+else
+  note "(compare per-finding rate against other N runs to extrapolate to ADR-0014's 4296-finding reference scale)"
+fi
