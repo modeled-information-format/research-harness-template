@@ -37,10 +37,20 @@
 #      duplicate); a new @id is written via scripts/write-finding.sh (the
 #      same hardened stage+ajv+atomic-ln-publish primitive every other
 #      first-write path in this repo uses, rather than a second hand-rolled
-#      copy of the same logic). ontology-map/concordance resources are
-#      digest-verified in step 2 but never hand-written here -- the
-#      destination's own copies are rebuilt fresh in step 5. An overwrite is
-#      NOT a blind replace: a per-field reconciliation policy (Task #326,
+#      copy of the same logic). The manifest's ontology-map resource is
+#      digest-verified in step 2 and, for a FULL-scope export ONLY, written
+#      here verbatim (mktemp+mv, same directory, skipped as a no-op if the
+#      destination's copy already matches the incoming digest) -- Story #328
+#      review found this resource was exported but never materialized at the
+#      destination on import, silently dropping a topic's ontology typing on
+#      a round-trip. A SUBSET export's ontology-map.json only covers the
+#      exported ids, so it is intentionally NOT written here (writing it
+#      verbatim would delete typing for every other finding already at the
+#      destination) -- merging a subset's entries by finding_id is a filed
+#      follow-up, not implemented in this story. concordance is a cross-topic
+#      global file and stays rebuilt fresh in step 5, not written from the
+#      container. An overwrite is NOT a blind replace: a per-field
+#      reconciliation policy (Task #326,
 #      ADR-0017 AD-6) applies -- `.provenance` (the finding's own W3C-PROV
 #      block, distinct from the container-level `sourceInstance` tag) and
 #      `.extensions.harness.{verification,gathered_under}` (falsification
@@ -295,9 +305,41 @@ fi
 # --- Step 4: idempotent upsert-by-@id write (Task #322, NFR-4) --------------
 # ($FINDINGS_DIR is already set from step 2, which needs it to locate any
 # existing @id for the bulk reconciliation-merge pre-check.)
+# EXPORT_SCOPE_TYPE gates the ontology-map write below: a FULL export's
+# ontology-map.json represents the whole topic, so overwriting the
+# destination's copy verbatim is correct. A SUBSET export's ontology-map.json
+# only covers the exported ids -- writing that verbatim over an
+# already-populated destination topic would silently delete ontology typing
+# for every OTHER finding already there (review finding, Story #328: this is
+# real data loss, not a rare corner case, since importing into an
+# already-populated topic is /import's normal documented use). Merging a
+# subset's entries into the destination by finding_id (parallel to AD-6's
+# per-field reconciliation policy for findings) is filed as a follow-up, not
+# built here -- for now, a subset import leaves the destination's own
+# ontology-map.json untouched.
+EXPORT_SCOPE_TYPE="$(jq -r '.exportScope.type // empty' "$MANIFEST")"
 UPSERTED=0
 SKIPPED=0
+ONTMAP_WRITTEN=0
 while IFS=$'\t' read -r rpath rdigest rmiftype; do
+  if [ "$rmiftype" = "ontology-map" ]; then
+    [ "$EXPORT_SCOPE_TYPE" = "full" ] || continue
+    rfile="$CONTAINER_DIR/$rpath"
+    dest="reports/$TOPIC/ontology-map.json"
+    jq -e 'type == "array"' "$rfile" > /dev/null 2>&1 \
+      || fail "ontology-map.json resource $rpath is not a JSON array -- refusing to write it into $dest"
+    if [ -f "$dest" ]; then
+      dest_digest="$(scripts/mif-container-digest.sh resource "$dest" 2>/dev/null)" || dest_digest=""
+      [ "$dest_digest" = "$rdigest" ] && continue
+    fi
+    ontmap_stage="$(mktemp "reports/$TOPIC/.ontology-map-import.XXXXXX")" \
+      || fail "failed to create a staging file for ontology-map.json"
+    cp "$rfile" "$ontmap_stage" || { rm -f "$ontmap_stage"; fail "failed to stage ontology-map.json for $TOPIC"; }
+    mv -f "$ontmap_stage" "$dest" \
+      || { rm -f "$ontmap_stage"; fail "failed to publish ontology-map.json for $TOPIC"; }
+    ONTMAP_WRITTEN=1
+    continue
+  fi
   [ "$rmiftype" = "finding" ] || continue
   rfile="$CONTAINER_DIR/$rpath"
   rid="$(jq -r '."@id"' "$rfile")"
@@ -392,7 +434,7 @@ while IFS=$'\t' read -r rpath rdigest rmiftype; do
     || fail "failed to write new finding $rpath via write-finding.sh"
   UPSERTED=$((UPSERTED + 1))
 done < <(jq -r '.resources[] | [.path, .digest, .mifType] | @tsv' "$MANIFEST")
-echo "mif-container-import: step 4/5 idempotent upsert OK ($UPSERTED written, $SKIPPED already up to date)"
+echo "mif-container-import: step 4/5 idempotent upsert OK ($UPSERTED written, $SKIPPED already up to date, ontology-map.json $([ "$ONTMAP_WRITTEN" -eq 1 ] && echo written || echo unchanged))"
 
 # --- Step 5: trigger the existing deterministic rebuilders (Task #323) ------
 bash scripts/build-graph.sh "$FINDINGS_DIR" "reports/$TOPIC/knowledge-graph.json" \

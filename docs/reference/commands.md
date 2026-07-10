@@ -14,7 +14,7 @@ diataxis_type: reference
 # Reference: commands
 
 Commands are slash-command entry points invoked directly in a Claude session.
-All nine listed here are core (non-pack); they ship with the template.
+All eleven listed here are core (non-pack); they ship with the template.
 
 See [dependencies](dependencies.md) for tool installation requirements.
 
@@ -46,6 +46,30 @@ With no area it surveys the current configuration and suggests next steps.
 
 **Dependencies:** `harness.config.json`, `harness.config.schema.json`,
 `scripts/pack-toggle.sh`, `scripts/site-toggle.sh`, `jq`, `ajv`.
+
+---
+
+## /export
+
+Builds a MIF Container manifest plus resource files from a registered topic.
+
+**Purpose:** Thin delegator to `scripts/mif-container-export.sh` (ADR-0017,
+Story #328) — never implements export logic itself. Read-only against
+`reports/<topic>/`. Supports a full-topic export or a `--subset` of
+`urn:mif:concept:...` ids (optionally expanded via `--closure`, ADR-0017 AD-4).
+The finished `<output-dir>/mif-package.json` is self-validated against
+`schemas/mif-container.schema.json` before the command reports success.
+
+**Usage:**
+
+```text
+/export <topic> <output-dir> [--subset <in-scope-ids.json>] [--closure] [--source-instance <name>]
+```
+
+**What it delegates to:** `scripts/mif-container-export.sh`.
+
+**Dependencies:** `scripts/mif-container-resolve-scope.sh`,
+`scripts/mif-container-digest.sh`, `schemas/mif-container.schema.json`, `jq`, `ajv`.
 
 ---
 
@@ -95,6 +119,38 @@ Does not spawn the orchestrator.
 
 **Dependencies:** `scripts/goal-version.sh`, `scripts/resolve-membership.sh`,
 `schemas/goal.schema.json`, `ajv`.
+
+---
+
+## /import
+
+Applies a MIF Container manifest into a registered topic through the
+fail-closed import gate.
+
+**Purpose:** Thin delegator to `scripts/mif-container-import.sh` (ADR-0017,
+Stories #318/#324/#328) — never implements import logic itself. A strict,
+ordered sequence (manifest schema validation, digest verification,
+ontology-binding compatibility, idempotent upsert-by-`@id` with a per-field
+reconciliation policy, then the deterministic rebuilders plus a candidate
+sameAs scan): a failure at any step rejects the entire import, never a
+partial write. `--dry-run` runs validation only.
+
+The manifest's ontology-map resource is written verbatim to the destination
+topic only for a **full-scope** import — a **subset** import leaves the
+destination's `ontology-map.json` untouched, since overwriting it with a
+subset's partial map would delete typing for every other finding already
+there.
+
+**Usage:**
+
+```text
+/import <container-dir> <topic> [--dry-run]
+```
+
+**What it delegates to:** `scripts/mif-container-import.sh`.
+
+**Dependencies:** `scripts/mif-container-digest.sh`,
+`schemas/mif-container.schema.json`, `schemas/findings.schema.json`, `jq`, `ajv`.
 
 ---
 
