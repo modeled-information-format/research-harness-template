@@ -143,7 +143,7 @@ per ADR-0017's AD-7.
 ## Edge Cases
 
 - **Digest mismatch on any single resource**: the entire import is
-  rejected -- no partial write, matching AC 2. The error names the
+  rejected -- no partial write, matching AC 3. The error names the
   mismatched resource path, not just "import failed."
 - **Ontology pack/version not cataloged on the destination instance**: import
   fails closed the same way `resolve-ontology.sh`'s existing `extends`
@@ -163,8 +163,8 @@ per ADR-0017's AD-7.
   `resources[]` array and a defined (not null) manifest-level digest over
   the empty set -- not an error.
 - **Manifest `$schema` version unrecognized by the importing instance**:
-  fails closed per AC 8, naming the unrecognized version, never attempting
+  fails closed per AC 9, naming the unrecognized version, never attempting
   best-effort parsing of an unknown shape.
 - **Import target already holds a finding with the same `@id`**: upserts in
-  place per AC 4; the pre-existing file's content is replaced only if the
+  place per AC 5; the pre-existing file's content is replaced only if the
   incoming digest differs, and the operation is safely re-runnable.
