@@ -5,7 +5,8 @@
 # manifest-level digest computed over the sorted list of resource digests
 # (Task #314, NFR-1 determinism) -- ADR-0017 AD-2, deliberately rejecting
 # Data Package's opt-in MD5-default hash. Pure shell + coreutils (sha256sum
-# or shasum), no new dependency per ADR-0017 AD-7.
+# or shasum), no new dependency per ADR-0017's Secondary Decision Driver 2
+# ("jq/ajv-cli, already required by scripts/verify.sh, must be sufficient").
 #
 # Usage:
 #   mif-container-digest.sh resource <file>
@@ -33,24 +34,36 @@ sha256_bytes() { # sha256_bytes < bytes  -> prints the raw 64-hex digest (no pre
 }
 
 cmd_resource() {
-  local file="${1:?usage: mif-container-digest.sh resource <file>}"
+  [ "$#" -eq 1 ] || { echo "usage: mif-container-digest.sh resource <file>" >&2; return 2; }
+  local file="$1"
   [ -f "$file" ] || { echo "mif-container-digest: not a file: $file" >&2; return 2; }
-  printf 'sha256:%s\n' "$(sha256_bytes < "$file")"
+  # Assign-then-printf, not `printf '...' "$(sha256_bytes < "$file")"` directly:
+  # a command substitution used as a bare printf argument discards its own exit
+  # status (printf's success is what the function returns), so a sha256_bytes
+  # failure -- unreadable file, or neither sha256sum nor shasum on PATH -- was
+  # silently swallowed and printed as a malformed "sha256:" line at exit 0.
+  local hex
+  hex="$(sha256_bytes < "$file")" || return $?
+  printf 'sha256:%s\n' "$hex"
 }
 
 cmd_manifest() {
-  # Sort first (byte order, matching the digest strings' own hex charset),
-  # THEN strip the "sha256:" prefix -- sorting the bare hex instead of the
-  # prefixed string would give the same order here since every line shares
-  # the identical prefix, but working from the prefixed form is what a
-  # caller piping schemas/mif-container.schema.json's own resources[].digest
-  # values in verbatim actually has on hand.
-  sort | sed 's/^sha256://' | sha256_bytes | sed 's/^/sha256:/'
+  [ "$#" -eq 0 ] || { echo "usage: mif-container-digest.sh manifest [< digests]" >&2; return 2; }
+  # LC_ALL=C pins byte-order collation, matching every other determinism-
+  # critical sort in this repo (scripts/update.sh, scripts/build-topic-
+  # readme.sh) -- an unpinned `sort`'s order can vary by the running locale,
+  # which would silently break the "byte-identical regardless of build order"
+  # guarantee NFR-1 (Task #314) requires. Hash the sorted, still-prefixed
+  # lines directly: stripping and re-adding "sha256:" around the hash costs
+  # two extra subprocess forks for no behavioral difference, since every line
+  # already shares the identical prefix and therefore sorts identically either
+  # way.
+  { LC_ALL=C sort | sha256_bytes; } | sed 's/^/sha256:/'
 }
 
 case "${1:-}" in
   resource) shift; cmd_resource "$@" ;;
-  manifest) shift; cmd_manifest ;;
+  manifest) shift; cmd_manifest "$@" ;;
   *)
     echo "usage: mif-container-digest.sh resource <file> | manifest [< digests]" >&2
     exit 2

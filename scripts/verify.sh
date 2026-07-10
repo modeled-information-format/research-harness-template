@@ -2703,6 +2703,31 @@ gate_m27() {
     bad "resource digest did not fail on a missing file"
   fi
 
+  # 27f. Fail-closed: a file that exists but can't be read (permission denied)
+  #      must also be a named error, never the malformed "sha256:" (empty hex)
+  #      line at exit 0 that a command-substitution-inside-printf swallow bug
+  #      previously produced.
+  local out rc
+  printf 'x' > "$T/unreadable.txt"; chmod 000 "$T/unreadable.txt"
+  out="$(scripts/mif-container-digest.sh resource "$T/unreadable.txt" 2>/dev/null)"; rc=$?
+  chmod 644 "$T/unreadable.txt"
+  if [ "$rc" -ne 0 ] && [ "$out" != "sha256:" ]; then
+    ok "resource digest fails closed on an unreadable file (permission denied), not a malformed empty digest"
+  else
+    bad "resource digest did not fail closed on an unreadable file (rc=$rc out='$out')"
+  fi
+
+  # 27g. Extra positional arguments are rejected, not silently dropped -- a
+  # `resource f1 f2` invocation must not quietly hash only f1.
+  scripts/mif-container-digest.sh resource \
+    schemas/samples/mif-container-full.sample.json \
+    schemas/samples/mif-container-subset.sample.json >/dev/null 2>&1
+  if [ "$?" -ne 0 ]; then
+    ok "resource digest rejects extra positional arguments instead of silently hashing only the first"
+  else
+    bad "resource digest silently accepted extra positional arguments"
+  fi
+
   rm -rf "$T"
 }
 
