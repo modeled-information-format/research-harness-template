@@ -178,6 +178,15 @@ scripts/falsify.sh "$FINDING_FILE" fixture.json > "$FINDING_FILE.tmp" \
   && mv "$FINDING_FILE.tmp" "$FINDING_FILE"
 ```
 
+**Always supply a real `attempted_at` ISO8601 timestamp in every fixture
+entry you author** — never omit it and rely on the engine's default (see
+issue #359). An authored fixture entry that omits `attempted_at` still gets
+a timestamp so the finding validates, but that value is a fallback, not a
+substitute for recording the real grading time: get in the habit of writing
+it yourself. (This is distinct from a finding with no fixture entry at all,
+which correctly omits `attempted_at` entirely so a later real gate run can
+still grade it — see the one-round rule above.)
+
 Then re-validate the finding against the schema:
 
 ```bash
