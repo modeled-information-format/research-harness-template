@@ -50,6 +50,10 @@ run "finding-publish-collision" bash evals/finding-publish-collision.sh
 #     refuses a dirty tree (issue #94).
 run "update-provenance-gate" bash evals/update-provenance.sh
 
+# 1d. guard-falsify-gate.sh's path-extraction regex must not be corrupted by
+#     a shell-assignment prefix on the same line (issue #356).
+run "guard-falsify-gate" bash evals/guard-falsify-gate.sh
+
 # 2. Citation-integrity: a clean finding passes; a bad one is flagged.
 run     "citation-integrity-good" scripts/check-citation-integrity.sh schemas/samples/citation-good.sample.json
 run_neg "citation-integrity-bad"  scripts/check-citation-integrity.sh schemas/samples/citation-bad.sample.json
