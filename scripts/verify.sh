@@ -2647,10 +2647,15 @@ gate_m27() {
 
   # 27a. Per-resource digest: correct sha256, and deterministic (same file
   #      hashed twice yields the same digest).
-  local d1 d2 expect
+  local d1 d2 expect_hex expect
   d1="$(scripts/mif-container-digest.sh resource schemas/samples/mif-container-full.sample.json)"
   d2="$(scripts/mif-container-digest.sh resource schemas/samples/mif-container-full.sample.json)"
-  expect="sha256:$( (command -v sha256sum >/dev/null 2>&1 && sha256sum schemas/samples/mif-container-full.sample.json || shasum -a 256 schemas/samples/mif-container-full.sample.json) | awk '{print $1}')"
+  if command -v sha256sum >/dev/null 2>&1; then
+    expect_hex="$(sha256sum schemas/samples/mif-container-full.sample.json | awk '{print $1}')"
+  else
+    expect_hex="$(shasum -a 256 schemas/samples/mif-container-full.sample.json | awk '{print $1}')"
+  fi
+  expect="sha256:${expect_hex}"
   if [ "$d1" = "$d2" ] && [ "$d1" = "$expect" ]; then
     ok "resource digest is deterministic and matches sha256sum/shasum directly"
   else

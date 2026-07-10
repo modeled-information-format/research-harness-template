@@ -37,6 +37,7 @@ cmd_resource() {
   [ "$#" -eq 1 ] || { echo "usage: mif-container-digest.sh resource <file>" >&2; return 2; }
   local file="$1"
   [ -f "$file" ] || { echo "mif-container-digest: not a file: $file" >&2; return 2; }
+  [ -r "$file" ] || { echo "mif-container-digest: not readable: $file" >&2; return 2; }
   # Assign-then-printf, not `printf '...' "$(sha256_bytes < "$file")"` directly:
   # a command substitution used as a bare printf argument discards its own exit
   # status (printf's success is what the function returns), so a sha256_bytes
