@@ -1,0 +1,23 @@
+{
+  "profile": "https://research-harness.dev/schema/mif-container/v1",
+  "sourceInstance": {
+    "namespace": "sample-instance",
+    "corpusUrl": "https://example.org/corpus"
+  },
+  "exportScope": {
+    "type": "full",
+    "topic": "empty-topic",
+    "selector": null,
+    "generatedAt": "2026-07-10T00:00:00Z"
+  },
+  "ontologyBindings": [
+    {
+      "packId": "mif-generic",
+      "version": "1.0.0"
+    }
+  ],
+  "resources": [],
+  "boundaryReferences": [],
+  "manifestDigest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "createdAt": "2026-07-10T00:00:00Z"
+}

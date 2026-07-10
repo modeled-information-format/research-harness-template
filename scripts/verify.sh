@@ -2494,6 +2494,150 @@ JSON
   rm -rf "$T"
 }
 
+# ---------------------------------------------------------------------------
+# Milestone 26 — MIF Container manifest schema (Epic #275, Story #308)
+# ---------------------------------------------------------------------------
+gate_m26() {
+  info "Milestone 26 — MIF Container manifest schema (schemas/mif-container.schema.json)"
+  local T; T="$(mktemp -d)"
+
+  # 26a. The schema validates a full-export sample (resources + an ontology binding,
+  #      an EMPTY boundaryReferences[] -- required and present, not omitted, but
+  #      empty because a full export excludes nothing by definition), a
+  #      zero-finding-topic sample (empty resources[]/boundaryReferences[], feature-spec
+  #      edge case "Zero-finding topic exported"), and a subset-export sample carrying
+  #      the boundaryReferences[] example (AC6/AC7).
+  if ajv_plain schemas/mif-container.schema.json schemas/samples/mif-container-full.sample.json; then
+    ok "mif-container schema validates a full-export sample manifest"
+  else
+    bad "mif-container schema does not validate the full-export sample"
+  fi
+  if ajv_plain schemas/mif-container.schema.json schemas/samples/mif-container-empty.sample.json; then
+    ok "mif-container schema validates a zero-resource (empty topic) sample manifest"
+  else
+    bad "mif-container schema does not validate the zero-resource sample"
+  fi
+  if ajv_plain schemas/mif-container.schema.json schemas/samples/mif-container-subset.sample.json; then
+    ok "mif-container schema validates a subset-export sample manifest carrying a boundaryReferences[] entry"
+  else
+    bad "mif-container schema does not validate the subset-export sample"
+  fi
+
+  # 26b. Fail-closed at the structural level (feature-spec AC9): an unrecognized
+  #      profile value, and a manifest missing its mandatory manifestDigest, must
+  #      each be independently rejected -- never accepted as best-effort.
+  jq '.profile = "https://example.org/some-other-profile/v9"' \
+    schemas/samples/mif-container-full.sample.json > "$T/bad-profile.json"
+  jq 'del(.manifestDigest)' \
+    schemas/samples/mif-container-full.sample.json > "$T/bad-digest.json"
+  if ! ajv_plain schemas/mif-container.schema.json "$T/bad-profile.json"; then
+    ok "mif-container schema fails closed on an unrecognized profile value"
+  else
+    bad "mif-container schema accepted an unrecognized profile value"
+  fi
+  if ! ajv_plain schemas/mif-container.schema.json "$T/bad-digest.json"; then
+    ok "mif-container schema fails closed on a missing manifestDigest"
+  else
+    bad "mif-container schema accepted a manifest missing manifestDigest"
+  fi
+
+  # 26c. Regression coverage for three review-caught structural loopholes (a schema
+  #      that only ever validated its own intended-good fixtures would not have
+  #      caught any of these): a null selector must not satisfy subset's "selector
+  #      required" clause; a resource's mifType and ontologyType must be coupled, not
+  #      independently free; and a full export must not carry a boundaryReferences[]
+  #      entry.
+  jq '.exportScope.selector = null' \
+    schemas/samples/mif-container-subset.sample.json > "$T/subset-null-selector.json"
+  if ! ajv_plain schemas/mif-container.schema.json "$T/subset-null-selector.json"; then
+    ok "mif-container schema rejects a subset export with a null selector (not just an absent one)"
+  else
+    bad "mif-container schema accepted a subset export with selector: null"
+  fi
+
+  jq '.resources[0].ontologyType = null' \
+    schemas/samples/mif-container-full.sample.json > "$T/finding-null-ontology-type.json"
+  if ! ajv_plain schemas/mif-container.schema.json "$T/finding-null-ontology-type.json"; then
+    ok "mif-container schema requires a non-null ontologyType on a finding resource"
+  else
+    bad "mif-container schema accepted a finding resource with ontologyType: null"
+  fi
+
+  jq '.resources[1].mifType = "concordance" | .resources[1].ontologyType = "concept"' \
+    schemas/samples/mif-container-full.sample.json > "$T/concordance-nonnull-ontology-type.json"
+  if ! ajv_plain schemas/mif-container.schema.json "$T/concordance-nonnull-ontology-type.json"; then
+    ok "mif-container schema forbids a non-null ontologyType on an ontology-map/concordance resource"
+  else
+    bad "mif-container schema accepted a concordance resource with a non-null ontologyType"
+  fi
+
+  # An ontology-map/concordance resource that OMITS ontologyType entirely must be
+  # rejected too, not just one carrying an explicit non-null value -- the field's
+  # own description claims it "must be null ... enforced below, not just
+  # descriptively," which is false unless ontologyType is also required.
+  jq 'del(.resources[1].ontologyType)' \
+    schemas/samples/mif-container-full.sample.json > "$T/ontology-map-missing-ontology-type.json"
+  if ! ajv_plain schemas/mif-container.schema.json "$T/ontology-map-missing-ontology-type.json"; then
+    ok "mif-container schema requires ontologyType (as null) on an ontology-map/concordance resource, not just its non-null value"
+  else
+    bad "mif-container schema accepted an ontology-map resource omitting ontologyType entirely"
+  fi
+
+  jq '.exportScope.type = "full" | .exportScope.selector = null' \
+    schemas/samples/mif-container-subset.sample.json > "$T/full-with-boundary-refs.json"
+  if ! ajv_plain schemas/mif-container.schema.json "$T/full-with-boundary-refs.json"; then
+    ok "mif-container schema rejects a full export carrying a boundaryReferences[] entry"
+  else
+    bad "mif-container schema accepted a full export with a non-empty boundaryReferences[]"
+  fi
+
+  # Copilot review on PR #368 caught three more structural loopholes: boundaryReferences
+  # was optional at the top level, so a full export could omit it entirely and never hit
+  # the maxItems:0 constraint; exportScope.selector's description claimed "null for
+  # full/incremental" but nothing enforced it; and resources[].path had no traversal/
+  # absolute-path guard despite being a future write-target for import.
+  jq 'del(.boundaryReferences)' \
+    schemas/samples/mif-container-full.sample.json > "$T/full-omits-boundary-refs.json"
+  if ! ajv_plain schemas/mif-container.schema.json "$T/full-omits-boundary-refs.json"; then
+    ok "mif-container schema rejects a manifest that omits boundaryReferences entirely (not just a non-empty one)"
+  else
+    bad "mif-container schema accepted a manifest omitting boundaryReferences"
+  fi
+
+  jq '.exportScope.selector = "should-not-be-allowed"' \
+    schemas/samples/mif-container-full.sample.json > "$T/full-nonnull-selector.json"
+  if ! ajv_plain schemas/mif-container.schema.json "$T/full-nonnull-selector.json"; then
+    ok "mif-container schema rejects a non-null selector on a full/incremental export"
+  else
+    bad "mif-container schema accepted a non-null selector on a full export"
+  fi
+
+  jq '.resources[0].path = "../../etc/passwd"' \
+    schemas/samples/mif-container-full.sample.json > "$T/path-traversal.json"
+  jq '.resources[0].path = "/abs/path.json"' \
+    schemas/samples/mif-container-full.sample.json > "$T/path-absolute.json"
+  if ! ajv_plain schemas/mif-container.schema.json "$T/path-traversal.json" \
+     && ! ajv_plain schemas/mif-container.schema.json "$T/path-absolute.json"; then
+    ok "mif-container schema rejects a resource path containing '..' or an absolute path"
+  else
+    bad "mif-container schema accepted a directory-traversal or absolute resource path"
+  fi
+
+  # 26d. Coverage restored: a subset export whose selector matches zero resources is
+  #      valid (an empty resources[] is not itself an error for a subset export, only
+  #      the selector's own presence is required -- distinct from 26a's zero-finding
+  #      FULL-export case).
+  jq '.resources = [] | .boundaryReferences = []' \
+    schemas/samples/mif-container-subset.sample.json > "$T/subset-zero-resources.json"
+  if ajv_plain schemas/mif-container.schema.json "$T/subset-zero-resources.json"; then
+    ok "mif-container schema validates a subset export whose selector matched zero resources"
+  else
+    bad "mif-container schema does not validate a zero-resource subset export"
+  fi
+
+  rm -rf "$T"
+}
+
 gate_ontology_lock() {
   info "Ontology vendoring — pinned-lock integrity (ADR-0012)"
   # On-demand vendored domain ontologies must match their pinned sha256 (no local
@@ -2572,7 +2716,7 @@ gate_versions() {
 # ---------------------------------------------------------------------------
 # Gate registry — each milestone appends its function name here.
 # ---------------------------------------------------------------------------
-GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18 gate_m19 gate_m20 gate_m21 gate_m22 gate_m23 gate_m24 gate_m25 gate_ontology_lock gate_versions)
+GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18 gate_m19 gate_m20 gate_m21 gate_m22 gate_m23 gate_m24 gate_m25 gate_m26 gate_ontology_lock gate_versions)
 
 for g in "${GATES[@]}"; do "$g"; done
 

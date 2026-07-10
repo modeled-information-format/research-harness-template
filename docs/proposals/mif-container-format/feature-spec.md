@@ -85,7 +85,7 @@ per ADR-0017's AD-7.
    digest-verifiable) by a container reader that has loaded ONLY the base
    `mif-generic`/`mif-base` profile, with every domain-specific field
    appearing as an optional, additively-typed extension.
-9. IF the container tool encounters a manifest whose declared `$schema`
+9. IF the container tool encounters a manifest whose declared `profile`
    version it does not recognize, THEN THE SYSTEM SHALL fail closed with a
    named "unrecognized container schema version" error rather than
    attempting best-effort parsing.
@@ -162,7 +162,7 @@ per ADR-0017's AD-7.
 - **Zero-finding topic exported**: produces a manifest with an empty
   `resources[]` array and a defined (not null) manifest-level digest over
   the empty set -- not an error.
-- **Manifest `$schema` version unrecognized by the importing instance**:
+- **Manifest `profile` version unrecognized by the importing instance**:
   fails closed per AC 9, naming the unrecognized version, never attempting
   best-effort parsing of an unknown shape.
 - **Import target already holds a finding with the same `@id`**: upserts in

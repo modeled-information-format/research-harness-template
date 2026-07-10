@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-harness.dev/schema/mif-container.schema.json",
+  "title": "MIF Container Manifest (mif-package.json)",
+  "description": "Manifest for a lossless topic export/import unit between two research-harness-template instances (ADR-0017, research-harness-template#194/#275). Modeled on datapackage.json's resources[] array, extended with mandatory per-resource+manifest-level digests, ontology-pack bindings, an export-scope descriptor, a sourceInstance tag, and an explicit boundaryReferences[] mechanism for excluded subset-export cross-references. research-harness-template-local; independent of the org-wide MIF Container Profile (modeled-information-format/MIF#77) per ADR-0017's Context section. Field names are deliberately camelCase (mifType, sourceInstance, exportScope, ontologyBindings, boundaryReferences, manifestDigest), not this repo's usual harness-local snake_case -- ADR-0017 and feature-spec.md already name these fields verbatim in camelCase as the accepted manifest vocabulary; this schema follows that ratified naming rather than the repo default.",
+  "type": "object",
+  "required": ["profile", "sourceInstance", "exportScope", "ontologyBindings", "resources", "boundaryReferences", "manifestDigest", "createdAt"],
+  "additionalProperties": false,
+  "properties": {
+    "profile": {
+      "type": "string",
+      "enum": ["https://research-harness.dev/schema/mif-container/v1"],
+      "description": "The container manifest's own declared format version -- deliberately its own versioned URI, distinct from this schema's $id, mirroring Data Package v2's replacement of the free-text `profile` string (ai-architecture-doc.md Building Blocks; feature-spec AC9: unrecognized-schema-version fail-closed). A reader that does not recognize this value MUST fail closed with a named error rather than attempt best-effort parsing -- never silently accept an unknown profile."
+    },
+    "sourceInstance": {
+      "type": "object",
+      "required": ["namespace"],
+      "additionalProperties": false,
+      "description": "Origin/reconciliation tag (Story #324): identifies the corpus instance this container was exported from, separate from any individual finding's own W3C-PROV provenance.",
+      "properties": {
+        "namespace": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Stable identifier for the exporting corpus instance (e.g. a clone or org label)."
+        },
+        "corpusUrl": {
+          "type": ["string", "null"],
+          "format": "uri",
+          "description": "Optional resolvable URL of the exporting corpus instance."
+        }
+      }
+    },
+    "exportScope": {
+      "type": "object",
+      "required": ["type", "topic", "selector", "generatedAt"],
+      "additionalProperties": false,
+      "description": "Export-scope descriptor (Story #308/#311).",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["full", "incremental", "subset"]
+        },
+        "topic": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The reports/<topic> slug this container was exported from."
+        },
+        "selector": {
+          "type": ["string", "null"],
+          "description": "The subset selector used to build this export. Non-null and non-empty for type=subset; MUST be null for full/incremental (enforced below, not just descriptively)."
+        },
+        "generatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "if": {
+        "properties": { "type": { "const": "subset" } }
+      },
+      "then": {
+        "properties": { "selector": { "type": "string", "minLength": 1 } }
+      },
+      "else": {
+        "properties": { "selector": { "const": null } }
+      }
+    },
+    "ontologyBindings": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Ontology packs (id + version) the contained resources are typed against (Story #310), reusing the harness's existing pack extends mechanism (ADR-0012) rather than inventing a second one. Import (Story #318) rejects on a destination version mismatch.",
+      "items": {
+        "type": "object",
+        "required": ["packId", "version"],
+        "additionalProperties": false,
+        "properties": {
+          "packId": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "version": {
+            "type": "string",
+            "pattern": "^\\d+\\.\\d+\\.\\d+$"
+          }
+        }
+      }
+    },
+    "resources": {
+      "type": "array",
+      "description": "Packaged units (Story #309). MAY be empty (a zero-finding topic export is valid, not an error) -- manifestDigest is still required and defined over the empty set.",
+      "items": {
+        "type": "object",
+        "required": ["mifType", "path", "ontologyType", "digest"],
+        "additionalProperties": false,
+        "properties": {
+          "mifType": {
+            "type": "string",
+            "enum": ["finding", "ontology-map", "concordance"],
+            "description": "Discriminator for the kind of MIF concept this resource packages -- a container packages more than one kind of thing, unlike a plain Data Package resource."
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?!/)(?!.*\\.\\.).+$",
+            "description": "The resource's file path within the container, relative to the manifest. MUST NOT be absolute (no leading /) and MUST NOT contain a \"..\" segment -- a future import writing files from this value must not be handed a directory-traversal primitive."
+          },
+          "ontologyType": {
+            "type": ["string", "null"],
+            "description": "The resolved ontology entity_type for this resource. Required and non-null for mifType=finding; must be null for mifType=ontology-map/concordance (enforced below, not just descriptively)."
+          },
+          "digest": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "description": "Mandatory per-resource content digest (Story #312) -- never opt-in, correcting Data Package's opt-in MD5-default hash."
+          }
+        },
+        "allOf": [
+          {
+            "if": { "properties": { "mifType": { "const": "finding" } } },
+            "then": {
+              "properties": { "ontologyType": { "type": "string", "minLength": 1 } }
+            }
+          },
+          {
+            "if": { "properties": { "mifType": { "enum": ["ontology-map", "concordance"] } } },
+            "then": {
+              "properties": { "ontologyType": { "const": null } }
+            }
+          }
+        ]
+      }
+    },
+    "boundaryReferences": {
+      "type": "array",
+      "description": "Explicit boundary markers (Story #315) for a subset/incremental export's relationships[] or ontology-map.json edges whose target is genuinely excluded from this bundle -- never a silent drop. Closure takes precedence over marking (ADR-0017 AD-4): a target reachable via dependency closure is included directly instead of appearing here. MUST be empty for exportScope.type=full (enforced below): a full export excludes nothing by definition.",
+      "items": {
+        "type": "object",
+        "required": ["target", "reason"],
+        "additionalProperties": false,
+        "properties": {
+          "target": {
+            "type": "string",
+            "pattern": "^urn:mif:",
+            "description": "The excluded target's urn:mif: @id."
+          },
+          "reason": {
+            "type": "string",
+            "enum": ["out-of-scope", "cross-topic", "unresolvable"]
+          }
+        }
+      }
+    },
+    "manifestDigest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "Manifest-level digest (Story #312) computed over the sorted list of resource digests -- defined even for an empty resources[] array, mirroring OCI's self-verifying content-addressed manifest and npm's SRI-enforced install."
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "if": {
+    "properties": { "exportScope": { "properties": { "type": { "const": "full" } } } }
+  },
+  "then": {
+    "properties": { "boundaryReferences": { "maxItems": 0 } }
+  }
+}
