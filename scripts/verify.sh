@@ -2736,6 +2736,97 @@ gate_m27() {
   rm -rf "$T"
 }
 
+# ---------------------------------------------------------------------------
+# Milestone 28 — MIF Container export-scope resolver (Epic #275, Story #315)
+# ---------------------------------------------------------------------------
+gate_m28() {
+  info "Milestone 28 — MIF Container export-scope resolver (scripts/mif-container-resolve-scope.sh)"
+  local T; T="$(mktemp -d)"
+  local RESOLVE="scripts/mif-container-resolve-scope.sh"
+  local GRAPH="reports/_meta/sample-session/knowledge-graph.json"
+
+  # 28a. Full scope, no closure: every concept-to-concept relationship edge is
+  #      already satisfied (no concept boundary references), but the entity-
+  #      mention edges still surface as boundaryReferences -- entities are
+  #      never a packageable resource, so both edge sources (relationships[]
+  #      AND the entity/ontology-typed edges) get walked, per the feature-spec
+  #      edge case that a marker omitted at either level reproduces the exact
+  #      silent-drop failure AD-4 exists to prevent.
+  printf '%s\n' '["urn:mif:concept:harness:kg-cookiecutter-0002","urn:mif:concept:harness:kg-copier-0001","urn:mif:concept:harness:kg-distribution-0003"]' > "$T/full-scope.json"
+  local got
+  got="$("$RESOLVE" "$GRAPH" "$T/full-scope.json" | jq -c '{resources: (.resources|sort), concept_boundaries: [.boundaryReferences[] | select(.target|test("^urn:mif:concept:"))], entity_boundary_count: [.boundaryReferences[] | select(.target|test("^urn:mif:entity:"))] | length}')"
+  if [ "$got" = '{"resources":["urn:mif:concept:harness:kg-cookiecutter-0002","urn:mif:concept:harness:kg-copier-0001","urn:mif:concept:harness:kg-distribution-0003"],"concept_boundaries":[],"entity_boundary_count":4}' ]; then
+    ok "full scope: all concept relationships satisfied, entity mentions still walked and marked"
+  else
+    bad "full scope result wrong: $got"
+  fi
+
+  # 28b. Partial scope, no closure: a referenced-but-out-of-scope concept
+  #      becomes an explicit boundaryReferences[] entry, never silently
+  #      dropped -- resources stays exactly the initial set.
+  printf '%s\n' '["urn:mif:concept:harness:kg-cookiecutter-0002"]' > "$T/partial-scope.json"
+  got="$("$RESOLVE" "$GRAPH" "$T/partial-scope.json" | jq -c '{resources, out_of_scope: [.boundaryReferences[] | select(.reason=="out-of-scope" and (.target|test("^urn:mif:concept:")))]}')"
+  if [ "$got" = '{"resources":["urn:mif:concept:harness:kg-cookiecutter-0002"],"out_of_scope":[{"target":"urn:mif:concept:harness:kg-copier-0001","reason":"out-of-scope"}]}' ]; then
+    ok "partial scope without closure marks the excluded concept as an out-of-scope boundary reference"
+  else
+    bad "partial-scope-no-closure result wrong: $got"
+  fi
+
+  # 28c. Partial scope WITH --closure: dependency closure takes precedence
+  #      over marking (AD-4) -- the resolver transitively expands scope to
+  #      every concept reachable via relationship edges, so kg-copier-0001 is
+  #      now INCLUDED, not marked. Entity mentions are still never closure-
+  #      included (not a packageable resource) and remain boundary references.
+  got="$("$RESOLVE" "$GRAPH" "$T/partial-scope.json" --closure | jq -c '{resources: (.resources|sort), concept_boundaries: [.boundaryReferences[] | select(.target|test("^urn:mif:concept:"))]}')"
+  if [ "$got" = '{"resources":["urn:mif:concept:harness:kg-cookiecutter-0002","urn:mif:concept:harness:kg-copier-0001","urn:mif:concept:harness:kg-distribution-0003"],"concept_boundaries":[]}' ]; then
+    ok "closure expands scope to every transitively-reachable concept, closure takes precedence over marking (AD-4)"
+  else
+    bad "closure expansion result wrong: $got"
+  fi
+
+  # 28d/28e. Reason classification: a different-namespace concept id is
+  #      "cross-topic" even though it can never appear as a node in a single-
+  #      topic graph (build-graph.sh only ever sees one topic); a same-
+  #      namespace id that simply isn't a node anywhere is "unresolvable".
+  #      The namespace check MUST run before the node-presence check, or
+  #      every cross-topic reference misclassifies as unresolvable (a real
+  #      bug this suite caught and fixed during development).
+  jq '.edges += [
+        {"source":"urn:mif:concept:harness:kg-cookiecutter-0002","target":"urn:mif:concept:other-topic:some-finding","type":"supports","strength":0.5,"via":"relationship"},
+        {"source":"urn:mif:concept:harness:kg-cookiecutter-0002","target":"urn:mif:concept:harness:does-not-exist","type":"supports","strength":0.5,"via":"relationship"}
+      ]' "$GRAPH" > "$T/graph-edge-cases.json"
+  got="$("$RESOLVE" "$T/graph-edge-cases.json" "$T/partial-scope.json" | jq -c '[.boundaryReferences[] | select(.target=="urn:mif:concept:other-topic:some-finding" or .target=="urn:mif:concept:harness:does-not-exist") | {target, reason}] | sort_by(.target)')"
+  if [ "$got" = '[{"target":"urn:mif:concept:harness:does-not-exist","reason":"unresolvable"},{"target":"urn:mif:concept:other-topic:some-finding","reason":"cross-topic"}]' ]; then
+    ok "boundary reason classifies a different-namespace target as cross-topic and a same-namespace missing target as unresolvable"
+  else
+    bad "boundary reason classification wrong: $got"
+  fi
+
+  # 28f. Zero in-scope findings (a subset selector matching nothing) is valid,
+  #      not an error -- empty resources[] and boundaryReferences[].
+  printf '[]\n' > "$T/empty-scope.json"
+  got="$("$RESOLVE" "$GRAPH" "$T/empty-scope.json" | jq -c .)"
+  if [ "$got" = '{"resources":[],"boundaryReferences":[]}' ]; then
+    ok "an empty in-scope set resolves to empty resources and boundaryReferences, not an error"
+  else
+    bad "empty-scope result wrong: $got"
+  fi
+
+  # 28g. Fail-closed: missing arguments and a missing graph file are named
+  #      errors (exit != 0), never a silent empty/wrong result.
+  "$RESOLVE" >/dev/null 2>&1
+  local rc_noargs=$?
+  "$RESOLVE" "$T/does-not-exist.json" "$T/full-scope.json" >/dev/null 2>&1
+  local rc_missing=$?
+  if [ "$rc_noargs" -ne 0 ] && [ "$rc_missing" -ne 0 ]; then
+    ok "resolver fails closed on missing arguments and a missing graph file"
+  else
+    bad "resolver did not fail closed (rc_noargs=$rc_noargs rc_missing=$rc_missing)"
+  fi
+
+  rm -rf "$T"
+}
+
 gate_ontology_lock() {
   info "Ontology vendoring — pinned-lock integrity (ADR-0012)"
   # On-demand vendored domain ontologies must match their pinned sha256 (no local
@@ -2814,7 +2905,7 @@ gate_versions() {
 # ---------------------------------------------------------------------------
 # Gate registry — each milestone appends its function name here.
 # ---------------------------------------------------------------------------
-GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18 gate_m19 gate_m20 gate_m21 gate_m22 gate_m23 gate_m24 gate_m25 gate_m26 gate_m27 gate_ontology_lock gate_versions)
+GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18 gate_m19 gate_m20 gate_m21 gate_m22 gate_m23 gate_m24 gate_m25 gate_m26 gate_m27 gate_m28 gate_ontology_lock gate_versions)
 
 for g in "${GATES[@]}"; do "$g"; done
 
