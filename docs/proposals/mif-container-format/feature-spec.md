@@ -87,7 +87,7 @@ per ADR-0017's AD-7.
    appearing as an optional, additively-typed extension.
 9. IF the container tool encounters a manifest whose declared `profile`
    version it does not recognize, THEN THE SYSTEM SHALL fail closed with a
-   named "unrecognized container schema version" error rather than
+   named "unrecognized container profile" error rather than
    attempting best-effort parsing.
 10. WHEN a user runs `/export <topic> [--subset <selector>]`, THE SYSTEM
     SHALL produce a `mif-package.json` manifest plus its named resource

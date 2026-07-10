@@ -371,7 +371,7 @@ flowchart LR
    appearing as an optional, additively-typed extension.
 8. IF the container tool encounters a manifest whose declared `profile`
    version it does not recognize, THEN THE SYSTEM SHALL fail closed with a
-   named "unrecognized container schema version" error rather than
+   named "unrecognized container profile" error rather than
    attempting best-effort parsing.
 
 ## Decision Log
