@@ -43,6 +43,8 @@ docs/proposals/mif-entity-type-subsumption.md
 .*.json.staging
 # dimension-analyst finding-publish staging dirs (issue #357)
 .staging-*/
+# write-finding.sh's per-invocation staging dirs (issue #360)
+.wf-staging-*/
 *.fix.json
 *.vb.json
 reports/**/.gate_stderr*
