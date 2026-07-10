@@ -2494,6 +2494,47 @@ JSON
   rm -rf "$T"
 }
 
+# ---------------------------------------------------------------------------
+# Milestone 26 — MIF Container manifest schema (Epic #275, Story #308)
+# ---------------------------------------------------------------------------
+gate_m26() {
+  info "Milestone 26 — MIF Container manifest schema (schemas/mif-container.schema.json)"
+  local T; T="$(mktemp -d)"
+
+  # 26a. The schema validates a full-export sample carrying resources, an ontology
+  #      binding, and a boundaryReferences[] entry.
+  if ajv_plain schemas/mif-container.schema.json schemas/samples/mif-container-full.sample.json; then
+    ok "mif-container schema validates a full-export sample manifest"
+  else
+    bad "mif-container schema does not validate the full-export sample"
+  fi
+
+  # 26b. A zero-finding topic export is valid, not an error: empty resources[] and
+  #      boundaryReferences[], still carrying a defined manifestDigest (feature-spec
+  #      edge case: "Zero-finding topic exported").
+  if ajv_plain schemas/mif-container.schema.json schemas/samples/mif-container-empty.sample.json; then
+    ok "mif-container schema validates a zero-resource (empty topic) sample manifest"
+  else
+    bad "mif-container schema does not validate the zero-resource sample"
+  fi
+
+  # 26c. Fail-closed at the structural level (feature-spec AC9): an unrecognized
+  #      profile value, and a manifest missing its mandatory manifestDigest, must
+  #      both be rejected -- never accepted as best-effort.
+  jq '.profile = "https://example.org/some-other-profile/v9"' \
+    schemas/samples/mif-container-full.sample.json > "$T/bad-profile.json"
+  jq 'del(.manifestDigest)' \
+    schemas/samples/mif-container-full.sample.json > "$T/bad-digest.json"
+  if ! ajv_plain schemas/mif-container.schema.json "$T/bad-profile.json" \
+     && ! ajv_plain schemas/mif-container.schema.json "$T/bad-digest.json"; then
+    ok "mif-container schema fails closed on an unrecognized profile and a missing manifestDigest"
+  else
+    bad "mif-container schema accepted an unrecognized profile or a missing manifestDigest"
+  fi
+
+  rm -rf "$T"
+}
+
 gate_ontology_lock() {
   info "Ontology vendoring — pinned-lock integrity (ADR-0012)"
   # On-demand vendored domain ontologies must match their pinned sha256 (no local
@@ -2572,7 +2613,7 @@ gate_versions() {
 # ---------------------------------------------------------------------------
 # Gate registry — each milestone appends its function name here.
 # ---------------------------------------------------------------------------
-GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18 gate_m19 gate_m20 gate_m21 gate_m22 gate_m23 gate_m24 gate_m25 gate_ontology_lock gate_versions)
+GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18 gate_m19 gate_m20 gate_m21 gate_m22 gate_m23 gate_m24 gate_m25 gate_m26 gate_ontology_lock gate_versions)
 
 for g in "${GATES[@]}"; do "$g"; done
 

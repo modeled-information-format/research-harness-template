@@ -36,6 +36,7 @@ SCHEMAS=(
   "schemas/session-state.schema.json"
   "schemas/mif/ontology.schema.json"
   "schemas/mif/source-envelope.schema.json"
+  "schemas/mif-container.schema.json"
 )
 
 # --- toolchain (pinned, isolated) -------------------------------------------
