@@ -2570,6 +2570,18 @@ gate_m26() {
     bad "mif-container schema accepted a concordance resource with a non-null ontologyType"
   fi
 
+  # An ontology-map/concordance resource that OMITS ontologyType entirely must be
+  # rejected too, not just one carrying an explicit non-null value -- the field's
+  # own description claims it "must be null ... enforced below, not just
+  # descriptively," which is false unless ontologyType is also required.
+  jq 'del(.resources[1].ontologyType)' \
+    schemas/samples/mif-container-full.sample.json > "$T/ontology-map-missing-ontology-type.json"
+  if ! ajv_plain schemas/mif-container.schema.json "$T/ontology-map-missing-ontology-type.json"; then
+    ok "mif-container schema requires ontologyType (as null) on an ontology-map/concordance resource, not just its non-null value"
+  else
+    bad "mif-container schema accepted an ontology-map resource omitting ontologyType entirely"
+  fi
+
   jq '.exportScope.type = "full" | .exportScope.selector = null' \
     schemas/samples/mif-container-subset.sample.json > "$T/full-with-boundary-refs.json"
   if ! ajv_plain schemas/mif-container.schema.json "$T/full-with-boundary-refs.json"; then

@@ -121,6 +121,7 @@
           {
             "if": { "properties": { "mifType": { "enum": ["ontology-map", "concordance"] } } },
             "then": {
+              "required": ["ontologyType"],
               "properties": { "ontologyType": { "const": null } }
             }
           }
