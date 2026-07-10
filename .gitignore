@@ -54,6 +54,9 @@ reports/**/.gate_stderr*
 # (concordance.json itself stays tracked — it is deterministic and on the allowlist.)
 reports/concordance-status.json
 reports/**/.synthesis-withheld
+# Story #324: candidate sameAs proposals -- regenerated on every import that
+# writes anything (mif-container-detect-sameas.sh), not a source artifact.
+reports/concordance-sameas-proposals.json
 
 # Domain ontology packs are vendored on demand from the canonical registry
 # (ADR-0012, #224); only base layers under schemas/ontologies/ ship committed.

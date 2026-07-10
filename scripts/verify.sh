@@ -2913,12 +2913,27 @@ gate_m29() {
   cp -r "$TOPIC_DIR/findings/." "$T/snapshot/findings/"
   cp "$TOPIC_DIR/README.md" "$T/snapshot/README.md"
   cp reports/concordance.json "$T/snapshot/concordance.json"
+  # reports/concordance-sameas-proposals.json (Story #324) is a GLOBAL
+  # (not per-topic) file step 5 writes whenever an import upserts anything
+  # (including these test invocations) -- it did not exist before this
+  # story and is gitignored, so "restore" here means "remove it", not
+  # "restore content".
+  local had_sameas_proposals=0
+  [ -f reports/concordance-sameas-proposals.json ] && {
+    had_sameas_proposals=1
+    cp reports/concordance-sameas-proposals.json "$T/snapshot/concordance-sameas-proposals.json"
+  }
   restore_snapshot() {
     rm -rf "$TOPIC_DIR/findings"
     mkdir -p "$TOPIC_DIR/findings"
     cp -r "$T/snapshot/findings/." "$TOPIC_DIR/findings/"
     cp "$T/snapshot/README.md" "$TOPIC_DIR/README.md"
     cp "$T/snapshot/concordance.json" reports/concordance.json
+    if [ "$had_sameas_proposals" -eq 1 ]; then
+      cp "$T/snapshot/concordance-sameas-proposals.json" reports/concordance-sameas-proposals.json
+    else
+      rm -f reports/concordance-sameas-proposals.json
+    fi
     rm -f "$TOPIC_DIR/knowledge-graph.json"
     rm -rf "$TOPIC_DIR/.container.lock"
     rm -rf "$T"
@@ -3129,6 +3144,210 @@ gate_m29() {
   fi
 }
 
+# ---------------------------------------------------------------------------
+# Milestone 30 — MIF Container origin tagging + reconciliation (Epic #275, Story #324)
+# ---------------------------------------------------------------------------
+gate_m30() {
+  info "Milestone 30 — MIF Container origin tagging + reconciliation policy"
+  local IMPORT="scripts/mif-container-import.sh"
+  local DETECT="scripts/mif-container-detect-sameas.sh"
+  local TOPIC="example-okf-mif-knowledge-spine"
+  local TOPIC_DIR="reports/$TOPIC"
+  local T; T="$(mktemp -d)"
+  local got
+
+  mkdir -p "$T/snapshot/findings"
+  cp -r "$TOPIC_DIR/findings/." "$T/snapshot/findings/"
+  cp "$TOPIC_DIR/README.md" "$T/snapshot/README.md"
+  cp reports/concordance.json "$T/snapshot/concordance.json"
+  local had_sameas_proposals=0
+  [ -f reports/concordance-sameas-proposals.json ] && {
+    had_sameas_proposals=1
+    cp reports/concordance-sameas-proposals.json "$T/snapshot/concordance-sameas-proposals.json"
+  }
+  restore_snapshot() {
+    rm -rf "$TOPIC_DIR/findings"
+    mkdir -p "$TOPIC_DIR/findings"
+    cp -r "$T/snapshot/findings/." "$TOPIC_DIR/findings/"
+    cp "$T/snapshot/README.md" "$TOPIC_DIR/README.md"
+    cp "$T/snapshot/concordance.json" reports/concordance.json
+    if [ "$had_sameas_proposals" -eq 1 ]; then
+      cp "$T/snapshot/concordance-sameas-proposals.json" reports/concordance-sameas-proposals.json
+    else
+      rm -f reports/concordance-sameas-proposals.json
+    fi
+    rm -f "$TOPIC_DIR/knowledge-graph.json"
+    rm -rf "$TOPIC_DIR/.container.lock"
+    rm -rf "$T"
+    trap - EXIT
+  }
+  trap restore_snapshot RETURN EXIT
+
+  local seed_finding; seed_finding="$(find "$TOPIC_DIR/findings" -maxdepth 1 -name '*.json' | head -1)"
+  local seed_id; seed_id="$(jq -r '."@id"' "$seed_finding")"
+
+  build_container() { # build_container <dir> <resource-file> <digest> <manifest-digest>
+    mkdir -p "$1"
+    cp "$2" "$1/finding.json"
+    jq -n --arg d "$3" --arg md "$4" --arg topic "$TOPIC" '{
+      profile: "https://research-harness.dev/schema/mif-container/v1",
+      sourceInstance: {namespace: "gate-m30-test-instance", corpusUrl: null},
+      exportScope: {type: "full", topic: $topic, selector: null, generatedAt: "2026-07-10T00:00:00Z"},
+      ontologyBindings: [{packId: "mif-generic", version: "1.0.0"}],
+      resources: [{mifType: "finding", path: "finding.json", ontologyType: "technology", digest: $d}],
+      boundaryReferences: [],
+      manifestDigest: $md,
+      createdAt: "2026-07-10T00:00:00Z"
+    }' > "$1/mif-package.json"
+  }
+
+  # 30a. Reconciliation: an incoming re-import of an existing @id with a
+  #      DIFFERENT verification verdict, gathered_under, and provenance must
+  #      NOT overwrite those three fields (AD-6: origin-scoped) -- the
+  #      destination's own values survive even though the rest of the
+  #      content (summary) DOES take the incoming value.
+  jq '.extensions.harness.verification.verdict = "falsified"
+      | .extensions.harness.verification.verdict_basis = "gate-m30 foreign verdict, must not survive"
+      | .extensions.harness.gathered_under = "gv-000000000000"
+      | .provenance.trustLevel = "low_confidence"
+      | .summary = "gate-m30 reconciliation test: this field SHOULD reconcile"' \
+    "$seed_finding" > "$T/foreign-finding.json"
+  local foreign_digest; foreign_digest="$(scripts/mif-container-digest.sh resource "$T/foreign-finding.json")"
+  local foreign_manifest_digest; foreign_manifest_digest="$(printf '%s\n' "$foreign_digest" | scripts/mif-container-digest.sh manifest)"
+  build_container "$T/c-foreign" "$T/foreign-finding.json" "$foreign_digest" "$foreign_manifest_digest"
+  local orig_verdict orig_gathered orig_trust
+  orig_verdict="$(jq -r '.extensions.harness.verification.verdict' "$seed_finding")"
+  orig_gathered="$(jq -r '.extensions.harness.gathered_under // "null"' "$seed_finding")"
+  orig_trust="$(jq -r '.provenance.trustLevel // "null"' "$seed_finding")"
+  got="$("$IMPORT" "$T/c-foreign" "$TOPIC" 2>&1)"
+  local result_file; result_file="$(find "$TOPIC_DIR/findings" -maxdepth 1 -name '*.json' -exec grep -Fl "\"@id\": \"$seed_id\"" {} + 2>/dev/null | head -1)"
+  local new_verdict new_gathered new_trust new_summary
+  new_verdict="$(jq -r '.extensions.harness.verification.verdict' "$result_file")"
+  new_gathered="$(jq -r '.extensions.harness.gathered_under // "null"' "$result_file")"
+  new_trust="$(jq -r '.provenance.trustLevel // "null"' "$result_file")"
+  new_summary="$(jq -r '.summary' "$result_file")"
+  if [ "$new_verdict" = "$orig_verdict" ] && [ "$new_gathered" = "$orig_gathered" ] \
+     && [ "$new_trust" = "$orig_trust" ] \
+     && [ "$new_summary" = "gate-m30 reconciliation test: this field SHOULD reconcile" ]; then
+    ok "verification verdict, gathered_under, and provenance stay origin-scoped (destination's own values survive); other fields reconcile toward the incoming value"
+  else
+    bad "reconciliation policy violated: verdict $orig_verdict->$new_verdict, gathered_under $orig_gathered->$new_gathered, trust $orig_trust->$new_trust, summary='$new_summary'"
+  fi
+
+  # 30b. Reconciliation: tags[] reconciles toward a UNION, not a replace --
+  #      a tag present on only one side must survive on both.
+  jq '.tags = ["gate-m30-foreign-tag"] + (.tags // [])' "$seed_finding" > "$T/tags-finding.json"
+  local tags_digest; tags_digest="$(scripts/mif-container-digest.sh resource "$T/tags-finding.json")"
+  local tags_manifest_digest; tags_manifest_digest="$(printf '%s\n' "$tags_digest" | scripts/mif-container-digest.sh manifest)"
+  build_container "$T/c-tags" "$T/tags-finding.json" "$tags_digest" "$tags_manifest_digest"
+  local orig_tags_count; orig_tags_count="$(jq '.tags // [] | length' "$seed_finding")"
+  "$IMPORT" "$T/c-tags" "$TOPIC" >/dev/null 2>&1
+  result_file="$(find "$TOPIC_DIR/findings" -maxdepth 1 -name '*.json' -exec grep -Fl "\"@id\": \"$seed_id\"" {} + 2>/dev/null | head -1)"
+  local has_foreign_tag has_orig_tags
+  has_foreign_tag="$(jq '(.tags // []) | index("gate-m30-foreign-tag") != null' "$result_file")"
+  has_orig_tags="$(jq --argjson n "$orig_tags_count" '((.tags // []) | length) >= $n' "$result_file")"
+  if [ "$has_foreign_tag" = "true" ] && [ "$has_orig_tags" = "true" ]; then
+    ok "tags[] reconciles toward a union of both sides, never a replace"
+  else
+    bad "tags union check failed (has_foreign_tag=$has_foreign_tag has_orig_tags=$has_orig_tags)"
+  fi
+
+  # 30c. Candidate sameAs detection: importing a finding whose label
+  #      normalizes identically to an existing DIFFERENT-@id finding's label
+  #      surfaces a proposal in reports/concordance-sameas-proposals.json --
+  #      it must NOT rewrite either @id or merge anything.
+  local seed_title; seed_title="$(jq -r '.title' "$seed_finding")"
+  local dup_id="urn:mif:concept:harness/${TOPIC}:gate-m30-sameas-synthetic"
+  mkdir -p "$T/c-dup"
+  jq --arg id "$dup_id" --arg t "  $seed_title  " '."@id" = $id | .title = $t' "$seed_finding" > "$T/c-dup/dup-finding.json"
+  local dup_digest; dup_digest="$(scripts/mif-container-digest.sh resource "$T/c-dup/dup-finding.json")"
+  local dup_manifest_digest; dup_manifest_digest="$(printf '%s\n' "$dup_digest" | scripts/mif-container-digest.sh manifest)"
+  jq -n --arg d "$dup_digest" --arg md "$dup_manifest_digest" --arg topic "$TOPIC" '{
+    profile: "https://research-harness.dev/schema/mif-container/v1",
+    sourceInstance: {namespace: "gate-m30-test-instance", corpusUrl: null},
+    exportScope: {type: "full", topic: $topic, selector: null, generatedAt: "2026-07-10T00:00:00Z"},
+    ontologyBindings: [{packId: "mif-generic", version: "1.0.0"}],
+    resources: [{mifType: "finding", path: "dup-finding.json", ontologyType: "technology", digest: $d}],
+    boundaryReferences: [],
+    manifestDigest: $md,
+    createdAt: "2026-07-10T00:00:00Z"
+  }' > "$T/c-dup/mif-package.json"
+  "$IMPORT" "$T/c-dup" "$TOPIC" >/dev/null 2>&1
+  got="$(jq -c --arg a "$seed_id" --arg b "$dup_id" '.proposals[] | select((.a==$a and .b==$b) or (.a==$b and .b==$a))' reports/concordance-sameas-proposals.json 2>/dev/null)"
+  local seed_still_seed_id dup_written_separately
+  seed_still_seed_id="$(jq -r '."@id"' "$seed_finding" 2>/dev/null)"
+  dup_written_separately="$([ -f "$TOPIC_DIR/findings/dup-finding.json" ] && jq -r '."@id"' "$TOPIC_DIR/findings/dup-finding.json" 2>/dev/null)"
+  if [ -n "$got" ] && [ "$seed_still_seed_id" = "$seed_id" ] && [ "$dup_written_separately" = "$dup_id" ]; then
+    ok "a candidate sameAs match (whitespace/case-normalized label) surfaces as a proposal; both findings remain distinct files under their own @id, never merged"
+  else
+    bad "sameAs proposal check failed: got='$got' seed_id_after='$seed_still_seed_id' dup_id_after='$dup_written_separately'"
+  fi
+
+  # 30d. The detector never modifies concordance.json itself -- it is
+  #      read-only, detection-only (never a merge).
+  local concordance_before concordance_after
+  concordance_before="$(scripts/mif-container-digest.sh resource reports/concordance.json)"
+  "$DETECT" reports/concordance.json >/dev/null 2>&1
+  concordance_after="$(scripts/mif-container-digest.sh resource reports/concordance.json)"
+  if [ "$concordance_before" = "$concordance_after" ]; then
+    ok "the sameAs detector never modifies concordance.json -- detection only, never a merge"
+  else
+    bad "sameAs detector unexpectedly modified concordance.json"
+  fi
+
+  # 30e. Fail-closed: a missing/unreadable concordance file is a named error.
+  "$DETECT" "$T/does-not-exist.json" >/dev/null 2>&1
+  if [ "$?" -ne 0 ]; then
+    ok "sameAs detector fails closed on a missing concordance file"
+  else
+    bad "sameAs detector did not fail on a missing concordance file"
+  fi
+
+  # 30f. Regression: reconciliation's merge draws on the DESTINATION's own
+  #      on-disk content (Story #324), which step 2's incoming-bytes-only
+  #      pre-check cannot see -- a corrupt destination finding (.tags not
+  #      an array, so the union's `+` throws a jq type error) must still be
+  #      caught in step 2's bulk pre-check, rejecting the WHOLE import
+  #      (including an entirely independent, valid, brand-new-@id resource
+  #      in the SAME manifest) before step 4 writes anything. This is the
+  #      exact partial-write shape review caught in this reconciliation
+  #      change: merge-validation moved into step 2 fixes it the same way
+  #      29i's fix did for per-finding schema validation.
+  local corrupt_target; corrupt_target="$(find "$TOPIC_DIR/findings" -maxdepth 1 -name '*.json' ! -name "$(basename "$seed_finding")" | sort | head -1)"
+  local corrupt_id; corrupt_id="$(jq -r '."@id"' "$corrupt_target")"
+  local corrupt_tmp; corrupt_tmp="$(mktemp)"
+  jq '.tags = "not-an-array"' "$corrupt_target" > "$corrupt_tmp" && mv "$corrupt_tmp" "$corrupt_target"
+  mkdir -p "$T/c-corrupt"
+  cp "$seed_finding" "$T/c-corrupt/corrupt-target.json"
+  jq --arg id "$corrupt_id" '."@id" = $id | .summary = "gate-m30 corrupt-destination regression: incoming side is valid"' "$seed_finding" > "$T/c-corrupt/corrupt-target-tmp.json" && mv "$T/c-corrupt/corrupt-target-tmp.json" "$T/c-corrupt/corrupt-target.json"
+  local corrupt_incoming_real_digest; corrupt_incoming_real_digest="$(scripts/mif-container-digest.sh resource "$T/c-corrupt/corrupt-target.json")"
+  local other_new_id="urn:mif:concept:harness/${TOPIC}:gate-m30-corrupt-independent-new"
+  jq --arg id "$other_new_id" '."@id" = $id' "$seed_finding" > "$T/c-corrupt/independent-new.json"
+  local other_new_digest; other_new_digest="$(scripts/mif-container-digest.sh resource "$T/c-corrupt/independent-new.json")"
+  local corrupt_manifest_digest; corrupt_manifest_digest="$(printf '%s\n%s\n' "$corrupt_incoming_real_digest" "$other_new_digest" | scripts/mif-container-digest.sh manifest)"
+  jq -n --arg cd "$corrupt_incoming_real_digest" --arg nd "$other_new_digest" --arg md "$corrupt_manifest_digest" --arg topic "$TOPIC" '{
+    profile: "https://research-harness.dev/schema/mif-container/v1",
+    sourceInstance: {namespace: "gate-m30-test-instance", corpusUrl: null},
+    exportScope: {type: "full", topic: $topic, selector: null, generatedAt: "2026-07-10T00:00:00Z"},
+    ontologyBindings: [{packId: "mif-generic", version: "1.0.0"}],
+    resources: [
+      {mifType: "finding", path: "corrupt-target.json", ontologyType: "technology", digest: $cd},
+      {mifType: "finding", path: "independent-new.json", ontologyType: "technology", digest: $nd}
+    ],
+    boundaryReferences: [],
+    manifestDigest: $md,
+    createdAt: "2026-07-10T00:00:00Z"
+  }' > "$T/c-corrupt/mif-package.json"
+  "$IMPORT" "$T/c-corrupt" "$TOPIC" >/dev/null 2>&1
+  local rc_corrupt=$?
+  local independent_written; independent_written="$(find "$TOPIC_DIR/findings" -maxdepth 1 -name 'independent-new.json' 2>/dev/null | wc -l | tr -d ' ')"
+  if [ "$rc_corrupt" -ne 0 ] && [ "$independent_written" = "0" ]; then
+    ok "a corrupt destination finding (reconciliation merge throws) rejects the WHOLE import -- not even an independent valid new-@id resource in the same manifest is written"
+  else
+    bad "corrupt-destination partial-write regression check failed (rc=$rc_corrupt, independent_written=$independent_written)"
+  fi
+}
+
 gate_ontology_lock() {
   info "Ontology vendoring — pinned-lock integrity (ADR-0012)"
   # On-demand vendored domain ontologies must match their pinned sha256 (no local
@@ -3207,7 +3426,7 @@ gate_versions() {
 # ---------------------------------------------------------------------------
 # Gate registry — each milestone appends its function name here.
 # ---------------------------------------------------------------------------
-GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18 gate_m19 gate_m20 gate_m21 gate_m22 gate_m23 gate_m24 gate_m25 gate_m26 gate_m27 gate_m28 gate_m29 gate_ontology_lock gate_versions)
+GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18 gate_m19 gate_m20 gate_m21 gate_m22 gate_m23 gate_m24 gate_m25 gate_m26 gate_m27 gate_m28 gate_m29 gate_m30 gate_ontology_lock gate_versions)
 
 for g in "${GATES[@]}"; do "$g"; done
 
