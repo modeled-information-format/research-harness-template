@@ -2638,6 +2638,104 @@ gate_m26() {
   rm -rf "$T"
 }
 
+# ---------------------------------------------------------------------------
+# Milestone 27 — MIF Container digest engine (Epic #275, Story #312)
+# ---------------------------------------------------------------------------
+gate_m27() {
+  info "Milestone 27 — MIF Container digest engine (scripts/mif-container-digest.sh)"
+  local T; T="$(mktemp -d)"
+
+  # 27a. Per-resource digest: correct sha256, and deterministic (same file
+  #      hashed twice yields the same digest).
+  local d1 d2 expect_hex expect
+  d1="$(scripts/mif-container-digest.sh resource schemas/samples/mif-container-full.sample.json)"
+  d2="$(scripts/mif-container-digest.sh resource schemas/samples/mif-container-full.sample.json)"
+  if command -v sha256sum >/dev/null 2>&1; then
+    expect_hex="$(sha256sum schemas/samples/mif-container-full.sample.json | awk '{print $1}')"
+  else
+    expect_hex="$(shasum -a 256 schemas/samples/mif-container-full.sample.json | awk '{print $1}')"
+  fi
+  expect="sha256:${expect_hex}"
+  if [ "$d1" = "$d2" ] && [ "$d1" = "$expect" ]; then
+    ok "resource digest is deterministic and matches sha256sum/shasum directly"
+  else
+    bad "resource digest wrong or non-deterministic (d1=$d1 d2=$d2 expect=$expect)"
+  fi
+
+  # 27b. Content-sensitivity: a changed file produces a different digest.
+  printf 'x' > "$T/a.txt"
+  printf 'y' > "$T/b.txt"
+  local da db
+  da="$(scripts/mif-container-digest.sh resource "$T/a.txt")"
+  db="$(scripts/mif-container-digest.sh resource "$T/b.txt")"
+  if [ "$da" != "$db" ]; then
+    ok "resource digest is content-sensitive (different bytes -> different digest)"
+  else
+    bad "resource digest did not change for different file content"
+  fi
+
+  # 27c. Manifest digest determinism (NFR-1, Task #314): two independently-built
+  #      manifests over an identical resource set, presented in different orders,
+  #      produce a byte-identical manifest digest.
+  local m1 m2
+  m1="$(printf 'sha256:aaaa\nsha256:bbbb\nsha256:cccc\n' | scripts/mif-container-digest.sh manifest)"
+  m2="$(printf 'sha256:cccc\nsha256:aaaa\nsha256:bbbb\n' | scripts/mif-container-digest.sh manifest)"
+  if [ "$m1" = "$m2" ]; then
+    ok "manifest digest is order-independent (sorted before hashing, per NFR-1)"
+  else
+    bad "manifest digest depends on input order (m1=$m1 m2=$m2)"
+  fi
+
+  # 27d. Zero-finding topic (empty resources[]): the manifest digest is still
+  #      defined, over the empty set -- matching schemas/samples/mif-container-
+  #      empty.sample.json's manifestDigest (sha256 of the empty string).
+  local mempty
+  mempty="$(printf '' | scripts/mif-container-digest.sh manifest)"
+  local expect_empty
+  expect_empty="$(jq -r '.manifestDigest' schemas/samples/mif-container-empty.sample.json)"
+  if [ "$mempty" = "$expect_empty" ]; then
+    ok "manifest digest over zero resources matches the empty-topic sample fixture's manifestDigest"
+  else
+    bad "manifest digest over zero resources ($mempty) does not match the empty sample fixture ($expect_empty)"
+  fi
+
+  # 27e. Fail-closed: a missing file is a named error (exit != 0), never a
+  #      silently-wrong or empty digest.
+  scripts/mif-container-digest.sh resource "$T/does-not-exist.json" >/dev/null 2>&1
+  if [ "$?" -ne 0 ]; then
+    ok "resource digest fails closed on a missing file (exit != 0)"
+  else
+    bad "resource digest did not fail on a missing file"
+  fi
+
+  # 27f. Fail-closed: a file that exists but can't be read (permission denied)
+  #      must also be a named error, never the malformed "sha256:" (empty hex)
+  #      line at exit 0 that a command-substitution-inside-printf swallow bug
+  #      previously produced.
+  local out rc
+  printf 'x' > "$T/unreadable.txt"; chmod 000 "$T/unreadable.txt"
+  out="$(scripts/mif-container-digest.sh resource "$T/unreadable.txt" 2>/dev/null)"; rc=$?
+  chmod 644 "$T/unreadable.txt"
+  if [ "$rc" -ne 0 ] && [ "$out" != "sha256:" ]; then
+    ok "resource digest fails closed on an unreadable file (permission denied), not a malformed empty digest"
+  else
+    bad "resource digest did not fail closed on an unreadable file (rc=$rc out='$out')"
+  fi
+
+  # 27g. Extra positional arguments are rejected, not silently dropped -- a
+  # `resource f1 f2` invocation must not quietly hash only f1.
+  scripts/mif-container-digest.sh resource \
+    schemas/samples/mif-container-full.sample.json \
+    schemas/samples/mif-container-subset.sample.json >/dev/null 2>&1
+  if [ "$?" -ne 0 ]; then
+    ok "resource digest rejects extra positional arguments instead of silently hashing only the first"
+  else
+    bad "resource digest silently accepted extra positional arguments"
+  fi
+
+  rm -rf "$T"
+}
+
 gate_ontology_lock() {
   info "Ontology vendoring — pinned-lock integrity (ADR-0012)"
   # On-demand vendored domain ontologies must match their pinned sha256 (no local
@@ -2716,7 +2814,7 @@ gate_versions() {
 # ---------------------------------------------------------------------------
 # Gate registry — each milestone appends its function name here.
 # ---------------------------------------------------------------------------
-GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18 gate_m19 gate_m20 gate_m21 gate_m22 gate_m23 gate_m24 gate_m25 gate_m26 gate_ontology_lock gate_versions)
+GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18 gate_m19 gate_m20 gate_m21 gate_m22 gate_m23 gate_m24 gate_m25 gate_m26 gate_m27 gate_ontology_lock gate_versions)
 
 for g in "${GATES[@]}"; do "$g"; done
 

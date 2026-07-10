@@ -138,6 +138,14 @@ These are dev/build-time only; generated files are committed.
 
 ---
 
+## MIF Container export/import (Epic #275)
+
+| Script | What it does | Toolchain |
+| --- | --- | --- |
+| `scripts/mif-container-digest.sh` | The container digest engine (Story #312, ADR-0017 AD-2): `resource <file>` prints a `sha256:<64-hex>` digest over the file's raw bytes; `manifest [< digests]` reads resource digests from stdin, sorts them (`LC_ALL=C`, matching this repo's other determinism-critical sorts), and hashes the sorted list — order-independent, fail-closed on an unreadable file or a missing sha256 tool. | coreutils (`sha256sum` or `shasum`) |
+
+---
+
 ## Release and verification
 
 Scripts that verify harness integrity and attestation.
