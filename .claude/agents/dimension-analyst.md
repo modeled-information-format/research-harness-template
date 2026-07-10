@@ -319,11 +319,12 @@ check-and-publish in one step:
 DEST="$REPORTS_DIR/findings/finding-<slug>.json"
 if ln "$S" "$DEST" 2>/dev/null; then
   rm -f "$S"   # published; the staging copy is now a redundant hard link
-else
-  # DEST already exists. If it's YOUR OWN dimension's finding, this is either a
-  # retry/resume of this exact slug (safe to overwrite) OR a second, genuinely
-  # different finding from this SAME run that happened to slug to the same
-  # identifier -- that second case is the same silent-loss failure mode as the
+elif [ -e "$DEST" ]; then
+  # DEST already exists -- this is a genuine collision, not just "ln failed".
+  # If it's YOUR OWN dimension's finding, this is either a retry/resume of
+  # this exact slug (safe to overwrite) OR a second, genuinely different
+  # finding from this SAME run that happened to slug to the same identifier
+  # -- that second case is the same silent-loss failure mode as the
   # cross-dimension one, just scoped to one analyst, so it is NEVER silent
   # either way: always log which case fired. If it's a DIFFERENT dimension's
   # finding, this is a genuine cross-analyst slug collision: republish under a
@@ -340,7 +341,7 @@ else
     if ln "$S" "$ALT" 2>/dev/null; then
       rm -f "$S"
       echo "COLLISION: slug '<slug>' already published by dimension '$existing_dim'; this finding published as '<slug>-<dimension>' instead" >&2
-    else
+    elif [ -e "$ALT" ]; then
       # ALT itself also collided (3+ findings converging on one slug --
       # extremely rare). Don't retry another deterministic name here: reuse
       # STAGE_DIR's own mktemp-random suffix (already unique per invocation)
@@ -352,8 +353,20 @@ else
       else
         echo "ERROR: could not publish finding for slug '<slug>' even under a uniquely-suffixed path -- staged content left at '$S' for manual recovery" >&2
       fi
+    else
+      # ln to ALT failed for a reason OTHER than ALT existing (permissions,
+      # missing directory, cross-filesystem, disk full, ...) -- do not treat
+      # this as a collision, that would misreport a real error as a benign
+      # slug clash and hide it.
+      echo "ERROR: ln '$S' -> '$ALT' failed for a reason other than an existing destination -- staged content left at '$S' for manual recovery, NOT a slug collision" >&2
     fi
   fi
+else
+  # ln to DEST failed for a reason OTHER than DEST existing (permissions,
+  # missing directory, cross-filesystem EXDEV, disk full, ...). Do not fall
+  # into the collision-handling branch above: that would misreport a real
+  # publish failure as a benign slug clash and hide the actual error.
+  echo "ERROR: ln '$S' -> '$DEST' failed for a reason other than an existing destination -- staged content left at '$S' for manual recovery, NOT a slug collision" >&2
 fi
 rmdir "$STAGE_DIR" 2>/dev/null \
   || echo "NOTE: could not remove staging dir '$STAGE_DIR' (not empty or already gone) -- check for leftover .staging-* dirs under findings/" >&2
@@ -453,7 +466,9 @@ finding_count: N   # findings you AUTHORED and ran through Step 5 this run --
                     # silently reconcile them to match -- the gap between them
                     # is exactly the signal the orchestrator's shortfall check
                     # (Phase 1) is watching for.
-collisions: ["<slug> -> <slug>-<dimension>", ...]  # any Step 5 COLLISION/NOTE lines, verbatim
+collisions: ["<slug> -> <slug>-<dimension>", ...]  # one summarized "<slug> -> <where it landed>"
+                    # entry per Step 5 COLLISION/NOTE line -- a compact signal for
+                    # the orchestrator, not the literal stderr text
 oversized_sources: ["<url>", ...]              # too large to process — orchestrator may chunk
 unresolved_gaps: ["..."]
 ```

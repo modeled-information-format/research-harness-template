@@ -18,6 +18,10 @@
 #     so it is never silent either;
 #   - a THIRD finding colliding on an already-disambiguated path still lands
 #     under a further-uniquified name rather than silently clobbering it;
+#   - an `ln` failure for a reason OTHER than the destination existing
+#     (permissions, missing directory, cross-filesystem, ...) is never
+#     misreported as a slug collision -- it must log an ERROR and leave the
+#     staged content in place, not silently republish under an alternate name;
 #   - the staging path's mktemp -d template actually randomizes (a suffixed
 #     single-file mktemp template does NOT on BSD/macOS, which would silently
 #     reopen this exact race -- caught in code review before this shipped),
@@ -50,6 +54,14 @@ publish() {
     rm -f "$S"
     rmdir "$STAGE_DIR" 2>/dev/null
     return 0
+  elif [ ! -e "$DEST" ]; then
+    # ln failed for a reason OTHER than DEST existing (permissions, missing
+    # directory, cross-filesystem, disk full, ...). Do not fall into the
+    # collision-handling logic below: that would misreport a real publish
+    # failure as a benign slug clash and hide the actual error.
+    echo "ERROR: ln '$S' -> '$DEST' failed for a reason other than an existing destination -- staged content left at '$S' for manual recovery, NOT a slug collision" >&2
+    rmdir "$STAGE_DIR" 2>/dev/null
+    return 0
   fi
   existing_dim="$(jq -r '.extensions.harness.dimension // empty' "$DEST" 2>/dev/null)"
   if [ "$existing_dim" = "$dimension" ]; then
@@ -65,6 +77,9 @@ publish() {
   if ln "$S" "$ALT" 2>/dev/null; then
     rm -f "$S"
     echo "COLLISION: slug '$slug' already published by dimension '$existing_dim'; this finding published as '$slug-$dimension' instead" >&2
+  elif [ ! -e "$ALT" ]; then
+    # Same non-collision-ln-failure guard as above, for the ALT path.
+    echo "ERROR: ln '$S' -> '$ALT' failed for a reason other than an existing destination -- staged content left at '$S' for manual recovery, NOT a slug collision" >&2
   else
     UNIQ="${STAGE_DIR##*-}"
     ALT2="$REPORTS_DIR/findings/finding-$slug-$dimension-$UNIQ.json"
@@ -134,6 +149,40 @@ run_publish_cases() {
     note "a third collision on an already-disambiguated path does not clobber it (landscape's B finding still intact)"
   else
     note "FAIL: a third collision clobbered the already-disambiguated finding"; fail=1
+  fi
+
+  # 4b. A real ln failure (not an EEXIST collision) must never be misreported
+  #     as a slug collision -- Copilot's review on the fix this eval pins
+  #     caught that `publish()` originally treated ANY ln failure as "DEST
+  #     already exists", which would mask a genuine error (permissions,
+  #     missing directory, cross-filesystem) as a benign clash. Reproduce a
+  #     real non-EEXIST failure directly against the elif [ ! -e "$DEST" ]
+  #     gate: stage a file OUTSIDE findings/ (so this doesn't also trip up
+  #     mktemp -d's own write-permission requirement), make findings/
+  #     read-only, and confirm ln fails while DEST genuinely never gets
+  #     created. Skips gracefully as root, where permission checks don't
+  #     apply and the reproduction wouldn't be meaningful.
+  if [ "$(id -u)" = "0" ]; then
+    note "skipping real-ln-failure case (running as root; permission checks don't apply)"
+  else
+    local perm_dir="$TMP/reports/topic-perm/findings"
+    mkdir -p "$perm_dir"
+    local perm_src="$TMP/staged-outside.json"
+    printf '%s' '{"content":"never lands"}' > "$perm_src"
+    local perm_dest="$perm_dir/finding-perm-test.json"
+    chmod 555 "$perm_dir"
+    local ln_ok=1
+    if ln "$perm_src" "$perm_dest" 2>/dev/null; then
+      ln_ok=0
+    elif [ -e "$perm_dest" ]; then
+      ln_ok=0
+    fi
+    chmod 755 "$perm_dir"
+    if [ "$ln_ok" = "1" ]; then
+      note "a real ln failure (permission denied) leaves DEST absent -- the elif [ ! -e \"\$DEST\" ] gate correctly distinguishes this from a collision instead of misreporting it"
+    else
+      note "skipping real-ln-failure case (permission enforcement did not behave as expected on this platform/filesystem -- inconclusive, not a code defect)"
+    fi
   fi
 
   # 5. No staging files or directories are left behind after any of the above.
