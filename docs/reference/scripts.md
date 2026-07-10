@@ -143,6 +143,7 @@ These are dev/build-time only; generated files are committed.
 | Script | What it does | Toolchain |
 | --- | --- | --- |
 | `scripts/mif-container-digest.sh` | The container digest engine (Story #312, ADR-0017 AD-2): `resource <file>` prints a `sha256:<64-hex>` digest over the file's raw bytes; `manifest [< digests]` reads resource digests from stdin, sorts them (`LC_ALL=C`, matching this repo's other determinism-critical sorts), and hashes the sorted list — order-independent, fail-closed on an unreadable file or a missing sha256 tool. | coreutils (`sha256sum` or `shasum`) |
+| `scripts/mif-container-import.sh` | The fail-closed import gate (Story #318, ADR-0017): a strict, ordered 5-step sequence into an existing `harness.config.json` topic — manifest schema validation, per-resource + manifest-level digest verification plus a bulk `findings.schema.json` pre-check (before anything is written), ontology-binding compatibility against the destination's cataloged packs, an idempotent upsert-by-`@id` write (new `@id`s via `scripts/write-finding.sh`; existing `@id`s overwritten in place only if the digest differs), then `build-graph.sh`/`build-topic-readme.sh`/`build-concordance.sh`. `--dry-run` runs the validation steps only. An `mkdir`-based lock (`reports/<topic>/.container.lock`) fails a concurrent invocation closed (AC12) instead of racing. | `jq`, `ajv` |
 
 ---
 

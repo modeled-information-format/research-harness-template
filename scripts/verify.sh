@@ -2763,23 +2763,45 @@ gate_m29() {
     cp "$T/snapshot/README.md" "$TOPIC_DIR/README.md"
     cp "$T/snapshot/concordance.json" reports/concordance.json
     rm -f "$TOPIC_DIR/knowledge-graph.json"
+    rm -rf "$TOPIC_DIR/.container.lock"
     rm -rf "$T"
+    # Deregister the EXIT copy of this trap once the restore has actually
+    # run: EXIT is a last-resort net for a fatal error INSIDE this function
+    # (e.g. an unbound-variable abort under this script's own `set -u`,
+    # which terminates the whole script without ever reaching gate_m29's
+    # normal return -- a RETURN-only trap would miss that case). But once
+    # gate_m29 DOES return normally, its `local` variables ($T, $TOPIC_DIR)
+    # stop existing in the calling scope; a lingering EXIT trap firing much
+    # later, at verify.sh's true end, would reference those now-undefined
+    # locals and abort the ENTIRE script on "T: unbound variable" -- a real
+    # regression this exact line was written to catch, then briefly
+    # reintroduced by leaving this trap registered past its useful window.
+    trap - EXIT
   }
-  trap restore_snapshot RETURN
+  trap restore_snapshot RETURN EXIT
 
   local seed_finding; seed_finding="$(find "$TOPIC_DIR/findings" -maxdepth 1 -name '*.json' | head -1)"
   local seed_digest; seed_digest="$(scripts/mif-container-digest.sh resource "$seed_finding")"
   local seed_manifest_digest; seed_manifest_digest="$(printf '%s\n' "$seed_digest" | scripts/mif-container-digest.sh manifest)"
 
-  build_container() { # build_container <dir> <resource-file> <digest> <manifest-digest> <ontology-version>
+  build_container() { # build_container <dir> <resource-file> <digest> <manifest-digest> <ontology-version> [<resource-filename>]
+    # resource-filename defaults to "finding.json"; sub-tests that write a
+    # genuinely NEW @id (as opposed to matching the seed finding's existing
+    # @id) must each pass a distinct name -- the real script's destination
+    # filename for a new @id is basename(resources[].path), so two "new"
+    # sub-tests sharing the default name would collide with each other at
+    # the shared $FINDINGS_DIR (write-finding.sh correctly refuses that
+    # collision, which looks like an unrelated import failure if the two
+    # sub-tests' fixtures aren't actually distinct resources).
+    local rname="${6:-finding.json}"
     mkdir -p "$1"
-    cp "$2" "$1/finding.json"
-    jq -n --arg d "$3" --arg md "$4" --arg ov "$5" --arg topic "$TOPIC" '{
+    cp "$2" "$1/$rname"
+    jq -n --arg d "$3" --arg md "$4" --arg ov "$5" --arg topic "$TOPIC" --arg rname "$rname" '{
       profile: "https://research-harness.dev/schema/mif-container/v1",
       sourceInstance: {namespace: "gate-m29-test", corpusUrl: null},
       exportScope: {type: "full", topic: $topic, selector: null, generatedAt: "2026-07-10T00:00:00Z"},
       ontologyBindings: [{packId: "mif-generic", version: $ov}],
-      resources: [{mifType: "finding", path: "finding.json", ontologyType: "technology", digest: $d}],
+      resources: [{mifType: "finding", path: $rname, ontologyType: "technology", digest: $d}],
       boundaryReferences: [],
       manifestDigest: $md,
       createdAt: "2026-07-10T00:00:00Z"
@@ -2877,6 +2899,76 @@ gate_m29() {
     ok "re-importing the same @id with different content overwrites in place, never a duplicate"
   else
     bad "overwrite-in-place check failed: $got (file_count=$new_file_count, summary=$updated_summary)"
+  fi
+
+  # 29h. Regression: an @id containing regex-special characters (schema-legal
+  #      -- schemas/mif/mif.schema.json only constrains @id to a "^urn:mif:"
+  #      prefix) must be matched LITERALLY, not as a BRE pattern. An earlier
+  #      version interpolated $rid unescaped into a bare `grep` pattern,
+  #      which could match the wrong existing finding or fail to match its
+  #      own. Re-importing the SAME special-char @id unchanged must still be
+  #      a true no-op (proves the literal match finds itself correctly, not
+  #      just that it avoids false positives).
+  local special_id="urn:mif:concept:harness/example-okf-mif-knowledge-spine:gate-m29-special.chars[test]"
+  jq --arg id "$special_id" '."@id" = $id' "$seed_finding" > "$T/special-finding.json"
+  local special_digest; special_digest="$(scripts/mif-container-digest.sh resource "$T/special-finding.json")"
+  local special_manifest_digest; special_manifest_digest="$(printf '%s\n' "$special_digest" | scripts/mif-container-digest.sh manifest)"
+  build_container "$T/c-special" "$T/special-finding.json" "$special_digest" "$special_manifest_digest" "1.0.0" "special-finding.json"
+  "$IMPORT" "$T/c-special" "$TOPIC" >/dev/null 2>&1
+  got="$("$IMPORT" "$T/c-special" "$TOPIC" 2>&1)"
+  if printf '%s' "$got" | grep -q "0 written, 1 already up to date"; then
+    ok "an @id containing regex-special characters is matched literally (idempotent no-op on re-import)"
+  else
+    bad "special-char @id regression check failed: $got"
+  fi
+
+  # 29i. Regression: bulk pre-validation (step 2) rejects a multi-resource
+  #      manifest where ANY finding fails findings.schema.json BEFORE step 4
+  #      writes anything -- not even the resources that WOULD have been
+  #      valid. An earlier version validated each finding one at a time
+  #      inside the step-4 write loop, so a later resource's schema failure
+  #      left earlier resources in the same manifest already durably
+  #      written -- a real partial write all 5 review passes converged on.
+  mkdir -p "$T/c-multi"
+  cp "$seed_finding" "$T/c-multi/good.json"
+  jq --arg id "urn:mif:concept:harness/example-okf-mif-knowledge-spine:gate-m29-multi-good" '."@id" = $id' "$seed_finding" > "$T/c-multi/good-tmp.json" && mv "$T/c-multi/good-tmp.json" "$T/c-multi/good.json"
+  echo '{"@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:gate-m29-multi-bad", "notAValidFinding": true}' > "$T/c-multi/bad.json"
+  local multi_good_digest; multi_good_digest="$(scripts/mif-container-digest.sh resource "$T/c-multi/good.json")"
+  local multi_bad_digest; multi_bad_digest="$(scripts/mif-container-digest.sh resource "$T/c-multi/bad.json")"
+  local multi_manifest_digest; multi_manifest_digest="$(printf '%s\n%s\n' "$multi_good_digest" "$multi_bad_digest" | scripts/mif-container-digest.sh manifest)"
+  jq -n --arg gd "$multi_good_digest" --arg bd "$multi_bad_digest" --arg md "$multi_manifest_digest" --arg topic "$TOPIC" '{
+    profile: "https://research-harness.dev/schema/mif-container/v1",
+    sourceInstance: {namespace: "gate-m29-test", corpusUrl: null},
+    exportScope: {type: "full", topic: $topic, selector: null, generatedAt: "2026-07-10T00:00:00Z"},
+    ontologyBindings: [{packId: "mif-generic", version: "1.0.0"}],
+    resources: [
+      {mifType: "finding", path: "good.json", ontologyType: "technology", digest: $gd},
+      {mifType: "finding", path: "bad.json", ontologyType: "technology", digest: $bd}
+    ],
+    boundaryReferences: [],
+    manifestDigest: $md,
+    createdAt: "2026-07-10T00:00:00Z"
+  }' > "$T/c-multi/mif-package.json"
+  "$IMPORT" "$T/c-multi" "$TOPIC" >/dev/null 2>&1
+  local rc_multi=$?
+  local multi_written; multi_written="$(find "$TOPIC_DIR/findings" -maxdepth 1 -name 'good.json' -o -name 'bad.json' 2>/dev/null | wc -l | tr -d ' ')"
+  if [ "$rc_multi" -ne 0 ] && [ "$multi_written" = "0" ]; then
+    ok "a multi-resource manifest with one invalid finding rejects the WHOLE import -- not even the valid resource is written"
+  else
+    bad "multi-resource partial-write regression check failed (rc=$rc_multi, written=$multi_written)"
+  fi
+
+  # 29j. Regression: a concurrent invocation against the same topic fails
+  #      closed on the mkdir-based lock (feature-spec AC12) instead of
+  #      racing steps 4/5.
+  mkdir -p "$TOPIC_DIR/.container.lock"
+  "$IMPORT" "$T/c-noop" "$TOPIC" >/dev/null 2>&1
+  local rc_locked=$?
+  rmdir "$TOPIC_DIR/.container.lock" 2>/dev/null
+  if [ "$rc_locked" -ne 0 ]; then
+    ok "a held lock rejects a concurrent invocation against the same topic (AC12)"
+  else
+    bad "import did not fail closed against an already-held lock"
   fi
 }
 
