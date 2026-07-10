@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # mif-container-import.sh — the MIF Container fail-closed import gate
-# (Story #318, ADR-0017). A strict, ordered sequence -- never a best-effort
-# merge. Every step must pass before ANYTHING is written; a failure at any
-# step rejects the entire import, never a partial write:
+# (Stories #318/#324, ADR-0017). A strict, ordered sequence -- never a
+# best-effort merge. Every step must pass before ANYTHING is written; a
+# failure at any step rejects the entire import, never a partial write:
 #
 #   1. Manifest schema validation (Task #319) against
 #      schemas/mif-container.schema.json.
@@ -13,7 +13,14 @@
 #      step 4 writes anything. (An earlier version validated each finding's
 #      schema one at a time inside the step-4 write loop; a later resource
 #      failing that check left earlier resources in the same manifest
-#      already durably written -- a real partial write review caught.)
+#      already durably written -- a real partial write review caught.) For
+#      any @id that already exists at the destination, step 2 ALSO computes
+#      and validates step 4's reconciliation MERGE here (Story #324) -- the
+#      merge draws on the destination's own on-disk content, which step 2's
+#      incoming-bytes-only validation cannot otherwise rule out producing
+#      invalid output from (a corrupt/hand-edited destination finding is the
+#      realistic trigger); this closes the same partial-write class the
+#      earlier fix closed, for the one path this story's merge reopened.
 #   3. Ontology-binding compatibility check against the destination corpus's
 #      cataloged packs (Task #321, NFR-3): base layers under
 #      schemas/ontologies/<id>/<version>.yaml (the version is the filename
@@ -32,9 +39,22 @@
 #      first-write path in this repo uses, rather than a second hand-rolled
 #      copy of the same logic). ontology-map/concordance resources are
 #      digest-verified in step 2 but never hand-written here -- the
-#      destination's own copies are rebuilt fresh in step 5.
+#      destination's own copies are rebuilt fresh in step 5. An overwrite is
+#      NOT a blind replace: a per-field reconciliation policy (Task #326,
+#      ADR-0017 AD-6) applies -- `.provenance` (the finding's own W3C-PROV
+#      block, distinct from the container-level `sourceInstance` tag) and
+#      `.extensions.harness.{verification,gathered_under}` (falsification
+#      verdict, session lineage) are origin-scoped and always kept from the
+#      DESTINATION's existing copy; `.tags[]` reconciles toward a union of
+#      both sides; every other field (content, summary, title, citations,
+#      relationships, ontology, entity) reconciles toward the incoming
+#      container's value, same as before this story.
 #   5. Trigger the existing deterministic rebuilders (Task #323):
-#      build-graph.sh, build-topic-readme.sh, build-concordance.sh.
+#      build-graph.sh, build-topic-readme.sh, build-concordance.sh, THEN
+#      scan the rebuilt concordance for candidate cross-@id sameAs matches
+#      (Task #327, ADR-0017 AD-6) via scripts/mif-container-detect-sameas.sh,
+#      writing reports/concordance-sameas-proposals.json. This is detection
+#      ONLY -- never an automatic merge; a human confirms any real match.
 #
 # Concurrency (feature-spec AC12): a second invocation against the same
 # topic while one is already running fails closed on an mkdir-based lock
@@ -123,6 +143,20 @@ echo "mif-container-import: step 1/5 manifest schema validation OK"
 # in a bulk pass before anything is written, not one-at-a-time during the
 # step-4 write loop -- so a later resource's schema failure can no longer
 # leave earlier resources in the same manifest already durably written.
+#
+# Story #324: step 4's overwrite-in-place path applies a per-field
+# reconciliation MERGE (see the policy block at step 4), not a verbatim
+# copy of the incoming bytes -- so validating only the incoming resource
+# here is not enough to rule out step 4 producing invalid content: the
+# merge also draws from the DESTINATION's existing on-disk copy, which
+# this script does not control (a corrupt/hand-edited destination finding
+# is the only realistic way a merge of two already-schema-valid documents
+# produces an invalid result). So for every finding whose @id already
+# exists at the destination, the reconciled merge is computed and
+# validated HERE too, in this same bulk pre-pass -- before step 4 writes
+# anything for ANY resource in this manifest, not discovered mid-write.
+FINDINGS_DIR="reports/$TOPIC/findings"
+mkdir -p "$FINDINGS_DIR"
 BAD_DIGESTS=""
 BAD_SCHEMAS=""
 while IFS=$'\t' read -r rpath rdigest rmiftype; do
@@ -144,6 +178,68 @@ while IFS=$'\t' read -r rpath rdigest rmiftype; do
       -r schemas/mif/definitions/entity-reference.schema.json \
       -d "$rfile" > /dev/null 2>&1 \
       || BAD_SCHEMAS="${BAD_SCHEMAS}${rpath}; "
+
+    rid="$(jq -r '."@id" // empty' "$rfile" 2>/dev/null)"
+    if [ -n "$rid" ]; then
+      existing_probe="$(find "$FINDINGS_DIR" -maxdepth 1 -name '*.json' -exec grep -Fl "\"@id\": \"$rid\"" {} + 2>/dev/null || true)"
+      # Only check the merge if step 4 would actually PERFORM one: a
+      # matching digest means step 4 skips as a no-op, never touching
+      # (or being able to trip over corruption in) the existing file --
+      # checking the merge unconditionally here would reject an import
+      # that step 4 itself would have cleanly skipped.
+      existing_probe_digest=""
+      [ -n "$existing_probe" ] && existing_probe_digest="$(scripts/mif-container-digest.sh resource "$existing_probe" 2>/dev/null || true)"
+      if [ -n "$existing_probe" ] && [ "$existing_probe_digest" != "$rdigest" ]; then
+        merge_check_err="$(jq --slurpfile ex "$existing_probe" '
+          ($ex[0]) as $e
+          | .provenance = ($e.provenance // null)
+          | .tags = ((($e.tags // []) + (.tags // [])) | unique | sort)
+          | .extensions.harness.verification = ($e.extensions.harness.verification // null)
+          | .extensions.harness.gathered_under = ($e.extensions.harness.gathered_under // null)
+          | (if .provenance == null then del(.provenance) else . end)
+          | (if .extensions.harness.verification == null then del(.extensions.harness.verification) else . end)
+          | (if .extensions.harness.gathered_under == null then del(.extensions.harness.gathered_under) else . end)
+          | (if (.tags | length) == 0 then del(.tags) else . end)
+        ' "$rfile" 2>&1 > /dev/null)"
+        if [ -n "$merge_check_err" ]; then
+          BAD_SCHEMAS="${BAD_SCHEMAS}${rpath} (reconciliation merge against the existing destination finding at $existing_probe failed: $merge_check_err); "
+        else
+          # A real temp file is required (ajv-cli's `-d /dev/stdin` is
+          # unreliable on this platform), and it MUST have a real .json
+          # suffix: ajv-cli's own openFile() derives the parse format from
+          # path.extname(), and on a bare `mktemp` name like `tmp.aB3xY9`
+          # the random suffix itself gets mistaken for the "extension" --
+          # decodeFile then throws on the bogus format, and ajv-cli's
+          # catch-all fallback calls Node's require() on the file, which
+          # parses valid JSON as JAVASCRIPT and dies on the first `:` in
+          # `{"@context": ...}` with a wildly misleading "Unexpected token
+          # ':'" error that looks exactly like a real schema failure. A
+          # mktemp -d directory + an explicitly-named "<name>.json" file
+          # inside it (the same pattern write-finding.sh's own staging
+          # uses) sidesteps this entirely.
+          merge_check_dir="$(mktemp -d)" || fail "failed to create a temp directory to validate the reconciliation merge for $rpath"
+          merge_check_file="$merge_check_dir/merge-check.json"
+          jq --slurpfile ex "$existing_probe" '
+            ($ex[0]) as $e
+            | .provenance = ($e.provenance // null)
+            | .tags = ((($e.tags // []) + (.tags // [])) | unique | sort)
+            | .extensions.harness.verification = ($e.extensions.harness.verification // null)
+            | .extensions.harness.gathered_under = ($e.extensions.harness.gathered_under // null)
+            | (if .provenance == null then del(.provenance) else . end)
+            | (if .extensions.harness.verification == null then del(.extensions.harness.verification) else . end)
+            | (if .extensions.harness.gathered_under == null then del(.extensions.harness.gathered_under) else . end)
+            | (if (.tags | length) == 0 then del(.tags) else . end)
+          ' "$rfile" > "$merge_check_file" 2>/dev/null
+          ajv validate --spec=draft2020 --strict=false -c ajv-formats \
+            -s schemas/findings.schema.json \
+            -r schemas/mif/mif.schema.json \
+            -r schemas/mif/definitions/entity-reference.schema.json \
+            -d "$merge_check_file" > /dev/null 2>&1 \
+            || BAD_SCHEMAS="${BAD_SCHEMAS}${rpath} (the reconciled merge with the existing destination finding at $existing_probe is not schema-valid); "
+          rm -rf "$merge_check_dir"
+        fi
+      fi
+    fi
   fi
 done < <(jq -r '.resources[] | [.path, .digest, .mifType] | @tsv' "$MANIFEST")
 [ -z "$BAD_DIGESTS" ] || fail "per-resource digest mismatch: $BAD_DIGESTS"
@@ -190,8 +286,8 @@ if [ "$DRY_RUN" -eq 1 ]; then
 fi
 
 # --- Step 4: idempotent upsert-by-@id write (Task #322, NFR-4) --------------
-FINDINGS_DIR="reports/$TOPIC/findings"
-mkdir -p "$FINDINGS_DIR"
+# ($FINDINGS_DIR is already set from step 2, which needs it to locate any
+# existing @id for the bulk reconciliation-merge pre-check.)
 UPSERTED=0
 SKIPPED=0
 while IFS=$'\t' read -r rpath rdigest rmiftype; do
@@ -233,10 +329,46 @@ while IFS=$'\t' read -r rpath rdigest rmiftype; do
     recheck="$(scripts/mif-container-digest.sh resource "$rfile" 2>/dev/null)" \
       || fail "failed to re-verify the digest of $rpath immediately before writing"
     [ "$recheck" = "$rdigest" ] || fail "$rpath's digest changed between verification and write (expected $rdigest, got $recheck) -- refusing to write unverified content"
+
+    # ============================================================
+    # NAMED RECONCILIATION POLICY (Story #324, ADR-0017 AD-6):
+    #   ORIGIN-SCOPED (always the DESTINATION's value, or its absence --
+    #   NEVER falls back to the incoming value even when the destination
+    #   lacks one; absence is itself part of the destination's own
+    #   origin-scoped state, so a foreign verdict/session id is not
+    #   rendered true by the destination simply never having recorded
+    #   one of its own):
+    #     - .provenance                          (the finding's OWN
+    #       W3C-PROV block -- distinct from the container-level
+    #       sourceInstance tag, which this policy does not consult)
+    #     - .extensions.harness.verification      (falsification verdict
+    #       -- a verdict reached by THIS instance's own adversarial gate
+    #       is not something a re-import from elsewhere overwrites)
+    #     - .extensions.harness.gathered_under    (session lineage)
+    #   UNION (both sides' values kept, never a replace):
+    #     - .tags[]
+    #   RECONCILE (incoming container's value wins -- everything else:
+    #     content, summary, title, citations, relationships, ontology,
+    #     entity -- that's the point of the update):
+    #     - (implicit: every field not named above)
+    # This exact merge is ALSO computed and schema-validated in step 2's
+    # bulk pre-check (before ANY resource in this manifest is written),
+    # so it is not re-validated here -- see step 2's comment for why.
+    # ============================================================
     CURRENT_STAGE_DIR="$(mktemp -d "$FINDINGS_DIR/.import-staging-XXXXXX")" \
       || fail "failed to create staging directory under $FINDINGS_DIR"
     STAGE="$CURRENT_STAGE_DIR/$(basename "$existing")"
-    cp "$rfile" "$STAGE" || fail "failed to stage $rpath for overwrite"
+    jq --slurpfile ex "$existing" '
+      ($ex[0]) as $e
+      | .provenance = ($e.provenance // null)
+      | .tags = ((($e.tags // []) + (.tags // [])) | unique | sort)
+      | .extensions.harness.verification = ($e.extensions.harness.verification // null)
+      | .extensions.harness.gathered_under = ($e.extensions.harness.gathered_under // null)
+      | (if .provenance == null then del(.provenance) else . end)
+      | (if .extensions.harness.verification == null then del(.extensions.harness.verification) else . end)
+      | (if .extensions.harness.gathered_under == null then del(.extensions.harness.gathered_under) else . end)
+      | (if (.tags | length) == 0 then del(.tags) else . end)
+    ' "$rfile" > "$STAGE" 2>/dev/null || fail "failed to apply the per-field reconciliation policy to $rpath (step 2 already validated this merge would succeed -- an unexpected failure here means the destination file changed after step 2's pre-check)"
     mv -f "$STAGE" "$existing" || fail "failed to publish the overwrite of $existing (mv failed -- destination may be on a read-only filesystem or out of space)"
     rmdir "$CURRENT_STAGE_DIR" 2>/dev/null
     CURRENT_STAGE_DIR=""
@@ -262,6 +394,31 @@ bash scripts/build-topic-readme.sh "$TOPIC" \
   || fail "build-topic-readme.sh failed after a successful upsert -- re-run manually"
 bash scripts/build-concordance.sh \
   || fail "build-concordance.sh failed after a successful upsert -- re-run manually"
-echo "mif-container-import: step 5/5 deterministic rebuilders OK"
+
+# Candidate concordance sameAs detection (Task #327, ADR-0017 AD-6): scan the
+# freshly-rebuilt concordance for same-labeled-but-different-@id node pairs
+# a cross-instance import can introduce. This NEVER merges or rewrites
+# anything -- it only surfaces a reviewable proposals file; a human decides.
+# Skipped on a true no-op (nothing written this run) -- an import that
+# upserted nothing cannot have introduced a new candidate pair, so
+# re-scanning the entire (potentially large, cross-topic) concordance
+# would be pure wasted work.
+if [ "$UPSERTED" -gt 0 ]; then
+  # Write via mktemp+mv (same filesystem, same directory) rather than a
+  # bare `>` redirect: this is a GLOBAL (not per-topic) file, so a
+  # concurrent import into a DIFFERENT topic's own lock can still reach
+  # this same step at the same time -- an atomic rename can't prevent
+  # last-writer-wins between the two runs' proposals (reports/concordance.json
+  # itself, which this scan reads, has that same pre-existing cross-topic
+  # exposure -- not something Story #324 introduces or owns), but it does
+  # rule out an interleaved/corrupt half-written file.
+  sameas_tmp="$(mktemp reports/.concordance-sameas-proposals.XXXXXX)" \
+    || fail "failed to create a temp file for the sameAs proposals write"
+  scripts/mif-container-detect-sameas.sh reports/concordance.json > "$sameas_tmp" \
+    || { rm -f "$sameas_tmp"; fail "mif-container-detect-sameas.sh failed after a successful upsert -- re-run manually"; }
+  mv -f "$sameas_tmp" reports/concordance-sameas-proposals.json \
+    || fail "failed to publish the sameAs proposals file"
+fi
+echo "mif-container-import: step 5/5 deterministic rebuilders + sameAs detection OK"
 
 echo "mif-container-import: import complete -- $UPSERTED finding(s) written, $SKIPPED already up to date"
