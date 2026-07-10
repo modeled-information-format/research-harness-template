@@ -5,9 +5,9 @@
     "corpusUrl": "https://example.org/corpus"
   },
   "exportScope": {
-    "type": "subset",
-    "topic": "edge-systems",
-    "selector": "tag:bandwidth",
+    "type": "full",
+    "topic": "empty-topic",
+    "selector": null,
     "generatedAt": "2026-07-10T00:00:00Z"
   },
   "ontologyBindings": [

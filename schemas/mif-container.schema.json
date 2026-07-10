@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://research-harness.dev/schema/mif-container.schema.json",
   "title": "MIF Container Manifest (mif-package.json)",
-  "description": "Manifest for a lossless topic export/import unit between two research-harness-template instances (ADR-0017, research-harness-template#194/#275). Modeled on datapackage.json's resources[] array, extended with mandatory per-resource+manifest-level digests, ontology-pack bindings, an export-scope descriptor, a sourceInstance tag, and an explicit boundaryReferences[] mechanism for excluded subset-export cross-references. research-harness-template-local; independent of the org-wide MIF Container Profile (modeled-information-format/MIF#77) per ADR-0017's Context section.",
+  "description": "Manifest for a lossless topic export/import unit between two research-harness-template instances (ADR-0017, research-harness-template#194/#275). Modeled on datapackage.json's resources[] array, extended with mandatory per-resource+manifest-level digests, ontology-pack bindings, an export-scope descriptor, a sourceInstance tag, and an explicit boundaryReferences[] mechanism for excluded subset-export cross-references. research-harness-template-local; independent of the org-wide MIF Container Profile (modeled-information-format/MIF#77) per ADR-0017's Context section. Field names are deliberately camelCase (mifType, sourceInstance, exportScope, ontologyBindings, boundaryReferences, manifestDigest), not this repo's usual harness-local snake_case -- ADR-0017 and feature-spec.md already name these fields verbatim in camelCase as the accepted manifest vocabulary; this schema follows that ratified naming rather than the repo default.",
   "type": "object",
   "required": ["profile", "sourceInstance", "exportScope", "ontologyBindings", "resources", "manifestDigest", "createdAt"],
   "additionalProperties": false,
@@ -10,7 +10,7 @@
     "profile": {
       "type": "string",
       "enum": ["https://research-harness.dev/schema/mif-container/v1"],
-      "description": "The container manifest's own declared format version (AD-... unrecognized-schema-version fail-closed, feature-spec AC9). A reader that does not recognize this value MUST fail closed with a named error rather than attempt best-effort parsing -- never silently accept an unknown profile."
+      "description": "The container manifest's own declared format version -- deliberately its own versioned URI, distinct from this schema's $id, mirroring Data Package v2's replacement of the free-text `profile` string (ADR-0017 AD-2, feature-spec AC9: unrecognized-schema-version fail-closed). A reader that does not recognize this value MUST fail closed with a named error rather than attempt best-effort parsing -- never silently accept an unknown profile."
     },
     "sourceInstance": {
       "type": "object",
@@ -58,6 +58,7 @@
         "properties": { "type": { "const": "subset" } }
       },
       "then": {
+        "properties": { "selector": { "type": "string", "minLength": 1 } },
         "required": ["selector"]
       }
     },
@@ -101,19 +102,34 @@
           },
           "ontologyType": {
             "type": ["string", "null"],
-            "description": "The resolved ontology entity_type for this resource (findings only); null for ontology-map/concordance resources."
+            "description": "The resolved ontology entity_type for this resource. Required and non-null for mifType=finding; must be null for mifType=ontology-map/concordance (enforced below, not just descriptively)."
           },
           "digest": {
             "type": "string",
             "pattern": "^sha256:[0-9a-f]{64}$",
             "description": "Mandatory per-resource content digest (Story #312) -- never opt-in, correcting Data Package's opt-in MD5-default hash."
           }
-        }
+        },
+        "allOf": [
+          {
+            "if": { "properties": { "mifType": { "const": "finding" } } },
+            "then": {
+              "required": ["ontologyType"],
+              "properties": { "ontologyType": { "type": "string", "minLength": 1 } }
+            }
+          },
+          {
+            "if": { "properties": { "mifType": { "enum": ["ontology-map", "concordance"] } } },
+            "then": {
+              "properties": { "ontologyType": { "const": null } }
+            }
+          }
+        ]
       }
     },
     "boundaryReferences": {
       "type": "array",
-      "description": "Explicit boundary markers (Story #315) for a subset/incremental export's relationships[] or ontology-map.json edges whose target is genuinely excluded from this bundle -- never a silent drop. Closure takes precedence over marking (ADR-0017 AD-4): a target reachable via dependency closure is included directly instead of appearing here.",
+      "description": "Explicit boundary markers (Story #315) for a subset/incremental export's relationships[] or ontology-map.json edges whose target is genuinely excluded from this bundle -- never a silent drop. Closure takes precedence over marking (ADR-0017 AD-4): a target reachable via dependency closure is included directly instead of appearing here. MUST be empty for exportScope.type=full (enforced below): a full export excludes nothing by definition.",
       "items": {
         "type": "object",
         "required": ["target", "reason"],
@@ -140,5 +156,11 @@
       "type": "string",
       "format": "date-time"
     }
+  },
+  "if": {
+    "properties": { "exportScope": { "properties": { "type": { "const": "full" } } } }
+  },
+  "then": {
+    "properties": { "boundaryReferences": { "maxItems": 0 } }
   }
 }

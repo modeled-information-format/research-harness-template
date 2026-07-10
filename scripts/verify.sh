@@ -2501,35 +2501,76 @@ gate_m26() {
   info "Milestone 26 — MIF Container manifest schema (schemas/mif-container.schema.json)"
   local T; T="$(mktemp -d)"
 
-  # 26a. The schema validates a full-export sample carrying resources, an ontology
-  #      binding, and a boundaryReferences[] entry.
+  # 26a. The schema validates a full-export sample (resources + an ontology binding,
+  #      NO boundaryReferences -- a full export excludes nothing by definition), a
+  #      zero-finding-topic sample (empty resources[]/boundaryReferences[], feature-spec
+  #      edge case "Zero-finding topic exported"), and a subset-export sample carrying
+  #      the boundaryReferences[] example (AC6/AC7).
   if ajv_plain schemas/mif-container.schema.json schemas/samples/mif-container-full.sample.json; then
     ok "mif-container schema validates a full-export sample manifest"
   else
     bad "mif-container schema does not validate the full-export sample"
   fi
-
-  # 26b. A zero-finding topic export is valid, not an error: empty resources[] and
-  #      boundaryReferences[], still carrying a defined manifestDigest (feature-spec
-  #      edge case: "Zero-finding topic exported").
   if ajv_plain schemas/mif-container.schema.json schemas/samples/mif-container-empty.sample.json; then
     ok "mif-container schema validates a zero-resource (empty topic) sample manifest"
   else
     bad "mif-container schema does not validate the zero-resource sample"
   fi
+  if ajv_plain schemas/mif-container.schema.json schemas/samples/mif-container-subset.sample.json; then
+    ok "mif-container schema validates a subset-export sample manifest carrying a boundaryReferences[] entry"
+  else
+    bad "mif-container schema does not validate the subset-export sample"
+  fi
 
-  # 26c. Fail-closed at the structural level (feature-spec AC9): an unrecognized
+  # 26b. Fail-closed at the structural level (feature-spec AC9): an unrecognized
   #      profile value, and a manifest missing its mandatory manifestDigest, must
-  #      both be rejected -- never accepted as best-effort.
+  #      each be independently rejected -- never accepted as best-effort.
   jq '.profile = "https://example.org/some-other-profile/v9"' \
     schemas/samples/mif-container-full.sample.json > "$T/bad-profile.json"
   jq 'del(.manifestDigest)' \
     schemas/samples/mif-container-full.sample.json > "$T/bad-digest.json"
-  if ! ajv_plain schemas/mif-container.schema.json "$T/bad-profile.json" \
-     && ! ajv_plain schemas/mif-container.schema.json "$T/bad-digest.json"; then
-    ok "mif-container schema fails closed on an unrecognized profile and a missing manifestDigest"
+  if ! ajv_plain schemas/mif-container.schema.json "$T/bad-profile.json"; then
+    ok "mif-container schema fails closed on an unrecognized profile value"
   else
-    bad "mif-container schema accepted an unrecognized profile or a missing manifestDigest"
+    bad "mif-container schema accepted an unrecognized profile value"
+  fi
+  if ! ajv_plain schemas/mif-container.schema.json "$T/bad-digest.json"; then
+    ok "mif-container schema fails closed on a missing manifestDigest"
+  else
+    bad "mif-container schema accepted a manifest missing manifestDigest"
+  fi
+
+  # 26c. Regression coverage for three review-caught structural loopholes (a schema
+  #      that only ever validated its own intended-good fixtures would not have
+  #      caught any of these): a null selector must not satisfy subset's "selector
+  #      required" clause; a resource's mifType and ontologyType must be coupled, not
+  #      independently free; and a full export must not carry a boundaryReferences[]
+  #      entry.
+  jq '.exportScope.selector = null' \
+    schemas/samples/mif-container-subset.sample.json > "$T/subset-null-selector.json"
+  if ! ajv_plain schemas/mif-container.schema.json "$T/subset-null-selector.json"; then
+    ok "mif-container schema rejects a subset export with a null selector (not just an absent one)"
+  else
+    bad "mif-container schema accepted a subset export with selector: null"
+  fi
+
+  jq '.resources[0].ontologyType = null' \
+    schemas/samples/mif-container-full.sample.json > "$T/finding-null-ontology-type.json"
+  jq '.resources[1].mifType = "concordance" | .resources[1].ontologyType = "concept"' \
+    schemas/samples/mif-container-full.sample.json > "$T/concordance-nonnull-ontology-type.json"
+  if ! ajv_plain schemas/mif-container.schema.json "$T/finding-null-ontology-type.json" \
+     && ! ajv_plain schemas/mif-container.schema.json "$T/concordance-nonnull-ontology-type.json"; then
+    ok "mif-container schema couples resources[].ontologyType to mifType (finding requires it, ontology-map/concordance forbid it)"
+  else
+    bad "mif-container schema let ontologyType diverge from mifType's discriminator"
+  fi
+
+  jq '.exportScope.type = "full" | .exportScope.selector = null' \
+    schemas/samples/mif-container-subset.sample.json > "$T/full-with-boundary-refs.json"
+  if ! ajv_plain schemas/mif-container.schema.json "$T/full-with-boundary-refs.json"; then
+    ok "mif-container schema rejects a full export carrying a boundaryReferences[] entry"
+  else
+    bad "mif-container schema accepted a full export with a non-empty boundaryReferences[]"
   fi
 
   rm -rf "$T"

@@ -5,9 +5,9 @@
     "corpusUrl": null
   },
   "exportScope": {
-    "type": "full",
+    "type": "subset",
     "topic": "edge-systems",
-    "selector": null,
+    "selector": "tag:bandwidth",
     "generatedAt": "2026-07-10T00:00:00Z"
   },
   "ontologyBindings": [
@@ -22,15 +22,14 @@
       "path": "findings/lc-bandwidth.json",
       "ontologyType": "concept",
       "digest": "sha256:0fad3b39edea50e6f45eef0a4aef333ae752e941f5611d0c337a04134746d7fb"
-    },
-    {
-      "mifType": "ontology-map",
-      "path": "ontology-map.json",
-      "ontologyType": null,
-      "digest": "sha256:f0554a24194cec7f7610d87f9403f0f822c3138492fbdb737567fe8787e428c6"
     }
   ],
-  "boundaryReferences": [],
+  "boundaryReferences": [
+    {
+      "target": "urn:mif:concept:sample:gateway-0003",
+      "reason": "out-of-scope"
+    }
+  ],
   "manifestDigest": "sha256:caf53ece14719a6e31e101f381e4bb8d318ed57142fd784bf80011d08cc68749",
   "createdAt": "2026-07-10T00:00:00Z"
 }
