@@ -2836,12 +2836,16 @@ gate_m28() {
   #      (the script runs under -uo pipefail, not -e). Bounded by `timeout`
   #      so a regression here fails this gate instead of hanging verify.sh.
   jq 'del(.edges)' "$GRAPH" > "$T/graph-no-edges.json"
-  timeout 5 "$RESOLVE" "$T/graph-no-edges.json" "$T/partial-scope.json" --closure >/dev/null 2>&1
-  local rc_noedges=$?
-  if [ "$rc_noedges" -ne 0 ] && [ "$rc_noedges" -ne 124 ]; then
-    ok "resolver fails fast (not hangs) on a graph missing .edges[] under --closure"
+  if ! command -v timeout >/dev/null 2>&1; then
+    bad "resolver hang-regression check requires 'timeout' on PATH, which is not available -- cannot verify fail-fast behavior"
   else
-    bad "resolver hung or did not fail closed on a graph missing .edges[] (rc=$rc_noedges, 124=timeout)"
+    timeout 5 "$RESOLVE" "$T/graph-no-edges.json" "$T/partial-scope.json" --closure >/dev/null 2>&1
+    local rc_noedges=$?
+    if [ "$rc_noedges" -ne 0 ] && [ "$rc_noedges" -ne 124 ]; then
+      ok "resolver fails fast (not hangs) on a graph missing .edges[] under --closure"
+    else
+      bad "resolver hung or did not fail closed on a graph missing .edges[] (rc=$rc_noedges, 124=timeout)"
+    fi
   fi
 
   # 28i. Regression: a malformed-but-concept-prefixed target (no second

@@ -52,13 +52,15 @@ CLOSURE=0
 [ -f "$GRAPH" ] || { echo "mif-container-resolve-scope: not a file: $GRAPH" >&2; exit 2; }
 [ -f "$IDS" ] || { echo "mif-container-resolve-scope: not a file: $IDS" >&2; exit 2; }
 
-T="$(mktemp -d)"
+T="$(mktemp -d)" || { echo "mif-container-resolve-scope: mktemp failed" >&2; exit 5; }
+[ -n "$T" ] && [ -d "$T" ] || { echo "mif-container-resolve-scope: mktemp did not produce a usable directory" >&2; exit 5; }
 trap 'rm -rf "$T"' EXIT
 
-# Read+validate the graph exactly once (not once per closure iteration, and
-# not three separate times as the first version of this script did) into a
-# compact temp copy every later jq call reads from. Fail closed here, loudly,
-# on a missing/malformed .nodes[]/.edges[] -- rather than that malformed shape
+# Read+validate the graph once (validated once; every later jq call reads
+# from this small cached compact copy rather than re-parsing the original
+# possibly-large file -- the first version of this script re-parsed the
+# original three separate times). Fail closed here, loudly, on a
+# missing/malformed .nodes[]/.edges[] -- rather than that malformed shape
 # silently producing empty jq output deep inside the closure loop below, which
 # previously hung forever: a failed jq call produced an empty $new_count, and
 # comparing an empty string with -eq threw bash's "integer expression
@@ -68,13 +70,13 @@ jq -e '(.nodes | type == "array") and (.edges | type == "array")' "$GRAPH" > /de
   echo "mif-container-resolve-scope: $GRAPH is not a valid graph (.nodes[]/.edges[] required)" >&2
   exit 2
 }
-jq -c '.' "$GRAPH" > "$T/graph.json"
+jq -c '.' "$GRAPH" > "$T/graph.json" || { echo "mif-container-resolve-scope: failed to read/parse $GRAPH" >&2; exit 2; }
 
 jq -e 'type == "array"' "$IDS" > /dev/null 2>&1 || {
   echo "mif-container-resolve-scope: $IDS is not a JSON array" >&2
   exit 2
 }
-jq -c 'unique' "$IDS" > "$T/scope.json"
+jq -c 'unique' "$IDS" > "$T/scope.json" || { echo "mif-container-resolve-scope: failed to read/parse $IDS" >&2; exit 2; }
 
 if [ "$CLOSURE" -eq 1 ]; then
   # Fixpoint BFS: repeatedly add any concept-kind edge target reachable from a
@@ -131,7 +133,7 @@ jq -c -n --slurpfile graph "$T/graph.json" --slurpfile scope "$T/scope.json" '
               # the silent-drop this script exists to prevent (Task #317).
               # scan() always yields a definite (possibly-empty) array.
               | ([$t | scan("^urn:mif:concept:([^:]+):")] | if length > 0 then .[0][0] else null end) as $t_ns
-              | if ($t_ns != null) and ($t_ns != $topic_ns) then "cross-topic"
+              | if ($t_ns != null) and ($topic_ns != null) and ($t_ns != $topic_ns) then "cross-topic"
                 elif ($g.nodes | any(.id == $t) | not) then "unresolvable"
                 else "out-of-scope"
                 end
