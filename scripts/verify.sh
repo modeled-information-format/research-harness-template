@@ -2736,6 +2736,150 @@ gate_m27() {
   rm -rf "$T"
 }
 
+# ---------------------------------------------------------------------------
+# Milestone 29 — MIF Container fail-closed import gate (Epic #275, Story #318)
+# ---------------------------------------------------------------------------
+gate_m29() {
+  info "Milestone 29 — MIF Container fail-closed import gate (scripts/mif-container-import.sh)"
+  local IMPORT="scripts/mif-container-import.sh"
+  local TOPIC="example-okf-mif-knowledge-spine"
+  local TOPIC_DIR="reports/$TOPIC"
+  local T; T="$(mktemp -d)"
+  local got
+
+  # This gate imports into the real registered sample topic (the import gate
+  # has no sandboxed-corpus mode -- it resolves harness.config.json/reports/
+  # from the repo root like every other harness script). Snapshot every file
+  # it can touch and restore it on EVERY exit path (trap, not just the happy
+  # path), so a gate failure never leaves the real corpus mutated.
+  mkdir -p "$T/snapshot/findings"
+  cp -r "$TOPIC_DIR/findings/." "$T/snapshot/findings/"
+  cp "$TOPIC_DIR/README.md" "$T/snapshot/README.md"
+  cp reports/concordance.json "$T/snapshot/concordance.json"
+  restore_snapshot() {
+    rm -rf "$TOPIC_DIR/findings"
+    mkdir -p "$TOPIC_DIR/findings"
+    cp -r "$T/snapshot/findings/." "$TOPIC_DIR/findings/"
+    cp "$T/snapshot/README.md" "$TOPIC_DIR/README.md"
+    cp "$T/snapshot/concordance.json" reports/concordance.json
+    rm -f "$TOPIC_DIR/knowledge-graph.json"
+    rm -rf "$T"
+  }
+  trap restore_snapshot RETURN
+
+  local seed_finding; seed_finding="$(find "$TOPIC_DIR/findings" -maxdepth 1 -name '*.json' | head -1)"
+  local seed_digest; seed_digest="$(scripts/mif-container-digest.sh resource "$seed_finding")"
+  local seed_manifest_digest; seed_manifest_digest="$(printf '%s\n' "$seed_digest" | scripts/mif-container-digest.sh manifest)"
+
+  build_container() { # build_container <dir> <resource-file> <digest> <manifest-digest> <ontology-version>
+    mkdir -p "$1"
+    cp "$2" "$1/finding.json"
+    jq -n --arg d "$3" --arg md "$4" --arg ov "$5" --arg topic "$TOPIC" '{
+      profile: "https://research-harness.dev/schema/mif-container/v1",
+      sourceInstance: {namespace: "gate-m29-test", corpusUrl: null},
+      exportScope: {type: "full", topic: $topic, selector: null, generatedAt: "2026-07-10T00:00:00Z"},
+      ontologyBindings: [{packId: "mif-generic", version: $ov}],
+      resources: [{mifType: "finding", path: "finding.json", ontologyType: "technology", digest: $d}],
+      boundaryReferences: [],
+      manifestDigest: $md,
+      createdAt: "2026-07-10T00:00:00Z"
+    }' > "$1/mif-package.json"
+  }
+
+  # 29a. A container carrying the topic's own unmodified finding content is a
+  #      true idempotent no-op (NFR-4): 0 written, matched by @id AND digest.
+  build_container "$T/c-noop" "$seed_finding" "$seed_digest" "$seed_manifest_digest" "1.0.0"
+  got="$("$IMPORT" "$T/c-noop" "$TOPIC" 2>&1)"
+  if printf '%s' "$got" | grep -q "0 written, 1 already up to date"; then
+    ok "re-importing a finding's own unmodified content is a true idempotent no-op"
+  else
+    bad "idempotent no-op check failed: $got"
+  fi
+
+  # 29b. Per-resource digest mismatch rejects the ENTIRE import before any
+  #      write (NFR-2) -- never a partial/best-effort write.
+  build_container "$T/c-baddigest" "$seed_finding" "sha256:0000000000000000000000000000000000000000000000000000000000000000" "$seed_manifest_digest" "1.0.0"
+  "$IMPORT" "$T/c-baddigest" "$TOPIC" >/dev/null 2>&1
+  local rc_baddigest=$?
+  if [ "$rc_baddigest" -ne 0 ] && [ -z "$(git status --porcelain "$TOPIC_DIR/findings" 2>/dev/null)" ]; then
+    ok "a per-resource digest mismatch rejects the entire import, nothing written"
+  else
+    bad "digest-mismatch import was not rejected cleanly (rc=$rc_baddigest)"
+  fi
+
+  # 29c. Ontology-binding version mismatch rejects the entire import (NFR-3)
+  #      -- never a silent best-effort re-type.
+  build_container "$T/c-badonto" "$seed_finding" "$seed_digest" "$seed_manifest_digest" "9.9.9"
+  "$IMPORT" "$T/c-badonto" "$TOPIC" >/dev/null 2>&1
+  local rc_badonto=$?
+  if [ "$rc_badonto" -ne 0 ] && [ -z "$(git status --porcelain "$TOPIC_DIR/findings" 2>/dev/null)" ]; then
+    ok "an ontology-binding version mismatch rejects the entire import, nothing written"
+  else
+    bad "ontology-mismatch import was not rejected cleanly (rc=$rc_badonto)"
+  fi
+
+  # 29d. --dry-run runs every validation step and writes nothing (AC11).
+  #      Checked as a content snapshot immediately before/after the --dry-run
+  #      call itself, not against `git status`/HEAD: a prior test's own
+  #      legitimate rebuild (29a's no-op still runs step 5) can leave
+  #      README.md/concordance.json genuinely different from committed HEAD
+  #      (a deterministic rebuild is not guaranteed byte-identical to a
+  #      possibly-stale committed copy) or an untracked knowledge-graph.json
+  #      behind -- none of that is evidence --dry-run itself wrote anything.
+  #      Only a change relative to the state right before THIS call counts.
+  local before_hash after_hash before_count after_count
+  (cat "$TOPIC_DIR/README.md" reports/concordance.json; find "$TOPIC_DIR/findings" -maxdepth 1 -name '*.json' -exec cat {} +) > "$T/before-snapshot.txt"
+  before_hash="$(scripts/mif-container-digest.sh resource "$T/before-snapshot.txt" 2>/dev/null)"
+  before_count="$(find "$TOPIC_DIR/findings" -maxdepth 1 -name '*.json' | wc -l | tr -d ' ')"
+  "$IMPORT" "$T/c-noop" "$TOPIC" --dry-run >/dev/null 2>&1
+  local rc_dryrun=$?
+  (cat "$TOPIC_DIR/README.md" reports/concordance.json; find "$TOPIC_DIR/findings" -maxdepth 1 -name '*.json' -exec cat {} +) > "$T/after-snapshot.txt"
+  after_hash="$(scripts/mif-container-digest.sh resource "$T/after-snapshot.txt" 2>/dev/null)"
+  after_count="$(find "$TOPIC_DIR/findings" -maxdepth 1 -name '*.json' | wc -l | tr -d ' ')"
+  if [ "$rc_dryrun" -eq 0 ] && [ "$before_count" = "$after_count" ] && [ "$before_hash" = "$after_hash" ]; then
+    ok "--dry-run validates without writing anything (findings/README/concordance content unchanged before/after)"
+  else
+    bad "--dry-run wrote something or failed (rc=$rc_dryrun, findings $before_count -> $after_count)"
+  fi
+
+  # 29e. Importing into an unregistered topic fails closed immediately.
+  "$IMPORT" "$T/c-noop" "not-a-real-topic" >/dev/null 2>&1
+  if [ "$?" -ne 0 ]; then
+    ok "importing into an unregistered topic fails closed"
+  else
+    bad "import accepted an unregistered topic"
+  fi
+
+  # 29f. A brand-new @id is written as a new finding file, and 29g. a
+  #      re-import of that SAME @id with different content overwrites in
+  #      place -- never a duplicate file (NFR-4, "safely re-runnable").
+  local new_id="urn:mif:concept:harness/example-okf-mif-knowledge-spine:gate-m29-synthetic"
+  jq --arg id "$new_id" '."@id" = $id' "$seed_finding" > "$T/new-finding.json"
+  local new_digest; new_digest="$(scripts/mif-container-digest.sh resource "$T/new-finding.json")"
+  local new_manifest_digest; new_manifest_digest="$(printf '%s\n' "$new_digest" | scripts/mif-container-digest.sh manifest)"
+  build_container "$T/c-new" "$T/new-finding.json" "$new_digest" "$new_manifest_digest" "1.0.0"
+  got="$("$IMPORT" "$T/c-new" "$TOPIC" 2>&1)"
+  local new_file_count; new_file_count="$(find "$TOPIC_DIR/findings" -maxdepth 1 -name 'finding.json' | wc -l | tr -d ' ')"
+  if printf '%s' "$got" | grep -q "1 written, 0 already up to date" && [ "$new_file_count" = "1" ]; then
+    ok "a brand-new @id is written as a new finding file"
+  else
+    bad "new-finding write check failed: $got (file_count=$new_file_count)"
+  fi
+
+  jq '.summary = "gate_m29 overwrite-in-place test"' "$T/new-finding.json" > "$T/new-finding-v2.json"
+  local updated_digest; updated_digest="$(scripts/mif-container-digest.sh resource "$T/new-finding-v2.json")"
+  local updated_manifest_digest; updated_manifest_digest="$(printf '%s\n' "$updated_digest" | scripts/mif-container-digest.sh manifest)"
+  build_container "$T/c-updated" "$T/new-finding-v2.json" "$updated_digest" "$updated_manifest_digest" "1.0.0"
+  got="$("$IMPORT" "$T/c-updated" "$TOPIC" 2>&1)"
+  new_file_count="$(find "$TOPIC_DIR/findings" -maxdepth 1 -name 'finding.json' | wc -l | tr -d ' ')"
+  local updated_summary; updated_summary="$(jq -r '.summary' "$TOPIC_DIR/findings/finding.json" 2>/dev/null)"
+  if printf '%s' "$got" | grep -q "1 written, 0 already up to date" && [ "$new_file_count" = "1" ] && [ "$updated_summary" = "gate_m29 overwrite-in-place test" ]; then
+    ok "re-importing the same @id with different content overwrites in place, never a duplicate"
+  else
+    bad "overwrite-in-place check failed: $got (file_count=$new_file_count, summary=$updated_summary)"
+  fi
+}
+
 gate_ontology_lock() {
   info "Ontology vendoring — pinned-lock integrity (ADR-0012)"
   # On-demand vendored domain ontologies must match their pinned sha256 (no local
@@ -2814,7 +2958,7 @@ gate_versions() {
 # ---------------------------------------------------------------------------
 # Gate registry — each milestone appends its function name here.
 # ---------------------------------------------------------------------------
-GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18 gate_m19 gate_m20 gate_m21 gate_m22 gate_m23 gate_m24 gate_m25 gate_m26 gate_m27 gate_ontology_lock gate_versions)
+GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18 gate_m19 gate_m20 gate_m21 gate_m22 gate_m23 gate_m24 gate_m25 gate_m26 gate_m27 gate_m29 gate_ontology_lock gate_versions)
 
 for g in "${GATES[@]}"; do "$g"; done
 
