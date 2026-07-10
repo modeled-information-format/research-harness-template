@@ -5,7 +5,9 @@
 # docs/proposals/mif-container-format/ai-architecture-doc.md's "Non-Functional
 # Requirements" section against the REAL bundled sample topic
 # (example-okf-mif-knowledge-spine, 36 real findings with real relationship
-# edges and 3 real domain ontology bindings), not just gate_m26-m31's
+# edges and 3 real ontology bindings -- the always-on mif-generic base core
+# plus the market-research and trend-analysis domain packs), not just
+# gate_m26-m31's
 # synthetic/small fixtures -- matching feature-spec.md's own framing of this
 # Story: "a round-trip eval (export -> import into a fresh instance -> export
 # again) proving the manifest digest is byte-identical across the cycle, run
@@ -25,7 +27,7 @@
 # NFR-7: the manifest stays structurally readable by a base-profile-only
 #        reader -- schema-valid against schemas/mif-container.schema.json
 #        ALONE, with no domain ontology schema required, even though the
-#        real topic is bound to 3 domain ontology packs.
+#        real topic carries 3 ontology bindings (base core + 2 domain packs).
 # NFR-8: an unrecognized container profile fails closed with a named error.
 #
 # Also proves the Story's own headline claim: export -> import into a fresh
@@ -231,31 +233,38 @@ else
 
 # NFR-5: without --closure, the excluded target must appear as a named
 # boundary reference, not a silent drop.
-scripts/mif-container-resolve-scope.sh "$GRAPH" "$T/nfr56-subset-ids.json" > "$T/nfr5-result.json" 2>/dev/null
-boundary_has_target="$(jq --arg t "$TGT_ID" '[.boundaryReferences[]? | select(.target == $t)] | length' "$T/nfr5-result.json" 2>/dev/null)"
-if [ "${boundary_has_target:-0}" -gt 0 ]; then
-  pass "NFR-5 boundary-marker emission (real edge to $TGT_ID marked, not dropped)"
+if ! scripts/mif-container-resolve-scope.sh "$GRAPH" "$T/nfr56-subset-ids.json" > "$T/nfr5-result.json" 2>/dev/null; then
+  bad "NFR-5 boundary-marker emission (mif-container-resolve-scope.sh failed, not a boundary-marking regression)"
 else
-  bad "NFR-5 boundary-marker emission (target not found in boundaryReferences)"
+  boundary_has_target="$(jq --arg t "$TGT_ID" '[.boundaryReferences[]? | select(.target == $t)] | length' "$T/nfr5-result.json" 2>/dev/null)"
+  if [ "${boundary_has_target:-0}" -gt 0 ]; then
+    pass "NFR-5 boundary-marker emission (real edge to $TGT_ID marked, not dropped)"
+  else
+    bad "NFR-5 boundary-marker emission (target not found in boundaryReferences)"
+  fi
 fi
 
 # NFR-6: WITH --closure, the same target is included directly and must
 # NOT appear as a boundary reference.
-scripts/mif-container-resolve-scope.sh "$GRAPH" "$T/nfr56-subset-ids.json" --closure > "$T/nfr6-result.json" 2>/dev/null
-resource_has_target="$(jq --arg t "$TGT_ID" '[.resourceIds[]? | select(. == $t)] | length' "$T/nfr6-result.json" 2>/dev/null)"
-boundary_has_target_closure="$(jq --arg t "$TGT_ID" '[.boundaryReferences[]? | select(.target == $t)] | length' "$T/nfr6-result.json" 2>/dev/null)"
-if [ "${resource_has_target:-0}" -gt 0 ] && [ "${boundary_has_target_closure:-1}" = "0" ]; then
-  pass "NFR-6 closure precedence (target included directly, not marked)"
+if ! scripts/mif-container-resolve-scope.sh "$GRAPH" "$T/nfr56-subset-ids.json" --closure > "$T/nfr6-result.json" 2>/dev/null; then
+  bad "NFR-6 closure precedence (mif-container-resolve-scope.sh --closure failed, not a closure-precedence regression)"
 else
-  bad "NFR-6 closure precedence (resource_has_target=$resource_has_target boundary_has_target=$boundary_has_target_closure)"
+  resource_has_target="$(jq --arg t "$TGT_ID" '[.resourceIds[]? | select(. == $t)] | length' "$T/nfr6-result.json" 2>/dev/null)"
+  boundary_has_target_closure="$(jq --arg t "$TGT_ID" '[.boundaryReferences[]? | select(.target == $t)] | length' "$T/nfr6-result.json" 2>/dev/null)"
+  if [ "${resource_has_target:-0}" -gt 0 ] && [ "${boundary_has_target_closure:-1}" = "0" ]; then
+    pass "NFR-6 closure precedence (target included directly, not marked)"
+  else
+    bad "NFR-6 closure precedence (resource_has_target=$resource_has_target boundary_has_target=$boundary_has_target_closure)"
+  fi
 fi
 fi
 
 # =====================================================================
-# NFR-7: the manifest for a topic bound to N (here: 3) domain ontology
-# packs stays structurally readable by a base-profile-only reader --
-# schema-valid against schemas/mif-container.schema.json ALONE, no
-# domain ontology schema required.
+# NFR-7: the manifest for a topic bound to N (here: 3) ontology bindings
+# (the always-on mif-generic base core plus 2 domain packs) stays
+# structurally readable by a base-profile-only reader -- schema-valid
+# against schemas/mif-container.schema.json ALONE, no domain ontology
+# schema required.
 # =====================================================================
 binding_count="$(jq '.ontologyBindings | length' "$T/build-a/mif-package.json" 2>/dev/null)"
 ajv validate --spec=draft2020 --strict=false -c ajv-formats \
@@ -263,10 +272,10 @@ ajv validate --spec=draft2020 --strict=false -c ajv-formats \
 rc_nfr7=$?
 # The real topic carries exactly 3 ontologyBindings entries (mif-generic, the
 # always-on base/generic core, plus the market-research and trend-analysis
-# domain packs) -- assert that exact premise (-ge 3) rather than an
-# under-specified -ge 2 that wouldn't actually prove the real topic's bindings
-# were exercised. "bindings" (not "domain bindings") in the message below
-# because one of the 3 is the base core, not a domain pack.
+# domain packs) -- assert this floor (-ge 3) rather than an under-specified
+# -ge 2 that wouldn't actually prove the real topic's bindings were
+# exercised. "bindings" (not "domain bindings") in the message below because
+# one of the 3 is the base core, not a domain pack.
 if [ "$rc_nfr7" -eq 0 ] && [ "${binding_count:-0}" -ge 3 ]; then
   pass "NFR-7 base-profile-only schema readability ($binding_count ontology bindings incl. domain packs, no domain schema needed)"
 else
