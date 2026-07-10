@@ -40,7 +40,17 @@ printf '%s' "$CMD" | grep -qF 'falsify.sh' || exit 0
 
 # Only guard grading of a topic's SESSION FINDINGS (reports/<topic>/findings/*.json).
 # Anything else (report-finding, fixtures) is a legit non-gate use -> allow.
-FINDINGS=$(printf '%s' "$CMD" | grep -oE '[^[:space:]]*reports/[^[:space:]]+/findings/[^[:space:]]+\.json')
+# The prefix is a POSITIVE path-character class (alnum, /, ., _, -), not a
+# negative "not whitespace" one (issue #356): "F=reports/t/findings/f.json" used
+# to have the greedy [^[:space:]]* prefix swallow "F=" itself, corrupting the
+# extracted path and the TOPIC_DIR computed from it. An earlier fix attempt
+# just excluded '=' from the negative class, but that still let a QUOTED
+# assignment's leading quote character through ('F="reports/..."' -- the
+# stray '"' corrupts TOPIC_DIR the same way "F=" did). A positive class only
+# matching real path characters closes both the unquoted- and quoted-
+# assignment shapes, while still matching an absolute path's leading
+# directories, preserving the case statement below's absolute-path branch.
+FINDINGS=$(printf '%s' "$CMD" | grep -oE '[[:alnum:]/._-]*reports/[^[:space:]]+/findings/[^[:space:]]+\.json')
 [ -n "$FINDINGS" ] || exit 0
 
 # EVERY targeted topic must have an open + fresh gate window — a command grading findings in
