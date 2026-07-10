@@ -268,6 +268,15 @@ run "site-toggle" bash evals/site-toggle.sh
 # to inbound references) that let orphaned targets land in the corpus unnoticed.
 run "relationship-targets" bash evals/relationship-targets.sh
 
+# MIF Container NFR verification (Story #331, Epic #275, ADR-0017): proves all
+# 8 EARS-notation non-functional requirements from the architecture doc's
+# "Non-Functional Requirements" section against the REAL bundled sample topic
+# (36 real findings, real relationship edges, 3 real domain ontology
+# bindings) -- not just gate_m26-m31's synthetic/small fixtures -- plus the
+# feature-spec's own headline claim: export -> import into a fresh instance
+# -> export again reproduces a byte-identical manifest digest.
+run "mif-container-nfr-verification" bash evals/mif-container-nfr-verification.sh
+
 # 7. Progress-log markdownlint conformance (issue #85 Defect 2): a multi-session
 #    research-progress.md built per orchestrator.md's template — one H1 (file
 #    creation only) + date-qualified per-session H2s — lints clean, while each old
