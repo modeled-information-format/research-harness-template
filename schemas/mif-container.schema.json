@@ -4,7 +4,7 @@
   "title": "MIF Container Manifest (mif-package.json)",
   "description": "Manifest for a lossless topic export/import unit between two research-harness-template instances (ADR-0017, research-harness-template#194/#275). Modeled on datapackage.json's resources[] array, extended with mandatory per-resource+manifest-level digests, ontology-pack bindings, an export-scope descriptor, a sourceInstance tag, and an explicit boundaryReferences[] mechanism for excluded subset-export cross-references. research-harness-template-local; independent of the org-wide MIF Container Profile (modeled-information-format/MIF#77) per ADR-0017's Context section. Field names are deliberately camelCase (mifType, sourceInstance, exportScope, ontologyBindings, boundaryReferences, manifestDigest), not this repo's usual harness-local snake_case -- ADR-0017 and feature-spec.md already name these fields verbatim in camelCase as the accepted manifest vocabulary; this schema follows that ratified naming rather than the repo default.",
   "type": "object",
-  "required": ["profile", "sourceInstance", "exportScope", "ontologyBindings", "resources", "manifestDigest", "createdAt"],
+  "required": ["profile", "sourceInstance", "exportScope", "ontologyBindings", "resources", "boundaryReferences", "manifestDigest", "createdAt"],
   "additionalProperties": false,
   "properties": {
     "profile": {
@@ -32,7 +32,7 @@
     },
     "exportScope": {
       "type": "object",
-      "required": ["type", "topic", "generatedAt"],
+      "required": ["type", "topic", "selector", "generatedAt"],
       "additionalProperties": false,
       "description": "Export-scope descriptor (Story #308/#311).",
       "properties": {
@@ -47,7 +47,7 @@
         },
         "selector": {
           "type": ["string", "null"],
-          "description": "The subset selector used to build this export (required in practice for type=subset; null for full/incremental)."
+          "description": "The subset selector used to build this export. Non-null and non-empty for type=subset; MUST be null for full/incremental (enforced below, not just descriptively)."
         },
         "generatedAt": {
           "type": "string",
@@ -58,8 +58,10 @@
         "properties": { "type": { "const": "subset" } }
       },
       "then": {
-        "properties": { "selector": { "type": "string", "minLength": 1 } },
-        "required": ["selector"]
+        "properties": { "selector": { "type": "string", "minLength": 1 } }
+      },
+      "else": {
+        "properties": { "selector": { "const": null } }
       }
     },
     "ontologyBindings": {
@@ -87,7 +89,7 @@
       "description": "Packaged units (Story #309). MAY be empty (a zero-finding topic export is valid, not an error) -- manifestDigest is still required and defined over the empty set.",
       "items": {
         "type": "object",
-        "required": ["mifType", "path", "digest"],
+        "required": ["mifType", "path", "ontologyType", "digest"],
         "additionalProperties": false,
         "properties": {
           "mifType": {
@@ -98,7 +100,8 @@
           "path": {
             "type": "string",
             "minLength": 1,
-            "description": "The resource's file path within the container, relative to the manifest."
+            "pattern": "^(?!/)(?!.*\\.\\.).+$",
+            "description": "The resource's file path within the container, relative to the manifest. MUST NOT be absolute (no leading /) and MUST NOT contain a \"..\" segment -- a future import writing files from this value must not be handed a directory-traversal primitive."
           },
           "ontologyType": {
             "type": ["string", "null"],
@@ -114,14 +117,12 @@
           {
             "if": { "properties": { "mifType": { "const": "finding" } } },
             "then": {
-              "required": ["ontologyType"],
               "properties": { "ontologyType": { "type": "string", "minLength": 1 } }
             }
           },
           {
             "if": { "properties": { "mifType": { "enum": ["ontology-map", "concordance"] } } },
             "then": {
-              "required": ["ontologyType"],
               "properties": { "ontologyType": { "const": null } }
             }
           }

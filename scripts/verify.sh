@@ -2502,7 +2502,8 @@ gate_m26() {
   local T; T="$(mktemp -d)"
 
   # 26a. The schema validates a full-export sample (resources + an ontology binding,
-  #      NO boundaryReferences -- a full export excludes nothing by definition), a
+  #      an EMPTY boundaryReferences[] -- required and present, not omitted, but
+  #      empty because a full export excludes nothing by definition), a
   #      zero-finding-topic sample (empty resources[]/boundaryReferences[], feature-spec
   #      edge case "Zero-finding topic exported"), and a subset-export sample carrying
   #      the boundaryReferences[] example (AC6/AC7).
@@ -2588,6 +2589,38 @@ gate_m26() {
     ok "mif-container schema rejects a full export carrying a boundaryReferences[] entry"
   else
     bad "mif-container schema accepted a full export with a non-empty boundaryReferences[]"
+  fi
+
+  # Copilot review on PR #368 caught three more structural loopholes: boundaryReferences
+  # was optional at the top level, so a full export could omit it entirely and never hit
+  # the maxItems:0 constraint; exportScope.selector's description claimed "null for
+  # full/incremental" but nothing enforced it; and resources[].path had no traversal/
+  # absolute-path guard despite being a future write-target for import.
+  jq 'del(.boundaryReferences)' \
+    schemas/samples/mif-container-full.sample.json > "$T/full-omits-boundary-refs.json"
+  if ! ajv_plain schemas/mif-container.schema.json "$T/full-omits-boundary-refs.json"; then
+    ok "mif-container schema rejects a manifest that omits boundaryReferences entirely (not just a non-empty one)"
+  else
+    bad "mif-container schema accepted a manifest omitting boundaryReferences"
+  fi
+
+  jq '.exportScope.selector = "should-not-be-allowed"' \
+    schemas/samples/mif-container-full.sample.json > "$T/full-nonnull-selector.json"
+  if ! ajv_plain schemas/mif-container.schema.json "$T/full-nonnull-selector.json"; then
+    ok "mif-container schema rejects a non-null selector on a full/incremental export"
+  else
+    bad "mif-container schema accepted a non-null selector on a full export"
+  fi
+
+  jq '.resources[0].path = "../../etc/passwd"' \
+    schemas/samples/mif-container-full.sample.json > "$T/path-traversal.json"
+  jq '.resources[0].path = "/abs/path.json"' \
+    schemas/samples/mif-container-full.sample.json > "$T/path-absolute.json"
+  if ! ajv_plain schemas/mif-container.schema.json "$T/path-traversal.json" \
+     && ! ajv_plain schemas/mif-container.schema.json "$T/path-absolute.json"; then
+    ok "mif-container schema rejects a resource path containing '..' or an absolute path"
+  else
+    bad "mif-container schema accepted a directory-traversal or absolute resource path"
   fi
 
   # 26d. Coverage restored: a subset export whose selector matches zero resources is
