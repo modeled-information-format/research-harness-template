@@ -2914,9 +2914,10 @@ gate_m29() {
   cp "$TOPIC_DIR/README.md" "$T/snapshot/README.md"
   cp reports/concordance.json "$T/snapshot/concordance.json"
   # reports/concordance-sameas-proposals.json (Story #324) is a GLOBAL
-  # (not per-topic) file step 5 writes on every import, including these
-  # test invocations -- it did not exist before this story and is
-  # untracked, so "restore" here means "remove it", not "restore content".
+  # (not per-topic) file step 5 writes whenever an import upserts anything
+  # (including these test invocations) -- it did not exist before this
+  # story and is gitignored, so "restore" here means "remove it", not
+  # "restore content".
   local had_sameas_proposals=0
   [ -f reports/concordance-sameas-proposals.json ] && {
     had_sameas_proposals=1

@@ -181,7 +181,14 @@ while IFS=$'\t' read -r rpath rdigest rmiftype; do
 
     rid="$(jq -r '."@id" // empty' "$rfile" 2>/dev/null)"
     if [ -n "$rid" ]; then
-      existing_probe="$(find "$FINDINGS_DIR" -maxdepth 1 -name '*.json' -exec grep -Fl "\"@id\": \"$rid\"" {} + 2>/dev/null || true)"
+      existing_probe_matches="$(find "$FINDINGS_DIR" -maxdepth 1 -name '*.json' -exec grep -Fl "\"@id\": \"$rid\"" {} + 2>/dev/null || true)"
+      existing_probe_match_count="$(printf '%s\n' "$existing_probe_matches" | grep -c . || true)"
+      # Same ambiguous-@id fail-closed check step 4 already does: a
+      # multi-line $existing_probe_matches used as a single filename below
+      # would mask a real "destination corpus already corrupted" root
+      # cause behind a confusing digest/slurp failure instead.
+      [ "$existing_probe_match_count" -le 1 ] || fail "multiple existing findings share @id $rid in $FINDINGS_DIR -- destination corpus is already corrupted (duplicate @id), refusing to guess which one to check"
+      existing_probe="$existing_probe_matches"
       # Only check the merge if step 4 would actually PERFORM one: a
       # matching digest means step 4 skips as a no-op, never touching
       # (or being able to trip over corruption in) the existing file --
