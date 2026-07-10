@@ -369,7 +369,7 @@ flowchart LR
    -verifiable) by a container reader that has loaded ONLY the base
    `mif-generic`/`mif-base` profile, with every domain-specific field
    appearing as an optional, additively-typed extension.
-8. IF the container tool encounters a manifest whose declared `$schema`
+8. IF the container tool encounters a manifest whose declared `profile`
    version it does not recognize, THEN THE SYSTEM SHALL fail closed with a
    named "unrecognized container schema version" error rather than
    attempting best-effort parsing.

@@ -10,7 +10,7 @@
     "profile": {
       "type": "string",
       "enum": ["https://research-harness.dev/schema/mif-container/v1"],
-      "description": "The container manifest's own declared format version -- deliberately its own versioned URI, distinct from this schema's $id, mirroring Data Package v2's replacement of the free-text `profile` string (ADR-0017 AD-2, feature-spec AC9: unrecognized-schema-version fail-closed). A reader that does not recognize this value MUST fail closed with a named error rather than attempt best-effort parsing -- never silently accept an unknown profile."
+      "description": "The container manifest's own declared format version -- deliberately its own versioned URI, distinct from this schema's $id, mirroring Data Package v2's replacement of the free-text `profile` string (ai-architecture-doc.md Building Blocks; feature-spec AC9: unrecognized-schema-version fail-closed). A reader that does not recognize this value MUST fail closed with a named error rather than attempt best-effort parsing -- never silently accept an unknown profile."
     },
     "sourceInstance": {
       "type": "object",

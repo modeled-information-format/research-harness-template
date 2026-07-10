@@ -2556,13 +2556,18 @@ gate_m26() {
 
   jq '.resources[0].ontologyType = null' \
     schemas/samples/mif-container-full.sample.json > "$T/finding-null-ontology-type.json"
+  if ! ajv_plain schemas/mif-container.schema.json "$T/finding-null-ontology-type.json"; then
+    ok "mif-container schema requires a non-null ontologyType on a finding resource"
+  else
+    bad "mif-container schema accepted a finding resource with ontologyType: null"
+  fi
+
   jq '.resources[1].mifType = "concordance" | .resources[1].ontologyType = "concept"' \
     schemas/samples/mif-container-full.sample.json > "$T/concordance-nonnull-ontology-type.json"
-  if ! ajv_plain schemas/mif-container.schema.json "$T/finding-null-ontology-type.json" \
-     && ! ajv_plain schemas/mif-container.schema.json "$T/concordance-nonnull-ontology-type.json"; then
-    ok "mif-container schema couples resources[].ontologyType to mifType (finding requires it, ontology-map/concordance forbid it)"
+  if ! ajv_plain schemas/mif-container.schema.json "$T/concordance-nonnull-ontology-type.json"; then
+    ok "mif-container schema forbids a non-null ontologyType on an ontology-map/concordance resource"
   else
-    bad "mif-container schema let ontologyType diverge from mifType's discriminator"
+    bad "mif-container schema accepted a concordance resource with a non-null ontologyType"
   fi
 
   jq '.exportScope.type = "full" | .exportScope.selector = null' \
@@ -2571,6 +2576,18 @@ gate_m26() {
     ok "mif-container schema rejects a full export carrying a boundaryReferences[] entry"
   else
     bad "mif-container schema accepted a full export with a non-empty boundaryReferences[]"
+  fi
+
+  # 26d. Coverage restored: a subset export whose selector matches zero resources is
+  #      valid (an empty resources[] is not itself an error for a subset export, only
+  #      the selector's own presence is required -- distinct from 26a's zero-finding
+  #      FULL-export case).
+  jq '.resources = [] | .boundaryReferences = []' \
+    schemas/samples/mif-container-subset.sample.json > "$T/subset-zero-resources.json"
+  if ajv_plain schemas/mif-container.schema.json "$T/subset-zero-resources.json"; then
+    ok "mif-container schema validates a subset export whose selector matched zero resources"
+  else
+    bad "mif-container schema does not validate a zero-resource subset export"
   fi
 
   rm -rf "$T"
