@@ -13,7 +13,7 @@ class SourceInstance(TypedDict):
 class ExportScope(TypedDict):
     type: Literal["full", "incremental", "subset"]
     topic: str
-    selector: NotRequired[str | None]
+    selector: str | None
     generatedAt: str
 
 
@@ -25,7 +25,7 @@ class OntologyBinding(TypedDict):
 class Resource(TypedDict):
     mifType: Literal["finding", "ontology-map", "concordance"]
     path: str
-    ontologyType: NotRequired[str | None]
+    ontologyType: str | None
     digest: str
 
 
@@ -40,6 +40,6 @@ class MifContainerManifestMifPackageJson(TypedDict):
     exportScope: ExportScope
     ontologyBindings: list[OntologyBinding]
     resources: list[Resource]
-    boundaryReferences: NotRequired[list[BoundaryReference]]
+    boundaryReferences: list[BoundaryReference]
     manifestDigest: str
     createdAt: str
