@@ -2,7 +2,7 @@
 id: reference-scripts
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-05T10:16:37-04:00'
+modified: '2026-07-09T19:35:00-04:00'
 namespace: docs/reference
 tags:
   - documentation
@@ -27,6 +27,15 @@ update`. Only **tracked data artifacts** — findings, the knowledge graph
 belong in `reports/`. The HTML graph viz is ephemeral: `build-graph-viz.sh`
 defaults to `mktemp` and only writes into `reports/` when an explicit output
 path is passed.
+
+**Exception:** the dimension-analyst's finding-publish staging directory
+(`.claude/agents/dimension-analyst.md` Step 5, issue #357) is created via
+`mktemp -d` **inside** `reports/<topic>/findings/`, not outside the tree. Its
+collision-safe publish uses `ln` (a hard link), which requires the staging
+file and its destination to share a filesystem — a `/tmp` mktemp risks
+crossing filesystems (`EXDEV`) and defeating the whole mechanism. The
+directory is gitignored (`.staging-*/`) so it never dirties the tree or blocks
+`copier update`.
 
 ---
 

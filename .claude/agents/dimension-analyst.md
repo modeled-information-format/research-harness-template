@@ -268,7 +268,19 @@ emit.write(finding, sys.argv[1])  # canonical: sorted keys, 2-space indent, vali
 
 ```bash
 mkdir -p "$REPORTS_DIR/findings"
-S="$REPORTS_DIR/findings/.finding-<slug>.json.staging"
+# Namespaced by mktemp, not just the slug: two analysts converging on the same
+# slug (issue #357) must not even share a STAGING path, or the second writer
+# clobbers the first's staged content before either one publishes.
+# `mktemp -d` with the WHOLE basename as the template (not a suffixed
+# filename): BSD/macOS's stock mktemp does not randomize a template whose
+# XXXXXX is followed by more literal characters (it silently returns the
+# X's unreplaced on the first call, then fails on a second) -- only GNU
+# coreutils' mktemp handles a trailing suffix. A directory-template call is
+# portable across both. This lives under findings/ (not the usual mktemp-
+# outside-the-tree convention) because ln (below) requires the staging file
+# and its destination to share a filesystem; .staging-*/ is gitignored.
+STAGE_DIR="$(mktemp -d "$REPORTS_DIR/findings/.staging-XXXXXX")"
+S="$STAGE_DIR/finding-<slug>.staging"
 A="$(mktemp -t author-finding.XXXXXX.py)"   # unique per analyst — no shared-cwd race
 # (write the Python above to "$A" with the Write tool, then:)
 python3 "$A" "$S"; rm -f "$A"
@@ -294,12 +306,75 @@ the verdict. Until then, confirm the parts you own validate (MIF base shape +
 gate passes. If validation of your own fields fails, diagnose with `jq`, correct,
 and re-validate (max 2 retries) per the Structured Data Protocol.
 
-Once your own fields validate, **atomically publish** the finding (a torn write is
-never visible to reconcile):
+Once your own fields validate, **publish the finding collision-safe**: a torn
+write must never be visible to reconcile, AND two analysts converging on the
+same slug must never silently clobber one another (issue #357 — this exact race
+lost a real finding: two analysts both chose the slug
+`rebel-seq2seq-end-to-end-relation-extraction`, and a plain `mv` let the second
+overwrite the first with no error). `ln` (a hard link, not `mv`) fails atomically
+with `EEXIST` if the destination already exists, giving a race-free
+check-and-publish in one step:
 
 ```bash
-mv "$S" "$REPORTS_DIR/findings/finding-<slug>.json"
+DEST="$REPORTS_DIR/findings/finding-<slug>.json"
+if ln "$S" "$DEST" 2>/dev/null; then
+  rm -f "$S"   # published; the staging copy is now a redundant hard link
+elif [ -e "$DEST" ]; then
+  # DEST already exists -- this is a genuine collision, not just "ln failed".
+  # If it's YOUR OWN dimension's finding, this is either a retry/resume of
+  # this exact slug (safe to overwrite) OR a second, genuinely different
+  # finding from this SAME run that happened to slug to the same identifier
+  # -- that second case is the same silent-loss failure mode as the
+  # cross-dimension one, just scoped to one analyst, so it is NEVER silent
+  # either way: always log which case fired. If it's a DIFFERENT dimension's
+  # finding, this is a genuine cross-analyst slug collision: republish under a
+  # disambiguated slug instead of destroying the other analyst's work.
+  existing_dim="$(jq -r '.extensions.harness.dimension // empty' "$DEST" 2>/dev/null)"
+  if [ "$existing_dim" = "<dimension>" ]; then
+    if mv "$S" "$DEST"; then
+      echo "NOTE: slug '<slug>' was already published by this same dimension ('<dimension>'); overwritten -- if this was a distinct finding (not a retry), it is now lost and needs a more specific slug" >&2
+    else
+      echo "ERROR: could not overwrite '$DEST' with slug '<slug>' -- staged content left at '$S' for manual recovery" >&2
+    fi
+  else
+    ALT="$REPORTS_DIR/findings/finding-<slug>-<dimension>.json"
+    if ln "$S" "$ALT" 2>/dev/null; then
+      rm -f "$S"
+      echo "COLLISION: slug '<slug>' already published by dimension '$existing_dim'; this finding published as '<slug>-<dimension>' instead" >&2
+    elif [ -e "$ALT" ]; then
+      # ALT itself also collided (3+ findings converging on one slug --
+      # extremely rare). Don't retry another deterministic name here: reuse
+      # STAGE_DIR's own mktemp-random suffix (already unique per invocation)
+      # to move into a path that cannot itself collide.
+      UNIQ="${STAGE_DIR##*-}"
+      ALT2="$REPORTS_DIR/findings/finding-<slug>-<dimension>-$UNIQ.json"
+      if mv "$S" "$ALT2"; then
+        echo "COLLISION: slug '<slug>' already published by dimension '$existing_dim', AND '<slug>-<dimension>' also collided; this finding published as '<slug>-<dimension>-$UNIQ' instead" >&2
+      else
+        echo "ERROR: could not publish finding for slug '<slug>' even under a uniquely-suffixed path -- staged content left at '$S' for manual recovery" >&2
+      fi
+    else
+      # ln to ALT failed for a reason OTHER than ALT existing (permissions,
+      # missing directory, cross-filesystem, disk full, ...) -- do not treat
+      # this as a collision, that would misreport a real error as a benign
+      # slug clash and hide it.
+      echo "ERROR: ln '$S' -> '$ALT' failed for a reason other than an existing destination -- staged content left at '$S' for manual recovery, NOT a slug collision" >&2
+    fi
+  fi
+else
+  # ln to DEST failed for a reason OTHER than DEST existing (permissions,
+  # missing directory, cross-filesystem EXDEV, disk full, ...). Do not fall
+  # into the collision-handling branch above: that would misreport a real
+  # publish failure as a benign slug clash and hide the actual error.
+  echo "ERROR: ln '$S' -> '$DEST' failed for a reason other than an existing destination -- staged content left at '$S' for manual recovery, NOT a slug collision" >&2
+fi
+rmdir "$STAGE_DIR" 2>/dev/null \
+  || echo "NOTE: could not remove staging dir '$STAGE_DIR' (not empty or already gone) -- check for leftover .staging-* dirs under findings/" >&2
 ```
+
+If a `COLLISION:` or `NOTE:` line fired above, record it (slug and where it ended
+up) in your Step 7 return's `collisions[]` — a stderr line only you saw is not a
+signal the orchestrator or a human can act on.
 
 ### Step 5b — Classify against the topic's ontologies (SPEC §8c)
 
@@ -382,8 +457,18 @@ message a compact, machine-readable summary of what you produced:
 dimension: "<DIMENSION>"
 topic: "<TOPIC>"
 methodology: "<pack:skill | general-web-research>"
-finding_files: ["finding-<slug>.json", ...]   # written under REPORTS_DIR
-finding_count: N
+finding_files: ["finding-<slug>.json", ...]   # the DISTINCT file paths now on disk
+finding_count: N   # findings you AUTHORED and ran through Step 5 this run --
+                    # increment once per finding regardless of what Step 5's
+                    # publish resolved to. A same-dimension collision (Step 5's
+                    # NOTE: branch) still overwrites, so finding_count can be
+                    # HIGHER than len(finding_files) when that happens; do not
+                    # silently reconcile them to match -- the gap between them
+                    # is exactly the signal the orchestrator's shortfall check
+                    # (Phase 1) is watching for.
+collisions: ["<slug> -> <slug>-<dimension>", ...]  # one summarized "<slug> -> <where it landed>"
+                    # entry per Step 5 COLLISION/NOTE line -- a compact signal for
+                    # the orchestrator, not the literal stderr text
 oversized_sources: ["<url>", ...]              # too large to process — orchestrator may chunk
 unresolved_gaps: ["..."]
 ```

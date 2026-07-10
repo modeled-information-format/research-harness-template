@@ -41,6 +41,8 @@ docs/proposals/mif-entity-type-subsumption.md
 *.mg
 *.staging
 .*.json.staging
+# dimension-analyst finding-publish staging dirs (issue #357)
+.staging-*/
 *.fix.json
 *.vb.json
 reports/**/.gate_stderr*
