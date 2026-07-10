@@ -18,8 +18,8 @@
 #   - a non-gate command (falsify.sh on a path outside reports/*/findings/)
 #     is always allowed, regardless of any window;
 #   - an absolute finding path still resolves its window correctly (the
-#     narrower fix — excluding '=' from the prefix rather than deleting the
-#     prefix outright — preserves the case statement's absolute-path branch).
+#     positive path-character-class fix, rather than deleting the prefix
+#     outright, preserves the case statement's absolute-path branch).
 #
 # Exit 0 = the guard's contract holds. Exit 1 = a case failed.
 
@@ -119,8 +119,8 @@ else
 fi
 
 # --- Case 5: absolute finding path, gate window OPEN -> must ALLOW --------
-# Confirms the narrower fix (excluding '=' from the prefix, not deleting the
-# prefix outright) still lets an absolute path's leading directories match,
+# Confirms the positive path-character-class fix, not deleting the prefix
+# outright, still lets an absolute path's leading directories match,
 # preserving the hook's case "/*") branch for an absolute TOPIC_DIR.
 ABS_TOPIC="$TMP/elsewhere/reports/mytopic"
 mkdir -p "$ABS_TOPIC/findings"
