@@ -122,8 +122,14 @@ mkdir -p "$OUTPUT_DIR/findings" || fail "failed to create $OUTPUT_DIR/findings"
 INDEX_FILE="$T/id-index.jsonl"
 : > "$INDEX_FILE"
 while IFS= read -r f; do
-  jq -c --arg p "$f" '{id: (."@id" // empty), path: $p} | select(.id != "")' "$f" >> "$INDEX_FILE" \
-    || fail "failed to parse finding file as JSON: $f -- a full export must fail closed, not silently omit a corrupted finding"
+  # A missing/empty @id must fail closed here too (Copilot review, PR #378):
+  # the prior `select(.id != "")` silently DROPPED such a file from the
+  # index with a clean jq exit status, so it was never caught by the `|| fail`
+  # guard below -- a full export could silently undercount instead of
+  # rejecting a corrupted finding. `error()` makes jq exit non-zero for this
+  # case too, same as an actual JSON parse failure.
+  jq -c --arg p "$f" 'if ((."@id" // "") == "") then error("finding file has no @id: " + $p) else {id: ."@id", path: $p} end' "$f" >> "$INDEX_FILE" \
+    || fail "failed to parse finding file as JSON, or it has no @id: $f -- a full export must fail closed, not silently omit a corrupted finding"
 done < <(find "$FINDINGS_DIR" -maxdepth 1 -name '*.json' | LC_ALL=C sort)
 
 if [ -n "$SUBSET_IDS" ]; then

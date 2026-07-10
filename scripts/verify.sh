@@ -3386,6 +3386,16 @@ gate_m31() {
       || { bad "gate_m31: failed to back up reports/concordance-sameas-proposals.json"; rm -rf "$T"; return 1; }
   }
   local roundtrip_topic="gate-m31-roundtrip-test"
+  # Declared here (not at 31h, where it's used) so restore_state()'s own
+  # cleanup below can reference it unconditionally -- both synthetic topics
+  # are pre-declared before the trap is set, so the trap never depends on
+  # having reached a specific sub-test to know what to clean up (Copilot
+  # review, PR #378: an earlier version only cleaned up gate-m31-malformed-test
+  # via an unconditional `rm -rf` at the very end of 31h's own code, which an
+  # unexpected early exit between creating it and reaching that line -- a
+  # future refactor, an external signal -- could skip, leaving it behind
+  # despite restore_state()'s trap claiming to fully restore state).
+  local malformed_topic="gate-m31-malformed-test"
   restore_state() {
     cp "$T/harness.config.json.orig" harness.config.json
     cp "$T/concordance.json.orig" reports/concordance.json
@@ -3395,6 +3405,7 @@ gate_m31() {
       rm -f reports/concordance-sameas-proposals.json
     fi
     rm -rf "reports/$roundtrip_topic"
+    rm -rf "reports/$malformed_topic"
     rm -rf "$T"
     trap - EXIT
   }
@@ -3517,8 +3528,12 @@ gate_m31() {
 
   # 31h. A malformed (invalid-JSON) finding file must make export fail
   #      closed, not silently undercount and report success -- a synthetic
-  #      topic isolated from the real corpus, torn down by restore_state().
-  local malformed_topic="gate-m31-malformed-test"
+  #      topic isolated from the real corpus (using the $malformed_topic
+  #      declared above, alongside $roundtrip_topic), torn down
+  #      unconditionally by restore_state() -- not by an explicit `rm -rf`
+  #      at the end of this block, which an early exit between creating it
+  #      and reaching that line could skip (the exact gap Copilot review
+  #      flagged, PR #378).
   mkdir -p "reports/$malformed_topic/findings"
   printf '{not valid json' > "reports/$malformed_topic/findings/bad.json"
   echo '[]' > "reports/$malformed_topic/ontology-map.json"
@@ -3531,7 +3546,6 @@ gate_m31() {
   else
     bad "malformed-finding export check failed (rc=$rc_malformed, output dir created: $([ -d "$T/malformed-export" ] && echo yes || echo no))"
   fi
-  rm -rf "reports/$malformed_topic"
 }
 
 gate_ontology_lock() {
