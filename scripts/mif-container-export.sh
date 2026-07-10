@@ -4,6 +4,12 @@
 # reads the existing corpus and writes a self-contained mif-package.json
 # manifest plus every named resource under a fresh <output-dir>.
 #
+# Concurrency (feature-spec AC12, issue #375): acquires the same
+# reports/<topic>/.container.lock mkdir-based lock mif-container-import.sh
+# uses, before reading anything -- shared mutual exclusion between export and
+# import, so a concurrent export can no longer read a mix of pre- and
+# post-import state while an import is mid-flight on the same topic.
+#
 # Steps:
 #   1. Resolve scope: full (every finding in the topic) or subset
 #      (scripts/mif-container-resolve-scope.sh over a caller-supplied
@@ -84,6 +90,31 @@ FINDINGS_DIR="reports/$TOPIC/findings"
 ONTOLOGY_MAP="reports/$TOPIC/ontology-map.json"
 [ -f "$ONTOLOGY_MAP" ] || fail "no ontology-map.json for topic '$TOPIC': $ONTOLOGY_MAP -- run /ontology-review first"
 
+# --- Concurrency lock (feature-spec AC12, issue #375): shared mutual
+# exclusion with mif-container-import.sh's own lock, same path, same
+# mkdir-atomic mechanism. Export never acquired this before, so a concurrent
+# /export could read reports/<topic>/findings/*.json and ontology-map.json
+# while an /import was mid-flight on the same topic -- a manifest whose
+# resources are a mix of pre- and post-import state, with no error or
+# warning. Acquired here, before Step 1 reads anything.
+LOCK_DIR="reports/$TOPIC/.container.lock"
+if lock_err="$(mkdir "$LOCK_DIR" 2>&1)"; then
+  :
+elif [ -d "$LOCK_DIR" ]; then
+  fail "another export/import is in progress for topic '$TOPIC' (lock held: $LOCK_DIR)"
+else
+  fail "failed to create export lock at $LOCK_DIR: ${lock_err:-mkdir failed for an unknown reason}"
+fi
+# Release-only trap for the window between lock acquisition and the OUTPUT_DIR
+# pre-check below -- deliberately NOT the fuller cleanup() (which also does
+# `rm -rf "$OUTPUT_DIR"` on failure): arming that wider trap this early would
+# let it fire while $OUTPUT_DIR has NOT yet been confirmed empty-or-absent,
+# destroying a caller's pre-existing directory on e.g. the "already exists
+# and is not empty" rejection below -- exactly the guarantee this script's
+# own header comment on that `rm -rf "$OUTPUT_DIR"` line depends on. Upgraded
+# to the full cleanup() once that precondition is actually confirmed.
+trap 'rmdir "$LOCK_DIR" 2>/dev/null' EXIT
+
 if [ -e "$OUTPUT_DIR" ]; then
   [ -d "$OUTPUT_DIR" ] || fail "$OUTPUT_DIR exists and is not a directory"
   [ -z "$(find "$OUTPUT_DIR" -mindepth 1 -print -quit 2>/dev/null)" ] \
@@ -101,11 +132,15 @@ T="$(mktemp -d)" || fail "failed to create a scratch directory"
 # already copied left partial content behind under $OUTPUT_DIR, directly
 # contradicting this command's own documented "nothing written" guarantee on
 # failure (review finding, Story #328). EXPORT_OK is set to 1 only
-# immediately before the final success message.
+# immediately before the final success message. This trap now also releases
+# $LOCK_DIR (issue #375), upgrading the release-only trap armed right after
+# lock acquisition above -- by this point $OUTPUT_DIR IS confirmed
+# empty-or-absent, so it's safe for this fuller cleanup to also remove it.
 EXPORT_OK=0
 cleanup() {
   rm -rf "$T"
   [ "$EXPORT_OK" -eq 1 ] || rm -rf "$OUTPUT_DIR"
+  rmdir "$LOCK_DIR" 2>/dev/null
 }
 trap cleanup EXIT
 mkdir -p "$OUTPUT_DIR/findings" || fail "failed to create $OUTPUT_DIR/findings"

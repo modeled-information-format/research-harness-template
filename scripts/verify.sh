@@ -2901,7 +2901,7 @@ gate_m29() {
   local IMPORT="scripts/mif-container-import.sh"
   local TOPIC="example-okf-mif-knowledge-spine"
   local TOPIC_DIR="reports/$TOPIC"
-  local T; T="$(mktemp -d)"
+  local T; T="$(mktemp -d)" || { bad "gate_m29: failed to create a scratch directory"; return 1; }
   local got
 
   # This gate imports into the real registered sample topic (the import gate
@@ -2909,10 +2909,21 @@ gate_m29() {
   # from the repo root like every other harness script). Snapshot every file
   # it can touch and restore it on EVERY exit path (trap, not just the happy
   # path), so a gate failure never leaves the real corpus mutated.
-  mkdir -p "$T/snapshot/findings"
-  cp -r "$TOPIC_DIR/findings/." "$T/snapshot/findings/"
-  cp "$TOPIC_DIR/README.md" "$T/snapshot/README.md"
-  cp reports/concordance.json "$T/snapshot/concordance.json"
+  #
+  # Every backup below is guarded (issue #377): an unchecked backup failure
+  # here would make restore_snapshot()'s own restoring `cp` silently no-op
+  # too (the "backup" it's copying from was never written), permanently
+  # leaving the corpus mutated by this gate's own test run -- the same
+  # failure mode gate_m31's equivalent backups were hardened against
+  # (Story #328's review pass).
+  mkdir -p "$T/snapshot/findings" \
+    || { bad "gate_m29: failed to create the snapshot scratch directory"; rm -rf "$T"; return 1; }
+  cp -r "$TOPIC_DIR/findings/." "$T/snapshot/findings/" \
+    || { bad "gate_m29: failed to back up $TOPIC_DIR/findings before mutating it"; rm -rf "$T"; return 1; }
+  cp "$TOPIC_DIR/README.md" "$T/snapshot/README.md" \
+    || { bad "gate_m29: failed to back up $TOPIC_DIR/README.md before mutating it"; rm -rf "$T"; return 1; }
+  cp reports/concordance.json "$T/snapshot/concordance.json" \
+    || { bad "gate_m29: failed to back up reports/concordance.json before mutating it"; rm -rf "$T"; return 1; }
   # reports/concordance-sameas-proposals.json (Story #324) is a GLOBAL
   # (not per-topic) file step 5 writes whenever an import upserts anything
   # (including these test invocations) -- it did not exist before this
@@ -2921,8 +2932,23 @@ gate_m29() {
   local had_sameas_proposals=0
   [ -f reports/concordance-sameas-proposals.json ] && {
     had_sameas_proposals=1
-    cp reports/concordance-sameas-proposals.json "$T/snapshot/concordance-sameas-proposals.json"
+    cp reports/concordance-sameas-proposals.json "$T/snapshot/concordance-sameas-proposals.json" \
+      || { bad "gate_m29: failed to back up reports/concordance-sameas-proposals.json"; rm -rf "$T"; return 1; }
   }
+  # harness.config.json backup + a pre-declared synthetic topic name (issue
+  # #376's destination-ontology-map regression test, 29k): a fresh synthetic
+  # topic, not the real $TOPIC, is the destination there specifically so a
+  # deliberately-corrupted ontology-map.json never touches the real corpus --
+  # this gate's own snapshot/restore above never backs up ontology-map.json
+  # at all (no prior test here ever needed to mutate the real topic's copy),
+  # so writing corrupt content directly to $TOPIC_DIR/ontology-map.json would
+  # have no restore path if this gate exited before an explicit undo ran.
+  # Declared here (not at 29k, where it's used), same rationale as gate_m31's
+  # roundtrip_topic/malformed_topic: restore_snapshot()'s cleanup below must
+  # be able to reference it unconditionally, not depend on 29k having run.
+  cp harness.config.json "$T/snapshot/harness.config.json" \
+    || { bad "gate_m29: failed to back up harness.config.json before mutating it"; rm -rf "$T"; return 1; }
+  local badontmap_topic="gate-m29-badontmap-test"
   restore_snapshot() {
     rm -rf "$TOPIC_DIR/findings"
     mkdir -p "$TOPIC_DIR/findings"
@@ -2934,6 +2960,8 @@ gate_m29() {
     else
       rm -f reports/concordance-sameas-proposals.json
     fi
+    cp "$T/snapshot/harness.config.json" harness.config.json
+    rm -rf "reports/$badontmap_topic"
     rm -f "$TOPIC_DIR/knowledge-graph.json"
     rm -rf "$TOPIC_DIR/.container.lock"
     rm -rf "$T"
@@ -3142,6 +3170,51 @@ gate_m29() {
   else
     bad "import did not fail closed against an already-held lock"
   fi
+
+  # 29k. Regression test for issue #376's destination pre-validation: a
+  #      SUBSET manifest whose DESTINATION ontology-map.json is corrupted
+  #      (not a JSON array) must reject the WHOLE import before any write --
+  #      not crash mid-write-loop after the manifest's own good finding has
+  #      already landed. An earlier version of the #376 merge only validated
+  #      the INCOMING ontology-map resource in step 2, discovering a corrupt
+  #      DESTINATION only live inside step 4, after step 4 had already
+  #      durably written every 'finding' resource in the same manifest.
+  #      Destination is a fresh synthetic topic, never the real $TOPIC --
+  #      see the rationale on badontmap_topic's declaration above.
+  jq --arg id "$badontmap_topic" '.topics += [{id: $id, title: "gate_m29 bad-ontology-map test", namespace: ("harness/" + $id), status: "active", ontologies: []}]' \
+    harness.config.json > "$T/config-with-badontmap-topic.json" && cp "$T/config-with-badontmap-topic.json" harness.config.json
+  mkdir -p "reports/$badontmap_topic/findings"
+  echo '{"not": "an array"}' > "reports/$badontmap_topic/ontology-map.json"
+  mkdir -p "$T/c-badontmap"
+  local badontmap_finding_id="urn:mif:concept:harness/$badontmap_topic:good"
+  jq --arg id "$badontmap_finding_id" '."@id" = $id' "$seed_finding" > "$T/c-badontmap/good.json"
+  echo '[{"finding_id": "'"$badontmap_finding_id"'", "entity_type": "technology", "resolved_ontology": "mif-generic@1.0.0", "basis": "declared", "valid": true}]' > "$T/c-badontmap/ontology-map.json"
+  local badontmap_good_digest badontmap_ontmap_digest badontmap_manifest_digest
+  badontmap_good_digest="$(scripts/mif-container-digest.sh resource "$T/c-badontmap/good.json")"
+  badontmap_ontmap_digest="$(scripts/mif-container-digest.sh resource "$T/c-badontmap/ontology-map.json")"
+  badontmap_manifest_digest="$(printf '%s\n%s\n' "$badontmap_good_digest" "$badontmap_ontmap_digest" | scripts/mif-container-digest.sh manifest)"
+  jq -n --arg gd "$badontmap_good_digest" --arg od "$badontmap_ontmap_digest" --arg md "$badontmap_manifest_digest" \
+    --arg topic "$badontmap_topic" --arg selector "[\"$badontmap_finding_id\"]" '{
+    profile: "https://research-harness.dev/schema/mif-container/v1",
+    sourceInstance: {namespace: "gate-m29-test", corpusUrl: null},
+    exportScope: {type: "subset", topic: $topic, selector: $selector, generatedAt: "2026-07-10T00:00:00Z"},
+    ontologyBindings: [{packId: "mif-generic", version: "1.0.0"}],
+    resources: [
+      {mifType: "finding", path: "good.json", ontologyType: "technology", digest: $gd},
+      {mifType: "ontology-map", path: "ontology-map.json", ontologyType: null, digest: $od}
+    ],
+    boundaryReferences: [],
+    manifestDigest: $md,
+    createdAt: "2026-07-10T00:00:00Z"
+  }' > "$T/c-badontmap/mif-package.json"
+  "$IMPORT" "$T/c-badontmap" "$badontmap_topic" >/dev/null 2>&1
+  local rc_badontmap=$?
+  local badontmap_written; badontmap_written="$(find "reports/$badontmap_topic/findings" -maxdepth 1 -name 'good.json' 2>/dev/null | wc -l | tr -d ' ')"
+  if [ "$rc_badontmap" -ne 0 ] && [ "$badontmap_written" = "0" ]; then
+    ok "a corrupt (non-array) destination ontology-map.json rejects the WHOLE subset import before any write (#376)"
+  else
+    bad "destination ontology-map pre-validation check failed (rc=$rc_badontmap, finding_written=$badontmap_written)"
+  fi
 }
 
 # ---------------------------------------------------------------------------
@@ -3153,17 +3226,26 @@ gate_m30() {
   local DETECT="scripts/mif-container-detect-sameas.sh"
   local TOPIC="example-okf-mif-knowledge-spine"
   local TOPIC_DIR="reports/$TOPIC"
-  local T; T="$(mktemp -d)"
+  local T; T="$(mktemp -d)" || { bad "gate_m30: failed to create a scratch directory"; return 1; }
   local got
 
-  mkdir -p "$T/snapshot/findings"
-  cp -r "$TOPIC_DIR/findings/." "$T/snapshot/findings/"
-  cp "$TOPIC_DIR/README.md" "$T/snapshot/README.md"
-  cp reports/concordance.json "$T/snapshot/concordance.json"
+  # Every backup below is guarded (issue #377), same rationale as gate_m29
+  # and gate_m31: an unchecked backup failure here would make
+  # restore_snapshot()'s own restoring `cp` silently no-op too, permanently
+  # leaving the corpus mutated by this gate's own test run.
+  mkdir -p "$T/snapshot/findings" \
+    || { bad "gate_m30: failed to create the snapshot scratch directory"; rm -rf "$T"; return 1; }
+  cp -r "$TOPIC_DIR/findings/." "$T/snapshot/findings/" \
+    || { bad "gate_m30: failed to back up $TOPIC_DIR/findings before mutating it"; rm -rf "$T"; return 1; }
+  cp "$TOPIC_DIR/README.md" "$T/snapshot/README.md" \
+    || { bad "gate_m30: failed to back up $TOPIC_DIR/README.md before mutating it"; rm -rf "$T"; return 1; }
+  cp reports/concordance.json "$T/snapshot/concordance.json" \
+    || { bad "gate_m30: failed to back up reports/concordance.json before mutating it"; rm -rf "$T"; return 1; }
   local had_sameas_proposals=0
   [ -f reports/concordance-sameas-proposals.json ] && {
     had_sameas_proposals=1
-    cp reports/concordance-sameas-proposals.json "$T/snapshot/concordance-sameas-proposals.json"
+    cp reports/concordance-sameas-proposals.json "$T/snapshot/concordance-sameas-proposals.json" \
+      || { bad "gate_m30: failed to back up reports/concordance-sameas-proposals.json"; rm -rf "$T"; return 1; }
   }
   restore_snapshot() {
     rm -rf "$TOPIC_DIR/findings"
@@ -3406,6 +3488,11 @@ gate_m31() {
     fi
     rm -rf "reports/$roundtrip_topic"
     rm -rf "reports/$malformed_topic"
+    # This gate's $EXPORT calls against the REAL $TOPIC (not the synthetic
+    # topics above) now acquire $TOPIC_DIR/.container.lock (issue #375) --
+    # same defensive cleanup gate_m29/gate_m30's restore_snapshot() already
+    # does for that lock, needed here too now that export shares it.
+    rm -rf "$TOPIC_DIR/.container.lock"
     rm -rf "$T"
     trap - EXIT
   }
@@ -3426,6 +3513,20 @@ gate_m31() {
   else
     bad "export left reports/<topic>/ dirty"
     git status --porcelain "$TOPIC_DIR" >&2
+  fi
+
+  # 31a2. Regression: a held lock rejects a concurrent export invocation
+  #      instead of racing (issue #375) -- mirrors gate_m29's 29j test for
+  #      import's own identical lock; export's new lock (this diff) had no
+  #      equivalent coverage.
+  mkdir -p "$TOPIC_DIR/.container.lock"
+  "$EXPORT" "$TOPIC" "$T/locked-export" > /dev/null 2>&1
+  local rc_export_locked=$?
+  rmdir "$TOPIC_DIR/.container.lock" 2>/dev/null
+  if [ "$rc_export_locked" -ne 0 ] && [ ! -d "$T/locked-export" ]; then
+    ok "a held lock rejects a concurrent export invocation, not just import (issue #375)"
+  else
+    bad "export did not fail closed against an already-held lock (rc=$rc_export_locked)"
   fi
 
   # 31b. The exported manifest validates against schemas/mif-container.schema.json.
@@ -3526,7 +3627,51 @@ gate_m31() {
     bad "subset import ontology-map preservation check failed (rc=$rc_subset_import, map changed: $([ "$ontmap_before_subset_import" = "$ontmap_after_subset_import" ] && echo no || echo YES))"
   fi
 
-  # 31h. A malformed (invalid-JSON) finding file must make export fail
+  # 31h. Regression test for issue #376: prove the subset import actually
+  #      UPSERTS missing/differing entries, not just no-ops when the incoming
+  #      content already matches the destination -- 31g's re-import above
+  #      never has to change anything, because the subset's entries were
+  #      already identical to what the full import wrote in 31f, so it stays
+  #      green under both the old skip-only behavior and a real merge. Strip
+  #      $roundtrip_topic's ontology-map.json entries for the subset's own
+  #      finding_ids out first, so restoring them actually requires a merge,
+  #      then re-run the same subset import and confirm (a) the stripped
+  #      entries come back with exactly the incoming content, and (b) every
+  #      OTHER entry outside the subset is untouched.
+  local ontmap_others_before; ontmap_others_before="$(jq --slurpfile ids "$T/subset-ids.json" -S \
+    '[.[] | select((.finding_id | IN($ids[0][])) | not)] | sort_by(.finding_id)' \
+    "reports/$roundtrip_topic/ontology-map.json")"
+  # Both steps of the strip below are explicitly checked (not `&&`-chained
+  # unchecked): a silent failure here would leave the destination un-stripped,
+  # making the re-import below a true no-op and every assertion after it
+  # trivially pass -- a false green on the very test meant to catch the merge
+  # logic not working, exactly the failure mode this regression test exists
+  # to prevent.
+  local strip_ok=1
+  jq --slurpfile ids "$T/subset-ids.json" \
+    '[.[] | select((.finding_id | IN($ids[0][])) | not)]' \
+    "reports/$roundtrip_topic/ontology-map.json" > "$T/ontmap-stripped.json" || strip_ok=0
+  if [ "$strip_ok" -eq 1 ]; then
+    cp "$T/ontmap-stripped.json" "reports/$roundtrip_topic/ontology-map.json" || strip_ok=0
+  fi
+  "$IMPORT" "$T/subset-export" "$roundtrip_topic" > /dev/null 2>&1
+  local rc_merge_restore=$?
+  local ontmap_restored_subset ontmap_others_after subset_entries_expected
+  ontmap_restored_subset="$(jq --slurpfile ids "$T/subset-ids.json" -S \
+    '[.[] | select(.finding_id | IN($ids[0][]))] | sort_by(.finding_id)' \
+    "reports/$roundtrip_topic/ontology-map.json" 2>/dev/null)"
+  ontmap_others_after="$(jq --slurpfile ids "$T/subset-ids.json" -S \
+    '[.[] | select((.finding_id | IN($ids[0][])) | not)] | sort_by(.finding_id)' \
+    "reports/$roundtrip_topic/ontology-map.json" 2>/dev/null)"
+  subset_entries_expected="$(jq -S 'sort_by(.finding_id)' "$T/subset-export/ontology-map.json" 2>/dev/null)"
+  if [ "$strip_ok" -eq 1 ] && [ "$rc_merge_restore" -eq 0 ] && [ "$ontmap_restored_subset" = "$subset_entries_expected" ] \
+     && [ "$ontmap_others_after" = "$ontmap_others_before" ] && [ -n "$ontmap_others_before" ]; then
+    ok "subset import upserts its own in-scope ontology-map entries back in by finding_id, without disturbing untouched destination entries (#376)"
+  else
+    bad "subset import upsert-restore check failed (strip_ok=$strip_ok rc=$rc_merge_restore restored_match=$([ "$ontmap_restored_subset" = "$subset_entries_expected" ] && echo yes || echo no) others_match=$([ "$ontmap_others_after" = "$ontmap_others_before" ] && echo yes || echo no))"
+  fi
+
+  # 31i. A malformed (invalid-JSON) finding file must make export fail
   #      closed, not silently undercount and report success -- a synthetic
   #      topic isolated from the real corpus (using the $malformed_topic
   #      declared above, alongside $roundtrip_topic), torn down

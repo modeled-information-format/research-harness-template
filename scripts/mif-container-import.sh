@@ -38,16 +38,18 @@
 #      same hardened stage+ajv+atomic-ln-publish primitive every other
 #      first-write path in this repo uses, rather than a second hand-rolled
 #      copy of the same logic). The manifest's ontology-map resource is
-#      digest-verified in step 2 and, for a FULL-scope export ONLY, written
-#      here verbatim (mktemp+mv, same directory, skipped as a no-op if the
+#      digest-verified in step 2 and written here: for a FULL-scope export,
+#      verbatim (mktemp+mv, same directory, skipped as a no-op if the
 #      destination's copy already matches the incoming digest) -- Story #328
 #      review found this resource was exported but never materialized at the
 #      destination on import, silently dropping a topic's ontology typing on
 #      a round-trip. A SUBSET export's ontology-map.json only covers the
-#      exported ids, so it is intentionally NOT written here (writing it
-#      verbatim would delete typing for every other finding already at the
-#      destination) -- merging a subset's entries by finding_id is a filed
-#      follow-up, not implemented in this story. concordance is a cross-topic
+#      exported ids, so a verbatim overwrite would delete typing for every
+#      other finding already at the destination -- instead its entries are
+#      upserted into the destination array by finding_id, keeping every
+#      destination entry not present in the incoming set (issue #376;
+#      Story #328 shipped the conservative skip-only version and filed the
+#      merge as this follow-up). concordance is a cross-topic
 #      global file and stays rebuilt fresh in step 5, not written from the
 #      container. An overwrite is NOT a blind replace: a per-field
 #      reconciliation policy (Task #326,
@@ -258,6 +260,30 @@ while IFS=$'\t' read -r rpath rdigest rmiftype; do
       fi
     fi
   fi
+
+  # A SUBSET import's step-4 write (issue #376) merges the incoming
+  # ontology-map.json INTO the destination's existing on-disk copy, which,
+  # like a finding's reconciliation merge above, this script does not
+  # control -- a corrupt/hand-edited/non-array destination ontology-map.json
+  # would otherwise only be discovered live inside step 4's write loop,
+  # after every 'finding' resource in this same manifest has already been
+  # durably written, breaking this script's own "reject entire import,
+  # never a partial write" guarantee. Checked here, in this same bulk
+  # pre-pass, before step 4 writes anything for ANY resource. Scoped to
+  # subset scope only (read inline from the manifest -- EXPORT_SCOPE_TYPE
+  # itself isn't assigned until after this pre-validation loop runs): a FULL
+  # export's step-4 write always overwrites the destination VERBATIM, never
+  # parses it as data, so a corrupt destination doesn't crash the full-scope
+  # path and a full re-import remains a valid way to heal it -- rejecting it
+  # here too would break that self-healing path for no safety benefit.
+  if [ "$rmiftype" = "ontology-map" ]; then
+    dest_ontmap="reports/$TOPIC/ontology-map.json"
+    resource_scope_type="$(jq -r '.exportScope.type // empty' "$MANIFEST" 2>/dev/null)"
+    if [ "$resource_scope_type" = "subset" ] && [ -f "$dest_ontmap" ] \
+       && ! jq -e 'type == "array"' "$dest_ontmap" > /dev/null 2>&1; then
+      BAD_SCHEMAS="${BAD_SCHEMAS}${rpath} (destination ontology-map.json at $dest_ontmap is not a JSON array -- a subset merge cannot safely fold it; refusing before any write); "
+    fi
+  fi
 done < <(jq -r '.resources[] | [.path, .digest, .mifType] | @tsv' "$MANIFEST")
 [ -z "$BAD_DIGESTS" ] || fail "per-resource digest mismatch: $BAD_DIGESTS"
 [ -z "$BAD_SCHEMAS" ] || fail "finding resource(s) do not validate against schemas/findings.schema.json (passed digest verification but are not schema-valid): $BAD_SCHEMAS"
@@ -323,20 +349,57 @@ SKIPPED=0
 ONTMAP_WRITTEN=0
 while IFS=$'\t' read -r rpath rdigest rmiftype; do
   if [ "$rmiftype" = "ontology-map" ]; then
-    [ "$EXPORT_SCOPE_TYPE" = "full" ] || continue
     rfile="$CONTAINER_DIR/$rpath"
     dest="reports/$TOPIC/ontology-map.json"
     jq -e 'type == "array"' "$rfile" > /dev/null 2>&1 \
       || fail "ontology-map.json resource $rpath is not a JSON array -- refusing to write it into $dest"
-    if [ -f "$dest" ]; then
-      dest_digest="$(scripts/mif-container-digest.sh resource "$dest" 2>/dev/null)" || dest_digest=""
-      [ "$dest_digest" = "$rdigest" ] && continue
+    if [ "$EXPORT_SCOPE_TYPE" = "full" ]; then
+      # A full export's ontology-map.json represents the whole topic -- overwriting the
+      # destination's copy verbatim is correct.
+      if [ -f "$dest" ]; then
+        dest_digest="$(scripts/mif-container-digest.sh resource "$dest" 2>/dev/null)" || dest_digest=""
+        [ "$dest_digest" = "$rdigest" ] && continue
+      fi
+      ontmap_stage="$(mktemp "reports/$TOPIC/.ontology-map-import.XXXXXX")" \
+        || fail "failed to create a staging file for ontology-map.json"
+      cp "$rfile" "$ontmap_stage" || { rm -f "$ontmap_stage"; fail "failed to stage ontology-map.json for $TOPIC"; }
+      mv -f "$ontmap_stage" "$dest" \
+        || { rm -f "$ontmap_stage"; fail "failed to publish ontology-map.json for $TOPIC"; }
+      ONTMAP_WRITTEN=1
+      continue
     fi
+    # A subset export's ontology-map.json only covers the exported ids (issue #376):
+    # upsert the incoming entries into the destination array by finding_id, keeping
+    # every destination entry whose finding_id is NOT in the incoming set -- never a
+    # verbatim overwrite, which would delete typing for every other finding already
+    # at the destination. Order-preserving: an existing entry that IS being updated
+    # keeps its original array position (replaced in place, not moved to the end) --
+    # only a genuinely NEW finding_id (present in incoming, absent from the
+    # destination) is appended. This matters because gate_m31's own regression test
+    # compares the destination array before/after a same-content subset re-import and
+    # expects it byte-identical, not merely set-equal.
     ontmap_stage="$(mktemp "reports/$TOPIC/.ontology-map-import.XXXXXX")" \
       || fail "failed to create a staging file for ontology-map.json"
-    cp "$rfile" "$ontmap_stage" || { rm -f "$ontmap_stage"; fail "failed to stage ontology-map.json for $TOPIC"; }
+    if [ -f "$dest" ]; then
+      jq -s '
+        (.[0]) as $incoming
+        | (.[1]) as $existing
+        | ($incoming | map({(.finding_id): .}) | add // {}) as $incoming_by_id
+        | ($existing | map({(.finding_id): true}) | add // {}) as $existing_by_id
+        | ($existing | map(.finding_id as $id | ($incoming_by_id[$id] // .))) as $updated_existing
+        | ($incoming | map(select(.finding_id as $id | ($existing_by_id | has($id)) | not))) as $new_entries
+        | $updated_existing + $new_entries
+      ' "$rfile" "$dest" > "$ontmap_stage" \
+        || { rm -f "$ontmap_stage"; fail "failed to merge ontology-map.json entries for $TOPIC"; }
+    else
+      cp "$rfile" "$ontmap_stage" || { rm -f "$ontmap_stage"; fail "failed to stage ontology-map.json for $TOPIC"; }
+    fi
+    if [ -f "$dest" ] && cmp -s "$ontmap_stage" "$dest"; then
+      rm -f "$ontmap_stage"
+      continue
+    fi
     mv -f "$ontmap_stage" "$dest" \
-      || { rm -f "$ontmap_stage"; fail "failed to publish ontology-map.json for $TOPIC"; }
+      || { rm -f "$ontmap_stage"; fail "failed to publish merged ontology-map.json for $TOPIC"; }
     ONTMAP_WRITTEN=1
     continue
   fi

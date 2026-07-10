@@ -42,18 +42,21 @@ upsert-by-`@id` write applying the per-field reconciliation policy (ADR-0017
 AD-6 — falsification verdicts, session lineage, and each finding's own
 provenance stay origin-scoped to THIS instance; tags union; everything else
 takes the incoming value; the ontology-map resource itself is written
-verbatim only for a full-scope export, since a subset export's ontology-map
-only covers the exported ids and would otherwise delete typing for every
-other finding already at the destination), then the deterministic
+verbatim for a full-scope export, but for a subset export — whose
+ontology-map only covers the exported ids — its entries are instead upserted
+into the destination's array by `finding_id`, keeping every destination
+entry not present in the incoming set, never a verbatim overwrite that would
+delete typing for every other finding already at the destination), then the
+deterministic
 `knowledge-graph.json`/README/concordance rebuilders plus a candidate
 cross-`@id` sameAs scan. **A failure at any step rejects the entire import —
 never a partial write.**
 
 A second import already running against the same topic fails closed on a
-held lock (`reports/<topic>/.container.lock`) rather than racing. This lock
-is import-side only — `/export` does not currently take it, so a concurrent
-`/export` against a topic mid-import can read an inconsistent in-flight
-snapshot (tracked as a follow-up, not yet fixed).
+held lock (`reports/<topic>/.container.lock`) rather than racing. `/export`
+acquires the same lock before reading anything, so a concurrent `/export`
+against a topic mid-import also fails closed instead of reading an
+inconsistent in-flight snapshot.
 
 ## Next steps
 
