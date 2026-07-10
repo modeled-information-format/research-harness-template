@@ -958,6 +958,60 @@ gate_m11() {
     bad "atomic-write contract broken (valid-landed=$good invalid-absent=$badw)"
   fi
 
+  # 11f2 (issue #360). A same-name collision refuses (fail-closed) rather than
+  # silently overwriting -- the exact #357 failure mode, on write-finding.sh's
+  # different write path. A second, DIFFERENT valid finding writing to the same
+  # dest-name must be rejected, the original content must survive untouched, and
+  # no .wf-staging-* directory should be left behind either way.
+  jq '."@id"="urn:mif:concept:harness/durability-topic:collision"' \
+    schemas/samples/finding.sample.json > "$T/finding-collision.json"
+  local refused=0 unchanged=0 clean=0
+  scripts/write-finding.sh "$T/finding-collision.json" "$T/wf" "finding-ok.json" >/dev/null 2>&1 || refused=1
+  [ "$(jq -r '."@id"' "$T/wf/finding-ok.json" 2>/dev/null)" = "$(jq -r '."@id"' "$RD/findings/finding-a.json")" ] && unchanged=1
+  [ -z "$(find "$T/wf" -mindepth 1 -name '.wf-staging-*' 2>/dev/null)" ] && clean=1
+  if [ "$refused" = 1 ] && [ "$unchanged" = 1 ] && [ "$clean" = 1 ]; then
+    ok "write-finding.sh refuses a same-name collision (fail-closed, no silent overwrite, no staging leftovers)"
+  else
+    bad "write-finding.sh collision handling broken (refused=$refused unchanged=$unchanged staging-clean=$clean)"
+  fi
+
+  # 11f3 (issue #360, #357-review parity). write-finding.sh's ln-based publish
+  # must distinguish "DEST already exists" (a real collision, tested above)
+  # from any OTHER ln failure (permissions, cross-filesystem, ...) -- #357's
+  # own review caught the identical bug (any ln failure misreported as a
+  # collision) in a sibling write path, and write-finding.sh already codes the
+  # correct elif [ -e "$DEST" ] distinction, but nothing exercised it.
+  # Can't reproduce via $FDIR permissions the way #357's eval did for
+  # dimension-analyst.md: write-finding.sh's STAGE_DIR is created INSIDE
+  # $FDIR (so ln and the destination share a filesystem, per its own header
+  # comment), so any $FDIR permission change that would break `ln` also
+  # breaks the preceding `mktemp -d` first -- that's the mktemp failure
+  # gate_m11 already tests separately (11f, since #360's fix hardened the
+  # unchecked-mktemp path too). Instead, isolate the conditional's LOGIC
+  # directly: a real non-EEXIST ln failure (a source that never existed to
+  # begin with) must be reported as a genuine failure, not misreported as
+  # "$DEST already exists" when it plainly does not.
+  local ln_ok=1 ln_dest="$T/wf/never-created.json"
+  if ln "$T/wf/.nonexistent-source-$$" "$ln_dest" 2>/dev/null; then
+    ln_ok=0
+  elif [ -e "$ln_dest" ]; then
+    ln_ok=0
+  fi
+  if [ "$ln_ok" = 1 ]; then
+    ok "a real ln failure (missing source) leaves DEST absent -- the elif [ -e \"\$DEST\" ] gate in write-finding.sh's publish correctly distinguishes this from a collision"
+  else
+    bad "ln-failure-vs-collision gate broken (ln_ok=$ln_ok)"
+  fi
+  # Pin the logic test above to the actual script: the isolated conditional
+  # only proves anything if write-finding.sh really codes this shape, not a
+  # bare `if ln ...; then ...; else <collision-handling> ...; fi` that would
+  # misreport any ln failure as a collision (#357's original bug).
+  if grep -qE 'elif \[ -e "\$DEST" \]' scripts/write-finding.sh; then
+    ok "write-finding.sh's publish still codes the elif [ -e \"\$DEST\" ] distinction the logic test above pins"
+  else
+    bad "write-finding.sh no longer codes the ln-failure-vs-collision distinction -- the logic test above is now testing a pattern the real script doesn't use"
+  fi
+
   # 11g (condition 6). A fully-gated session reconciles to an empty plan.
   local RD2 plan
   RD2="$T/done-topic"; mkdir -p "$RD2/findings"

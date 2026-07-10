@@ -29,13 +29,14 @@ defaults to `mktemp` and only writes into `reports/` when an explicit output
 path is passed.
 
 **Exception:** the dimension-analyst's finding-publish staging directory
-(`.claude/agents/dimension-analyst.md` Step 5, issue #357) is created via
-`mktemp -d` **inside** `reports/<topic>/findings/`, not outside the tree. Its
-collision-safe publish uses `ln` (a hard link), which requires the staging
-file and its destination to share a filesystem — a `/tmp` mktemp risks
-crossing filesystems (`EXDEV`) and defeating the whole mechanism. The
-directory is gitignored (`.staging-*/`) so it never dirties the tree or blocks
-`copier update`.
+(`.claude/agents/dimension-analyst.md` Step 5, issue #357) and
+`scripts/write-finding.sh`'s own staging directory (issue #360) are both
+created via `mktemp -d` **inside** the findings directory they publish into,
+not outside the tree. Both use `ln` (a hard link) for the final publish,
+which requires the staging file and its destination to share a filesystem —
+a `/tmp` mktemp risks crossing filesystems (`EXDEV`) and defeating the whole
+mechanism. The directories are gitignored (`.staging-*/`, `.wf-staging-*/`)
+so neither dirties the tree or blocks `copier update`.
 
 ---
 
