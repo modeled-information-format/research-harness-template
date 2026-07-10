@@ -2850,12 +2850,12 @@ gate_m29() {
   #      behind -- none of that is evidence --dry-run itself wrote anything.
   #      Only a change relative to the state right before THIS call counts.
   local before_hash after_hash before_count after_count
-  (cat "$TOPIC_DIR/README.md" reports/concordance.json; find "$TOPIC_DIR/findings" -maxdepth 1 -name '*.json' -exec cat {} +) > "$T/before-snapshot.txt"
+  (cat "$TOPIC_DIR/README.md" reports/concordance.json; find "$TOPIC_DIR/findings" -maxdepth 1 -name '*.json' | LC_ALL=C sort | while IFS= read -r f; do cat "$f"; done) > "$T/before-snapshot.txt"
   before_hash="$(scripts/mif-container-digest.sh resource "$T/before-snapshot.txt" 2>/dev/null)"
   before_count="$(find "$TOPIC_DIR/findings" -maxdepth 1 -name '*.json' | wc -l | tr -d ' ')"
   "$IMPORT" "$T/c-noop" "$TOPIC" --dry-run >/dev/null 2>&1
   local rc_dryrun=$?
-  (cat "$TOPIC_DIR/README.md" reports/concordance.json; find "$TOPIC_DIR/findings" -maxdepth 1 -name '*.json' -exec cat {} +) > "$T/after-snapshot.txt"
+  (cat "$TOPIC_DIR/README.md" reports/concordance.json; find "$TOPIC_DIR/findings" -maxdepth 1 -name '*.json' | LC_ALL=C sort | while IFS= read -r f; do cat "$f"; done) > "$T/after-snapshot.txt"
   after_hash="$(scripts/mif-container-digest.sh resource "$T/after-snapshot.txt" 2>/dev/null)"
   after_count="$(find "$TOPIC_DIR/findings" -maxdepth 1 -name '*.json' | wc -l | tr -d ' ')"
   if [ "$rc_dryrun" -eq 0 ] && [ "$before_count" = "$after_count" ] && [ "$before_hash" = "$after_hash" ]; then

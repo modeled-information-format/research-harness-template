@@ -79,8 +79,18 @@ jq -e --arg t "$TOPIC" '.topics[] | select(.id == $t)' harness.config.json > /de
 fail() { echo "mif-container-import: REJECTED -- $1" >&2; exit 1; }
 
 # --- Concurrency lock (feature-spec AC12): mkdir is atomic, no flock -------
+# A failed mkdir means EITHER a genuine lock (another run got there first,
+# so $LOCK_DIR now exists) OR an unrelated failure (missing parent dir,
+# permissions, read-only FS) -- distinguish them so a misconfigured
+# destination corpus isn't misreported as "another import in progress".
 LOCK_DIR="reports/$TOPIC/.container.lock"
-mkdir "$LOCK_DIR" 2>/dev/null || fail "another export/import is in progress for topic '$TOPIC' (lock held: $LOCK_DIR)"
+if lock_err="$(mkdir "$LOCK_DIR" 2>&1)"; then
+  :
+elif [ -d "$LOCK_DIR" ]; then
+  fail "another export/import is in progress for topic '$TOPIC' (lock held: $LOCK_DIR)"
+else
+  fail "failed to create import lock at $LOCK_DIR: ${lock_err:-mkdir failed for an unknown reason}"
+fi
 # One EXIT trap for the whole script (not per-loop-iteration RETURN traps,
 # which never fire in top-level script code -- only in functions/sourced
 # scripts): releases the lock and, if step 4's overwrite-in-place path left
@@ -195,7 +205,17 @@ while IFS=$'\t' read -r rpath rdigest rmiftype; do
   # so any later segment can legally contain regex metacharacters
   # ('.', '*', '[', ...) that would otherwise be interpreted as a pattern
   # and could match the wrong existing finding (or fail to match its own).
-  existing="$(grep -Fl "\"@id\": \"$rid\"" "$FINDINGS_DIR"/*.json 2>/dev/null | head -1 || true)"
+  # `find -exec grep +` (not a bare "$FINDINGS_DIR"/*.json glob) so a large
+  # topic's file count can't hit ARG_MAX; matches are counted explicitly so
+  # a destination corpus already corrupted with a duplicate @id is rejected
+  # instead of non-deterministically picking one (this script's own writes
+  # can never create that state -- write-finding.sh and the overwrite path
+  # below never introduce a second file for the same @id -- but a corpus
+  # written before this script existed could already be corrupted).
+  existing_matches="$(find "$FINDINGS_DIR" -maxdepth 1 -name '*.json' -exec grep -Fl "\"@id\": \"$rid\"" {} + 2>/dev/null || true)"
+  existing_match_count="$(printf '%s\n' "$existing_matches" | grep -c . || true)"
+  [ "$existing_match_count" -le 1 ] || fail "multiple existing findings share @id $rid in $FINDINGS_DIR -- destination corpus is already corrupted (duplicate @id), refusing to guess which one to update"
+  existing="$existing_matches"
   if [ -n "$existing" ]; then
     existing_digest="$(scripts/mif-container-digest.sh resource "$existing" 2>/dev/null)" \
       || fail "failed to compute the digest of the existing finding at $existing -- refusing to guess whether an upsert is needed"
