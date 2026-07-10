@@ -3348,6 +3348,192 @@ gate_m30() {
   fi
 }
 
+# ---------------------------------------------------------------------------
+# Milestone 31 — MIF Container export builder + /export /import commands (Epic #275, Story #328)
+# ---------------------------------------------------------------------------
+gate_m31() {
+  info "Milestone 31 — MIF Container export builder (scripts/mif-container-export.sh)"
+  local EXPORT="scripts/mif-container-export.sh"
+  local IMPORT="scripts/mif-container-import.sh"
+  local TOPIC="example-okf-mif-knowledge-spine"
+  local TOPIC_DIR="reports/$TOPIC"
+  local T; T="$(mktemp -d)" || { bad "gate_m31: failed to create a scratch directory"; return 1; }
+  local got
+
+  # This gate is READ-ONLY against the real corpus for 31a-31e (export never
+  # writes to reports/<topic>/), but 31f performs a real round-trip import
+  # into a FRESH synthetic topic this gate registers and tears down itself
+  # -- never reports/example-okf-mif-knowledge-spine/findings -- so no
+  # snapshot/restore of the real topic is needed here, only of
+  # harness.config.json (which 31f temporarily appends a topic to) and the
+  # global reports/concordance.json + reports/concordance-sameas-proposals.json
+  # the round-trip import's own step 5 touches.
+  #
+  # Every backup `cp` below is guarded: an unchecked backup failure here
+  # (review finding, Story #328) would make restore_state()'s own restoring
+  # `cp` silently no-op too (the "backup" it's copying from was never
+  # written), permanently leaving 31f's synthetic-topic mutation in the
+  # REAL tracked harness.config.json/concordance.json -- a failure this gate
+  # exists specifically to prevent, not risk itself.
+  cp harness.config.json "$T/harness.config.json.orig" \
+    || { bad "gate_m31: failed to back up harness.config.json before mutating it"; rm -rf "$T"; return 1; }
+  cp reports/concordance.json "$T/concordance.json.orig" \
+    || { bad "gate_m31: failed to back up reports/concordance.json before mutating it"; rm -rf "$T"; return 1; }
+  local had_sameas_proposals=0
+  [ -f reports/concordance-sameas-proposals.json ] && {
+    had_sameas_proposals=1
+    cp reports/concordance-sameas-proposals.json "$T/concordance-sameas-proposals.json.orig" \
+      || { bad "gate_m31: failed to back up reports/concordance-sameas-proposals.json"; rm -rf "$T"; return 1; }
+  }
+  local roundtrip_topic="gate-m31-roundtrip-test"
+  restore_state() {
+    cp "$T/harness.config.json.orig" harness.config.json
+    cp "$T/concordance.json.orig" reports/concordance.json
+    if [ "$had_sameas_proposals" -eq 1 ]; then
+      cp "$T/concordance-sameas-proposals.json.orig" reports/concordance-sameas-proposals.json
+    else
+      rm -f reports/concordance-sameas-proposals.json
+    fi
+    rm -rf "reports/$roundtrip_topic"
+    rm -rf "$T"
+    trap - EXIT
+  }
+  trap restore_state RETURN EXIT
+
+  # 31a. Full export: every finding in the topic, corpus untouched.
+  local real_finding_count; real_finding_count="$(find "$TOPIC_DIR/findings" -maxdepth 1 -name '*.json' | wc -l | tr -d ' ')"
+  got="$("$EXPORT" "$TOPIC" "$T/full-export" 2>&1)"
+  local full_resource_count; full_resource_count="$(jq '.resources | length' "$T/full-export/mif-package.json" 2>/dev/null)"
+  if printf '%s' "$got" | grep -q "exported $real_finding_count finding(s) (full scope)" \
+     && [ "$full_resource_count" = "$((real_finding_count + 1))" ]; then
+    ok "full export includes every finding plus the topic's ontology-map.json, corpus untouched"
+  else
+    bad "full export check failed: got='$got' resource_count=$full_resource_count expected_findings=$real_finding_count"
+  fi
+  if [ -z "$(git status --porcelain "$TOPIC_DIR" 2>/dev/null)" ]; then
+    ok "export never modifies reports/<topic>/ (AC10)"
+  else
+    bad "export left reports/<topic>/ dirty"
+    git status --porcelain "$TOPIC_DIR" >&2
+  fi
+
+  # 31b. The exported manifest validates against schemas/mif-container.schema.json.
+  ajv validate --spec=draft2020 --strict=false -c ajv-formats \
+    -s schemas/mif-container.schema.json -d "$T/full-export/mif-package.json" > /dev/null 2>&1
+  if [ "$?" -eq 0 ]; then
+    ok "the exported manifest is schema-valid"
+  else
+    bad "the exported manifest failed schema validation"
+  fi
+
+  # 31c. Subset export: a small selector produces the right resource count
+  #      and boundary references, never touching the corpus.
+  local subset_ids; subset_ids="$(find "$TOPIC_DIR/findings" -maxdepth 1 -name '*.json' | LC_ALL=C sort | head -2 | xargs -I{} jq -r '."@id"' {})"
+  printf '%s\n' "$subset_ids" | jq -R -s 'split("\n") | map(select(length>0))' > "$T/subset-ids.json"
+  "$EXPORT" "$TOPIC" "$T/subset-export" --subset "$T/subset-ids.json" > /dev/null 2>&1
+  local subset_resource_count; subset_resource_count="$(jq '.resources | length' "$T/subset-export/mif-package.json" 2>/dev/null)"
+  local subset_scope_type; subset_scope_type="$(jq -r '.exportScope.type' "$T/subset-export/mif-package.json" 2>/dev/null)"
+  if [ "$subset_resource_count" = "3" ] && [ "$subset_scope_type" = "subset" ]; then
+    ok "subset export resolves exactly the requested findings plus ontology-map.json"
+  else
+    bad "subset export check failed (resource_count=$subset_resource_count scope_type=$subset_scope_type)"
+  fi
+
+  # 31d. A selector matching zero findings is a VALID export (schema's own
+  #      resources[] description; matches gate_m28's 28f precedent for the
+  #      resolver itself), not an error -- ontologyBindings still falls back
+  #      to the topic's full set so the manifest stays schema-valid.
+  echo '[]' > "$T/empty-ids.json"
+  "$EXPORT" "$TOPIC" "$T/empty-export" --subset "$T/empty-ids.json" > /dev/null 2>&1
+  local rc_empty=$?
+  local empty_bindings_count; empty_bindings_count="$(jq '.ontologyBindings | length' "$T/empty-export/mif-package.json" 2>/dev/null)"
+  ajv validate --spec=draft2020 --strict=false -c ajv-formats \
+    -s schemas/mif-container.schema.json -d "$T/empty-export/mif-package.json" > /dev/null 2>&1
+  local rc_empty_valid=$?
+  if [ "$rc_empty" -eq 0 ] && [ "$rc_empty_valid" -eq 0 ] && [ "${empty_bindings_count:-0}" -gt 0 ]; then
+    ok "a subset selector matching zero findings is a valid export, not an error"
+  else
+    bad "empty-scope export check failed (rc=$rc_empty valid_rc=$rc_empty_valid bindings=$empty_bindings_count)"
+  fi
+
+  # 31e. Fail-closed: an unregistered topic and a non-empty output directory.
+  "$EXPORT" "not-a-real-topic-$$" "$T/out-unreg" > /dev/null 2>&1
+  local rc_unreg=$?
+  mkdir -p "$T/out-nonempty"; touch "$T/out-nonempty/pre-existing-file"
+  "$EXPORT" "$TOPIC" "$T/out-nonempty" > /dev/null 2>&1
+  local rc_nonempty=$?
+  if [ "$rc_unreg" -ne 0 ] && [ "$rc_nonempty" -ne 0 ] && [ -f "$T/out-nonempty/pre-existing-file" ] \
+     && [ ! -f "$T/out-nonempty/mif-package.json" ]; then
+    ok "export fails closed on an unregistered topic and a non-empty output directory, without touching the latter's existing content"
+  else
+    bad "export fail-closed check failed (rc_unreg=$rc_unreg rc_nonempty=$rc_nonempty)"
+  fi
+
+  # 31f. Round-trip: export the whole topic, register a FRESH synthetic
+  #      topic, import the export into it, and confirm every finding
+  #      landed with the same content (byte-identical @id set) AND that
+  #      ontology-map.json itself landed at the destination -- not just
+  #      that its @id set matches. An earlier version of this test only
+  #      checked @id-set equality, which stayed green while
+  #      mif-container-import.sh silently dropped ontology-map.json on
+  #      import entirely (Story #328 review finding) -- a false-green this
+  #      assertion is specifically here to prevent recurring.
+  jq --arg id "$roundtrip_topic" '.topics += [{id: $id, title: "gate_m31 roundtrip", namespace: ("harness/" + $id), status: "active", ontologies: []}]' \
+    harness.config.json > "$T/config-with-roundtrip-topic.json" && cp "$T/config-with-roundtrip-topic.json" harness.config.json
+  mkdir -p "reports/$roundtrip_topic/findings"
+  "$IMPORT" "$T/full-export" "$roundtrip_topic" > /dev/null 2>&1
+  local rc_roundtrip=$?
+  local roundtrip_count; roundtrip_count="$(find "reports/$roundtrip_topic/findings" -maxdepth 1 -name '*.json' 2>/dev/null | wc -l | tr -d ' ')"
+  local source_ids dest_ids
+  source_ids="$(find "$TOPIC_DIR/findings" -maxdepth 1 -name '*.json' -exec jq -r '."@id"' {} + 2>/dev/null | LC_ALL=C sort)"
+  dest_ids="$(find "reports/$roundtrip_topic/findings" -maxdepth 1 -name '*.json' -exec jq -r '."@id"' {} + 2>/dev/null | LC_ALL=C sort)"
+  local ontmap_match="no"
+  if [ -f "reports/$roundtrip_topic/ontology-map.json" ] \
+     && diff -q <(jq -S . "$TOPIC_DIR/ontology-map.json") <(jq -S . "reports/$roundtrip_topic/ontology-map.json") > /dev/null 2>&1; then
+    ontmap_match="yes"
+  fi
+  if [ "$rc_roundtrip" -eq 0 ] && [ "$roundtrip_count" = "$real_finding_count" ] && [ "$source_ids" = "$dest_ids" ] && [ "$ontmap_match" = "yes" ]; then
+    ok "export -> import round-trip into a fresh topic reproduces the exact same @id set AND ontology-map.json"
+  else
+    bad "round-trip check failed (rc=$rc_roundtrip count=$roundtrip_count/$real_finding_count ids_match=$([ "$source_ids" = "$dest_ids" ] && echo yes || echo no) ontmap_match=$ontmap_match)"
+  fi
+
+  # 31g. Regression test for a real review-found data-loss bug: importing a
+  #      SUBSET export into an already-populated destination topic must NOT
+  #      shrink the destination's ontology-map.json to just the subset's
+  #      entries -- $roundtrip_topic is already fully populated from 31f, so
+  #      re-importing the 2-finding $T/subset-export (built in 31c) into it
+  #      must leave ontology-map.json exactly as the full import left it.
+  local ontmap_before_subset_import; ontmap_before_subset_import="$(jq -S . "reports/$roundtrip_topic/ontology-map.json" 2>/dev/null)"
+  "$IMPORT" "$T/subset-export" "$roundtrip_topic" > /dev/null 2>&1
+  local rc_subset_import=$?
+  local ontmap_after_subset_import; ontmap_after_subset_import="$(jq -S . "reports/$roundtrip_topic/ontology-map.json" 2>/dev/null)"
+  if [ "$rc_subset_import" -eq 0 ] && [ "$ontmap_before_subset_import" = "$ontmap_after_subset_import" ] \
+     && [ -n "$ontmap_before_subset_import" ]; then
+    ok "importing a subset export into an already-populated topic leaves the destination's ontology-map.json untouched (no data loss)"
+  else
+    bad "subset import ontology-map preservation check failed (rc=$rc_subset_import, map changed: $([ "$ontmap_before_subset_import" = "$ontmap_after_subset_import" ] && echo no || echo YES))"
+  fi
+
+  # 31h. A malformed (invalid-JSON) finding file must make export fail
+  #      closed, not silently undercount and report success -- a synthetic
+  #      topic isolated from the real corpus, torn down by restore_state().
+  local malformed_topic="gate-m31-malformed-test"
+  mkdir -p "reports/$malformed_topic/findings"
+  printf '{not valid json' > "reports/$malformed_topic/findings/bad.json"
+  echo '[]' > "reports/$malformed_topic/ontology-map.json"
+  jq --arg id "$malformed_topic" '.topics += [{id: $id, title: "gate_m31 malformed-finding test", namespace: ("harness/" + $id), status: "active", ontologies: []}]' \
+    harness.config.json > "$T/config-with-malformed-topic.json" && cp "$T/config-with-malformed-topic.json" harness.config.json
+  "$EXPORT" "$malformed_topic" "$T/malformed-export" > /dev/null 2>&1
+  local rc_malformed=$?
+  if [ "$rc_malformed" -ne 0 ] && [ ! -d "$T/malformed-export" ]; then
+    ok "export fails closed on a malformed (invalid-JSON) finding file, not a silent undercount"
+  else
+    bad "malformed-finding export check failed (rc=$rc_malformed, output dir created: $([ -d "$T/malformed-export" ] && echo yes || echo no))"
+  fi
+  rm -rf "reports/$malformed_topic"
+}
+
 gate_ontology_lock() {
   info "Ontology vendoring — pinned-lock integrity (ADR-0012)"
   # On-demand vendored domain ontologies must match their pinned sha256 (no local
@@ -3426,7 +3612,7 @@ gate_versions() {
 # ---------------------------------------------------------------------------
 # Gate registry — each milestone appends its function name here.
 # ---------------------------------------------------------------------------
-GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18 gate_m19 gate_m20 gate_m21 gate_m22 gate_m23 gate_m24 gate_m25 gate_m26 gate_m27 gate_m28 gate_m29 gate_m30 gate_ontology_lock gate_versions)
+GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18 gate_m19 gate_m20 gate_m21 gate_m22 gate_m23 gate_m24 gate_m25 gate_m26 gate_m27 gate_m28 gate_m29 gate_m30 gate_m31 gate_ontology_lock gate_versions)
 
 for g in "${GATES[@]}"; do "$g"; done
 
