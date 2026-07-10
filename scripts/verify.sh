@@ -1570,6 +1570,82 @@ gate_m14() {
     bad "phase-gate hook wrong (no-window=$d_no fresh=$d_yes report=$d_rep stale=$d_stale multi=$d_multi)"
   fi
 
+  # 14d. Regression (issue #356): a DOUBLE-QUOTED path argument within an open
+  #      window is allowed -- the leading/trailing quote must not corrupt TOPIC_DIR.
+  rm -f "$T/reports/tA/.gate-active"; touch "$T/reports/tA/.gate-active"
+  local d_quoted
+  d_quoted=$(hd '{"tool_input":{"command":"scripts/falsify.sh \"reports/tA/findings/f.json\" fx"}}')
+  if [ "$d_quoted" = allow ]; then
+    ok "phase-gate hook (#356): a double-quoted path argument within an open window is allowed"
+  else
+    bad "phase-gate hook #356 regression (quoted=$d_quoted)"
+  fi
+
+  # 14e. Regression test for issue #372's REVERTED fix attempt: every one of
+  #      these real-invocation shapes must still be DENIED with no window
+  #      open. An anchored-to-invocation-position regex tried for #372 (to
+  #      stop the false deny in 14f below) was reverted after code review
+  #      found it let every one of these bypass the gate silently instead --
+  #      including this repo's OWN established `$CLAUDE_PROJECT_DIR/scripts/
+  #      falsify.sh` convention (.claude/skills/publish-report/evals/
+  #      evals.json). The broad, unanchored substring check restored above
+  #      has none of these gaps; this test exists to keep it that way -- any
+  #      future attempt to narrow that check must keep every one of these DENY.
+  rm -f "$T/reports/tA/.gate-active"
+  local -a bypass_cmds=(
+    'FOO=bar scripts/falsify.sh reports/tA/findings/f.json fx'
+    'command scripts/falsify.sh reports/tA/findings/f.json fx'
+    'env scripts/falsify.sh reports/tA/findings/f.json fx'
+    'time scripts/falsify.sh reports/tA/findings/f.json fx'
+    'sudo scripts/falsify.sh reports/tA/findings/f.json fx'
+    'for f in reports/tA/findings/*.json; do scripts/falsify.sh "$f" fx; done'
+    'printf "%s\n" "reports/tA/findings/f.json" | xargs -I{} scripts/falsify.sh {} fx'
+    'sh -c "scripts/falsify.sh reports/tA/findings/f.json fx"'
+    '$CLAUDE_PROJECT_DIR/scripts/falsify.sh reports/tA/findings/f.json fx'
+    '${HARNESS_ROOT}/scripts/falsify.sh reports/tA/findings/f.json fx'
+    '"scripts/falsify.sh" reports/tA/findings/f.json fx'
+    '/bin/bash scripts/falsify.sh reports/tA/findings/f.json fx'
+    'env bash scripts/falsify.sh reports/tA/findings/f.json fx'
+    'zsh scripts/falsify.sh reports/tA/findings/f.json fx'
+  )
+  local bypass_fail="" cmd_json d_bypass
+  for c in "${bypass_cmds[@]}"; do
+    cmd_json="$(jq -cn --arg c "$c" '{tool_input:{command:$c}}')"
+    d_bypass="$(hd "$cmd_json")"
+    [ "$d_bypass" = deny ] || bypass_fail="${bypass_fail}[$c -> $d_bypass] "
+  done
+  if [ -z "$bypass_fail" ]; then
+    ok "phase-gate hook (#372 follow-up): every real-invocation bypass shape found in review (env-prefix, command/env/time/sudo, loop, xargs, sh -c, \$VAR-prefixed path, quoted command name, alternate interpreter) is still denied with no window open"
+  else
+    bad "phase-gate hook bypass regression: $bypass_fail"
+  fi
+
+  # 14f. Known, accepted false DENY (issue #372): a command that only
+  #      MENTIONS "falsify.sh" as quoted documentation text (e.g. a
+  #      `gh issue create --body "..."` heredoc reproducing a bug) is denied
+  #      even though it never invokes the script. Narrowing the check to
+  #      avoid this was tried and reverted (14e above) -- every attempt let a
+  #      REAL invocation through unguarded instead, unbounded worse than this
+  #      false deny. This assertion documents the accepted tradeoff so a
+  #      future change that "fixes" this by re-narrowing the check is caught
+  #      here first, before it can reach 14e's bypass shapes.
+  local d_overmatch
+  d_overmatch=$(hd '{"tool_input":{"command":"gh issue create --body \"example: scripts/falsify.sh \\\"reports/tA/findings/f.json\\\"\""}}')
+  if [ "$d_overmatch" = deny ]; then
+    ok "phase-gate hook (#372, known limitation): a doc-text mention of falsify.sh with no window open is denied (accepted false deny, not re-narrowed)"
+  else
+    bad "phase-gate hook: doc-text mention no longer denied (d=$d_overmatch) -- the check was re-narrowed; re-verify against every 14e bypass shape before accepting this"
+  fi
+
+  # 14g. A real, unquoted invocation with no window open is still denied.
+  local d_real_noquotes
+  d_real_noquotes=$(hd '{"tool_input":{"command":"scripts/falsify.sh reports/tA/findings/f.json fx"}}')
+  if [ "$d_real_noquotes" = deny ]; then
+    ok "phase-gate hook: a real, unquoted invocation is denied with no window open"
+  else
+    bad "phase-gate hook: real invocation not denied (d=$d_real_noquotes)"
+  fi
+
   rm -rf "$T"
 }
 

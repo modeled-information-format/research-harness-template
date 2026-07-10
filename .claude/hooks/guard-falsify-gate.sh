@@ -28,6 +28,16 @@
 # If jq is missing the hook fails OPEN (allow) — jq is a hard harness dependency, so its
 # absence means the harness is already non-functional, not a bypass an analyst can induce
 # (the analyst does not author this hook's stdin).
+#   - a KNOWN FALSE DENY (issue #372), on the other side of the same tradeoff: any Bash
+#     command that merely quotes "falsify.sh" as documentation text (e.g. a
+#     `gh issue create --body "..."` heredoc reproducing a bug that mentions the script
+#     name and an example findings/ path) is denied even though it never invokes the
+#     script. Workaround: avoid quoting the script name directly in such text (a
+#     paraphrase, or breaking up the string, avoids the substring match), or file/comment
+#     from outside a gated topic's window if a literal repro string is unavoidable. Not
+#     fixed by narrowing the substring check further -- see #384, which found that every
+#     attempt to do so (this hook's second attempt, reverted) let a REAL invocation
+#     silently bypass the gate instead, which is unbounded worse than this false deny.
 set -uo pipefail
 # Repo root: CLAUDE_PROJECT_DIR in the hook, else two levels up from .claude/hooks/<this>.
 ROOT="${CLAUDE_PROJECT_DIR:-$(cd "$(dirname "$0")/../.." && pwd)}"
@@ -35,7 +45,28 @@ ROOT="${CLAUDE_PROJECT_DIR:-$(cd "$(dirname "$0")/../.." && pwd)}"
 INPUT=$(cat /dev/stdin 2>/dev/null)
 CMD=$(printf '%s' "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null)
 
-# Only act on a command that invokes the gate script.
+# Only act on a command that MENTIONS the gate script -- a broad, unanchored
+# substring match, deliberately never narrowed to "invocation position" (issue
+# #372 tried exactly that: anchoring to command-start / after a shell operator,
+# optionally through a bash/sh prefix, to stop this check tripping on a
+# `gh issue create --body "... scripts/falsify.sh \"reports/.../findings/
+# foo.json\" ..."` heredoc that only quotes the script name as documentation
+# text, never invoking it). That anchor was reverted: review found it let a
+# REAL invocation through ungated whenever it didn't match one of the
+# enumerated shapes -- env-var-prefixed (`FOO=bar scripts/falsify.sh ...`),
+# `command`/`env`/`time`/`sudo`-wrapped, a `for`/`while` loop or `xargs -I{}`
+# fan-out, `sh -c "..."`, a quoted command name, or (confirmed live, and this
+# repo's OWN established convention in .claude/skills/publish-report/evals/
+# evals.json) a `$CLAUDE_PROJECT_DIR/scripts/falsify.sh ...` path -- silently
+# bypassing the one-round-rule gate this hook exists to enforce. A false ALLOW
+# here is unbounded worse than a false DENY (the gh-issue-create case above):
+# an annoying deny has a known workaround (quote the path unquoted, or avoid
+# quoting the script name in doc text -- see LIMITATIONS at the top of this
+# file); a false allow permanently corrupts the corpus. Distinguishing "quoted
+# doc text passed to an unrelated command" from "a real invocation, however
+# shaped" is a shell-parsing problem no regex anchor here can solve safely --
+# see #384 for the actual fix (falsify.sh checks a gate token/env var instead
+# of this hook inferring invocation shape from command text).
 printf '%s' "$CMD" | grep -qF 'falsify.sh' || exit 0
 
 # Only guard grading of a topic's SESSION FINDINGS (reports/<topic>/findings/*.json).
