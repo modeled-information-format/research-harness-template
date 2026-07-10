@@ -2754,8 +2754,8 @@ gate_m28() {
   #      silent-drop failure AD-4 exists to prevent.
   printf '%s\n' '["urn:mif:concept:harness:kg-cookiecutter-0002","urn:mif:concept:harness:kg-copier-0001","urn:mif:concept:harness:kg-distribution-0003"]' > "$T/full-scope.json"
   local got
-  got="$("$RESOLVE" "$GRAPH" "$T/full-scope.json" | jq -c '{resources: (.resources|sort), concept_boundaries: [.boundaryReferences[] | select(.target|test("^urn:mif:concept:"))], entity_boundary_count: [.boundaryReferences[] | select(.target|test("^urn:mif:entity:"))] | length}')"
-  if [ "$got" = '{"resources":["urn:mif:concept:harness:kg-cookiecutter-0002","urn:mif:concept:harness:kg-copier-0001","urn:mif:concept:harness:kg-distribution-0003"],"concept_boundaries":[],"entity_boundary_count":4}' ]; then
+  got="$("$RESOLVE" "$GRAPH" "$T/full-scope.json" | jq -c '{resourceIds: (.resourceIds|sort), concept_boundaries: [.boundaryReferences[] | select(.target|test("^urn:mif:concept:"))], entity_boundary_count: [.boundaryReferences[] | select(.target|test("^urn:mif:entity:"))] | length}')"
+  if [ "$got" = '{"resourceIds":["urn:mif:concept:harness:kg-cookiecutter-0002","urn:mif:concept:harness:kg-copier-0001","urn:mif:concept:harness:kg-distribution-0003"],"concept_boundaries":[],"entity_boundary_count":4}' ]; then
     ok "full scope: all concept relationships satisfied, entity mentions still walked and marked"
   else
     bad "full scope result wrong: $got"
@@ -2763,10 +2763,10 @@ gate_m28() {
 
   # 28b. Partial scope, no closure: a referenced-but-out-of-scope concept
   #      becomes an explicit boundaryReferences[] entry, never silently
-  #      dropped -- resources stays exactly the initial set.
+  #      dropped -- resourceIds stays exactly the initial set.
   printf '%s\n' '["urn:mif:concept:harness:kg-cookiecutter-0002"]' > "$T/partial-scope.json"
-  got="$("$RESOLVE" "$GRAPH" "$T/partial-scope.json" | jq -c '{resources, out_of_scope: [.boundaryReferences[] | select(.reason=="out-of-scope" and (.target|test("^urn:mif:concept:")))]}')"
-  if [ "$got" = '{"resources":["urn:mif:concept:harness:kg-cookiecutter-0002"],"out_of_scope":[{"target":"urn:mif:concept:harness:kg-copier-0001","reason":"out-of-scope"}]}' ]; then
+  got="$("$RESOLVE" "$GRAPH" "$T/partial-scope.json" | jq -c '{resourceIds, out_of_scope: [.boundaryReferences[] | select(.reason=="out-of-scope" and (.target|test("^urn:mif:concept:")))]}')"
+  if [ "$got" = '{"resourceIds":["urn:mif:concept:harness:kg-cookiecutter-0002"],"out_of_scope":[{"target":"urn:mif:concept:harness:kg-copier-0001","reason":"out-of-scope"}]}' ]; then
     ok "partial scope without closure marks the excluded concept as an out-of-scope boundary reference"
   else
     bad "partial-scope-no-closure result wrong: $got"
@@ -2777,8 +2777,8 @@ gate_m28() {
   #      every concept reachable via relationship edges, so kg-copier-0001 is
   #      now INCLUDED, not marked. Entity mentions are still never closure-
   #      included (not a packageable resource) and remain boundary references.
-  got="$("$RESOLVE" "$GRAPH" "$T/partial-scope.json" --closure | jq -c '{resources: (.resources|sort), concept_boundaries: [.boundaryReferences[] | select(.target|test("^urn:mif:concept:"))]}')"
-  if [ "$got" = '{"resources":["urn:mif:concept:harness:kg-cookiecutter-0002","urn:mif:concept:harness:kg-copier-0001","urn:mif:concept:harness:kg-distribution-0003"],"concept_boundaries":[]}' ]; then
+  got="$("$RESOLVE" "$GRAPH" "$T/partial-scope.json" --closure | jq -c '{resourceIds: (.resourceIds|sort), concept_boundaries: [.boundaryReferences[] | select(.target|test("^urn:mif:concept:"))]}')"
+  if [ "$got" = '{"resourceIds":["urn:mif:concept:harness:kg-cookiecutter-0002","urn:mif:concept:harness:kg-copier-0001","urn:mif:concept:harness:kg-distribution-0003"],"concept_boundaries":[]}' ]; then
     ok "closure expands scope to every transitively-reachable concept, closure takes precedence over marking (AD-4)"
   else
     bad "closure expansion result wrong: $got"
@@ -2803,25 +2803,86 @@ gate_m28() {
   fi
 
   # 28f. Zero in-scope findings (a subset selector matching nothing) is valid,
-  #      not an error -- empty resources[] and boundaryReferences[].
+  #      not an error -- empty resourceIds[] and boundaryReferences[].
   printf '[]\n' > "$T/empty-scope.json"
   got="$("$RESOLVE" "$GRAPH" "$T/empty-scope.json" | jq -c .)"
-  if [ "$got" = '{"resources":[],"boundaryReferences":[]}' ]; then
-    ok "an empty in-scope set resolves to empty resources and boundaryReferences, not an error"
+  if [ "$got" = '{"resourceIds":[],"boundaryReferences":[]}' ]; then
+    ok "an empty in-scope set resolves to empty resourceIds and boundaryReferences, not an error"
   else
     bad "empty-scope result wrong: $got"
   fi
 
-  # 28g. Fail-closed: missing arguments and a missing graph file are named
-  #      errors (exit != 0), never a silent empty/wrong result.
+  # 28g. Fail-closed: missing arguments, a missing graph file, and a
+  #      malformed (non-array) ids file are named errors (exit != 0), never a
+  #      silent empty/wrong result.
   "$RESOLVE" >/dev/null 2>&1
   local rc_noargs=$?
   "$RESOLVE" "$T/does-not-exist.json" "$T/full-scope.json" >/dev/null 2>&1
   local rc_missing=$?
-  if [ "$rc_noargs" -ne 0 ] && [ "$rc_missing" -ne 0 ]; then
-    ok "resolver fails closed on missing arguments and a missing graph file"
+  printf '{}\n' > "$T/bad-ids.json"
+  "$RESOLVE" "$GRAPH" "$T/bad-ids.json" >/dev/null 2>&1
+  local rc_badids=$?
+  if [ "$rc_noargs" -ne 0 ] && [ "$rc_missing" -ne 0 ] && [ "$rc_badids" -ne 0 ]; then
+    ok "resolver fails closed on missing arguments, a missing graph file, and a non-array ids file"
   else
-    bad "resolver did not fail closed (rc_noargs=$rc_noargs rc_missing=$rc_missing)"
+    bad "resolver did not fail closed (rc_noargs=$rc_noargs rc_missing=$rc_missing rc_badids=$rc_badids)"
+  fi
+
+  # 28h. Regression: a graph missing .edges[] must fail fast (a named error),
+  #      never hang. A prior version of this resolver's --closure fixpoint
+  #      loop looped forever on this exact input: a failed jq call left
+  #      new_count empty, and comparing an empty string with -eq threw a
+  #      bash arithmetic error on every pass without ever breaking the loop
+  #      (the script runs under -uo pipefail, not -e). Bounded by `timeout`
+  #      so a regression here fails this gate instead of hanging verify.sh.
+  jq 'del(.edges)' "$GRAPH" > "$T/graph-no-edges.json"
+  timeout 5 "$RESOLVE" "$T/graph-no-edges.json" "$T/partial-scope.json" --closure >/dev/null 2>&1
+  local rc_noedges=$?
+  if [ "$rc_noedges" -ne 0 ] && [ "$rc_noedges" -ne 124 ]; then
+    ok "resolver fails fast (not hangs) on a graph missing .edges[] under --closure"
+  else
+    bad "resolver hung or did not fail closed on a graph missing .edges[] (rc=$rc_noedges, 124=timeout)"
+  fi
+
+  # 28i. Regression: a malformed-but-concept-prefixed target (no second
+  #      colon, e.g. "urn:mif:concept:noslug") must still appear in
+  #      boundaryReferences, classified "unresolvable" -- not silently
+  #      vanish. jq's capture() produces ZERO outputs (not null) on a
+  #      non-match, which previously dropped the whole map() element; fixed
+  #      by switching to scan()'s always-an-array semantics.
+  jq '.edges += [{"source":"urn:mif:concept:harness:kg-cookiecutter-0002","target":"urn:mif:concept:noslug","type":"supports","strength":0.5,"via":"relationship"}]' "$GRAPH" > "$T/graph-malformed-target.json"
+  got="$("$RESOLVE" "$T/graph-malformed-target.json" "$T/partial-scope.json" | jq -c '.boundaryReferences[] | select(.target=="urn:mif:concept:noslug")')"
+  if [ "$got" = '{"target":"urn:mif:concept:noslug","reason":"unresolvable"}' ]; then
+    ok "a malformed-but-concept-prefixed target is classified unresolvable, not silently dropped from boundaryReferences"
+  else
+    bad "malformed-target regression check failed: got '$got'"
+  fi
+
+  # 28j. Regression: a malformed FIRST element in the in-scope set must not
+  #      poison the topic-namespace inference for the rest of the set. A
+  #      prior version sampled only scope[0]; here scope[0] fails to match
+  #      the concept-id pattern, so the topic namespace must fall back to the
+  #      second (well-formed) element instead of "" -- a same-topic target
+  #      genuinely out of scope must still classify out-of-scope, not
+  #      cross-topic.
+  printf '%s\n' '["not-a-concept-id","urn:mif:concept:harness:kg-cookiecutter-0002"]' > "$T/scope-bad-first.json"
+  got="$("$RESOLVE" "$GRAPH" "$T/scope-bad-first.json" | jq -c '.boundaryReferences[] | select(.target=="urn:mif:concept:harness:kg-copier-0001")')"
+  if [ "$got" = '{"target":"urn:mif:concept:harness:kg-copier-0001","reason":"out-of-scope"}' ]; then
+    ok "a malformed first in-scope element does not poison topic-namespace inference for the rest of the set"
+  else
+    bad "bad-first-element regression check failed: got '$got'"
+  fi
+
+  # 28k. Regression: duplicate ids in the input in-scope set are deduplicated
+  #      in resourceIds even without --closure (the closure path's own
+  #      `unique` incidentally covered this before; the non-closure path did
+  #      not).
+  printf '%s\n' '["urn:mif:concept:harness:kg-cookiecutter-0002","urn:mif:concept:harness:kg-cookiecutter-0002"]' > "$T/scope-dupes.json"
+  got="$("$RESOLVE" "$GRAPH" "$T/scope-dupes.json" | jq -c '.resourceIds')"
+  if [ "$got" = '["urn:mif:concept:harness:kg-cookiecutter-0002"]' ]; then
+    ok "duplicate ids in the in-scope input are deduplicated in resourceIds, with or without --closure"
+  else
+    bad "dedup regression check failed: got '$got'"
   fi
 
   rm -rf "$T"

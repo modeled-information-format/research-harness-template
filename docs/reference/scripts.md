@@ -143,6 +143,7 @@ These are dev/build-time only; generated files are committed.
 | Script | What it does | Toolchain |
 | --- | --- | --- |
 | `scripts/mif-container-digest.sh` | The container digest engine (Story #312, ADR-0017 AD-2): `resource <file>` prints a `sha256:<64-hex>` digest over the file's raw bytes; `manifest [< digests]` reads resource digests from stdin, sorts them (`LC_ALL=C`, matching this repo's other determinism-critical sorts), and hashes the sorted list — order-independent, fail-closed on an unreadable file or a missing sha256 tool. | coreutils (`sha256sum` or `shasum`) |
+| `scripts/mif-container-resolve-scope.sh` | The export-scope resolver (Story #315, ADR-0017 AD-4, closure-first/marker-fallback): consumes `build-graph.sh`'s `knowledge-graph.json` and a JSON array of in-scope `urn:mif:concept:` ids; with `--closure`, transitively expands scope over relationship edges (never entity/mentions edges — entities aren't a packageable resource); prints `{resourceIds, boundaryReferences}`, classifying every excluded edge target `cross-topic`/`unresolvable`/`out-of-scope`, never a silent drop. | `jq` |
 
 ---
 

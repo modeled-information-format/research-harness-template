@@ -3,11 +3,17 @@
 # (Story #315, ADR-0017 AD-4: closure-first, marker-fallback).
 #
 # Consumes the knowledge graph scripts/build-graph.sh already produces
-# (nodes[]/edges[] with via: "relationship"|"entity" -- the same relationships[]
-# and entity-mention edges ADR-0017 describes) rather than re-walking a
+# (nodes[]/edges[] with via: "relationship"|"entity") rather than re-walking a
 # finding's relationships[]/entities[] by hand: reusing the existing graph
 # projection instead of inventing a second one, matching this repo's own
-# "extends" precedent (ADR-0012) for reuse over parallel mechanisms.
+# "extends" precedent (ADR-0012) for reuse over parallel mechanisms. The
+# graph's "entity" edges are the operationalization of ADR-0017's
+# "ontology-map.json edges" language: ontology-map.json itself carries no
+# target reference to walk (it is a per-finding type record, finding_id ->
+# resolved_ontology, not a finding-to-finding/entity edge), but it is exactly
+# what backs the entity typing behind each finding's entities[]/"mentions"
+# edge -- so walking both graph edge kinds satisfies AD-4's "walk both edge
+# sources" requirement without a second, redundant read of ontology-map.json.
 #
 # For every candidate finding already in scope, walks its outgoing edges (both
 # via kinds -- Task #316) and classifies each target:
@@ -27,7 +33,10 @@
 #     subset selector's initial match set).
 #
 # Prints a JSON object to stdout:
-#   {"resources": [<sorted, closure-expanded concept ids>],
+#   {"resourceIds": [<sorted, deduped, closure-expanded concept ids -- bare
+#                     ids, NOT schemas/mif-container.schema.json's resources[]
+#                     object shape; a caller materializes each id into a full
+#                     {mifType,path,ontologyType,digest} entry separately>],
 #    "boundaryReferences": [{"target": "...", "reason": "..."}]}
 set -uo pipefail
 
@@ -46,7 +55,26 @@ CLOSURE=0
 T="$(mktemp -d)"
 trap 'rm -rf "$T"' EXIT
 
-jq -c '.' "$IDS" > "$T/scope.json"
+# Read+validate the graph exactly once (not once per closure iteration, and
+# not three separate times as the first version of this script did) into a
+# compact temp copy every later jq call reads from. Fail closed here, loudly,
+# on a missing/malformed .nodes[]/.edges[] -- rather than that malformed shape
+# silently producing empty jq output deep inside the closure loop below, which
+# previously hung forever: a failed jq call produced an empty $new_count, and
+# comparing an empty string with -eq threw bash's "integer expression
+# expected" on every single pass without ever breaking the loop, since the
+# script runs under -uo pipefail, not -e.
+jq -e '(.nodes | type == "array") and (.edges | type == "array")' "$GRAPH" > /dev/null 2>&1 || {
+  echo "mif-container-resolve-scope: $GRAPH is not a valid graph (.nodes[]/.edges[] required)" >&2
+  exit 2
+}
+jq -c '.' "$GRAPH" > "$T/graph.json"
+
+jq -e 'type == "array"' "$IDS" > /dev/null 2>&1 || {
+  echo "mif-container-resolve-scope: $IDS is not a JSON array" >&2
+  exit 2
+}
+jq -c 'unique' "$IDS" > "$T/scope.json"
 
 if [ "$CLOSURE" -eq 1 ]; then
   # Fixpoint BFS: repeatedly add any concept-kind edge target reachable from a
@@ -56,18 +84,18 @@ if [ "$CLOSURE" -eq 1 ]; then
   # entity always falls through to boundary-marking regardless of --closure.
   prev_count=0
   while :; do
-    jq -c --slurpfile scope "$T/scope.json" '
-      ($scope[0]) as $s
-      | .edges
-      | map(select(.via == "relationship" and (.source as $x | $s | index($x)) and ((.target as $x | $s | index($x)) | not)))
-      | map(.target)
-    ' "$GRAPH" > "$T/new-targets.json"
-    jq -sc '
-      .[0] as $graph
-      | .[1] as $scope
-      | .[2] as $new
-      | ($scope + ($new | map(select(. as $t | $graph.nodes | any(.id == $t and .kind == "concept"))))) | unique
-    ' <(jq -c '.' "$GRAPH") "$T/scope.json" "$T/new-targets.json" > "$T/scope-next.json"
+    if ! jq -c -n --slurpfile graph "$T/graph.json" --slurpfile scope "$T/scope.json" '
+      $graph[0] as $g | $scope[0] as $s
+      | ($s + (
+          $g.edges
+          | map(select(.via == "relationship" and (.source as $x | $s | index($x)) and ((.target as $x | $s | index($x)) | not)))
+          | map(.target)
+          | map(select(. as $t | $g.nodes | any(.id == $t and .kind == "concept")))
+        )) | unique
+    ' > "$T/scope-next.json"; then
+      echo "mif-container-resolve-scope: closure expansion failed on malformed graph/scope data" >&2
+      exit 2
+    fi
     new_count="$(jq 'length' "$T/scope-next.json")"
     mv "$T/scope-next.json" "$T/scope.json"
     [ "$new_count" -eq "$prev_count" ] && break
@@ -75,32 +103,40 @@ if [ "$CLOSURE" -eq 1 ]; then
   done
 fi
 
-jq -sc '
-  .[0] as $graph
-  | .[1] as $scope
-  | ($scope[0] // "" | capture("^urn:mif:concept:(?<ns>[^:]+):") .ns // "") as $topic_ns
+jq -c -n --slurpfile graph "$T/graph.json" --slurpfile scope "$T/scope.json" '
+  $graph[0] as $g | $scope[0] as $s
+  # Topic namespace: the first WELL-FORMED concept id anywhere in scope, not
+  # just the first array element -- a single malformed leading element
+  # previously poisoned every later same-topic classification to
+  # "cross-topic" instead of "out-of-scope" (an empty-string sentinel from an
+  # unmatched first element compared unequal to every real namespace). null
+  # (not "") when no in-scope id is a well-formed concept id, so the
+  # cross-topic branch below simply cannot fire on a false-positive mismatch.
+  | ([$s[] | [scan("^urn:mif:concept:([^:]+):")] | if length > 0 then .[0][0] else empty end] | first // null) as $topic_ns
   | {
-      resources: ($scope | sort),
+      resourceIds: ($s | unique | sort),
       boundaryReferences: (
-        $graph.edges
-        | map(select((.source as $x | $scope | index($x)) and ((.target as $x | $scope | index($x)) | not)))
+        $g.edges
+        | map(select((.source as $x | $s | index($x)) and ((.target as $x | $s | index($x)) | not)))
         | map(.target)
         | unique
         | map({
             target: .,
             reason: (
               . as $t
-              # Namespace check first, before node-presence: build-graph.sh only
-              # ever sees one topic worth of findings, so a genuine cross-topic
-              # concept id can NEVER appear as a node in this graph -- checking
-              # presence first would misclassify every cross-topic reference as
-              # "unresolvable" instead, since it is structurally always absent.
-              | if ($t | test("^urn:mif:concept:")) and (($t | capture("^urn:mif:concept:(?<ns>[^:]+):") .ns) != $topic_ns) then "cross-topic"
-                elif ($graph.nodes | any(.id == $t) | not) then "unresolvable"
+              # scan(), not capture(): capture() produces ZERO jq outputs (not
+              # null) when the pattern does not match, which silently vanishes
+              # the whole map() element for any concept-PREFIXED-but-malformed
+              # id (e.g. "urn:mif:concept:noslug", no second colon) -- exactly
+              # the silent-drop this script exists to prevent (Task #317).
+              # scan() always yields a definite (possibly-empty) array.
+              | ([$t | scan("^urn:mif:concept:([^:]+):")] | if length > 0 then .[0][0] else null end) as $t_ns
+              | if ($t_ns != null) and ($t_ns != $topic_ns) then "cross-topic"
+                elif ($g.nodes | any(.id == $t) | not) then "unresolvable"
                 else "out-of-scope"
                 end
             )
           })
       )
     }
-' <(jq -c '.' "$GRAPH") "$T/scope.json"
+'
