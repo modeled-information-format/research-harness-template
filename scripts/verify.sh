@@ -975,6 +975,22 @@ gate_m11() {
     bad "write-finding.sh collision handling broken (refused=$refused unchanged=$unchanged staging-clean=$clean)"
   fi
 
+  # 11f2b (PR #365 review). `ln src dest` does NOT fail with EEXIST when dest
+  # already exists as a DIRECTORY -- it silently succeeds by linking INSIDE
+  # that directory instead, which would defeat collision detection entirely
+  # without ever reaching the elif [ -e "$DEST" ] branch. If DEST is already a
+  # directory, write-finding.sh must refuse before ever attempting ln, and
+  # that directory must survive untouched (no file linked inside it).
+  mkdir -p "$T/wf-dircollision/finding-dir.json"
+  local dir_refused=0 dir_untouched=0
+  scripts/write-finding.sh "$RD/findings/finding-a.json" "$T/wf-dircollision" "finding-dir.json" >/dev/null 2>&1 || dir_refused=1
+  [ -d "$T/wf-dircollision/finding-dir.json" ] && [ -z "$(find "$T/wf-dircollision/finding-dir.json" -mindepth 1 2>/dev/null)" ] && dir_untouched=1
+  if [ "$dir_refused" = 1 ] && [ "$dir_untouched" = 1 ]; then
+    ok "write-finding.sh refuses when dest-name already exists as a directory (ln would link inside it, not fail)"
+  else
+    bad "write-finding.sh directory-collision handling broken (refused=$dir_refused untouched=$dir_untouched)"
+  fi
+
   # 11f3 (issue #360, #357-review parity). write-finding.sh's ln-based publish
   # must distinguish "DEST already exists" (a real collision, tested above)
   # from any OTHER ln failure (permissions, cross-filesystem, ...) -- #357's

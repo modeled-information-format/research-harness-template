@@ -62,6 +62,21 @@ fi
 # "lands in findings/ only after full-schema validation" and nothing lands
 # on any failure (docs/reference/contracts.md).
 DEST="$FDIR/$NAME"
+# ln into an EXISTING DIRECTORY does not fail with EEXIST -- it silently
+# succeeds by linking INSIDE that directory (as "$DEST/$(basename "$STAGE")",
+# i.e. nested one level deeper than intended), which would defeat the whole
+# collision-detection design without ever hitting the elif branch below. Guard
+# against it explicitly before attempting the link; this is the one pre-check
+# taken before the atomic ln (rather than relying on ln's own failure) because
+# a directory unexpectedly occupying DEST is not the concurrent-writer race
+# this design protects against -- it is refused the same way any other
+# unwritable-destination collision is.
+if [ -d "$DEST" ]; then
+  rm -f "$STAGE"
+  rmdir "$STAGE_DIR" 2>/dev/null
+  echo "write-finding: $NAME already exists as a directory at $DEST — refused (ln would link inside it rather than fail); nothing written" >&2
+  exit 1
+fi
 if ln "$STAGE" "$DEST" 2>/dev/null; then
   rm -f "$STAGE"
 elif [ -e "$DEST" ]; then
@@ -71,7 +86,7 @@ elif [ -e "$DEST" ]; then
   exit 1
 else
   rmdir "$STAGE_DIR" 2>/dev/null
-  echo "write-finding: validated but failed to move into place: $DEST (ln failed for a reason other than an existing destination)" >&2
+  echo "write-finding: validated but failed to publish: $DEST (ln failed for a reason other than an existing destination)" >&2
   exit 1
 fi
 rmdir "$STAGE_DIR" 2>/dev/null
