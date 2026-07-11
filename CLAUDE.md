@@ -181,7 +181,23 @@ must merge cleanly.
   CHANGELOG
   follows Keep a Changelog: a new `## [X.Y.Z] - YYYY-MM-DD` header is inserted under
   `## [Unreleased]` (the script does this); leave prior dated sections and CHANGELOG
-  history lines alone. Then author the new section's Added/Changed bullets by hand.
+  history lines alone **except for the footer-compare-link reconciliation the next
+  bullet describes** — that is the one sanctioned exception to "leave history alone,"
+  scoped exactly to stripping brackets from/adding links for never-tagged sections.
+  Then author the new section's Added/Changed bullets by hand.
+- **A footer compare-link is hand-authored and only added once a real git tag exists
+  for that version** (#393). The engine's `bump-version` inserts a bracketed dated
+  header for every pointer bump, but under ADR-0010's change-driven model an
+  intermediate pointer value can get folded into a later release without ever
+  getting its own Release/tag — do not add a footer `[X.Y.Z]: .../compare/...` link
+  for one of those. When the *next* version that genuinely does get tagged is
+  released, add its footer link comparing against the **previous actual tag** (`git
+  tag --list 'v*' | sort -V`), never against the immediately preceding dated
+  section's version string — and strip the brackets from any of that gap's
+  never-tagged section headings (`## X.Y.Z - DATE`, no `[]`) so they don't read as
+  dead reference links. `markdownlint`'s MD052 will catch a bracketed heading with
+  no matching footer definition, so this is a linted invariant, not just a
+  convention.
 - **Releases are GitHub-Release-driven, not bare-tag.** `release.yml` triggers on
   `release: published` (+ `workflow_dispatch`), so a published Release named
   `vX.Y.Z` is what fires SLSA attestation — `git push --tags` alone does not.

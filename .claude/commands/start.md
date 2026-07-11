@@ -247,6 +247,23 @@ sometimes longer. The live signal of healthy progress is the **growing
   findings count is **static AND** no new `research-progress.md` phase entry
   appears for an extended window (default ~10 min) — then `/resume`. Before that
   threshold, a quiet session is a working session; leave it alone.
+- **`TaskOutput`'s `status: completed` on the orchestrator's own `Agent` call is
+  NOT sufficient evidence the session died — do not `/resume` on that signal
+  alone.** This reproduced for real (issue #392): a supervisor checked
+  `TaskOutput(block: false)` on a background orchestrator, saw `status:
+  completed` paired with a stale-looking final message, concluded the
+  orchestrator had abandoned its work, and `/resume`d — spawning a **second**,
+  genuinely concurrent orchestrator against the same `REPORTS_DIR` while the
+  first was still alive and working. Only the two disk-state signals above
+  (static finding count AND no new progress-log entry, over the same window)
+  are authoritative; a `completed` status from `TaskOutput` can be reported
+  for a `local_agent` task that is, in fact, still actively producing output
+  underneath. If you must recover a topic whose lock `run-lock.sh acquire`
+  reports as held, do NOT reach straight for `scripts/run-lock.sh steal` on
+  the strength of an agent-status check — `steal` itself now refuses (unless
+  `FORCE=1`) when `findings/` or `research-progress.md` shows write activity
+  in the last couple of minutes, precisely to stop this scenario from racing
+  a live writer.
 
 ## Reconcile the topic README
 

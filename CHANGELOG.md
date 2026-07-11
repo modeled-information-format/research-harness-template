@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.1] - 2026-07-11
+
+### Fixed
+
+- `scripts/run-lock.sh steal` now refuses (exit 3, unless `FORCE=1`) when a
+  topic's `findings/` or `research-progress.md` shows write activity within
+  the last ~2 minutes, closing the race where a misread agent-liveness signal
+  (e.g. `TaskOutput` reporting `completed` for a still-working orchestrator)
+  could force a lock steal against a genuinely-alive writer (#392).
+- `start.md`/`resume.md`'s "Monitoring a running session" guidance now
+  explicitly warns that `TaskOutput`'s `completed` status on the
+  orchestrator's own `Agent` call is not sufficient evidence a session died —
+  only the disk-state signals (static finding count and no new progress-log
+  entry) are authoritative (#392).
+- `orchestrator.md`'s Phase 1/Phase 2 background-spawn poll loops are worded
+  more forcefully, with an explicit self-check, so the model can't substitute
+  a "wait for completion notification" narration for the required synchronous
+  `Bash` poll loop (#392).
+- `CHANGELOG.md`'s footer compare-links now only reference tags that were
+  actually cut, comparing each release against the previous *real* tag
+  instead of the adjacent dated section's version string; backfill-corrected
+  the ~9 dated sections that were folded into a later release without ever
+  getting their own tag (#393).
+
 ## [0.12.0] - 2026-07-11
 
 ### Added
@@ -57,7 +81,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   breaking `npm run build` outright. The `4.2.0` pin already remediates the
   CVE; staying on it is not a security regression.
 
-## [0.11.2] - 2026-07-09
+## 0.11.2 - 2026-07-09
 
 ### Fixed
 
@@ -68,7 +92,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   so every full research session's Phase 4 step failed `ajv validate` and
   left `harness.config.json` in an invalid state after a successful run.
 
-## [0.11.1] - 2026-07-07
+## 0.11.1 - 2026-07-07
 
 ### Added
 
@@ -117,7 +141,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **CI**: workflow steps that read public release artifacts now mint a
   short-lived App token instead of relying on the ambient `GITHUB_TOKEN`.
 
-## [0.10.1] - 2026-07-06
+## 0.10.1 - 2026-07-06
 
 ### Added
 
@@ -173,7 +197,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   A missing or too-old engine fails loudly with the remedy; there is no
   silent fallback.
 
-## [0.8.4] - 2026-07-02
+## 0.8.4 - 2026-07-02
 
 ### Fixed
 
@@ -240,7 +264,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `scripts/verify.sh` gate_m23's reports-landing check updated to match (asserts
   the base-relative `link: /reports/`, not the old hardcoded literal).
 
-## [0.8.2] - 2026-07-01
+## 0.8.2 - 2026-07-01
 
 > This entry collapses five version-bump commits (0.9.0, 0.10.0, 0.11.0,
 > 0.11.1, 0.11.2) that landed on `main` without ever being cut as a GitHub
@@ -373,7 +397,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   as success — the render already landed; the script's assertions verify it — and
   still retries the pre-apply local-clone hardlink race.
 
-## [0.7.1] - 2026-06-30
+## 0.7.1 - 2026-06-30
 
 ### Added
 
@@ -397,7 +421,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   resolver/pack-enable matrix. Docs reconciled (ADR-0002 audit, ontology-conformance,
   contracts reference, COMPLETION-CRITERIA, `ontology-manager` skill).
 
-## [0.7.0] - 2026-06-30
+## 0.7.0 - 2026-06-30
 
 ### Added
 
@@ -414,7 +438,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   bundled domain packs to a gitignored on-demand cache (with corpus re-enrichment)
   is a staged follow-up once the registry is served.
 
-## [0.6.1] - 2026-06-30
+## 0.6.1 - 2026-06-30
 
 ### Fixed
 
@@ -424,7 +448,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   partial checkout or any context without the harness hook scripts no-ops the hook
   instead of failing the tool call.
 
-## [0.6.0] - 2026-06-29
+## 0.6.0 - 2026-06-29
 
 ### Added
 
@@ -818,21 +842,13 @@ First release of the domain-general research harness template.
   marketplace.
 
 [Unreleased]: https://github.com/modeled-information-format/research-harness-template/compare/v0.12.0...HEAD
-[0.12.0]: https://github.com/modeled-information-format/research-harness-template/compare/v0.11.2...v0.12.0
-[0.11.2]: https://github.com/modeled-information-format/research-harness-template/compare/v0.11.1...v0.11.2
-[0.11.1]: https://github.com/modeled-information-format/research-harness-template/compare/v0.11.0...v0.11.1
-[0.11.0]: https://github.com/modeled-information-format/research-harness-template/compare/v0.10.1...v0.11.0
-[0.10.1]: https://github.com/modeled-information-format/research-harness-template/compare/v0.10.0...v0.10.1
+[0.12.0]: https://github.com/modeled-information-format/research-harness-template/compare/v0.11.0...v0.12.0
+[0.11.0]: https://github.com/modeled-information-format/research-harness-template/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/modeled-information-format/research-harness-template/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/modeled-information-format/research-harness-template/compare/v0.8.3...v0.9.0
-[0.8.3]: https://github.com/modeled-information-format/research-harness-template/compare/v0.8.2...v0.8.3
-[0.8.2]: https://github.com/modeled-information-format/research-harness-template/compare/v0.8.1...v0.8.2
+[0.8.3]: https://github.com/modeled-information-format/research-harness-template/compare/v0.8.1...v0.8.3
 [0.8.1]: https://github.com/modeled-information-format/research-harness-template/compare/v0.8.0...v0.8.1
-[0.8.0]: https://github.com/modeled-information-format/research-harness-template/compare/v0.7.1...v0.8.0
-[0.7.1]: https://github.com/modeled-information-format/research-harness-template/compare/v0.7.0...v0.7.1
-[0.7.0]: https://github.com/modeled-information-format/research-harness-template/compare/v0.6.1...v0.7.0
-[0.6.1]: https://github.com/modeled-information-format/research-harness-template/compare/v0.6.0...v0.6.1
-[0.6.0]: https://github.com/modeled-information-format/research-harness-template/compare/v0.5.0...v0.6.0
+[0.8.0]: https://github.com/modeled-information-format/research-harness-template/compare/v0.5.0...v0.8.0
 [0.5.0]: https://github.com/modeled-information-format/research-harness-template/compare/v0.4.3...v0.5.0
 [0.4.3]: https://github.com/modeled-information-format/research-harness-template/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/modeled-information-format/research-harness-template/compare/v0.4.1...v0.4.2
@@ -842,3 +858,14 @@ First release of the domain-general research harness template.
 [0.2.0]: https://github.com/modeled-information-format/research-harness-template/compare/v0.1.2...v0.2.0
 [0.1.2]: https://github.com/modeled-information-format/research-harness-template/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/modeled-information-format/research-harness-template/releases/tag/v0.1.1
+
+<!--
+Dated sections above with no bracketed heading (0.6.0, 0.6.1, 0.7.0, 0.7.1,
+0.8.2, 0.8.4, 0.10.1, 0.11.1, 0.11.2) moved the `harness.config.json` version
+pointer per ADR-0010's change-driven model but were folded into a later
+release before a GitHub Release/tag was ever published for them, so they omit
+a footer compare-link — nothing real exists to compare against. Convention
+(#393): a footer compare-link is only emitted once a real Release/tag exists
+for a dated section, and it compares against the previous *actual* tag, not
+the adjacent dated section's version string.
+-->

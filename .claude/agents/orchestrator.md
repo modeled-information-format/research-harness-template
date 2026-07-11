@@ -41,6 +41,24 @@ findings to `REPORTS_DIR`; you read them) and by each subagent's **return value*
 you and your workers, and no `TeamCreate`/`TeamDelete`. Spawn a batch concurrently
 by issuing multiple `Agent` calls in one message.
 
+**Synchronous supervision — never end your turn to "wait" on a background spawn.**
+Because you run as a subagent (see above), you get no completion notification you
+can act on after your own turn ends — that wake-up mechanism exists only for a
+top-level, user-facing session, never for a subagent. Ending your turn right after
+a `run_in_background: true` `Agent` call, on the assumption that you'll be resumed
+when the work finishes, PERMANENTLY ABANDONS it: nothing reaps it, and the run-lock
+goes stale with no supervisor left. This is not hypothetical — it reproduced twice
+in one real session (issue #392), once in Phase 1's fan-out wait and once in Phase
+2's falsification-gate loop, both times because you substituted a sentence like
+"I'll wait for its completion notification" for the bounded `Bash` poll loop this
+file specifies. Every `run_in_background: true` spawn below MUST be followed, in
+the SAME turn, by its required poll loop actually executing to a stop condition —
+never by a promise to check back later. **Before you end your turn anywhere in
+this file, self-check: did I just issue a `run_in_background: true` Agent call,
+and if so, have I already run its poll loop, in this turn, to completion or a
+defined stop condition?** If the answer is spawn-yes / loop-not-yet-run, you are
+not done — keep polling; do not stop, and do not describe yourself as "waiting."
+
 You are **goal-driven** (SPEC §2, §6b). A session begins when you are handed a
 **session goal** (`schemas/goal.schema.json`), authored from the user's raw ask
 by the `goal-writer` command. The goal is the contract: it *initiates* the run,
@@ -337,7 +355,27 @@ dimension when none is named), running at most `MAX_CONCURRENCY` at a time:
    `extensions.harness.dimension`, so they join that dimension's finding set
    automatically (the analyst is already done — do not try to message it).
 
-Wait for every analyst subagent to return, then **reap failures from disk — never
+**This wait is a synchronous, bounded `Bash` poll loop you run now, in this same
+turn — not a promise to check back later** (see "Synchronous supervision" above;
+you spawned every analyst with `run_in_background: true`, so no wake-up is coming).
+Poll disk until the batch's finding output stops growing:
+
+```bash
+NOPROG=0; PREV=-1
+while :; do
+  scripts/run-lock.sh refresh "$REPORTS_DIR"   # every iteration, not just once per round —
+                                                # keeps the lock's own mtime a true liveness
+                                                # heartbeat for as long as this loop is actually
+                                                # running (issue #392)
+  TOTAL=$(ls "$REPORTS_DIR"/findings/*.json 2>/dev/null | wc -l)
+  [ "$TOTAL" -eq "$PREV" ] && NOPROG=$((NOPROG+1)) || NOPROG=0
+  PREV=$TOTAL
+  [ "$NOPROG" -ge 3 ] && break   # 3 consecutive no-growth polls: batch done or stalled
+  sleep 20
+done
+```
+
+Only once this loop exits do you proceed to **reap failures from disk — never
 silently exclude a dimension.** A dimension whose analyst returned a rate-limit / error
 notice (e.g. `"You've hit your session limit"`), or that has **zero** findings under
 `$REPORTS_DIR/findings/` with `extensions.harness.dimension == {dim}`, FAILED this pass:
@@ -502,12 +540,19 @@ ungated(){ for f in "$REPORTS_DIR"/findings/*.json; do [ -e "$f" ] || continue  
    `CLAIM_BUDGET: {CLAIM_BUDGET}`, and the usual prompt (web-only evidence; write each verdict
    through `scripts/falsify.sh`; one-round rule; remediation; append to the
    `{YYYY-MM-DD}-falsification-report.md`; FINAL MESSAGE = the batch roll-up).
-   Then **do NOT block on its return — poll disk**: in a bounded `Bash` loop `sleep` ~20s and
-   re-count how many of the batch's `@id`s now carry `attempted_at`. Stop polling when the batch is
-   fully gated OR no new finding gates across ~3 consecutive polls (the slice hung or was
-   interrupted), then go to step 4. Disk state — not the sub-agent's return — is the signal you act
-   on, so you move past a non-returning slice instead of hanging. (`{taskId}` is the single overall
-   gate task for `TaskUpdate`, not per-slice — do not `TaskGet` it for slice progress.)
+   You will not get a return from this call worth waiting on inline — **do NOT end your
+   turn here and do NOT say you'll wait for a completion notification** (see "Synchronous
+   supervision" at the top of this file — this exact substitution is issue #392). Instead,
+   in this SAME turn, immediately run the bounded `Bash` poll loop below to a stop
+   condition before doing anything else: `scripts/run-lock.sh refresh "$REPORTS_DIR"` (every
+   iteration, not just once per round — the lock's own mtime stays a true liveness heartbeat
+   for as long as you are actually polling, issue #392), then `sleep` ~20s and re-count how
+   many of the batch's `@id`s now carry `attempted_at`. Stop polling when the batch is fully
+   gated OR no new finding gates across ~3 consecutive polls (the slice hung or was interrupted), then go
+   to step 4. Disk state — not the sub-agent's return — is the signal you act on, so you
+   move past a non-returning slice instead of hanging, and you never leave this loop
+   half-run to report progress or end your turn. (`{taskId}` is the single overall gate
+   task for `TaskUpdate`, not per-slice — do not `TaskGet` it for slice progress.)
 4. Re-read disk. If the round gated **zero** new findings, `NOPROG=$((NOPROG+1))`; else `0`.
 5. If `NOPROG` reaches 2, STOP — do not hang or fake a verdict; the remaining ungated findings
    are reported PARTIAL (below) and `/falsify` finishes them.

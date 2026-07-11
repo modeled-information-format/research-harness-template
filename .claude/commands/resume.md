@@ -151,6 +151,16 @@ watch it cheaply by file count / mtime, never by reading agent transcripts.
 - Treat the session as stalled only if the findings count is **static AND** no
   new phase entry appears for an extended window (default ~10 min) — then re-run
   `/resume`. Do not send premature nudges before that threshold.
+- **`TaskOutput`'s `status: completed` on the orchestrator's own `Agent` call is
+  NOT sufficient evidence the session died.** This reproduced for real (issue
+  #392): a supervisor read `completed` (paired with a stale-looking final
+  message) as proof of death and re-ran `/resume`, spawning a **second**,
+  genuinely concurrent orchestrator against the same `REPORTS_DIR` while the
+  first was still alive — a live-lock race, not a clean handoff. Only the two
+  disk-state signals above are authoritative. Do not reach for
+  `scripts/run-lock.sh steal` on the strength of an agent-status check alone;
+  `steal` itself now refuses (unless `FORCE=1`) when `findings/` or
+  `research-progress.md` shows write activity in the last couple of minutes.
 
 ## Reconcile the topic README
 
