@@ -31,17 +31,29 @@
 #   run-lock.sh refresh <reports_dir>           # touch a HELD lock; no-op if it is already gone (never resurrects)
 #   run-lock.sh release <reports_dir>           # drop the lock
 #   run-lock.sh steal   <reports_dir> [label]   # force re-acquire (recovery; e.g. operator-driven /resume)
+#                                                # refuses (exit 3) if findings/ or research-progress.md
+#                                                # were written within RUN_LOCK_STEAL_GUARD_MIN (default 10,
+#                                                # matching start.md/resume.md's own "quiet is normal up to
+#                                                # ~10m" guidance) — override with FORCE=1 once you've
+#                                                # independently confirmed via disk state that the owner is
+#                                                # dead (issue #392)
 set -uo pipefail
-STALE_MIN="${RUN_LOCK_STALE_MIN:-240}"
-# Validate: an empty/non-numeric/zero value would make `find -mmin` error and fresh()
-# mis-judge a LIVE lock as stale (then steal it — the corruption this prevents). Fall
-# back to the safe default rather than fail open. The case pattern alone only rejects
-# the exact literal "0" -- "00"/"0000" are all-digit and slip through, then
-# `find -mmin -00` matches nothing (a file can't be modified "<0 minutes ago"),
-# silently defeating the same fail-safe intent. The arithmetic check catches every
-# all-digit zero, not just the single-character form (issue #382 review).
-case "$STALE_MIN" in ''|*[!0-9]*) STALE_MIN=240 ;; esac
-[ "$STALE_MIN" -eq 0 ] 2>/dev/null && STALE_MIN=240
+
+# Sanitize a minutes value: an empty/non-numeric/zero value would make `find -mmin`
+# error and a freshness check mis-judge a LIVE target as stale (then act on it — the
+# corruption this prevents). Fall back to the given default rather than fail open. The
+# case pattern alone only rejects the exact literal "0" -- "00"/"0000" are all-digit and
+# slip through, then `find -mmin -00` matches nothing (a file can't be modified "<0
+# minutes ago"), silently defeating the same fail-safe intent. The arithmetic check
+# catches every all-digit zero, not just the single-character form (issue #382 review).
+sanitize_minutes() {
+  local val="$1" default="$2"
+  case "$val" in ''|*[!0-9]*) val="$default" ;; esac
+  [ "$val" -eq 0 ] 2>/dev/null && val="$default"
+  printf '%s' "$val"
+}
+STALE_MIN="$(sanitize_minutes "${RUN_LOCK_STALE_MIN:-240}" 240)"
+GUARD_MIN="$(sanitize_minutes "${RUN_LOCK_STEAL_GUARD_MIN:-10}" 10)"
 
 CMD="${1:?usage: run-lock.sh acquire|refresh|release|steal <reports_dir> [label]}"
 DIR="${2:?usage: run-lock.sh <cmd> <reports_dir> [label]}"
@@ -54,6 +66,24 @@ fresh() {
   [ -d "$LOCK" ] || return 1
   local hit
   hit=$(find "$LOCK" -maxdepth 0 -mmin "-$STALE_MIN" 2>/dev/null) || return 0
+  [ -n "$hit" ]
+}
+# A PATH shows recent activity if it, or (for a directory) anything directly inside
+# it, has an mtime within the guard window. `-maxdepth 1` checks both the directory's
+# OWN mtime (catches a file being created/renamed/deleted — e.g. falsify.sh's documented
+# temp+mv verdict write, which IS a rename and so bumps it) AND every individual file's
+# own mtime one level down (catches an in-place content-only write to an EXISTING file,
+# which does NOT bump the parent directory's mtime — a plain `> existing_file` truncate
+# leaves the directory entry itself untouched). Checking the directory's mtime alone
+# would miss that second case and let `steal` race a writer doing in-place updates.
+# `-maxdepth 1` bounds this to one level (findings/ is a flat directory of *.json per
+# convention), not an unbounded recursive walk. Fail SAFE like `fresh()`: if `find`
+# errors, treat it as recent (return 0) so `steal` refuses rather than racing a writer
+# it couldn't inspect.
+recent_activity() {
+  [ -e "$1" ] || return 1
+  local hit
+  hit=$(find "$1" -maxdepth 1 -mmin "-$GUARD_MIN" 2>/dev/null) || return 0
   [ -n "$hit" ]
 }
 write_owner() { printf '%s\n' "$LABEL" > "$LOCK/owner" 2>/dev/null || true; }
@@ -95,10 +125,29 @@ case "$CMD" in
     exit 0
     ;;
   steal)
+    # Guard against a steal driven by a misread liveness signal rather than a
+    # genuinely dead owner (issue #392: a supervisor read an orchestrator's
+    # `TaskOutput(block: false)` status of "completed" as proof of death while
+    # it was, in fact, still actively working — then stole its lock, producing
+    # two concurrent writers on one topic's findings/). The lock's own mtime is
+    # NOT a reliable "still alive right now" signal here: it only refreshes at
+    # phase boundaries (which can be many minutes apart), so a live run can look
+    # lock-stale-adjacent between refreshes. Recent writes under findings/ or to
+    # research-progress.md are a much tighter, independent signal of real
+    # activity — refuse the steal if either was touched within the guard
+    # window, unless explicitly forced. GUARD_MIN and its sanitization are set once,
+    # above, alongside STALE_MIN.
+    if [ -z "${FORCE:-}" ]; then
+      if recent_activity "$DIR/findings" || recent_activity "$DIR/research-progress.md"; then
+        echo "run-lock: REFUSED — $DIR shows write activity within the last ${GUARD_MIN}m, which looks ALIVE regardless of the lock's own age. Forcing a steal here would race a genuinely-live writer. An agent-status signal (e.g. TaskOutput reporting \"completed\") is NOT sufficient evidence the owner is dead — confirm via disk state instead: the finding count must be STATIC and no new research-progress.md phase entry must appear for the SAME window before you override. To proceed anyway: FORCE=1 scripts/run-lock.sh steal '$DIR'." >&2
+        exit 3
+      fi
+    fi
     # Forced recovery. Verify each step — if we cannot (re)create the lock the topic is
     # left UNLOCKED, so fail non-zero rather than claim success and let callers proceed.
+    # (mkdir alone already stamps a current mtime; no extra touch needed.)
     rm -rf "$LOCK" 2>/dev/null
-    if mkdir "$LOCK" 2>/dev/null && touch "$LOCK" 2>/dev/null; then
+    if mkdir "$LOCK" 2>/dev/null; then
       write_owner
       echo "run-lock: stole lock on $DIR (forced)" >&2
       exit 0

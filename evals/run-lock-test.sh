@@ -122,6 +122,82 @@ else
 fi
 "$LOCK" release "$D" 2>/dev/null
 
+# 10. Regression test for #392's corrected root cause: a steal against a topic
+#     with WRITE ACTIVITY inside the guard window (a findings/ file just
+#     written, simulating a genuinely-alive owner) is REFUSED without FORCE,
+#     and the lock is left untouched -- proving a misread liveness signal
+#     (e.g. a stale-looking TaskOutput message) can't alone force a steal past
+#     a live writer. FORCE=1 still overrides for a confirmed-dead recovery.
+"$LOCK" release "$D" 2>/dev/null
+"$LOCK" acquire "$D" "alive-owner" >/dev/null 2>&1
+mkdir -p "$D/findings"
+echo '{}' > "$D/findings/f1.json"
+"$LOCK" steal "$D" "operator" >/dev/null 2>&1; rc=$?
+if [ "$rc" -eq 3 ] && [ -d "$D/.run-lock" ]; then
+  note "steal refused (rc=3) against recent findings/ activity, lock left intact"
+else
+  note "FAIL: steal against recent write activity was not refused (rc=$rc, lock present=$([ -d "$D/.run-lock" ] && echo y || echo n))"; fail=1
+fi
+if FORCE=1 "$LOCK" steal "$D" "operator" 2>/dev/null && [ -d "$D/.run-lock" ]; then
+  note "FORCE=1 still overrides the guard for a confirmed-dead recovery"
+else
+  note "FAIL: FORCE=1 did not override the write-activity guard"; fail=1
+fi
+"$LOCK" release "$D" 2>/dev/null
+
+# 11. Regression test (Copilot review, PR #398): an IN-PLACE update to an
+#     EXISTING finding file (content overwritten via a plain truncate, same
+#     path, no rename) must still count as activity -- only the file's own
+#     mtime changes in this case, not the findings/ directory's mtime, so a
+#     directory-mtime-only check would miss it. Backdate the directory itself
+#     to look old, then touch only the existing file in place.
+"$LOCK" release "$D" 2>/dev/null
+"$LOCK" acquire "$D" "alive-owner" >/dev/null 2>&1
+mkdir -p "$D/findings"
+echo '{}' > "$D/findings/f1.json"
+touch -t 202001010000 "$D/findings"   # directory itself looks old/stale
+printf '{"v":2}' > "$D/findings/f1.json"   # in-place rewrite of the EXISTING file, no rename
+"$LOCK" steal "$D" "operator" >/dev/null 2>&1; rc=$?
+if [ "$rc" -eq 3 ] && [ -d "$D/.run-lock" ]; then
+  note "steal refused (rc=3) against an in-place file update, even with an old directory mtime"
+else
+  note "FAIL: an in-place existing-file update was not detected as activity (rc=$rc) -- directory-mtime-only check regression"; fail=1
+fi
+"$LOCK" release "$D" 2>/dev/null
+
+# 12. A steal against a topic with NO recent write activity (the ordinary
+#     crashed-run recovery case) proceeds without needing FORCE.
+rm -rf "$D/findings"
+"$LOCK" acquire "$D" "stale-owner" >/dev/null 2>&1
+if "$LOCK" steal "$D" "operator" 2>/dev/null && [ -d "$D/.run-lock" ]; then
+  note "steal with no recent write activity proceeds without FORCE"
+else
+  note "FAIL: steal was refused despite no recent write activity"; fail=1
+fi
+"$LOCK" release "$D" 2>/dev/null
+
+# 13. The steal guard fails SAFE (refuses) if it cannot inspect activity at all,
+#     matching fresh()'s existing fail-safe convention -- an unreadable findings/
+#     dir must not be silently treated as "no activity, safe to steal". Skipped
+#     when running as root, since root bypasses directory permission bits and
+#     the simulated unreadable-directory condition can't be produced.
+if [ "$(id -u)" -ne 0 ]; then
+  "$LOCK" acquire "$D" "alive-owner" >/dev/null 2>&1
+  mkdir -p "$D/findings"
+  echo '{}' > "$D/findings/f1.json"
+  chmod 000 "$D/findings"
+  "$LOCK" steal "$D" "operator" >/dev/null 2>&1; rc=$?
+  chmod 755 "$D/findings"
+  if [ "$rc" -eq 3 ] && [ -d "$D/.run-lock" ]; then
+    note "steal fails SAFE (refused) when findings/ can't be inspected, not treated as no-activity"
+  else
+    note "FAIL: steal against an uninspectable findings/ was not refused (rc=$rc) -- fails OPEN, not safe"; fail=1
+  fi
+  "$LOCK" release "$D" 2>/dev/null
+else
+  note "skipped: fail-safe-on-uninspectable-dir case (running as root, permission bits bypassed)"
+fi
+
 if [ "$fail" -eq 0 ]; then
   echo "run-lock-test: PASS"
   exit 0
