@@ -73,14 +73,16 @@ extract_section() {
 corpus_check() {
   local errs=0 sec stated actual
   [ -f "$OUT" ] || { echo "FAIL: README missing: $OUT" >&2; return 1; }
+  [ -f "$MAP" ] || { echo "FAIL: corpus map missing: $MAP" >&2; return 1; }
+  actual=$(jq -r '.topics | length' "$MAP" 2>/dev/null) \
+    || { echo "FAIL: corpus map is not valid JSON: $MAP" >&2; return 1; }
   for sec in "## Purpose" "## Topics" "## Reports"; do
     grep -qF "$sec" "$OUT" || { echo "FAIL: missing section: $sec" >&2; errs=$((errs+1)); }
   done
   stated=$(grep -oE '\*\*Topics:\*\* [0-9]+' "$OUT" | grep -oE '[0-9]+' | head -1)
-  actual=$(jq -r '.topics | length' "$MAP" 2>/dev/null)
   if [ -z "$stated" ]; then
     echo "FAIL: no '**Topics:** N' metadata line" >&2; errs=$((errs+1))
-  elif [ -n "$actual" ] && [ "$stated" != "$actual" ]; then
+  elif [ "$stated" != "$actual" ]; then
     echo "FAIL: Topics count drift — README says $stated, corpus-map has $actual" >&2
     errs=$((errs+1))
   fi
@@ -101,8 +103,14 @@ corpus_check() {
 corpus_build() {
   [ -f "$MAP" ] || die "corpus map not found: $MAP — run scripts/synthesize-corpus.sh first"
 
+  # Only ever link to corpus-synthesis.md when it actually exists — corpus_build can
+  # run before the atlas is rendered (corpus-map.json alone is enough to build this
+  # README), and an unconditional link there would fail the dangling-link check.
+  local atlas_ref=""
+  [ -f "$ATLAS" ] && atlas_ref=" See [corpus-synthesis.md](corpus-synthesis.md) for the full atlas."
+
   local purpose_default purpose today topic_count surv weak inc fals entity_count contra_count disproven_count
-  purpose_default="A cross-topic view of the whole research record spanning every registered topic — surviving evidence, entity reuse across topics, contradictions, and what has been disproven. See [corpus-synthesis.md](corpus-synthesis.md) for the full atlas."
+  purpose_default="A cross-topic view of the whole research record spanning every registered topic — surviving evidence, entity reuse across topics, contradictions, and what has been disproven.${atlas_ref}"
   purpose="$purpose_default"
   if [ -f "$OUT" ]; then
     local prev_purpose
@@ -162,7 +170,11 @@ corpus_build() {
     printf -- '- **Entity reuse:** %s cross-topic entities\n' "$entity_count"
     printf -- '- **Contradictions:** %s flagged\n' "$contra_count"
     printf -- '- **Disproven:** %s findings\n\n' "$disproven_count"
-    printf 'See [corpus-synthesis.md](corpus-synthesis.md) for the full Cross-Corpus Insights, entity-reuse detail, contradictions, and what was disproven.\n'
+    if [ -f "$ATLAS" ]; then
+      printf 'See [corpus-synthesis.md](corpus-synthesis.md) for the full Cross-Corpus Insights, entity-reuse detail, contradictions, and what was disproven.\n'
+    else
+      printf 'Run `scripts/synthesize-corpus.sh` to render the full atlas (Cross-Corpus Insights, entity-reuse detail, contradictions, what was disproven).\n'
+    fi
   } > "$out_tmp" || { rm -f "$out_tmp"; die "failed to write $OUT"; }
   mv "$out_tmp" "$OUT"
   echo "wrote $OUT ($topic_count topics)"
