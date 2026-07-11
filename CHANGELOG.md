@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## 0.12.1 - 2026-07-11
+## [0.12.1] - 2026-07-11
 
 ### Fixed
 
@@ -842,7 +842,8 @@ First release of the domain-general research harness template.
 - **Distribution** as a Copier living template and a Claude Code plugin
   marketplace.
 
-[Unreleased]: https://github.com/modeled-information-format/research-harness-template/compare/v0.12.0...HEAD
+[Unreleased]: https://github.com/modeled-information-format/research-harness-template/compare/v0.12.1...HEAD
+[0.12.1]: https://github.com/modeled-information-format/research-harness-template/compare/v0.12.0...v0.12.1
 [0.12.0]: https://github.com/modeled-information-format/research-harness-template/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/modeled-information-format/research-harness-template/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/modeled-information-format/research-harness-template/compare/v0.9.0...v0.10.0
@@ -862,14 +863,13 @@ First release of the domain-general research harness template.
 
 <!--
 Dated sections above with no bracketed heading (0.6.0, 0.6.1, 0.7.0, 0.7.1,
-0.8.2, 0.8.4, 0.10.1, 0.11.1, 0.11.2, and currently 0.12.1) moved the
-`harness.config.json` version pointer per ADR-0010's change-driven model but
-have no GitHub Release/tag published for them (yet, in 0.12.1's case — it is
-simply the newest bump and may or may not get its own tag before the next
-one lands), so they omit a footer compare-link — nothing real exists to
-compare against. Convention (#393): a footer compare-link is only emitted
-once a real Release/tag exists for a dated section, and it compares against
-the previous *actual* tag, not the adjacent dated section's version string.
-When 0.12.1 (or whichever version turns out to be the next one actually
-tagged) is released, add its brackets + footer link back at that point.
+0.8.2, 0.8.4, 0.10.1, 0.11.1, 0.11.2) moved the `harness.config.json` version
+pointer per ADR-0010's change-driven model but were folded into a later
+release before a GitHub Release/tag was ever published for them, so they omit
+a footer compare-link — nothing real exists to compare against. Convention
+(#393): a footer compare-link is only emitted once a real Release/tag exists
+for a dated section, and it compares against the previous *actual* tag, not
+the adjacent dated section's version string. If a future dated section's
+version pointer gets folded into a later release without its own tag, strip
+its brackets and omit its footer link the same way when that becomes known.
 -->
