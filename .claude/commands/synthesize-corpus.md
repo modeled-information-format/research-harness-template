@@ -47,3 +47,7 @@ Agent(
 
 - `reports/_corpus/corpus-map.json` — the deterministic cross-topic projection.
 - `reports/_corpus/corpus-synthesis.md` — the human-facing atlas (incl. *What Was Disproven*).
+- `reports/_corpus/README.md` — the site landing page for the corpus atlas
+  (research-harness-template#352): topics table, verdict summary, and a link into
+  `corpus-synthesis.md`. Built automatically by `scripts/synthesize-corpus.sh` (it calls
+  `scripts/build-topic-readme.sh`'s `_corpus` mode after the atlas renders) — nothing extra to run.
