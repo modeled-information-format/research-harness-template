@@ -410,6 +410,10 @@ while IFS=$'\t' read -r rpath rdigest rmiftype; do
     continue
   fi
   [ "$rmiftype" = "finding" ] || continue
+  # Refresh the lock every iteration (issue #382 review): a topic large
+  # enough to genuinely run past CONTAINER_LOCK_STALE_MIN must not have its
+  # own still-live lock misjudged as stale and stolen mid-import.
+  container_lock_refresh "$LOCK_DIR"
   rfile="$CONTAINER_DIR/$rpath"
   rid="$(jq -r '."@id"' "$rfile")"
   [ -n "$rid" ] && [ "$rid" != "null" ] || fail "resource $rpath has no @id, cannot upsert"

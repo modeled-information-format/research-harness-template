@@ -279,6 +279,10 @@ while IFS=$'\t' read -r rid existing _rid2 ontology_type; do
   # mis-paired ontology_type if either jq filter's row order ever diverges
   # (review finding, Story #328).
   [ "$rid" = "$_rid2" ] || fail "internal error: id/type lookup misalignment ($rid != $_rid2) -- this should be unreachable"
+  # Refresh the lock every iteration (issue #382 review): a topic large
+  # enough to genuinely run past CONTAINER_LOCK_STALE_MIN must not have its
+  # own still-live lock misjudged as stale and stolen mid-export.
+  container_lock_refresh "$LOCK_DIR"
   base="$(basename "$existing")"
   cp "$existing" "$OUTPUT_DIR/findings/$base" || fail "failed to copy $existing"
   digest="$(scripts/mif-container-digest.sh resource "$OUTPUT_DIR/findings/$base")" \

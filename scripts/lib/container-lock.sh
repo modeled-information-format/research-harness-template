@@ -80,12 +80,25 @@ container_lock_acquire() {
       echo "container-lock: DENIED -- another export/import is in progress for this topic (lock held: $lock_dir, held by '$(cat "$lock_dir/owner" 2>/dev/null || echo unknown)'; fresh within ${CONTAINER_LOCK_STALE_MIN}m)." >&2
       return 3
     fi
-    rm -rf "$lock_dir"
+    # Steal: rm -rf then re-mkdir, race-safe (only one racer's mkdir wins).
+    # Distinguish that genuine race from an rm/mkdir failure unrelated to
+    # any racer (permissions, read-only FS) -- if rm didn't actually clear
+    # the directory, a follow-up mkdir failure isn't "lost the race", it's
+    # the same underlying error rm just hit, and misreporting it as a race
+    # would hide a real filesystem problem from the caller (review).
+    if ! rm -rf "$lock_dir" 2>/dev/null || [ -e "$lock_dir" ]; then
+      CONTAINER_LOCK_LAST_ERROR="failed to remove stale lock at $lock_dir (permissions or read-only filesystem?)"
+      echo "container-lock: DENIED -- $CONTAINER_LOCK_LAST_ERROR" >&2
+      return 1
+    fi
     if mkdir "$lock_dir" 2>/dev/null; then
       printf '%s\n' "$label" > "$lock_dir/owner" 2>/dev/null || true
       echo "container-lock: stole STALE lock (previous holder left it >${CONTAINER_LOCK_STALE_MIN}m ago): $lock_dir" >&2
       return 0
     fi
+    # rm confirmed the directory gone, but mkdir still failed -- a
+    # concurrent racer's own mkdir must have won in between. A genuine lost
+    # race, not our own error.
     echo "container-lock: DENIED -- lost the steal race for a stale lock: $lock_dir" >&2
     return 3
   fi
@@ -93,6 +106,20 @@ container_lock_acquire() {
   echo "container-lock: failed to create lock at $lock_dir: $CONTAINER_LOCK_LAST_ERROR" >&2
   return 1
 }
+
+# container_lock_refresh <lock_dir> -- touch a HELD lock so it does not age
+# out mid-run, mirroring run-lock.sh's own `refresh` verb (which the
+# orchestrator's long-running Phase 2 loop calls at phase boundaries for the
+# identical reason). Without this, an export/import that genuinely runs
+# longer than CONTAINER_LOCK_STALE_MIN would have its own still-live lock
+# misjudged as stale and stolen by a second, concurrent invocation --
+# review caught this gap: staleness alone, with no refresh anywhere in the
+# two callers' long-running per-resource loops, meant "long-running" and
+# "stale" were indistinguishable. Does NOT recreate a missing lock (mirrors
+# run-lock.sh's own refresh: resurrecting a released/stolen lock would forge
+# a phantom second owner) -- a run that still legitimately owns the topic
+# always has the dir present.
+container_lock_refresh() { [ -d "$1" ] && touch "$1" 2>/dev/null || true; }
 
 # container_lock_release <lock_dir> -- drop the lock. rm -rf, not rmdir: the
 # lock dir is not empty (container_lock_acquire writes an `owner` file

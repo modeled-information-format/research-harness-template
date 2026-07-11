@@ -1722,6 +1722,27 @@ gate_m14() {
     bad "falsify.sh cd-into-findings bypass regression (no-window rc=$fs_cd_no_window_rc, fresh-window verdict=$fs_cd_open_vd)"
   fi
 
+  # 14j. Regression test for a second Copilot-caught gap in the SAME fix: a
+  #      DOTTED relative argument from inside findings/ (`./f.json`) made a
+  #      plain $PWD-prefix resolve to ".../findings/./f.json" -- dirname
+  #      twice over that yields TOPIC_DIR=".../findings" (dirname of
+  #      "findings/." is "findings" itself), one level too deep, so MARKER
+  #      pointed at a path that can never exist. Not a bypass (it fails
+  #      CLOSED, refusing even a legitimate call with the window open) but
+  #      still wrong -- falsify.sh now `cd`s into the finding's own
+  #      directory and reads `pwd` to canonicalize "." before matching.
+  rm -f "$T/reports/tA/.gate-active"
+  local fs_dotcd_no_window_rc
+  (cd "$T/reports/tA/findings" && "$FALSIFY_ABS" ./f2.json >/dev/null 2>&1); fs_dotcd_no_window_rc=$?
+  touch "$T/reports/tA/.gate-active"
+  local fs_dotcd_open_vd
+  fs_dotcd_open_vd=$(cd "$T/reports/tA/findings" && "$FALSIFY_ABS" ./f2.json 2>/dev/null | jq -r '.extensions.harness.verification.verdict')
+  if [ "$fs_dotcd_no_window_rc" != 0 ] && [ "$fs_dotcd_open_vd" = "inconclusive" ]; then
+    ok "falsify.sh (#384 Copilot review follow-up): a DOTTED relative arg ('./f.json') from inside findings/ resolves to the real topic dir, not one level too deep"
+  else
+    bad "falsify.sh dotted-relative-path regression (no-window rc=$fs_dotcd_no_window_rc, fresh-window verdict=$fs_dotcd_open_vd)"
+  fi
+
   rm -rf "$T"
 }
 
@@ -3772,6 +3793,38 @@ gate_m31() {
   else
     bad "container-lock (#382 review follow-up) STALE_MIN=\"00\" regression (rc=$rc_export_zerostale ok=$export_zerostale_ok)"
   fi
+
+  # 31a5. Regression test for #382 review: container_lock_refresh keeps a
+  #      genuinely long-running holder's OWN lock from aging into "stale"
+  #      territory -- without it, a topic large enough to run past
+  #      CONTAINER_LOCK_STALE_MIN would have its own live lock stolen out
+  #      from under it by a concurrent invocation. Unit-tested directly
+  #      against the sourced library (a real multi-hour export isn't
+  #      practical to simulate end-to-end here) by backdating the lock past
+  #      the window, refreshing it, then confirming it reads as fresh again
+  #      -- and that refresh never resurrects an already-released lock
+  #      (mirrors run-lock.sh's own refresh contract).
+  (
+    # shellcheck source=scripts/lib/container-lock.sh
+    . scripts/lib/container-lock.sh
+    RL_LOCK="$TOPIC_DIR/.refresh-test.lock"
+    rm -rf "$RL_LOCK"
+    mkdir -p "$RL_LOCK"
+    touch -t 200001010000 "$RL_LOCK"
+    container_lock_fresh "$RL_LOCK" && exit 1   # sanity: backdated lock reads stale first
+    container_lock_refresh "$RL_LOCK"
+    container_lock_fresh "$RL_LOCK" || exit 1   # after refresh, reads fresh again
+    rm -rf "$RL_LOCK"
+    container_lock_refresh "$RL_LOCK"           # no-op on a lock that was never created
+    [ ! -e "$RL_LOCK" ] || exit 1               # must not resurrect it
+    exit 0
+  )
+  if [ "$?" -eq 0 ]; then
+    ok "container-lock (#382 review follow-up): container_lock_refresh keeps a live holder's lock from aging into stale territory, and never resurrects a released one"
+  else
+    bad "container-lock (#382 review follow-up) container_lock_refresh regression"
+  fi
+  rm -rf "$TOPIC_DIR/.refresh-test.lock"
 
   # 31b. The exported manifest validates against schemas/mif-container.schema.json.
   ajv validate --spec=draft2020 --strict=false -c ajv-formats \
