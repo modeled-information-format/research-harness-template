@@ -118,15 +118,16 @@ jq -r --arg g "$GENRE" '.packs[] | select(.name==$g and .enabled) | .name' harne
 ```
 
 - **The requested genre's pack is enabled:** load its template via the `Skill`
-  tool, namespaced by where the pack actually comes from, not a hardcoded
-  `reports:` prefix — resolve it from that `packs[]` entry's `source`:
-  - `source.type == "marketplace-ref"`: the namespace is `source.marketplace`
-    (look it up by name in the top-level `marketplaces[]`). This harness's own
-    genre packs source from the `mif-docs` marketplace, so invoke e.g.
-    `Skill(mif-docs:engineering)`, `Skill(mif-docs:academic)`.
-  - `source == "bundled"` (a locally vendored genre pack): the namespace is the
-    pack's own `name`, e.g. `Skill(<name>:<name>)`.
-  Honor the loaded template's declared section structure, audience, altitude,
+  tool, never a hardcoded `reports:` prefix — Claude Code's native plugin
+  model resolves every skill as `pack:skill`, where `pack` is the pack's own
+  `name` from `packs[]` (NOT `source.marketplace`, which only says where the
+  plugin's code is *fetched from* — `scripts/sync-packs.sh` registers every
+  enabled pack, bundled or external, under this harness's own plugin
+  namespace regardless of upstream source). Each genre pack is one plugin
+  with one skill, self-named (`academic`, `engineering`, `briefing`, …), so
+  invoke e.g. `Skill(academic:academic)`, `Skill(engineering:engineering)` —
+  `<pack-name>:<pack-name>`, not the marketplace it happens to be vendored
+  from. Honor the loaded template's declared section structure, audience, altitude,
   citation style, and required front-/back-matter. Domain methodology a genre
   may draw on (from a separate methodology pack) plugs in only when that pack
   is enabled — the core stays domain-general.

@@ -270,6 +270,7 @@ gate_m3() {
   grep -qE '`reports`[^`]{0,24}(pack|genre)' "$RS" && rs_fail="${rs_fail}still describes a \`reports\` family pack in prose (review caught this leftover in the frontmatter description, worked example, and axis definition even after Step 2's own check was fixed); "
   grep -qE -- '--arg g "\$GENRE"' "$RS" || rs_fail="${rs_fail}missing the per-genre parameterized jq check; "
   grep -qE 'Skill\(reports:' "$RS" && rs_fail="${rs_fail}still hardcodes a reports: Skill() namespace; "
+  grep -qE 'Skill\(mif-docs:' "$RS" && rs_fail="${rs_fail}resolves the Skill() namespace from source.marketplace, e.g. Skill(mif-docs:...) (Copilot review, round 2: the real convention is pack:pack, self-named from packs[].name -- source.marketplace only says where the code is FETCHED from, sync-packs.sh registers every enabled pack under this harness's own plugin namespace regardless of upstream source); "
   if [ -z "$rs_fail" ]; then
     ok "report-synthesizer.md (#383): genre gate checks the specific requested pack, not a nonexistent 'reports' family; no hardcoded reports: Skill() namespace"
   else
@@ -1741,6 +1742,25 @@ gate_m14() {
     ok "falsify.sh (#384 Copilot review follow-up): a DOTTED relative arg ('./f.json') from inside findings/ resolves to the real topic dir, not one level too deep"
   else
     bad "falsify.sh dotted-relative-path regression (no-window rc=$fs_dotcd_no_window_rc, fresh-window verdict=$fs_dotcd_open_vd)"
+  fi
+
+  # 14k. Regression test for a THIRD Copilot-caught gap (review round 2): the
+  #      original `*/findings/*.json` pattern matched ANY path containing a
+  #      "findings/" segment anywhere, not just a real
+  #      reports/<topic>/findings/ session-finding path -- an unrelated path
+  #      like /tmp/findings/x.json would be misclassified as gated and
+  #      unexpectedly refused. The pattern is now anchored to require a
+  #      "reports/" segment before "findings/", matching the hook's own
+  #      regex scope. A non-report findings/ path must NEVER be gated, with
+  #      no window open at all.
+  mkdir -p "$T/unrelated/findings"
+  printf '{"@id":"urn:mif:concept:t:uf","title":"x"}\n' > "$T/unrelated/findings/uf.json"
+  local fs_unrelated_vd
+  fs_unrelated_vd=$(scripts/falsify.sh "$T/unrelated/findings/uf.json" 2>/dev/null | jq -r '.extensions.harness.verification.verdict // empty')
+  if [ "$fs_unrelated_vd" = "inconclusive" ]; then
+    ok "falsify.sh (#384 Copilot review round 2): an unrelated findings/ path outside reports/<topic>/ is never gated, even with no window open"
+  else
+    bad "falsify.sh over-broad findings/ match regression (verdict=$fs_unrelated_vd)"
   fi
 
   rm -rf "$T"

@@ -96,11 +96,19 @@ container_lock_acquire() {
       echo "container-lock: stole STALE lock (previous holder left it >${CONTAINER_LOCK_STALE_MIN}m ago): $lock_dir" >&2
       return 0
     fi
-    # rm confirmed the directory gone, but mkdir still failed -- a
-    # concurrent racer's own mkdir must have won in between. A genuine lost
-    # race, not our own error.
-    echo "container-lock: DENIED -- lost the steal race for a stale lock: $lock_dir" >&2
-    return 3
+    # rm confirmed the directory gone, but mkdir still failed -- distinguish
+    # a genuine lost race (a concurrent racer's own mkdir won in between, so
+    # $lock_dir exists again) from an unrelated mkdir failure (ENOSPC, a
+    # transient I/O error, ...) where $lock_dir is STILL absent -- the
+    # latter isn't a race at all and misreporting it as one would hide the
+    # real error from the caller (Copilot review, round 2).
+    if [ -d "$lock_dir" ]; then
+      echo "container-lock: DENIED -- lost the steal race for a stale lock: $lock_dir" >&2
+      return 3
+    fi
+    CONTAINER_LOCK_LAST_ERROR="failed to re-create lock at $lock_dir after removing the stale one (not a race -- the directory is still absent)"
+    echo "container-lock: DENIED -- $CONTAINER_LOCK_LAST_ERROR" >&2
+    return 1
   fi
   CONTAINER_LOCK_LAST_ERROR="${lock_err:-mkdir failed for an unknown reason}"
   echo "container-lock: failed to create lock at $lock_dir: $CONTAINER_LOCK_LAST_ERROR" >&2

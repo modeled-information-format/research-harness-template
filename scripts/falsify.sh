@@ -85,7 +85,14 @@ else
 fi
 
 case "$FINDING_ABS" in
-  */findings/*.json)
+  # Anchored to a "reports/<topic>/findings/" shape (matching the documented
+  # scope and the hook's own regex, which also requires a "reports/" segment
+  # before "findings/"), not a bare "*/findings/*.json" -- that broader
+  # pattern would misclassify ANY path containing a "findings/" segment
+  # anywhere (e.g. an unrelated /tmp/findings/x.json) as a gated session
+  # finding, causing unexpected refusals for a legitimate non-gate call
+  # (Copilot review).
+  */reports/*/findings/*.json)
     # TOPIC_DIR is always absolute here -- it's derived from $FINDING_ABS,
     # which the resolution above guarantees is absolute regardless of how
     # $FINDING was originally spelled.
