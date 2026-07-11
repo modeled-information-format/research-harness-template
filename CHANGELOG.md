@@ -7,6 +7,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-07-11
+
+### Added
+
+- **`reports/_corpus/README.md`**: `scripts/build-topic-readme.sh` gained a
+  `_corpus` mode, delegated to from `scripts/synthesize-corpus.sh`, that
+  renders a navigable corpus-atlas README alongside `corpus-map.json`/
+  `corpus-synthesis.md` — a topic table, verdict/entity/contradiction
+  counts, and a Purpose section preserved across rebuilds (#352).
+
+### Changed
+
+- **`scripts/lib/engine.sh` / `scripts/fetch-engine.sh`**: bumped the pinned
+  `mif-rh-cli` engine from `0.6.0` to `0.6.1`, picking up the upstream fix
+  for `attempted_at` recording as epoch-0 (closes #363, #389).
+- **Dependencies**: patch-bumped `astro` (`7.0.3` -> `7.0.7`), `@astrojs/starlight`
+  (`0.41.1` -> `0.41.3`), `starlight-links-validator` (`0.25.1` -> `0.25.2`),
+  `starlight-llms-txt` (`0.10.0` -> `0.11.0`). Astro's newer default Markdown
+  processor ("Sätteri") requires `remarkPlugins`/`rehypePlugins` users to
+  install `@astrojs/markdown-remark` explicitly, now added as a direct
+  dependency.
+- **`scripts/codegen/gen-models.sh`**: bumped the pinned dev-time
+  `datamodel-code-generator` from `0.65.0` to `0.68.1` — generated
+  `lib/harness_models/*.py` output is byte-identical, no regeneration diff.
+- **CI**: bumped the Python runtime pin from `3.12` to `3.14` (`3.12` exited
+  upstream bugfix support in 2025-04; `3.14` is in active bugfix support
+  until 2027-10). `actions/setup-python` bumped `v6.2.0` -> `v6.3.0`,
+  `actions/attest-build-provenance` bumped `v4.1.0` -> `v4.1.1`. Node stays
+  pinned at `24` (Active LTS until 2028) — `26` doesn't reach LTS until
+  2026-10-28, so it was evaluated and deliberately held back.
+  `docs/reference/dependencies.md`'s runtime table is corrected to match the
+  actual CI pins (it previously described `node` as floating `lts/*` and
+  `python3` as declared `3.12`, neither of which matched `ci.yml`).
+
+### Fixed
+
+- **`.claude/commands/start.md`**: Phase 2 topic-title derivation now strips
+  known goal-statement boilerplate phrasing and enforces a word-boundary-safe
+  80-char truncation, and always asks the user to confirm the derived title
+  (not only when truncation fired) before registering the topic (#353, #391).
+
+### Security
+
+- Evaluated bumping the `js-yaml` npm override (pinned to `4.2.0` to
+  remediate CVE-2026-53550 / GHSA-h67p-54hq-rp68, #149) to the latest
+  `5.2.1`. Reverted: `@astrojs/starlight` still does a default import of
+  `js-yaml` (`import yaml from 'js-yaml'`), which `5.x` no longer exports,
+  breaking `npm run build` outright. The `4.2.0` pin already remediates the
+  CVE; staying on it is not a security regression.
+
 ## [0.11.2] - 2026-07-09
 
 ### Fixed
@@ -767,7 +817,10 @@ First release of the domain-general research harness template.
 - **Distribution** as a Copier living template and a Claude Code plugin
   marketplace.
 
-[Unreleased]: https://github.com/modeled-information-format/research-harness-template/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/modeled-information-format/research-harness-template/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/modeled-information-format/research-harness-template/compare/v0.11.2...v0.12.0
+[0.11.2]: https://github.com/modeled-information-format/research-harness-template/compare/v0.11.1...v0.11.2
+[0.11.1]: https://github.com/modeled-information-format/research-harness-template/compare/v0.11.0...v0.11.1
 [0.11.0]: https://github.com/modeled-information-format/research-harness-template/compare/v0.10.1...v0.11.0
 [0.10.1]: https://github.com/modeled-information-format/research-harness-template/compare/v0.10.0...v0.10.1
 [0.10.0]: https://github.com/modeled-information-format/research-harness-template/compare/v0.9.0...v0.10.0
