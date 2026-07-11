@@ -102,3 +102,37 @@ jobs:
           set -euo pipefail
           gh release upload "${GITHUB_REF_NAME}" \
             "${{ steps.build.outputs.artifact }}" --clobber
+
+  # #397: surfaces CHANGELOG heading-bracket/footer-link drift for the
+  # version just released, without gating any other PR (this job doesn't
+  # `needs:` anything and nothing `needs:` it) or auto-committing back to
+  # main — reconciliation is a separate, hand-reviewed follow-up PR (the same
+  # fix the operator previously made by hand for research-harness-template#399).
+  # Only the "drift found" outcome is soft (a warning annotation, `exit 0`
+  # below): a genuine infrastructure failure (the engine fetch/attestation
+  # step failing) is left to fail this job normally, since that's worth
+  # surfacing loudly rather than silently swallowing.
+  changelog-links-check:
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0 # needs full tag history, not a shallow clone
+
+      - name: Fetch the mif-rh-cli engine
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/fetch-engine.sh
+
+      - name: Check CHANGELOG footer-link reconciliation
+        run: |
+          set -uo pipefail
+          bin/mif-rh-cli harness reconcile-changelog-links --check
+          code=$?
+          if [ "${code}" -ne 0 ]; then
+            echo "::warning::CHANGELOG.md needs heading-bracket/footer-link reconciliation for this release — run \`bin/mif-rh-cli harness reconcile-changelog-links\` locally and open a follow-up PR (research-harness-template#397)."
+          fi
+          exit 0
