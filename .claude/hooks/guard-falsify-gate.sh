@@ -60,9 +60,9 @@ CMD=$(printf '%s' "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null)
 # evals.json) a `$CLAUDE_PROJECT_DIR/scripts/falsify.sh ...` path -- silently
 # bypassing the one-round-rule gate this hook exists to enforce. A false ALLOW
 # here is unbounded worse than a false DENY (the gh-issue-create case above):
-# an annoying deny has a known workaround (quote the path unquoted, or avoid
-# quoting the script name in doc text -- see LIMITATIONS at the top of this
-# file); a false allow permanently corrupts the corpus. Distinguishing "quoted
+# an annoying deny has a known workaround (avoid quoting the script name in
+# doc text -- see LIMITATIONS at the top of this file); a false allow
+# permanently corrupts the corpus. Distinguishing "quoted
 # doc text passed to an unrelated command" from "a real invocation, however
 # shaped" is a shell-parsing problem no regex anchor here can solve safely --
 # see #384 for the actual fix (falsify.sh checks a gate token/env var instead

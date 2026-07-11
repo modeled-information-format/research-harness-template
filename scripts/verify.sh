@@ -1570,15 +1570,23 @@ gate_m14() {
     bad "phase-gate hook wrong (no-window=$d_no fresh=$d_yes report=$d_rep stale=$d_stale multi=$d_multi)"
   fi
 
-  # 14d. Regression (issue #356): a DOUBLE-QUOTED path argument within an open
-  #      window is allowed -- the leading/trailing quote must not corrupt TOPIC_DIR.
+  # 14d. Regression: a DOUBLE-QUOTED path argument DIRECTLY on the invocation
+  #      (`scripts/falsify.sh "reports/.../findings/f.json"`) within an open
+  #      window is allowed -- this is issue #372's own first reported repro
+  #      shape; it already passes because of #356's fix (a positive
+  #      path-character class that excludes quote characters from the
+  #      extracted path, closing both the quoted-VARIABLE-ASSIGNMENT shape
+  #      #356 itself reported, `F="reports/..."`, and this quoted-DIRECT-
+  #      ARGUMENT shape, incidentally, since both corrupt TOPIC_DIR the same
+  #      way). Kept here under #372 since that's the shape #372 reported as
+  #      still broken; #356 is the fix that actually makes it pass.
   rm -f "$T/reports/tA/.gate-active"; touch "$T/reports/tA/.gate-active"
   local d_quoted
   d_quoted=$(hd '{"tool_input":{"command":"scripts/falsify.sh \"reports/tA/findings/f.json\" fx"}}')
   if [ "$d_quoted" = allow ]; then
-    ok "phase-gate hook (#356): a double-quoted path argument within an open window is allowed"
+    ok "phase-gate hook (#372's own repro, fixed by #356): a double-quoted path argument within an open window is allowed"
   else
-    bad "phase-gate hook #356 regression (quoted=$d_quoted)"
+    bad "phase-gate hook #372/#356 regression (quoted=$d_quoted)"
   fi
 
   # 14e. Regression test for issue #372's REVERTED fix attempt: every one of
