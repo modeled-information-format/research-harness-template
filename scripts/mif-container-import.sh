@@ -111,17 +111,23 @@ jq -e --arg t "$TOPIC" '.topics[] | select(.id == $t)' harness.config.json > /de
 fail() { echo "mif-container-import: REJECTED -- $1" >&2; exit 1; }
 
 # --- Concurrency lock (feature-spec AC12): mkdir is atomic, no flock -------
-# A failed mkdir means EITHER a genuine lock (another run got there first,
-# so $LOCK_DIR now exists) OR an unrelated failure (missing parent dir,
-# permissions, read-only FS) -- distinguish them so a misconfigured
-# destination corpus isn't misreported as "another import in progress".
+# scripts/lib/container-lock.sh is the shared primitive (issue #382), sourced
+# here and by export instead of each script carrying its own copy -- it also
+# adds staleness/steal recovery so a killed export/import no longer wedges
+# the topic's lock forever. A failed acquire means EITHER a genuine lock
+# (another run got there first, so $LOCK_DIR now exists and is fresh) OR an
+# unrelated failure (missing parent dir, permissions, read-only FS) --
+# distinguish them so a misconfigured destination corpus isn't misreported
+# as "another import in progress".
+# shellcheck source=scripts/lib/container-lock.sh
+. "$ROOT/scripts/lib/container-lock.sh"
 LOCK_DIR="reports/$TOPIC/.container.lock"
-if lock_err="$(mkdir "$LOCK_DIR" 2>&1)"; then
-  :
-elif [ -d "$LOCK_DIR" ]; then
+container_lock_acquire "$LOCK_DIR" "import"
+lock_rc=$?
+if [ "$lock_rc" -eq 3 ]; then
   fail "another export/import is in progress for topic '$TOPIC' (lock held: $LOCK_DIR)"
-else
-  fail "failed to create import lock at $LOCK_DIR: ${lock_err:-mkdir failed for an unknown reason}"
+elif [ "$lock_rc" -ne 0 ]; then
+  fail "failed to create import lock at $LOCK_DIR"
 fi
 # One EXIT trap for the whole script (not per-loop-iteration RETURN traps,
 # which never fire in top-level script code -- only in functions/sourced
@@ -130,7 +136,7 @@ fi
 CURRENT_STAGE_DIR=""
 cleanup() {
   [ -n "$CURRENT_STAGE_DIR" ] && rm -rf "$CURRENT_STAGE_DIR" 2>/dev/null
-  rmdir "$LOCK_DIR" 2>/dev/null
+  container_lock_release "$LOCK_DIR"
 }
 trap cleanup EXIT
 

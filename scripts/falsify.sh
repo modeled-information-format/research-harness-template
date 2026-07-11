@@ -30,6 +30,18 @@
 # extensions.harness.verification) delegates to the mif-rh engine (mif-rh-cli),
 # hard required: install it with scripts/fetch-engine.sh, put mif-rh-cli on
 # PATH, or set MIF_RH_CLI.
+#
+# Phase-2 gate enforcement (SPEC §6b / #384) lives HERE, not in the PreToolUse
+# hook (.claude/hooks/guard-falsify-gate.sh). The hook can only regex-match raw
+# Bash command TEXT, which is ambiguous (quoting, wrapping, loops, doc-text
+# mentions) and was reverted twice over that ambiguity (#356, #372). This
+# script's own $FINDING argument is unambiguous — no shell-quoting shape to
+# guess — so grading a topic's SESSION FINDINGS (reports/<topic>/findings/*.json)
+# is gated directly against that topic's .gate-active marker (opened by the
+# orchestrator's Phase 2 loop / the /falsify command). A non-findings target
+# (a report-finding, a test fixture) is always a legit non-gate use and is
+# never gated. The hook stays as an early, defense-in-depth layer; it is no
+# longer the sole enforcement point.
 
 set -uo pipefail
 
@@ -37,6 +49,21 @@ FINDING="${1:?usage: falsify.sh <finding.json> [<evidence-fixture.json>]}"
 FIXTURE="${2:-}"
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
+case "$FINDING" in
+  */findings/*.json)
+    TOPIC_DIR="$(dirname "$(dirname "$FINDING")")"
+    case "$TOPIC_DIR" in
+      /*) MARKER="$TOPIC_DIR/.gate-active" ;;
+      *)  MARKER="$ROOT/$TOPIC_DIR/.gate-active" ;;
+    esac
+    if [ ! -f "$MARKER" ] || [ -z "$(find "$MARKER" -mmin -240 2>/dev/null)" ]; then
+      echo "falsify.sh: refusing to grade session finding '$FINDING' -- ${TOPIC_DIR}/.gate-active is absent or stale. Only the orchestrator's Phase 2 pass / the /falsify command may open this topic's gate window (SPEC §6b)." >&2
+      exit 3
+    fi
+    ;;
+esac
+
 # shellcheck source=scripts/lib/engine.sh
 . "$ROOT/scripts/lib/engine.sh"
 ENGINE="$(engine_bin "$ROOT")" || exit 5

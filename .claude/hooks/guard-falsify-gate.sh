@@ -25,6 +25,11 @@
 #   - the verdict could be written without falsify.sh at all (jq/Edit on the finding).
 # Those are covered by the layers around this hook: the dimension-analyst is explicitly
 # prohibited from writing verification / running the gate, and code review catches the rest.
+# As of #384, this hook is DEFENSE-IN-DEPTH, not the sole enforcement: scripts/falsify.sh
+# itself now checks the same topic marker directly against its own (unambiguous) $FINDING
+# argument before it will grade a session finding, so a command shape this hook's substring
+# match misses (env-var prefix, a loop, an interpreter wrapper, ...) is still refused by the
+# script it would have reached, not silently allowed through.
 # If jq is missing the hook fails OPEN (allow) — jq is a hard harness dependency, so its
 # absence means the harness is already non-functional, not a bypass an analyst can induce
 # (the analyst does not author this hook's stdin).
@@ -65,8 +70,9 @@ CMD=$(printf '%s' "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null)
 # permanently corrupts the corpus. Distinguishing "quoted
 # doc text passed to an unrelated command" from "a real invocation, however
 # shaped" is a shell-parsing problem no regex anchor here can solve safely --
-# see #384 for the actual fix (falsify.sh checks a gate token/env var instead
-# of this hook inferring invocation shape from command text).
+# per #384, scripts/falsify.sh now checks the same .gate-active marker directly
+# against its own $FINDING argument, so this hook no longer needs to be the
+# only thing standing between an ungated invocation shape and the corpus.
 printf '%s' "$CMD" | grep -qF 'falsify.sh' || exit 0
 
 # Only guard grading of a topic's SESSION FINDINGS (reports/<topic>/findings/*.json).

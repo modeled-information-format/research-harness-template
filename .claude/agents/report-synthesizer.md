@@ -107,19 +107,34 @@ surviving findings, say so plainly in the synthesis.
 
 ## Step 2 — Resolve the genre (optional, pack-provided)
 
+There is no family pack literally named `"reports"` — every genre
+(`engineering`, `academic`, `briefing`, `exec-summary`, `trend-analysis`, …) is
+its own top-level `packs[]` entry. Check the SPECIFIC requested genre, not a
+nonexistent grouping pack:
+
 ```bash
-jq -r '.packs[] | select(.name=="reports" and .enabled) | .name' harness.config.json
+jq -r --arg g "$GENRE" '.packs[] | select(.name==$g and .enabled) | .name' harness.config.json
 ```
 
-- **`reports` pack enabled AND a genre requested:** load the genre template via
-  the `Skill` tool (namespaced, e.g. `reports:<genre>`). Honor its declared
-  section structure, audience, altitude, citation style, and required
-  front-/back-matter. Domain methodology a genre may draw on (from a separate
-  methodology pack) plugs in only when that pack is enabled — the core stays
-  domain-general.
-- **Otherwise:** neutral synthesis — group surviving findings by their
+- **The requested genre's pack is enabled:** load its template via the `Skill`
+  tool, namespaced by where the pack actually comes from, not a hardcoded
+  `reports:` prefix — resolve it from that `packs[]` entry's `source`:
+  - `source.type == "marketplace-ref"`: the namespace is `source.marketplace`
+    (look it up by name in the top-level `marketplaces[]`). This harness's own
+    genre packs source from the `mif-docs` marketplace, so invoke e.g.
+    `Skill(mif-docs:engineering)`, `Skill(mif-docs:academic)`.
+  - `source == "bundled"` (a locally vendored genre pack): the namespace is the
+    pack's own `name`, e.g. `Skill(<name>:<name>)`.
+  Honor the loaded template's declared section structure, audience, altitude,
+  citation style, and required front-/back-matter. Domain methodology a genre
+  may draw on (from a separate methodology pack) plugs in only when that pack
+  is enabled — the core stays domain-general.
+- **Otherwise (no genre requested, or the requested genre's pack is disabled
+  or absent):** neutral synthesis — group surviving findings by their
   `extensions.harness.dimension`, order by the goal's stated priorities, and write
-  a decision-focused narrative. No fixed taxonomy.
+  a decision-focused narrative. No fixed taxonomy. Do **not** stamp a `genre:`
+  value into the output frontmatter that this branch was actually taken for —
+  frontmatter must only claim a genre whose template was really applied.
 
 ## Step 3 — Synthesize
 
