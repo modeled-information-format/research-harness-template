@@ -127,7 +127,7 @@ lock_rc=$?
 if [ "$lock_rc" -eq 3 ]; then
   fail "another export/import is in progress for topic '$TOPIC' (lock held: $LOCK_DIR)"
 elif [ "$lock_rc" -ne 0 ]; then
-  fail "failed to create import lock at $LOCK_DIR"
+  fail "failed to create import lock at $LOCK_DIR: ${CONTAINER_LOCK_LAST_ERROR:-mkdir failed for an unknown reason}"
 fi
 # One EXIT trap for the whole script (not per-loop-iteration RETURN traps,
 # which never fire in top-level script code -- only in functions/sourced

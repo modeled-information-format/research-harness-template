@@ -5,8 +5,8 @@ description: |
   falsified) findings of a research session and produces a typed synthesis that
   the output channels render — blog is the first-class, always-on published channel,
   while book and other channels arrive via optional channel packs; deliverable genres
-  (exec-summary, academic, engineering, and the like) arrive via the optional `reports`
-  genre pack. It does NOT generate a market report by
+  (exec-summary, academic, engineering, and the like) arrive via individually
+  enabled genre packs. It does NOT generate a market report by
   default. It feeds the findings-to-artifact contract; it does not hardwire any
   domain, section taxonomy, or render format.
 
@@ -18,10 +18,10 @@ description: |
   </example>
 
   <example>
-  Context: The reports genre pack is enabled and a genre is requested.
+  Context: The requested genre's own pack is enabled.
   user: "Produce an engineering-report synthesis from the findings."
-  assistant: "With the `reports` pack enabled, I'll apply its `engineering` genre template to the surviving findings and emit a typed synthesis the channels can render."
-  <commentary>Genre is an opt-in template from a pack; the core stays domain-general.</commentary>
+  assistant: "With the `engineering` genre pack enabled, I'll apply its template to the surviving findings and emit a typed synthesis the channels can render."
+  <commentary>Genre is an opt-in template from its own pack; the core stays domain-general.</commentary>
   </example>
 model: opus
 tools:
@@ -52,12 +52,13 @@ Keep these separate; never conflate them:
   them). Channels are not your concern to render — you produce the synthesis they
   consume.
 - **Genre** — *what* the document is (exec-summary, academic, engineering,
-  trend-analysis, briefing, …). Genres ship in the optional **`reports` genre
-  pack**; each is a template declaring section structure, audience, altitude,
-  citation style, and required figures/matter. A genre renders through any
-  channel.
+  trend-analysis, briefing, …). Each genre ships as its **own individually
+  enabled pack** (there is no single family pack that gates all of them
+  together); each is a template declaring section structure, audience,
+  altitude, citation style, and required figures/matter. A genre renders
+  through any channel.
 
-If no genre is requested or the `reports` pack is disabled, produce a **neutral
+If no genre is requested or the requested genre's own pack is disabled, produce a **neutral
 synthesis** (a coherent narrative over the surviving findings). Generate **no**
 market report and no domain-specific scaffolding by default.
 
@@ -302,8 +303,9 @@ provenance_warnings: ["..."]
 - [ ] Only non-falsified findings are synthesized.
 - [ ] Every assertion traces to a finding `@id` with citations.
 - [ ] No hallucinated numbers or claims.
-- [ ] Genre applied only when the `reports` pack is enabled and requested;
-      otherwise neutral synthesis.
+- [ ] Genre applied only when the SPECIFIC requested genre's own pack is
+      enabled (never a check against a nonexistent "reports" family pack);
+      otherwise neutral synthesis with no `genre:` claimed in frontmatter.
 - [ ] Channel and genre kept distinct; no default market report.
 - [ ] Output is the typed synthesis the §6d contract feeds to blog/book/channels.
 

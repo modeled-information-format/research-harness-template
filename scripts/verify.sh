@@ -267,6 +267,7 @@ gate_m3() {
   #     pack's source (e.g. `mif-docs:engineering`), never a local `reports:` family.
   local RS=".claude/agents/report-synthesizer.md" rs_fail=""
   grep -qE 'select\(\.name=="reports"' "$RS" && rs_fail="${rs_fail}still greps for a nonexistent 'reports' family pack; "
+  grep -qE '`reports`[^`]{0,24}(pack|genre)' "$RS" && rs_fail="${rs_fail}still describes a \`reports\` family pack in prose (review caught this leftover in the frontmatter description, worked example, and axis definition even after Step 2's own check was fixed); "
   grep -qE -- '--arg g "\$GENRE"' "$RS" || rs_fail="${rs_fail}missing the per-genre parameterized jq check; "
   grep -qE 'Skill\(reports:' "$RS" && rs_fail="${rs_fail}still hardcodes a reports: Skill() namespace; "
   if [ -z "$rs_fail" ]; then
@@ -1697,6 +1698,28 @@ gate_m14() {
     ok "falsify.sh (#384): refuses to grade a session finding with no/stale gate window open, independent of the hook; grades it once the window is fresh; a report-finding target is never gated"
   else
     bad "falsify.sh (#384) gate check wrong (no-window rc=$fs_no_window_rc report-verdict=$fs_report_vd open-verdict=$fs_open_vd stale rc=$fs_stale_rc)"
+  fi
+
+  # 14i. Regression test for a review-caught gap in #384's own fix: a BARE
+  #      relative argument invoked with the caller's cwd already INSIDE the
+  #      findings/ directory (`cd reports/t/findings && falsify.sh f.json`)
+  #      has no "findings/" path segment in the raw argument, so matching
+  #      against $FINDING as typed (rather than its resolved absolute form)
+  #      missed this shape entirely -- the exact "cd-into-findings" bypass
+  #      guard-falsify-gate.sh's own LIMITATIONS block documents as a
+  #      hook-miss, reproduced live in review as a SILENT miss in the script
+  #      that was supposed to close it independent of the hook.
+  local FALSIFY_ABS; FALSIFY_ABS="$(cd scripts && pwd)/falsify.sh"
+  rm -f "$T/reports/tA/.gate-active"
+  local fs_cd_no_window_rc
+  (cd "$T/reports/tA/findings" && "$FALSIFY_ABS" f2.json >/dev/null 2>&1); fs_cd_no_window_rc=$?
+  touch "$T/reports/tA/.gate-active"
+  local fs_cd_open_vd
+  fs_cd_open_vd=$(cd "$T/reports/tA/findings" && "$FALSIFY_ABS" f2.json 2>/dev/null | jq -r '.extensions.harness.verification.verdict')
+  if [ "$fs_cd_no_window_rc" != 0 ] && [ "$fs_cd_open_vd" = "inconclusive" ]; then
+    ok "falsify.sh (#384 review follow-up): a bare relative arg invoked from inside findings/ is still refused with no window open (resolved to its real absolute path, not matched on the raw argument)"
+  else
+    bad "falsify.sh cd-into-findings bypass regression (no-window rc=$fs_cd_no_window_rc, fresh-window verdict=$fs_cd_open_vd)"
   fi
 
   rm -rf "$T"
@@ -3730,6 +3753,24 @@ gate_m31() {
     ok "container-lock (#382): a STALE .container.lock is stolen (export proceeds, lock released clean); a FRESH lock still denies"
   else
     bad "container-lock (#382) staleness regression (stale: rc=$rc_export_stale ok=$export_stale_ok; fresh: rc=$rc_export_fresh ok=$export_fresh_ok)"
+  fi
+
+  # 31a4. Regression test for #382 review: CONTAINER_LOCK_STALE_MIN="00"
+  #      (all-digit but numerically zero) must fall back to the safe default
+  #      instead of making `find -mmin -00` match nothing and mis-steal a
+  #      FRESH lock -- mirrors evals/run-lock-test.sh's identical case for
+  #      RUN_LOCK_STALE_MIN, same underlying validation gap.
+  mkdir -p "$TOPIC_DIR/.container.lock"
+  CONTAINER_LOCK_STALE_MIN="00" "$EXPORT" "$TOPIC" "$T/zero-stale-export" > /dev/null 2>&1
+  local rc_export_zerostale=$?
+  local export_zerostale_ok=0
+  [ "$rc_export_zerostale" -ne 0 ] && [ ! -d "$T/zero-stale-export" ] && [ -d "$TOPIC_DIR/.container.lock" ] && export_zerostale_ok=1
+  rm -rf "$T/zero-stale-export"
+  rmdir "$TOPIC_DIR/.container.lock" 2>/dev/null
+  if [ "$export_zerostale_ok" -eq 1 ]; then
+    ok "container-lock (#382 review follow-up): CONTAINER_LOCK_STALE_MIN=\"00\" falls back to the safe default (a fresh lock still denies, not mis-stolen)"
+  else
+    bad "container-lock (#382 review follow-up) STALE_MIN=\"00\" regression (rc=$rc_export_zerostale ok=$export_zerostale_ok)"
   fi
 
   # 31b. The exported manifest validates against schemas/mif-container.schema.json.

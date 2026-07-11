@@ -50,13 +50,32 @@ FIXTURE="${2:-}"
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
+# Resolve $FINDING to an absolute path (this repo's established portable
+# pattern -- see render-artifact.sh's own identical prefix-if-relative
+# comment; `realpath -m` is a GNU-only extension, and this must run on a
+# contributor's plain macOS shell too) BEFORE the gate check below, not
+# after. A bare relative argument invoked from inside the findings/
+# directory itself (`cd reports/t/findings && falsify.sh f.json`) has no
+# "findings/" path segment in the RAW argument, so matching against $FINDING
+# as typed misses this shape entirely -- review caught this live: it
+# reproduces the exact "cd-into-findings" bypass guard-falsify-gate.sh's own
+# LIMITATIONS block already documents as a hook-miss, except here it would
+# have been a silent miss in the script that was supposed to close it.
+# Prepending the real invocation $PWD when the argument is relative makes
+# the path always reflect the caller's actual cwd, so this shape resolves
+# to .../findings/f.json like any other and is caught the same way.
 case "$FINDING" in
+  /*) FINDING_ABS="$FINDING" ;;
+  *)  FINDING_ABS="$PWD/$FINDING" ;;
+esac
+
+case "$FINDING_ABS" in
   */findings/*.json)
-    TOPIC_DIR="$(dirname "$(dirname "$FINDING")")"
-    case "$TOPIC_DIR" in
-      /*) MARKER="$TOPIC_DIR/.gate-active" ;;
-      *)  MARKER="$ROOT/$TOPIC_DIR/.gate-active" ;;
-    esac
+    # TOPIC_DIR is always absolute here -- it's derived from $FINDING_ABS,
+    # which the resolution above guarantees is absolute regardless of how
+    # $FINDING was originally spelled.
+    TOPIC_DIR="$(dirname "$(dirname "$FINDING_ABS")")"
+    MARKER="$TOPIC_DIR/.gate-active"
     if [ ! -f "$MARKER" ] || [ -z "$(find "$MARKER" -mmin -240 2>/dev/null)" ]; then
       echo "falsify.sh: refusing to grade session finding '$FINDING' -- ${TOPIC_DIR}/.gate-active is absent or stale. Only the orchestrator's Phase 2 pass / the /falsify command may open this topic's gate window (SPEC §6b)." >&2
       exit 3

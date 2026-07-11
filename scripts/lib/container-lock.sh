@@ -36,8 +36,14 @@ CONTAINER_LOCK_STALE_MIN="${CONTAINER_LOCK_STALE_MIN:-240}"
 # Validate: an empty/non-numeric/zero value would make `find -mmin` error and
 # container_lock_fresh mis-judge a LIVE lock as stale (then steal it -- the
 # corruption this file exists to prevent). Fall back to the safe default
-# rather than fail open.
-case "$CONTAINER_LOCK_STALE_MIN" in ''|*[!0-9]*|0) CONTAINER_LOCK_STALE_MIN=240 ;; esac
+# rather than fail open. The case pattern alone only rejects the exact
+# literal "0" -- "00"/"0000" are all-digit and would slip through as a
+# non-empty, non-'0' string, then `find -mmin -00` matches nothing (a file
+# can't be modified "<0 minutes ago"), silently defeating the same
+# fail-safe intent. The arithmetic check below catches every all-digit
+# zero, not just the single-character form.
+case "$CONTAINER_LOCK_STALE_MIN" in ''|*[!0-9]*) CONTAINER_LOCK_STALE_MIN=240 ;; esac
+[ "$CONTAINER_LOCK_STALE_MIN" -eq 0 ] 2>/dev/null && CONTAINER_LOCK_STALE_MIN=240
 
 # container_lock_fresh <lock_dir> -- true if $lock_dir exists and its
 # directory mtime is within the staleness window. Fails SAFE: if `find`
@@ -57,9 +63,14 @@ container_lock_fresh() {
 # Prints an error to stderr and returns nonzero (3 = held by a live
 # holder/lost the steal race, 1 = mkdir failed for an unrelated reason e.g.
 # missing parent dir or a read-only FS) on denial/failure; the caller
-# decides how to fail (this repo's convention is `fail "$msg"`).
+# decides how to fail (this repo's convention is `fail "$msg"`). On a rc=1
+# failure, also sets CONTAINER_LOCK_LAST_ERROR to the underlying mkdir error
+# text so the caller's own fail() message can include it (the pre-refactor
+# per-script messages embedded this detail inline; this global preserves
+# that without the library needing to know each caller's fail() shape).
 container_lock_acquire() {
   local lock_dir="$1" label="${2:-run}" lock_err
+  CONTAINER_LOCK_LAST_ERROR=""
   if lock_err="$(mkdir "$lock_dir" 2>&1)"; then
     printf '%s\n' "$label" > "$lock_dir/owner" 2>/dev/null || true
     return 0
@@ -78,7 +89,8 @@ container_lock_acquire() {
     echo "container-lock: DENIED -- lost the steal race for a stale lock: $lock_dir" >&2
     return 3
   fi
-  echo "container-lock: failed to create lock at $lock_dir: ${lock_err:-mkdir failed for an unknown reason}" >&2
+  CONTAINER_LOCK_LAST_ERROR="${lock_err:-mkdir failed for an unknown reason}"
+  echo "container-lock: failed to create lock at $lock_dir: $CONTAINER_LOCK_LAST_ERROR" >&2
   return 1
 }
 

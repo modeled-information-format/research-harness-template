@@ -108,7 +108,7 @@ lock_rc=$?
 if [ "$lock_rc" -eq 3 ]; then
   fail "another export/import is in progress for topic '$TOPIC' (lock held: $LOCK_DIR)"
 elif [ "$lock_rc" -ne 0 ]; then
-  fail "failed to create export lock at $LOCK_DIR"
+  fail "failed to create export lock at $LOCK_DIR: ${CONTAINER_LOCK_LAST_ERROR:-mkdir failed for an unknown reason}"
 fi
 # Release-only trap for the window between lock acquisition and the OUTPUT_DIR
 # pre-check below -- deliberately NOT the fuller cleanup() (which also does
