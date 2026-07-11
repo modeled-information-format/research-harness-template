@@ -68,15 +68,22 @@ fresh() {
   hit=$(find "$LOCK" -maxdepth 0 -mmin "-$STALE_MIN" 2>/dev/null) || return 0
   [ -n "$hit" ]
 }
-# A PATH shows recent activity if it exists and its own mtime is within the guard
-# window — an O(1) directory/file mtime check (a write inside a directory bumps the
-# directory's own mtime via its rename()/mkdir() syscall), not a recursive scan of
-# every file under it. Fail SAFE like `fresh()`: if `find` errors, treat it as recent
-# (return 0) so `steal` refuses rather than racing a writer it couldn't inspect.
+# A PATH shows recent activity if it, or (for a directory) anything directly inside
+# it, has an mtime within the guard window. `-maxdepth 1` checks both the directory's
+# OWN mtime (catches a file being created/renamed/deleted — e.g. falsify.sh's documented
+# temp+mv verdict write, which IS a rename and so bumps it) AND every individual file's
+# own mtime one level down (catches an in-place content-only write to an EXISTING file,
+# which does NOT bump the parent directory's mtime — a plain `> existing_file` truncate
+# leaves the directory entry itself untouched). Checking the directory's mtime alone
+# would miss that second case and let `steal` race a writer doing in-place updates.
+# `-maxdepth 1` bounds this to one level (findings/ is a flat directory of *.json per
+# convention), not an unbounded recursive walk. Fail SAFE like `fresh()`: if `find`
+# errors, treat it as recent (return 0) so `steal` refuses rather than racing a writer
+# it couldn't inspect.
 recent_activity() {
   [ -e "$1" ] || return 1
   local hit
-  hit=$(find "$1" -maxdepth 0 -mmin "-$GUARD_MIN" 2>/dev/null) || return 0
+  hit=$(find "$1" -maxdepth 1 -mmin "-$GUARD_MIN" 2>/dev/null) || return 0
   [ -n "$hit" ]
 }
 write_owner() { printf '%s\n' "$LABEL" > "$LOCK/owner" 2>/dev/null || true; }

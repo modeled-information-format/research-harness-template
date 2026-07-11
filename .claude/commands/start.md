@@ -262,8 +262,8 @@ sometimes longer. The live signal of healthy progress is the **growing
   reports as held, do NOT reach straight for `scripts/run-lock.sh steal` on
   the strength of an agent-status check — `steal` itself now refuses (unless
   `FORCE=1`) when `findings/` or `research-progress.md` shows write activity
-  in the last couple of minutes, precisely to stop this scenario from racing
-  a live writer.
+  within the guard window (`RUN_LOCK_STEAL_GUARD_MIN`, default 10 minutes),
+  precisely to stop this scenario from racing a live writer.
 
 ## Reconcile the topic README
 

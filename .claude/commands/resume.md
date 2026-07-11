@@ -160,7 +160,8 @@ watch it cheaply by file count / mtime, never by reading agent transcripts.
   disk-state signals above are authoritative. Do not reach for
   `scripts/run-lock.sh steal` on the strength of an agent-status check alone;
   `steal` itself now refuses (unless `FORCE=1`) when `findings/` or
-  `research-progress.md` shows write activity in the last couple of minutes.
+  `research-progress.md` shows write activity within the guard window
+  (`RUN_LOCK_STEAL_GUARD_MIN`, default 10 minutes).
 
 ## Reconcile the topic README
 

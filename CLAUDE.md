@@ -191,8 +191,10 @@ must merge cleanly.
   intermediate pointer value can get folded into a later release without ever
   getting its own Release/tag — do not add a footer `[X.Y.Z]: .../compare/...` link
   for one of those. When the *next* version that genuinely does get tagged is
-  released, add its footer link comparing against the **previous actual tag** (`git
-  tag --list 'v*' | sort -V`), never against the immediately preceding dated
+  released, add its footer link comparing against the **previous actual tag**
+  (`git tag --list 'v*'`, sorted by version — `sort -V` is GNU-only and absent on
+  macOS/BSD, so use `scripts/update.sh`'s own portable probe-then-fallback pattern
+  rather than a bare `sort -V`), never against the immediately preceding dated
   section's version string — and strip the brackets from any of that gap's
   never-tagged section headings (`## X.Y.Z - DATE`, no `[]`) so they don't read as
   dead reference links. `markdownlint`'s MD052 will catch a bracketed heading with

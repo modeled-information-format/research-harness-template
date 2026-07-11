@@ -145,7 +145,27 @@ else
 fi
 "$LOCK" release "$D" 2>/dev/null
 
-# 11. A steal against a topic with NO recent write activity (the ordinary
+# 11. Regression test (Copilot review, PR #398): an IN-PLACE update to an
+#     EXISTING finding file (content overwritten via a plain truncate, same
+#     path, no rename) must still count as activity -- only the file's own
+#     mtime changes in this case, not the findings/ directory's mtime, so a
+#     directory-mtime-only check would miss it. Backdate the directory itself
+#     to look old, then touch only the existing file in place.
+"$LOCK" release "$D" 2>/dev/null
+"$LOCK" acquire "$D" "alive-owner" >/dev/null 2>&1
+mkdir -p "$D/findings"
+echo '{}' > "$D/findings/f1.json"
+touch -t 202001010000 "$D/findings"   # directory itself looks old/stale
+printf '{"v":2}' > "$D/findings/f1.json"   # in-place rewrite of the EXISTING file, no rename
+"$LOCK" steal "$D" "operator" >/dev/null 2>&1; rc=$?
+if [ "$rc" -eq 3 ] && [ -d "$D/.run-lock" ]; then
+  note "steal refused (rc=3) against an in-place file update, even with an old directory mtime"
+else
+  note "FAIL: an in-place existing-file update was not detected as activity (rc=$rc) -- directory-mtime-only check regression"; fail=1
+fi
+"$LOCK" release "$D" 2>/dev/null
+
+# 12. A steal against a topic with NO recent write activity (the ordinary
 #     crashed-run recovery case) proceeds without needing FORCE.
 rm -rf "$D/findings"
 "$LOCK" acquire "$D" "stale-owner" >/dev/null 2>&1
@@ -156,7 +176,7 @@ else
 fi
 "$LOCK" release "$D" 2>/dev/null
 
-# 12. The steal guard fails SAFE (refuses) if it cannot inspect activity at all,
+# 13. The steal guard fails SAFE (refuses) if it cannot inspect activity at all,
 #     matching fresh()'s existing fail-safe convention -- an unreadable findings/
 #     dir must not be silently treated as "no activity, safe to steal". Skipped
 #     when running as root, since root bypasses directory permission bits and
