@@ -4108,6 +4108,10 @@ gate_changelog_links() {
     END { if (in_run) { last = buf }; printf "%s", last }
   ' CHANGELOG.md)"
   real_tags="$(git tag --list 'v*' 2>/dev/null)"
+  if [ -z "$real_tags" ] && [ -n "$footer" ]; then
+    bad "no 'v*' git tags visible at all (shallow clone or missing tag history?) — cannot verify any footer compare-link; fetch full tag history and re-run"
+    return
+  fi
   while IFS= read -r line; do
     [ -n "$line" ] || continue
     label="${line#\[}"; label="${label%%]:*}"

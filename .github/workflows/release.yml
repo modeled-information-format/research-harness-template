@@ -108,10 +108,11 @@ jobs:
   # `needs:` anything and nothing `needs:` it) or auto-committing back to
   # main — reconciliation is a separate, hand-reviewed follow-up PR (the same
   # fix the operator previously made by hand for research-harness-template#399).
-  # Only the "drift found" outcome is soft (a warning annotation, `exit 0`
-  # below): a genuine infrastructure failure (the engine fetch/attestation
-  # step failing) is left to fail this job normally, since that's worth
-  # surfacing loudly rather than silently swallowing.
+  # A genuine infrastructure failure in the "Fetch the mif-rh-cli engine"
+  # step below (e.g. attestation verification failing) is left to fail this
+  # job normally — that step isn't wrapped in any soft-failure handling.
+  # Only the final reconcile-check step is soft (see its own comment for why
+  # it can't distinguish "drift found" from "the engine hit a real error").
   changelog-links-check:
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
@@ -130,9 +131,24 @@ jobs:
       - name: Check CHANGELOG footer-link reconciliation
         run: |
           set -uo pipefail
+          # GitHub Actions runs `run:` steps under `bash -e` by default, so
+          # capturing `bin/mif-rh-cli ...`'s exit code needs `set +e` around
+          # it — otherwise `-e` aborts the step on the very first non-zero
+          # exit before `code=$?` ever runs, turning the intended soft
+          # warning into a hard job failure. (Two things verified
+          # empirically before landing this: wrapping the command in a bare
+          # `if cmd; then …; fi` with no `else` does NOT work either — `$?`
+          # after such an `if` is unconditionally 0, not the tested
+          # command's real exit status. And `--check`'s "drift found" exit
+          # and a genuine internal error both currently exit 1 — the CLI has
+          # no distinct code for the two — so this deliberately does not try
+          # to tell them apart via exit code; any non-zero exit gets the
+          # same soft warning, which is the right call for a job nothing
+          # else `needs:`.)
+          set +e
           bin/mif-rh-cli harness reconcile-changelog-links --check
           code=$?
+          set -e
           if [ "${code}" -ne 0 ]; then
-            echo "::warning::CHANGELOG.md needs heading-bracket/footer-link reconciliation for this release — run \`bin/mif-rh-cli harness reconcile-changelog-links\` locally and open a follow-up PR (research-harness-template#397)."
+            echo "::warning::mif-rh-cli harness reconcile-changelog-links --check reported an issue (exit ${code}) — CHANGELOG.md may need heading-bracket/footer-link reconciliation, or the engine hit a real error; run it locally to see which, then open a follow-up PR if reconciliation is needed (research-harness-template#397)."
           fi
-          exit 0
