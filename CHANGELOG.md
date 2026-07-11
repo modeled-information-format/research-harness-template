@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.2] - 2026-07-11
+
+### Added
+
+- CI now enforces that every `CHANGELOG.md` footer compare-link resolves to a
+  real git tag (`scripts/verify.sh`'s new `gate_changelog_links`,
+  deliberately narrow so it never fails on the normal bumped-but-not-yet-tagged
+  resting state between releases) (#397).
+- `release.yml` runs `mif-rh-cli harness reconcile-changelog-links --check`
+  after a release publishes and posts a warning annotation if the CHANGELOG
+  needs heading-bracket/footer-link reconciliation, without gating the
+  release or any other PR (#397).
+
+### Changed
+
+- Pinned `mif-rh-cli` engine version bumped `0.6.1` -> `0.7.0`
+  (`scripts/fetch-engine.sh`, `scripts/lib/engine.sh`) to pick up
+  `reconcile_changelog_links`/`harness reconcile-changelog-links`
+  (research-harness-template#397, mif-rs#82).
+
+### Fixed
+
+- `CLAUDE.md` no longer claims markdownlint's MD052 enforces the CHANGELOG
+  bracket/footer invariant — verified empirically false (0 errors on a
+  bracketed heading with no matching footer link); `gate_changelog_links`
+  enforces it instead.
+
 ## [0.12.1] - 2026-07-11
 
 ### Fixed

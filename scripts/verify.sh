@@ -4085,10 +4085,54 @@ gate_versions() {
   fi
 }
 
+gate_changelog_links() {
+  info "CHANGELOG footer compare-links reference only real tags (#397)"
+
+  # Deliberately narrow: only flags an EXISTING link whose compare target(s)
+  # aren't real tags (#393's actual defect class). Does NOT require every
+  # bracketed heading to already have a link — a version bumped but not yet
+  # tagged is CHANGELOG.md's normal resting state between releases, and a
+  # gate that flagged that would go red on main every time, blocking
+  # unrelated PRs. Reconciling brackets/links once a tag lands is
+  # `mif-rh-cli harness reconcile-changelog-links`, run manually (or as a
+  # non-blocking release-time check), never enforced here.
+  # Restrict to the LAST contiguous run of footer-link-shaped lines: Keep a
+  # Changelog's real reference-link footer is always the final such block in
+  # the file, so anchoring on the last run (not every matching line anywhere)
+  # keeps this safe against an inline `[label]: url`-shaped reference inside
+  # a body bullet being mistaken for a footer link.
+  local footer real_tags bad_links="" line label targets tag
+  footer="$(awk '
+    /^\[.*\]: / { buf = buf $0 "\n"; in_run = 1; next }
+    { if (in_run) { last = buf }; buf = ""; in_run = 0 }
+    END { if (in_run) { last = buf }; printf "%s", last }
+  ' CHANGELOG.md)"
+  real_tags="$(git tag --list 'v*' 2>/dev/null)"
+  if [ -z "$real_tags" ] && [ -n "$footer" ]; then
+    bad "no 'v*' git tags visible at all (shallow clone or missing tag history?) — cannot verify any footer compare-link; fetch full tag history and re-run"
+    return
+  fi
+  while IFS= read -r line; do
+    [ -n "$line" ] || continue
+    label="${line#\[}"; label="${label%%]:*}"
+    targets="$(printf '%s\n' "$line" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+')"
+    [ -n "$targets" ] || continue
+    while IFS= read -r tag; do
+      [ -n "$tag" ] || continue
+      printf '%s\n' "$real_tags" | grep -qxF "$tag" || bad_links="${bad_links}${label}->${tag} "
+    done <<<"$targets"
+  done <<<"$footer"
+  if [ -z "$bad_links" ]; then
+    ok "every CHANGELOG footer compare-link references a real tag"
+  else
+    bad "footer link(s) reference a tag that doesn't exist: $bad_links"
+  fi
+}
+
 # ---------------------------------------------------------------------------
 # Gate registry — each milestone appends its function name here.
 # ---------------------------------------------------------------------------
-GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18 gate_m19 gate_m20 gate_m21 gate_m22 gate_m23 gate_m24 gate_m25 gate_m26 gate_m27 gate_m28 gate_m29 gate_m30 gate_m31 gate_ontology_lock gate_versions)
+GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18 gate_m19 gate_m20 gate_m21 gate_m22 gate_m23 gate_m24 gate_m25 gate_m26 gate_m27 gate_m28 gate_m29 gate_m30 gate_m31 gate_ontology_lock gate_versions gate_changelog_links)
 
 for g in "${GATES[@]}"; do "$g"; done
 

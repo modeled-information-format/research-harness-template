@@ -197,9 +197,15 @@ must merge cleanly.
   rather than a bare `sort -V`), never against the immediately preceding dated
   section's version string — and strip the brackets from any of that gap's
   never-tagged section headings (`## X.Y.Z - DATE`, no `[]`) so they don't read as
-  dead reference links. `markdownlint`'s MD052 will catch a bracketed heading with
-  no matching footer definition, so this is a linted invariant, not just a
-  convention.
+  dead reference links. This is a convention enforced by `scripts/verify.sh`'s
+  `gate_changelog_links` (#397) — not by `markdownlint`: MD052 does not flag a
+  bracketed `## [X.Y.Z]` heading with no matching footer definition (verified
+  empirically, 0 errors), since headings aren't parsed as link references. The
+  gate is deliberately narrow — it only fails if an *existing* footer link's
+  compare target isn't a real tag (#393's actual defect class), never merely
+  because a bumped-but-not-yet-tagged section has no link yet (CHANGELOG.md's
+  normal resting state between releases) — so it can run as a required check
+  without going red on `main` after every ordinary version bump.
 - **Releases are GitHub-Release-driven, not bare-tag.** `release.yml` triggers on
   `release: published` (+ `workflow_dispatch`), so a published Release named
   `vX.Y.Z` is what fires SLSA attestation — `git push --tags` alone does not.
