@@ -34,15 +34,155 @@
 # mif-rh-cli on PATH, or set MIF_RH_CLI. Everything else here — file
 # scanning, deliverable title/genre/version extraction, table assembly, the
 # structural check gate, the atomic write — never used jq and stays as-is.
+#
+# <topic> = "_corpus" is a special case (research-harness-template#352): the
+# cross-topic corpus atlas dir (reports/_corpus/) has no goal.json/findings/ of
+# its own, so it skips the mif-rh-cli topic-metadata rollup entirely and builds
+# its README straight from reports/_corpus/corpus-map.json (already a flat JSON
+# artifact written by scripts/synthesize-corpus.sh) via jq, joined against
+# harness.config.json for each listed topic's title/status. Same
+# deterministic-backbone-plus-preserved-prose model as the per-topic path
+# (## Purpose is preserved across rebuilds); different data source and
+# sections, since a corpus atlas isn't shaped like a topic.
 
 set -uo pipefail
 
 die() { echo "build-topic-readme: $*" >&2; exit 2; }
 
+# Extract a preserved prose section's body from an existing README (shared by
+# both the per-topic and the _corpus paths). Match the heading tolerantly:
+# normalize a trailing CR (CRLF files) and any trailing whitespace before
+# comparing, so a cosmetically-perturbed heading does not silently defeat
+# prose preservation (this runs on every mutation now, so a missed match would
+# clobber synthesis-grade Purpose/Key Findings with the draft). Body lines are
+# still emitted verbatim ($0), not the normalized copy.
+extract_section() {
+  awk -v hdr="$1" '
+    { h=$0; sub(/\r$/,"",h); sub(/[ \t]+$/,"",h) }
+    h == hdr { grab=1; next }
+    grab && /^## / { grab=0 }
+    grab { print }
+  ' "$2" | awk '
+    { lines[n++] = $0 }
+    END { s=0; while (s<n && lines[s]=="") s++
+          e=n; while (e>s && lines[e-1]=="") e--
+          for (i=s;i<e;i++) print lines[i] }'
+}
+
+# ----- _corpus: the cross-topic atlas index, not a per-topic README -----------
+corpus_check() {
+  local errs=0 sec stated actual
+  [ -f "$OUT" ] || { echo "FAIL: README missing: $OUT" >&2; return 1; }
+  [ -f "$MAP" ] || { echo "FAIL: corpus map missing: $MAP" >&2; return 1; }
+  actual=$(jq -r '.topics | length' "$MAP" 2>/dev/null) \
+    || { echo "FAIL: corpus map is not valid JSON: $MAP" >&2; return 1; }
+  for sec in "## Purpose" "## Topics" "## Reports"; do
+    grep -qF "$sec" "$OUT" || { echo "FAIL: missing section: $sec" >&2; errs=$((errs+1)); }
+  done
+  stated=$(grep -oE '\*\*Topics:\*\* [0-9]+' "$OUT" | grep -oE '[0-9]+' | head -1)
+  if [ -z "$stated" ]; then
+    echo "FAIL: no '**Topics:** N' metadata line" >&2; errs=$((errs+1))
+  elif [ "$stated" != "$actual" ]; then
+    echo "FAIL: Topics count drift — README says $stated, corpus-map has $actual" >&2
+    errs=$((errs+1))
+  fi
+  # Every local link target must exist on disk (relative to reports/_corpus/).
+  local link
+  while IFS= read -r link; do
+    [ -n "$link" ] || continue
+    case "$link" in http://*|https://*|"#"*|mailto:*) continue ;; esac
+    [ -f "$TOPIC_DIR/$link" ] || { echo "FAIL: dangling link: $link" >&2; errs=$((errs+1)); }
+  done < <(grep -oE '\]\([^)]+\)' "$OUT" | sed -E 's/^\]\(//; s/\)$//')
+  if [ "$errs" -ne 0 ]; then
+    echo "build-topic-readme: $errs validation error(s) for _corpus" >&2
+    return 1
+  fi
+  echo "OK: $OUT valid ($actual topics)"
+}
+
+corpus_build() {
+  [ -f "$MAP" ] || die "corpus map not found: $MAP — run scripts/synthesize-corpus.sh first"
+
+  # Only ever link to corpus-synthesis.md when it actually exists — corpus_build can
+  # run before the atlas is rendered (corpus-map.json alone is enough to build this
+  # README), and an unconditional link there would fail the dangling-link check.
+  local atlas_ref=""
+  [ -f "$ATLAS" ] && atlas_ref=" See [corpus-synthesis.md](corpus-synthesis.md) for the full atlas."
+
+  local purpose_default purpose today topic_count surv weak inc fals entity_count contra_count disproven_count
+  purpose_default="A cross-topic view of the whole research record spanning every registered topic — surviving evidence, entity reuse across topics, contradictions, and what has been disproven.${atlas_ref}"
+  purpose="$purpose_default"
+  if [ -f "$OUT" ]; then
+    local prev_purpose
+    prev_purpose=$(extract_section "## Purpose" "$OUT")
+    [ -n "$prev_purpose" ] && purpose="$prev_purpose"
+  fi
+
+  today=$(date -u +%Y-%m-%d)
+  topic_count=$(jq -r '.topics | length' "$MAP")
+  surv=$(jq -r '.verdict_distribution.survived // 0' "$MAP")
+  weak=$(jq -r '.verdict_distribution.weakened // 0' "$MAP")
+  inc=$(jq -r '.verdict_distribution.inconclusive // 0' "$MAP")
+  fals=$(jq -r '.verdict_distribution.falsified // 0' "$MAP")
+  entity_count=$(jq -r '.entity_reuse | length' "$MAP")
+  contra_count=$(jq -r '.contradictions | length' "$MAP")
+  disproven_count=$(jq -r '.disproven | length' "$MAP")
+
+  local out_tmp="$OUT.tmp.$$"
+  {
+    printf '# Research Corpus Atlas\n\n'
+    printf '**Topics:** %s | **Updated:** %s\n' "$topic_count" "$today"
+    printf '**Findings:** survived %s, weakened %s, inconclusive %s, falsified %s | **Entities:** %s\n\n' \
+      "$surv" "$weak" "$inc" "$fals" "$entity_count"
+    printf -- '---\n\n'
+
+    printf '## Purpose\n\n%s\n\n' "$purpose"
+
+    printf '## Topics\n\n'
+    if [ "$topic_count" -eq 0 ]; then
+      printf 'No topics registered yet.\n\n'
+    else
+      printf '| Topic | Title | Status |\n| --- | --- | --- |\n'
+      # harness.config.json is optional enrichment here (title/status lookup), not
+      # required data — a topic id with no config entry (or no config file at all)
+      # still gets a row, falling back to "—"/"—" rather than failing closed.
+      local known_json="[]"
+      if [ -f "$CONFIG" ]; then
+        known_json=$(jq -c '.topics // []' "$CONFIG" 2>/dev/null) || known_json="[]"
+      fi
+      jq -r --argjson known "$known_json" '
+        .topics[] as $id
+        | (($known[] | select(.id == $id)) // {title: "—", status: "—"}) as $t
+        | "| \($id) | \($t.title // "—") | \($t.status // "—") |"
+      ' "$MAP"
+      printf '\n'
+    fi
+
+    printf '## Reports\n\n'
+    if [ -f "$ATLAS" ]; then
+      printf '| Type | Title |\n| --- | --- |\n'
+      printf '| Corpus Atlas | [corpus-synthesis.md](corpus-synthesis.md) |\n\n'
+    else
+      printf 'No atlas rendered yet — run `scripts/synthesize-corpus.sh`.\n\n'
+    fi
+
+    printf '## Cross-Corpus Summary\n\n'
+    printf -- '- **Entity reuse:** %s cross-topic entities\n' "$entity_count"
+    printf -- '- **Contradictions:** %s flagged\n' "$contra_count"
+    printf -- '- **Disproven:** %s findings\n\n' "$disproven_count"
+    if [ -f "$ATLAS" ]; then
+      printf 'See [corpus-synthesis.md](corpus-synthesis.md) for the full Cross-Corpus Insights, entity-reuse detail, contradictions, and what was disproven.\n'
+    else
+      printf 'Run `scripts/synthesize-corpus.sh` to render the full atlas (Cross-Corpus Insights, entity-reuse detail, contradictions, what was disproven).\n'
+    fi
+  } > "$out_tmp" || { rm -f "$out_tmp"; die "failed to write $OUT"; }
+  mv "$out_tmp" "$OUT"
+  echo "wrote $OUT ($topic_count topics)"
+}
+
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 # shellcheck source=scripts/lib/engine.sh
 . "$ROOT/scripts/lib/engine.sh"
-ENGINE="$(engine_bin "$ROOT")" || exit 5
 
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-.}"
 CONFIG="$PROJECT_DIR/harness.config.json"
@@ -64,11 +204,26 @@ while [ $# -gt 0 ]; do
 done
 
 [ -n "$TOPIC" ] || die "usage: build-topic-readme.sh <topic> [--check] [--findings <dir>] [--out <path>]"
-[ -f "$CONFIG" ] || die "manifest not found: $CONFIG"
 
 TOPIC_DIR="$PROJECT_DIR/reports/$TOPIC"
-[ -n "$FINDINGS_DIR" ] || FINDINGS_DIR="$TOPIC_DIR/findings"
 [ -n "$OUT" ] || OUT="$TOPIC_DIR/README.md"
+
+if [ "$TOPIC" = "_corpus" ]; then
+  MAP="$TOPIC_DIR/corpus-map.json"
+  ATLAS="$TOPIC_DIR/corpus-synthesis.md"
+  if [ "$MODE" = "check" ]; then corpus_check; exit $?; fi
+  corpus_build
+  exit $?
+fi
+
+# harness.config.json and the mif-rh-cli engine are required from here on (topic
+# registration/title/status, the topic-metadata rollup) — _corpus needs neither,
+# so both are skipped for it entirely (resolving the engine spawns a subprocess
+# and hard-fails if mif-rh-cli isn't installed/stale, which _corpus's pure-jq
+# build must not depend on).
+ENGINE="$(engine_bin "$ROOT")" || exit 5
+[ -f "$CONFIG" ] || die "manifest not found: $CONFIG"
+[ -n "$FINDINGS_DIR" ] || FINDINGS_DIR="$TOPIC_DIR/findings"
 GOAL="$TOPIC_DIR/goal.json"
 
 # ----- deterministic data over the MIF substrate (mif-rh-cli engine) -----------
@@ -111,24 +266,6 @@ fi
 HERO=$(find "$TOPIC_DIR/_assets" -maxdepth 1 -iname '*readme-hero*' 2>/dev/null | sort | head -1)
 
 # ----- preservation: keep authored prose + creation date on rebuild ------------
-
-extract_section() {
-  # Match the heading tolerantly: normalize a trailing CR (CRLF files) and any
-  # trailing whitespace before comparing, so a cosmetically-perturbed heading does
-  # not silently defeat prose preservation (this runs on every mutation now, so a
-  # missed match would clobber synthesis-grade Purpose/Key Findings with the draft).
-  # Body lines are still emitted verbatim ($0), not the normalized copy.
-  awk -v hdr="$1" '
-    { h=$0; sub(/\r$/,"",h); sub(/[ \t]+$/,"",h) }
-    h == hdr { grab=1; next }
-    grab && /^## / { grab=0 }
-    grab { print }
-  ' "$2" | awk '
-    { lines[n++] = $0 }
-    END { s=0; while (s<n && lines[s]=="") s++
-          e=n; while (e>s && lines[e-1]=="") e--
-          for (i=s;i<e;i++) print lines[i] }'
-}
 
 KEY_PRESERVED=""
 if [ "$MODE" = "build" ] && [ -f "$OUT" ]; then

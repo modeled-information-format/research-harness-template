@@ -13,6 +13,10 @@
 #                        synthesis-grade `## Cross-Corpus Insights` prose section authored by the
 #                        corpus-synthesizer agent. A navigation/atlas projection (no MIF
 #                        frontmatter); exempt from the output-conformance gate.
+#   README.md            the site landing page for reports/_corpus/ (research-harness-template#352
+#                        — every other reports/<dir>/ gets one, this was the exception). Built by
+#                        scripts/build-topic-readme.sh's `_corpus` mode straight from
+#                        corpus-map.json; not the mif-rh-cli engine render above.
 #
 # Scales to a large corpus: all STRUCTURE comes from concordance.json (already merged), so this
 # script opens NO finding files. Deterministic/idempotent: no wall-clock, every array sorted.
@@ -86,6 +90,9 @@ run_check() {
     echo "FAIL: Cross-Corpus Insights are the draft — synthesis not applied (run the corpus-synthesizer)" >&2
     errs=$((errs+1))
   fi
+  # The site landing page (research-harness-template#352) — delegate to its own gate.
+  CLAUDE_PROJECT_DIR="$(dirname "$RD")" bash "$ROOT/scripts/build-topic-readme.sh" _corpus --check >&2 \
+    || errs=$((errs+1))
   [ "$errs" -eq 0 ] || { echo "synthesize-corpus: $errs validation error(s)" >&2; return 1; }
   echo "OK: corpus atlas valid ($MD_OUT)"
 }
@@ -102,4 +109,10 @@ if [ -f "$MD_OUT" ]; then
   case "$prev" in *"$DRAFT_MARK"*) : ;; *) [ -n "$prev" ] && PRESERVED="$prev" ;; esac
 fi
 
-exec "$ENGINE" harness synthesize-corpus "$CONC" "$MAP_OUT" "$MD_OUT" --preserved-insights "$PRESERVED"
+"$ENGINE" harness synthesize-corpus "$CONC" "$MAP_OUT" "$MD_OUT" --preserved-insights "$PRESERVED"
+rc=$?
+[ "$rc" -eq 0 ] || exit "$rc"
+
+# Rebuild the site landing page (research-harness-template#352) from the map
+# the engine call above just wrote — pure jq, no engine dependency of its own.
+CLAUDE_PROJECT_DIR="$(dirname "$RD")" bash "$ROOT/scripts/build-topic-readme.sh" _corpus

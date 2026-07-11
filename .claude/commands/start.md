@@ -111,8 +111,36 @@ rule prevents re-falsifying prior findings).
 status}`. Register or update the topic by its `id` (per the Structured Data
 Protocol — jq write, then re-validate):
 
+Derive `TITLE` from the goal statement — strip the common boilerplate lead-in every
+goal statement shares ("Enable the decision of whether/on/to...", "Enable the
+board's decision to...") so the title starts at the actual topic content, then
+truncate at a **word boundary**, never mid-word (`cut -c1-80` alone corrupted
+titles whose 80th character landed inside a word — research-harness-template#353):
+
 ```bash
-TITLE=$(jq -r '.goal_statement' "$GOAL_FILE" | cut -c1-80)
+RAW=$(jq -r '.goal_statement' "$GOAL_FILE")
+CANDIDATE=$(printf '%s' "$RAW" | sed -E "s/^Enable the (board's )?decision (of whether( and how)? to|to|on) //")
+[ -n "$CANDIDATE" ] || CANDIDATE="$RAW"
+if [ "${#CANDIDATE}" -gt 80 ]; then
+  TITLE=$(printf '%s' "$CANDIDATE" | cut -c1-80 | sed -E 's/[[:space:]]+[^[:space:]]*$//')
+else
+  TITLE="$CANDIDATE"
+fi
+```
+
+`$TITLE` is still a mechanical derivation, not a confirmed title — the
+boilerplate-strip regex only covers the lead-ins observed so far, so a goal
+statement phrased differently can slip through unstripped even when it's short
+enough to skip truncation entirely, with no other signal that happened. **Ask
+the user** (AskUserQuestion) to confirm it before registering, every time, not
+only when truncation fired — offer the derived `$TITLE` as the suggested
+default (a one-click accept when it already looks right), and let them give
+their own short phrase instead (a PR-title-vs-body split: distinct from the
+goal statement's prose, not a restatement of it) — the same "ask rather than
+guess" pattern this file already uses for ontology selection below. Use their
+answer as `$TITLE`.
+
+```bash
 jq --arg id "$TOPIC" --arg title "$TITLE" --arg ns "harness/$TOPIC" '
   if any(.topics[]; .id == $id)
   then (.topics[] | select(.id == $id) | .status) = "active"

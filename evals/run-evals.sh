@@ -253,6 +253,31 @@ run_neg "concordance-undeclared-type"    scripts/validate-concordance.sh evals/f
 run_neg "concordance-domain-violation"   scripts/validate-concordance.sh evals/fixtures/concordance/domain-violation.concordance.json $WC
 run     "concordance-idempotent"         bash -c "scripts/build-concordance.sh evals/fixtures/concordance/reports \"$TMP/w1.json\" >/dev/null && scripts/build-concordance.sh evals/fixtures/concordance/reports \"$TMP/w2.json\" >/dev/null && diff -q \"$TMP/w1.json\" \"$TMP/w2.json\""
 
+# 5f. reports/_corpus/README.md (research-harness-template#352): synthesize-corpus.sh's
+#     _corpus mode builds a site landing page straight from corpus-map.json, joined against
+#     harness.config.json for each topic's title/status; a topic present in corpus-map but
+#     absent from the config falls back to "—" rather than crashing; a hand-edited Purpose
+#     section survives a rebuild.
+run "synthesize-corpus-readme" bash -c '
+  d="'"$TMP"'/corpus-readme"; mkdir -p "$d/reports"
+  cp evals/fixtures/concordance/good.concordance.json "$d/reports/concordance.json"
+  printf "%s" "{\"version\":\"0.1.0\",\"topics\":[{\"id\":\"edu\",\"title\":\"Education Fixture\",\"namespace\":\"harness/edu\",\"status\":\"active\"}]}" > "$d/harness.config.json"
+  CLAUDE_PROJECT_DIR="$d" bash scripts/synthesize-corpus.sh "$d/reports" >/dev/null &&
+  grep -qF "| edu | Education Fixture | active |" "$d/reports/_corpus/README.md" &&
+  grep -qF "**Topics:** 1" "$d/reports/_corpus/README.md" &&
+  CLAUDE_PROJECT_DIR="$d" bash scripts/build-topic-readme.sh _corpus --check >/dev/null &&
+  sed -i.bak "s/A cross-topic view.*/CUSTOM PURPOSE./" "$d/reports/_corpus/README.md" &&
+  CLAUDE_PROJECT_DIR="$d" bash scripts/build-topic-readme.sh _corpus >/dev/null &&
+  grep -qF "CUSTOM PURPOSE." "$d/reports/_corpus/README.md"
+'
+run "synthesize-corpus-readme-unmatched-topic" bash -c '
+  d="'"$TMP"'/corpus-readme-unmatched"; mkdir -p "$d/reports"
+  cp evals/fixtures/concordance/good.concordance.json "$d/reports/concordance.json"
+  printf "%s" "{\"version\":\"0.1.0\",\"topics\":[]}" > "$d/harness.config.json"
+  CLAUDE_PROJECT_DIR="$d" bash scripts/synthesize-corpus.sh "$d/reports" >/dev/null &&
+  grep -qF "| edu | — | — |" "$d/reports/_corpus/README.md"
+'
+
 # 6. Model-authoring layer (lib/harness_models): every authored schema emits
 #    deterministic, schema-valid contract JSON from a typed dict — replacing the
 #    hand-composed shell JSON (`jq -n`) that broke under the Bash `eval` wrapper.

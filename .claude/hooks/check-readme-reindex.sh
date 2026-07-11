@@ -66,6 +66,17 @@ case "$REL_PATH" in
   reports/*/*.md)
     TOPIC=$(printf '%s' "$REL_PATH" | sed -E 's#reports/([^/]+)/.*#\1#')
     [ "$TOPIC" = "_meta" ] && exit 0
+    # _corpus isn't a registered topic and its README has no Key Findings section
+    # or readme-skill support (research-harness-template#352) — its own message,
+    # not the per-topic one below.
+    if [ "$TOPIC" = "_corpus" ]; then
+      if rebuild_topic_readme "$TOPIC"; then
+        emit "Report '$REL_PATH' changed; the corpus atlas's README (reports/_corpus/README.md) was auto-rebuilt (topics table, verdict summary). Its Purpose section is hand-editable and preserved across rebuilds if you want to refine it; there is no readme-skill/Key-Findings step for it. Then 'bash scripts/build-topic-readme.sh _corpus --check'."
+      else
+        emit "Report '$REL_PATH' changed, but the corpus README auto-rebuild did NOT run (is reports/_corpus/corpus-map.json present? run 'bash scripts/synthesize-corpus.sh' first). Then 'bash scripts/build-topic-readme.sh _corpus --check'."
+      fi
+      exit 0
+    fi
     if rebuild_topic_readme "$TOPIC"; then
       emit "Report '$REL_PATH' changed; the navigation README for topic '$TOPIC' was auto-rebuilt (Reports table + counts). Refine its Purpose and Key Findings prose via the readme skill if needed ('readme --topic $TOPIC'), then '--check'."
     else
