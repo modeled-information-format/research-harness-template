@@ -92,18 +92,23 @@ ONTOLOGY_MAP="reports/$TOPIC/ontology-map.json"
 
 # --- Concurrency lock (feature-spec AC12, issue #375): shared mutual
 # exclusion with mif-container-import.sh's own lock, same path, same
-# mkdir-atomic mechanism. Export never acquired this before, so a concurrent
-# /export could read reports/<topic>/findings/*.json and ontology-map.json
-# while an /import was mid-flight on the same topic -- a manifest whose
-# resources are a mix of pre- and post-import state, with no error or
-# warning. Acquired here, before Step 1 reads anything.
+# mkdir-atomic mechanism (with staleness/steal recovery, issue #382) --
+# scripts/lib/container-lock.sh is the shared primitive, sourced here and by
+# import instead of each script carrying its own copy. Export never acquired
+# this before, so a concurrent /export could read reports/<topic>/findings/
+# *.json and ontology-map.json while an /import was mid-flight on the same
+# topic -- a manifest whose resources are a mix of pre- and post-import
+# state, with no error or warning. Acquired here, before Step 1 reads
+# anything.
+# shellcheck source=scripts/lib/container-lock.sh
+. "$ROOT/scripts/lib/container-lock.sh"
 LOCK_DIR="reports/$TOPIC/.container.lock"
-if lock_err="$(mkdir "$LOCK_DIR" 2>&1)"; then
-  :
-elif [ -d "$LOCK_DIR" ]; then
+container_lock_acquire "$LOCK_DIR" "export"
+lock_rc=$?
+if [ "$lock_rc" -eq 3 ]; then
   fail "another export/import is in progress for topic '$TOPIC' (lock held: $LOCK_DIR)"
-else
-  fail "failed to create export lock at $LOCK_DIR: ${lock_err:-mkdir failed for an unknown reason}"
+elif [ "$lock_rc" -ne 0 ]; then
+  fail "failed to create export lock at $LOCK_DIR: ${CONTAINER_LOCK_LAST_ERROR:-mkdir failed for an unknown reason}"
 fi
 # Release-only trap for the window between lock acquisition and the OUTPUT_DIR
 # pre-check below -- deliberately NOT the fuller cleanup() (which also does
@@ -113,7 +118,7 @@ fi
 # and is not empty" rejection below -- exactly the guarantee this script's
 # own header comment on that `rm -rf "$OUTPUT_DIR"` line depends on. Upgraded
 # to the full cleanup() once that precondition is actually confirmed.
-trap 'rmdir "$LOCK_DIR" 2>/dev/null' EXIT
+trap 'container_lock_release "$LOCK_DIR"' EXIT
 
 if [ -e "$OUTPUT_DIR" ]; then
   [ -d "$OUTPUT_DIR" ] || fail "$OUTPUT_DIR exists and is not a directory"
@@ -140,7 +145,7 @@ EXPORT_OK=0
 cleanup() {
   rm -rf "$T"
   [ "$EXPORT_OK" -eq 1 ] || rm -rf "$OUTPUT_DIR"
-  rmdir "$LOCK_DIR" 2>/dev/null
+  container_lock_release "$LOCK_DIR"
 }
 trap cleanup EXIT
 mkdir -p "$OUTPUT_DIR/findings" || fail "failed to create $OUTPUT_DIR/findings"
@@ -274,6 +279,10 @@ while IFS=$'\t' read -r rid existing _rid2 ontology_type; do
   # mis-paired ontology_type if either jq filter's row order ever diverges
   # (review finding, Story #328).
   [ "$rid" = "$_rid2" ] || fail "internal error: id/type lookup misalignment ($rid != $_rid2) -- this should be unreachable"
+  # Refresh the lock every iteration (issue #382 review): a topic large
+  # enough to genuinely run past CONTAINER_LOCK_STALE_MIN must not have its
+  # own still-live lock misjudged as stale and stolen mid-export.
+  container_lock_refresh "$LOCK_DIR"
   base="$(basename "$existing")"
   cp "$existing" "$OUTPUT_DIR/findings/$base" || fail "failed to copy $existing"
   digest="$(scripts/mif-container-digest.sh resource "$OUTPUT_DIR/findings/$base")" \

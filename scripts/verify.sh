@@ -256,6 +256,26 @@ gate_m3() {
     bad "engine smoke test failed"
     bash evals/smoke-test.sh 2>&1 | sed 's/^/      /' >&2
   fi
+
+  # 3e. Regression guard for #383: report-synthesizer's Step 2 genre-template gate
+  #     must check the SPECIFIC requested genre pack, not a nonexistent family pack
+  #     literally named "reports" (every genre is its own top-level packs[] entry --
+  #     that select() always returned empty, so every genre-tagged report silently
+  #     fell through to neutral synthesis while frontmatter still claimed the genre
+  #     was applied). Also guard against a hardcoded `reports:<genre>` Skill()
+  #     namespace -- the actual genre skills in this harness are namespaced by the
+  #     pack's source (e.g. `mif-docs:engineering`), never a local `reports:` family.
+  local RS=".claude/agents/report-synthesizer.md" rs_fail=""
+  grep -qE 'select\(\.name=="reports"' "$RS" && rs_fail="${rs_fail}still greps for a nonexistent 'reports' family pack; "
+  grep -qE '`reports`[^`]{0,24}(pack|genre)' "$RS" && rs_fail="${rs_fail}still describes a \`reports\` family pack in prose (review caught this leftover in the frontmatter description, worked example, and axis definition even after Step 2's own check was fixed); "
+  grep -qE -- '--arg g "\$GENRE"' "$RS" || rs_fail="${rs_fail}missing the per-genre parameterized jq check; "
+  grep -qE 'Skill\(reports:' "$RS" && rs_fail="${rs_fail}still hardcodes a reports: Skill() namespace; "
+  grep -qE 'Skill\(mif-docs:' "$RS" && rs_fail="${rs_fail}resolves the Skill() namespace from source.marketplace, e.g. Skill(mif-docs:...) (Copilot review, round 2: the real convention is pack:pack, self-named from packs[].name -- source.marketplace only says where the code is FETCHED from, sync-packs.sh registers every enabled pack under this harness's own plugin namespace regardless of upstream source); "
+  if [ -z "$rs_fail" ]; then
+    ok "report-synthesizer.md (#383): genre gate checks the specific requested pack, not a nonexistent 'reports' family; no hardcoded reports: Skill() namespace"
+  else
+    bad "report-synthesizer.md (#383) regression: $rs_fail"
+  fi
 }
 
 # ---------------------------------------------------------------------------
@@ -1652,6 +1672,95 @@ gate_m14() {
     ok "phase-gate hook: a real, unquoted invocation is denied with no window open"
   else
     bad "phase-gate hook: real invocation not denied (d=$d_real_noquotes)"
+  fi
+
+  # 14h. Regression test for #384: falsify.sh ITSELF refuses to grade a topic's
+  #      session findings without a fresh gate window, independent of the
+  #      PreToolUse hook -- this is what makes every 14e bypass shape (env-var
+  #      prefix, a loop, an interpreter wrapper, ...) harmless even though the
+  #      hook's own substring match misses some of them: the script the
+  #      command eventually reaches still refuses to run. A non-findings
+  #      target (a report-finding) is never gated, with no window open at all.
+  mkdir -p "$T/reports/tA/findings"
+  printf '{"@id":"urn:mif:concept:t:f2","title":"x"}\n' > "$T/reports/tA/findings/f2.json"
+  printf '{"@id":"urn:mif:concept:t:rf","title":"x"}\n' > "$T/reports/tA/report-finding.json"
+  rm -f "$T/reports/tA/.gate-active"
+  local fs_no_window_rc
+  scripts/falsify.sh "$T/reports/tA/findings/f2.json" >/dev/null 2>&1; fs_no_window_rc=$?
+  local fs_report_vd
+  fs_report_vd=$(scripts/falsify.sh "$T/reports/tA/report-finding.json" 2>/dev/null | jq -r '.extensions.harness.verification.verdict // empty')
+  touch "$T/reports/tA/.gate-active"
+  local fs_open_vd
+  fs_open_vd=$(scripts/falsify.sh "$T/reports/tA/findings/f2.json" 2>/dev/null | jq -r '.extensions.harness.verification.verdict')
+  touch -t 200001010000 "$T/reports/tA/.gate-active"
+  local fs_stale_rc
+  scripts/falsify.sh "$T/reports/tA/findings/f2.json" >/dev/null 2>&1; fs_stale_rc=$?
+  if [ "$fs_no_window_rc" != 0 ] && [ "$fs_report_vd" = "inconclusive" ] && [ "$fs_open_vd" = "inconclusive" ] && [ "$fs_stale_rc" != 0 ]; then
+    ok "falsify.sh (#384): refuses to grade a session finding with no/stale gate window open, independent of the hook; grades it once the window is fresh; a report-finding target is never gated"
+  else
+    bad "falsify.sh (#384) gate check wrong (no-window rc=$fs_no_window_rc report-verdict=$fs_report_vd open-verdict=$fs_open_vd stale rc=$fs_stale_rc)"
+  fi
+
+  # 14i. Regression test for a review-caught gap in #384's own fix: a BARE
+  #      relative argument invoked with the caller's cwd already INSIDE the
+  #      findings/ directory (`cd reports/t/findings && falsify.sh f.json`)
+  #      has no "findings/" path segment in the raw argument, so matching
+  #      against $FINDING as typed (rather than its resolved absolute form)
+  #      missed this shape entirely -- the exact "cd-into-findings" bypass
+  #      guard-falsify-gate.sh's own LIMITATIONS block documents as a
+  #      hook-miss, reproduced live in review as a SILENT miss in the script
+  #      that was supposed to close it independent of the hook.
+  local FALSIFY_ABS; FALSIFY_ABS="$(cd scripts && pwd)/falsify.sh"
+  rm -f "$T/reports/tA/.gate-active"
+  local fs_cd_no_window_rc
+  (cd "$T/reports/tA/findings" && "$FALSIFY_ABS" f2.json >/dev/null 2>&1); fs_cd_no_window_rc=$?
+  touch "$T/reports/tA/.gate-active"
+  local fs_cd_open_vd
+  fs_cd_open_vd=$(cd "$T/reports/tA/findings" && "$FALSIFY_ABS" f2.json 2>/dev/null | jq -r '.extensions.harness.verification.verdict')
+  if [ "$fs_cd_no_window_rc" != 0 ] && [ "$fs_cd_open_vd" = "inconclusive" ]; then
+    ok "falsify.sh (#384 review follow-up): a bare relative arg invoked from inside findings/ is still refused with no window open (resolved to its real absolute path, not matched on the raw argument)"
+  else
+    bad "falsify.sh cd-into-findings bypass regression (no-window rc=$fs_cd_no_window_rc, fresh-window verdict=$fs_cd_open_vd)"
+  fi
+
+  # 14j. Regression test for a second Copilot-caught gap in the SAME fix: a
+  #      DOTTED relative argument from inside findings/ (`./f.json`) made a
+  #      plain $PWD-prefix resolve to ".../findings/./f.json" -- dirname
+  #      twice over that yields TOPIC_DIR=".../findings" (dirname of
+  #      "findings/." is "findings" itself), one level too deep, so MARKER
+  #      pointed at a path that can never exist. Not a bypass (it fails
+  #      CLOSED, refusing even a legitimate call with the window open) but
+  #      still wrong -- falsify.sh now `cd`s into the finding's own
+  #      directory and reads `pwd` to canonicalize "." before matching.
+  rm -f "$T/reports/tA/.gate-active"
+  local fs_dotcd_no_window_rc
+  (cd "$T/reports/tA/findings" && "$FALSIFY_ABS" ./f2.json >/dev/null 2>&1); fs_dotcd_no_window_rc=$?
+  touch "$T/reports/tA/.gate-active"
+  local fs_dotcd_open_vd
+  fs_dotcd_open_vd=$(cd "$T/reports/tA/findings" && "$FALSIFY_ABS" ./f2.json 2>/dev/null | jq -r '.extensions.harness.verification.verdict')
+  if [ "$fs_dotcd_no_window_rc" != 0 ] && [ "$fs_dotcd_open_vd" = "inconclusive" ]; then
+    ok "falsify.sh (#384 Copilot review follow-up): a DOTTED relative arg ('./f.json') from inside findings/ resolves to the real topic dir, not one level too deep"
+  else
+    bad "falsify.sh dotted-relative-path regression (no-window rc=$fs_dotcd_no_window_rc, fresh-window verdict=$fs_dotcd_open_vd)"
+  fi
+
+  # 14k. Regression test for a THIRD Copilot-caught gap (review round 2): the
+  #      original `*/findings/*.json` pattern matched ANY path containing a
+  #      "findings/" segment anywhere, not just a real
+  #      reports/<topic>/findings/ session-finding path -- an unrelated path
+  #      like /tmp/findings/x.json would be misclassified as gated and
+  #      unexpectedly refused. The pattern is now anchored to require a
+  #      "reports/" segment before "findings/", matching the hook's own
+  #      regex scope. A non-report findings/ path must NEVER be gated, with
+  #      no window open at all.
+  mkdir -p "$T/unrelated/findings"
+  printf '{"@id":"urn:mif:concept:t:uf","title":"x"}\n' > "$T/unrelated/findings/uf.json"
+  local fs_unrelated_vd
+  fs_unrelated_vd=$(scripts/falsify.sh "$T/unrelated/findings/uf.json" 2>/dev/null | jq -r '.extensions.harness.verification.verdict // empty')
+  if [ "$fs_unrelated_vd" = "inconclusive" ]; then
+    ok "falsify.sh (#384 Copilot review round 2): an unrelated findings/ path outside reports/<topic>/ is never gated, even with no window open"
+  else
+    bad "falsify.sh over-broad findings/ match regression (verdict=$fs_unrelated_vd)"
   fi
 
   rm -rf "$T"
@@ -3268,6 +3377,25 @@ gate_m29() {
     bad "import did not fail closed against an already-held lock"
   fi
 
+  # 29j2. Regression test for #382: a STALE lock (mtime older than
+  #      CONTAINER_LOCK_STALE_MIN, left behind by e.g. a killed import that
+  #      never reached its EXIT trap) is safely STOLEN instead of wedging
+  #      every later export/import on the topic forever; a fresh lock is
+  #      still denied (mirrors gate_m31's 31a3 for export's own copy of this
+  #      shared lock primitive).
+  mkdir -p "$TOPIC_DIR/.container.lock"
+  touch -t 200001010000 "$TOPIC_DIR/.container.lock"
+  "$IMPORT" "$T/c-noop" "$TOPIC" >/dev/null 2>&1
+  local rc_stale=$?
+  local stale_ok=0
+  [ "$rc_stale" -eq 0 ] && [ ! -d "$TOPIC_DIR/.container.lock" ] && stale_ok=1
+  rm -rf "$TOPIC_DIR/.container.lock"
+  if [ "$stale_ok" -eq 1 ]; then
+    ok "container-lock (#382): import steals a STALE .container.lock instead of wedging the topic forever"
+  else
+    bad "container-lock (#382) import staleness regression (rc=$rc_stale ok=$stale_ok)"
+  fi
+
   # 29k. Regression test for issue #376's destination pre-validation: a
   #      SUBSET manifest whose DESTINATION ontology-map.json is corrupted
   #      (not a JSON array) must reject the WHOLE import before any write --
@@ -3642,6 +3770,81 @@ gate_m31() {
   else
     bad "export did not fail closed against an already-held lock (rc=$rc_export_locked)"
   fi
+
+  # 31a3. Regression test for #382: a STALE lock (mtime older than
+  #      CONTAINER_LOCK_STALE_MIN, left behind by e.g. a killed export/import
+  #      that never reached its EXIT trap) is safely STOLEN rather than
+  #      wedging every later export/import on the topic forever -- a fresh
+  #      lock is still denied, same as 31a2.
+  mkdir -p "$TOPIC_DIR/.container.lock"
+  touch -t 200001010000 "$TOPIC_DIR/.container.lock"
+  "$EXPORT" "$TOPIC" "$T/stale-lock-export" > /dev/null 2>&1
+  local rc_export_stale=$?
+  local export_stale_ok=0
+  [ "$rc_export_stale" -eq 0 ] && [ -f "$T/stale-lock-export/mif-package.json" ] && [ ! -d "$TOPIC_DIR/.container.lock" ] && export_stale_ok=1
+  rm -rf "$T/stale-lock-export" "$TOPIC_DIR/.container.lock"
+  mkdir -p "$TOPIC_DIR/.container.lock"
+  "$EXPORT" "$TOPIC" "$T/fresh-lock-export" > /dev/null 2>&1
+  local rc_export_fresh=$?
+  local export_fresh_ok=0
+  [ "$rc_export_fresh" -ne 0 ] && [ ! -d "$T/fresh-lock-export" ] && export_fresh_ok=1
+  rm -rf "$T/fresh-lock-export"
+  rmdir "$TOPIC_DIR/.container.lock" 2>/dev/null
+  if [ "$export_stale_ok" -eq 1 ] && [ "$export_fresh_ok" -eq 1 ]; then
+    ok "container-lock (#382): a STALE .container.lock is stolen (export proceeds, lock released clean); a FRESH lock still denies"
+  else
+    bad "container-lock (#382) staleness regression (stale: rc=$rc_export_stale ok=$export_stale_ok; fresh: rc=$rc_export_fresh ok=$export_fresh_ok)"
+  fi
+
+  # 31a4. Regression test for #382 review: CONTAINER_LOCK_STALE_MIN="00"
+  #      (all-digit but numerically zero) must fall back to the safe default
+  #      instead of making `find -mmin -00` match nothing and mis-steal a
+  #      FRESH lock -- mirrors evals/run-lock-test.sh's identical case for
+  #      RUN_LOCK_STALE_MIN, same underlying validation gap.
+  mkdir -p "$TOPIC_DIR/.container.lock"
+  CONTAINER_LOCK_STALE_MIN="00" "$EXPORT" "$TOPIC" "$T/zero-stale-export" > /dev/null 2>&1
+  local rc_export_zerostale=$?
+  local export_zerostale_ok=0
+  [ "$rc_export_zerostale" -ne 0 ] && [ ! -d "$T/zero-stale-export" ] && [ -d "$TOPIC_DIR/.container.lock" ] && export_zerostale_ok=1
+  rm -rf "$T/zero-stale-export"
+  rmdir "$TOPIC_DIR/.container.lock" 2>/dev/null
+  if [ "$export_zerostale_ok" -eq 1 ]; then
+    ok "container-lock (#382 review follow-up): CONTAINER_LOCK_STALE_MIN=\"00\" falls back to the safe default (a fresh lock still denies, not mis-stolen)"
+  else
+    bad "container-lock (#382 review follow-up) STALE_MIN=\"00\" regression (rc=$rc_export_zerostale ok=$export_zerostale_ok)"
+  fi
+
+  # 31a5. Regression test for #382 review: container_lock_refresh keeps a
+  #      genuinely long-running holder's OWN lock from aging into "stale"
+  #      territory -- without it, a topic large enough to run past
+  #      CONTAINER_LOCK_STALE_MIN would have its own live lock stolen out
+  #      from under it by a concurrent invocation. Unit-tested directly
+  #      against the sourced library (a real multi-hour export isn't
+  #      practical to simulate end-to-end here) by backdating the lock past
+  #      the window, refreshing it, then confirming it reads as fresh again
+  #      -- and that refresh never resurrects an already-released lock
+  #      (mirrors run-lock.sh's own refresh contract).
+  (
+    # shellcheck source=scripts/lib/container-lock.sh
+    . scripts/lib/container-lock.sh
+    RL_LOCK="$TOPIC_DIR/.refresh-test.lock"
+    rm -rf "$RL_LOCK"
+    mkdir -p "$RL_LOCK"
+    touch -t 200001010000 "$RL_LOCK"
+    container_lock_fresh "$RL_LOCK" && exit 1   # sanity: backdated lock reads stale first
+    container_lock_refresh "$RL_LOCK"
+    container_lock_fresh "$RL_LOCK" || exit 1   # after refresh, reads fresh again
+    rm -rf "$RL_LOCK"
+    container_lock_refresh "$RL_LOCK"           # no-op on a lock that was never created
+    [ ! -e "$RL_LOCK" ] || exit 1               # must not resurrect it
+    exit 0
+  )
+  if [ "$?" -eq 0 ]; then
+    ok "container-lock (#382 review follow-up): container_lock_refresh keeps a live holder's lock from aging into stale territory, and never resurrects a released one"
+  else
+    bad "container-lock (#382 review follow-up) container_lock_refresh regression"
+  fi
+  rm -rf "$TOPIC_DIR/.refresh-test.lock"
 
   # 31b. The exported manifest validates against schemas/mif-container.schema.json.
   ajv validate --spec=draft2020 --strict=false -c ajv-formats \

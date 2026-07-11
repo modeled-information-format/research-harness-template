@@ -35,8 +35,13 @@ set -uo pipefail
 STALE_MIN="${RUN_LOCK_STALE_MIN:-240}"
 # Validate: an empty/non-numeric/zero value would make `find -mmin` error and fresh()
 # mis-judge a LIVE lock as stale (then steal it — the corruption this prevents). Fall
-# back to the safe default rather than fail open.
-case "$STALE_MIN" in ''|*[!0-9]*|0) STALE_MIN=240 ;; esac
+# back to the safe default rather than fail open. The case pattern alone only rejects
+# the exact literal "0" -- "00"/"0000" are all-digit and slip through, then
+# `find -mmin -00` matches nothing (a file can't be modified "<0 minutes ago"),
+# silently defeating the same fail-safe intent. The arithmetic check catches every
+# all-digit zero, not just the single-character form (issue #382 review).
+case "$STALE_MIN" in ''|*[!0-9]*) STALE_MIN=240 ;; esac
+[ "$STALE_MIN" -eq 0 ] 2>/dev/null && STALE_MIN=240
 
 CMD="${1:?usage: run-lock.sh acquire|refresh|release|steal <reports_dir> [label]}"
 DIR="${2:?usage: run-lock.sh <cmd> <reports_dir> [label]}"

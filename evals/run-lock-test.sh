@@ -105,6 +105,23 @@ else
   note "FAIL: a lock on one topic blocked another"; fail=1
 fi
 
+# 9. Regression test for #382 review: RUN_LOCK_STALE_MIN="00" (all-digit but
+#    numerically zero) must fall back to the safe default, same as an empty or
+#    non-numeric value -- the original `case ... in ''|*[!0-9]*|0)` validation
+#    only rejected the exact literal "0", so "00"/"0000" slipped through as
+#    non-empty, non-"0" strings and made `find -mmin -00` match nothing (a file
+#    can't be modified "<0 minutes ago"), silently defeating the fail-safe
+#    intent (a fresh lock would misjudge as stale and get stolen).
+"$LOCK" release "$D" 2>/dev/null
+"$LOCK" acquire "$D" "live" >/dev/null 2>&1
+RUN_LOCK_STALE_MIN="00" "$LOCK" acquire "$D" "interloper" >/dev/null 2>&1; rc=$?
+if [ "$rc" -eq 3 ]; then
+  note "RUN_LOCK_STALE_MIN=\"00\" falls back to the safe default (fresh lock still denies, not mis-stolen)"
+else
+  note "FAIL: RUN_LOCK_STALE_MIN=\"00\" did not fall back to the safe default (rc=$rc, expected 3)"; fail=1
+fi
+"$LOCK" release "$D" 2>/dev/null
+
 if [ "$fail" -eq 0 ]; then
   echo "run-lock-test: PASS"
   exit 0

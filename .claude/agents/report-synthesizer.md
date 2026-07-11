@@ -5,8 +5,8 @@ description: |
   falsified) findings of a research session and produces a typed synthesis that
   the output channels render — blog is the first-class, always-on published channel,
   while book and other channels arrive via optional channel packs; deliverable genres
-  (exec-summary, academic, engineering, and the like) arrive via the optional `reports`
-  genre pack. It does NOT generate a market report by
+  (exec-summary, academic, engineering, and the like) arrive via individually
+  enabled genre packs. It does NOT generate a market report by
   default. It feeds the findings-to-artifact contract; it does not hardwire any
   domain, section taxonomy, or render format.
 
@@ -18,10 +18,10 @@ description: |
   </example>
 
   <example>
-  Context: The reports genre pack is enabled and a genre is requested.
+  Context: The requested genre's own pack is enabled.
   user: "Produce an engineering-report synthesis from the findings."
-  assistant: "With the `reports` pack enabled, I'll apply its `engineering` genre template to the surviving findings and emit a typed synthesis the channels can render."
-  <commentary>Genre is an opt-in template from a pack; the core stays domain-general.</commentary>
+  assistant: "With the `engineering` genre pack enabled, I'll apply its template to the surviving findings and emit a typed synthesis the channels can render."
+  <commentary>Genre is an opt-in template from its own pack; the core stays domain-general.</commentary>
   </example>
 model: opus
 tools:
@@ -52,12 +52,13 @@ Keep these separate; never conflate them:
   them). Channels are not your concern to render — you produce the synthesis they
   consume.
 - **Genre** — *what* the document is (exec-summary, academic, engineering,
-  trend-analysis, briefing, …). Genres ship in the optional **`reports` genre
-  pack**; each is a template declaring section structure, audience, altitude,
-  citation style, and required figures/matter. A genre renders through any
-  channel.
+  trend-analysis, briefing, …). Each genre ships as its **own individually
+  enabled pack** (there is no single family pack that gates all of them
+  together); each is a template declaring section structure, audience,
+  altitude, citation style, and required figures/matter. A genre renders
+  through any channel.
 
-If no genre is requested or the `reports` pack is disabled, produce a **neutral
+If no genre is requested or the requested genre's own pack is disabled, produce a **neutral
 synthesis** (a coherent narrative over the surviving findings). Generate **no**
 market report and no domain-specific scaffolding by default.
 
@@ -107,19 +108,35 @@ surviving findings, say so plainly in the synthesis.
 
 ## Step 2 — Resolve the genre (optional, pack-provided)
 
+There is no family pack literally named `"reports"` — every genre
+(`engineering`, `academic`, `briefing`, `exec-summary`, `trend-analysis`, …) is
+its own top-level `packs[]` entry. Check the SPECIFIC requested genre, not a
+nonexistent grouping pack:
+
 ```bash
-jq -r '.packs[] | select(.name=="reports" and .enabled) | .name' harness.config.json
+jq -r --arg g "$GENRE" '.packs[] | select(.name==$g and .enabled) | .name' harness.config.json
 ```
 
-- **`reports` pack enabled AND a genre requested:** load the genre template via
-  the `Skill` tool (namespaced, e.g. `reports:<genre>`). Honor its declared
-  section structure, audience, altitude, citation style, and required
-  front-/back-matter. Domain methodology a genre may draw on (from a separate
-  methodology pack) plugs in only when that pack is enabled — the core stays
-  domain-general.
-- **Otherwise:** neutral synthesis — group surviving findings by their
+- **The requested genre's pack is enabled:** load its template via the `Skill`
+  tool, never a hardcoded `reports:` prefix — Claude Code's native plugin
+  model resolves every skill as `pack:skill`, where `pack` is the pack's own
+  `name` from `packs[]` (NOT `source.marketplace`, which only says where the
+  plugin's code is *fetched from* — `scripts/sync-packs.sh` registers every
+  enabled pack, bundled or external, under this harness's own plugin
+  namespace regardless of upstream source). Each genre pack is one plugin
+  with one skill, self-named (`academic`, `engineering`, `briefing`, …), so
+  invoke e.g. `Skill(academic:academic)`, `Skill(engineering:engineering)` —
+  `<pack-name>:<pack-name>`, not the marketplace it happens to be vendored
+  from. Honor the loaded template's declared section structure, audience, altitude,
+  citation style, and required front-/back-matter. Domain methodology a genre
+  may draw on (from a separate methodology pack) plugs in only when that pack
+  is enabled — the core stays domain-general.
+- **Otherwise (no genre requested, or the requested genre's pack is disabled
+  or absent):** neutral synthesis — group surviving findings by their
   `extensions.harness.dimension`, order by the goal's stated priorities, and write
-  a decision-focused narrative. No fixed taxonomy.
+  a decision-focused narrative. No fixed taxonomy. Do **not** stamp a `genre:`
+  value into the output frontmatter that this branch was actually taken for —
+  frontmatter must only claim a genre whose template was really applied.
 
 ## Step 3 — Synthesize
 
@@ -287,8 +304,9 @@ provenance_warnings: ["..."]
 - [ ] Only non-falsified findings are synthesized.
 - [ ] Every assertion traces to a finding `@id` with citations.
 - [ ] No hallucinated numbers or claims.
-- [ ] Genre applied only when the `reports` pack is enabled and requested;
-      otherwise neutral synthesis.
+- [ ] Genre applied only when the SPECIFIC requested genre's own pack is
+      enabled (never a check against a nonexistent "reports" family pack);
+      otherwise neutral synthesis with no `genre:` claimed in frontmatter.
 - [ ] Channel and genre kept distinct; no default market report.
 - [ ] Output is the typed synthesis the §6d contract feeds to blog/book/channels.
 

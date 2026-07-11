@@ -30,6 +30,18 @@
 # extensions.harness.verification) delegates to the mif-rh engine (mif-rh-cli),
 # hard required: install it with scripts/fetch-engine.sh, put mif-rh-cli on
 # PATH, or set MIF_RH_CLI.
+#
+# Phase-2 gate enforcement (SPEC §6b / #384) lives HERE, not in the PreToolUse
+# hook (.claude/hooks/guard-falsify-gate.sh). The hook can only regex-match raw
+# Bash command TEXT, which is ambiguous (quoting, wrapping, loops, doc-text
+# mentions) and was reverted twice over that ambiguity (#356, #372). This
+# script's own $FINDING argument is unambiguous — no shell-quoting shape to
+# guess — so grading a topic's SESSION FINDINGS (reports/<topic>/findings/*.json)
+# is gated directly against that topic's .gate-active marker (opened by the
+# orchestrator's Phase 2 loop / the /falsify command). A non-findings target
+# (a report-finding, a test fixture) is always a legit non-gate use and is
+# never gated. The hook stays as an early, defense-in-depth layer; it is no
+# longer the sole enforcement point.
 
 set -uo pipefail
 
@@ -37,6 +49,62 @@ FINDING="${1:?usage: falsify.sh <finding.json> [<evidence-fixture.json>]}"
 FIXTURE="${2:-}"
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
+# Resolve $FINDING to an absolute, dot-free path BEFORE the gate check
+# below, not after. A bare relative argument invoked from inside the
+# findings/ directory itself (`cd reports/t/findings && falsify.sh f.json`)
+# has no "findings/" path segment in the RAW argument, so matching against
+# $FINDING as typed misses this shape entirely -- review caught this live:
+# it reproduces the exact "cd-into-findings" bypass guard-falsify-gate.sh's
+# own LIMITATIONS block already documents as a hook-miss, except here it
+# would have been a silent miss in the script that was supposed to close it.
+#
+# A plain $PWD-prefix-if-relative (this repo's usual portable pattern --
+# see render-artifact.sh's identical comment) is not enough on its own: a
+# caller passing a DOTTED relative path from inside findings/ (e.g.
+# `./f.json`) would resolve to ".../findings/./f.json", and `dirname` twice
+# over that yields TOPIC_DIR=".../findings" (the dirname of "findings/."
+# is "findings" itself) instead of the real topic dir one level up --
+# review caught this too, live: it doesn't let anything bypass the gate
+# (the wrong MARKER path just never exists, so it fails CLOSED, denying a
+# legitimate call), but it's still wrong. `cd` into the finding's own
+# directory and read `pwd` -- the shell's own portable path-canonicalization,
+# no GNU `realpath` needed -- so "." and ".." segments resolve the same way
+# a real invocation's cwd would, then rejoin with the file's basename.
+FINDING_DIR="$(cd "$(dirname "$FINDING")" 2>/dev/null && pwd)"
+if [ -n "$FINDING_DIR" ]; then
+  FINDING_ABS="$FINDING_DIR/$(basename "$FINDING")"
+else
+  # dirname doesn't exist -- can't canonicalize; fall back to the plain
+  # prefix so the gate check below still applies its best-effort classification (a
+  # nonexistent $FINDING fails for its own reason once the engine reads it).
+  case "$FINDING" in
+    /*) FINDING_ABS="$FINDING" ;;
+    *)  FINDING_ABS="$PWD/$FINDING" ;;
+  esac
+fi
+
+case "$FINDING_ABS" in
+  # Anchored to a "reports/<topic>/findings/" shape (matching the documented
+  # scope and the hook's own regex, which also requires a "reports/" segment
+  # before "findings/"), not a bare "*/findings/*.json" -- that broader
+  # pattern would misclassify ANY path containing a "findings/" segment
+  # anywhere (e.g. an unrelated /tmp/findings/x.json) as a gated session
+  # finding, causing unexpected refusals for a legitimate non-gate call
+  # (Copilot review).
+  */reports/*/findings/*.json)
+    # TOPIC_DIR is always absolute here -- it's derived from $FINDING_ABS,
+    # which the resolution above guarantees is absolute regardless of how
+    # $FINDING was originally spelled.
+    TOPIC_DIR="$(dirname "$(dirname "$FINDING_ABS")")"
+    MARKER="$TOPIC_DIR/.gate-active"
+    if [ ! -f "$MARKER" ] || [ -z "$(find "$MARKER" -mmin -240 2>/dev/null)" ]; then
+      echo "falsify.sh: refusing to grade session finding '$FINDING' -- ${TOPIC_DIR}/.gate-active is absent or stale. Only the orchestrator's Phase 2 pass / the /falsify command may open this topic's gate window (SPEC §6b)." >&2
+      exit 3
+    fi
+    ;;
+esac
+
 # shellcheck source=scripts/lib/engine.sh
 . "$ROOT/scripts/lib/engine.sh"
 ENGINE="$(engine_bin "$ROOT")" || exit 5
