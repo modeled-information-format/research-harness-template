@@ -17,7 +17,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
 
-DCG_VERSION="0.65.0"
+DCG_VERSION="0.68.1"
 # black is datamodel-codegen's formatter and its output is load-bearing for the
 # byte-identity the CHECK gate enforces — pin it too, or a new black release would
 # reformat the generated modules and fail CI on an unrelated change.
@@ -69,6 +69,10 @@ for schema in "${SCHEMAS[@]}"; do
   # `closed=` kwarg, datamodel-codegen imports TypedDict from `typing`, not the
   # external `typing_extensions`. The closed-object contract
   # (additionalProperties:false) is still enforced by ajv at validation time.
+  # --target-python-version pins the generated TYPING SYNTAX floor, deliberately
+  # decoupled from CI's python-version (which only gates what runs this script).
+  # Keeping it at 3.12 means the emitted stdlib TypedDict modules stay usable on
+  # any adopter's 3.12+ runtime, not just the exact version CI happens to run on.
   "$VENV/bin/datamodel-codegen" \
     --input "$bundled" --input-file-type jsonschema \
     --output-model-type typing.TypedDict \

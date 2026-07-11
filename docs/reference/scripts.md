@@ -133,7 +133,7 @@ These are dev/build-time only; generated files are committed.
 
 | Script | Purpose | Key dependency |
 | --- | --- | --- |
-| `scripts/codegen/gen-models.sh` | Regenerates Python TypedDict models under `lib/harness_models/<name>.py`. Pipeline: bundle schemas → `datamodel-codegen` → `black` format. Set `CHECK=1` to verify without writing. Pinned versions: `datamodel-code-generator==0.65.0`, `black==26.5.1`. | `python3`, venv |
+| `scripts/codegen/gen-models.sh` | Regenerates Python TypedDict models under `lib/harness_models/<name>.py`. Pipeline: bundle schemas → `datamodel-codegen` → `black` format. Set `CHECK=1` to verify without writing. Pinned versions: `datamodel-code-generator==0.68.1`, `black==26.5.1`. | `python3`, venv |
 | `scripts/codegen/bundle_schema.py` | Stdlib JSON-Schema bundler: inlines external `$ref`s into `#/$defs`. Offline and cycle-safe. Called by `gen-models.sh`. | Python stdlib only |
 
 ---

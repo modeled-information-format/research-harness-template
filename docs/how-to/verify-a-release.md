@@ -42,7 +42,7 @@ an unverified artifact. This is the "fail-closed" property: the producer applies
 the same check you are about to run.
 
 The actions in that workflow are SHA-pinned (for example
-`actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32`), so
+`actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373`), so
 the trusted build step cannot be swapped by a moved tag.
 
 ## Prerequisites

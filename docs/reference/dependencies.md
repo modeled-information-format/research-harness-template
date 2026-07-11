@@ -25,7 +25,7 @@ Versions below were checked **at authoring time on the development host and
 against the CI workflow**, not recalled from memory:
 
 - Runtime floors marked *repo-declared* come from `.github/workflows/ci.yml`
-  (`python-version: '3.12'`, `node-version: 'lts/*'`, `yq` pinned to
+  (`python-version: '3.14'`, `node-version: '24'`, `yq` pinned to
   `v4.53.3`).
 - *Verified present* versions are the output of the tool's own `--version` on
   the host where these docs were authored. Reproduce any of them with the
@@ -46,12 +46,29 @@ you enable.
 | `mif-rh-cli` | `0.6.1+` — *repo-pinned in `scripts/fetch-engine.sh`* | Ontology classification (`resolve-ontology.sh`, `ontology-review.sh` delegate to it, ADR-0016) plus the suggest/calibrate loop — see [engine-cli.md](engine-cli.md) for the full subcommand surface and [mcp-server.md](mcp-server.md) for its MCP server | `mif-rh-cli --version` |
 | `jq` | 1.7+ (1.8.2 verified) | The engine — index, graph, findings, render, falsify (most scripts) | `jq --version` |
 | `yq` (mikefarah) | `v4.53.3` — *repo-pinned in CI* (4.53.3 verified) | YAML frontmatter and ontology YAML in `verify.sh`, `mif-project.sh`, `validate-concordance.sh`; ontology catalog materialization in `sync-packs.sh` | `yq --version` |
-| `node` | Active LTS — *repo-declared* `lts/*` (26.x verified) | `npm` to install the validation toolchain (`ajv-cli`, `ajv-formats`, `markdownlint-cli2`); `npx` for Mermaid | `node --version` |
-| `python3` | 3.12 — *repo-declared* (3.14 verified) | `codegen/gen-models.sh` + `bundle_schema.py` (self-provisioned pinned venv), `sync-packs.sh` (embedded materialization), `.claude/hooks/markdown/md_remediate.py` | `python3 --version` |
+| `node` | Active LTS — *repo-declared* `'24'` (24.x verified) | `npm` to install the validation toolchain (`ajv-cli`, `ajv-formats`, `markdownlint-cli2`); `npx` for Mermaid | `node --version` |
+| `python3` | 3.14 — *repo-declared* (3.14 verified) | `codegen/gen-models.sh` + `bundle_schema.py` (self-provisioned pinned venv), `sync-packs.sh` (embedded materialization), `.claude/hooks/markdown/md_remediate.py` | `python3 --version` |
 
 `jq` and `yq` carry the heaviest load: `jq` drives the index, graph, session,
 and render scripts; `yq` reads every YAML input. If the engine's schema gates
 are to run, both must be present.
+
+### Pins deliberately held back
+
+Two pins were evaluated for a bump and intentionally left in place — noted
+here so a future contributor doesn't "fix" them without the context:
+
+- **`node` stays at `'24'`.** `v26` exists but is not yet an LTS line
+  (`lts: false` per Node's release schedule); it reaches Active LTS on
+  2026-10-28. Revisit once it does.
+- **The npm `overrides.js-yaml` pin stays at `4.2.0`.** It exists to force a
+  version above `js-yaml`'s CVE-2026-53550 / GHSA-h67p-54hq-rp68 vulnerable
+  range (`<= 4.1.1`), a transitive pull-in via `gray-matter`'s hard pin on
+  `js-yaml ^3.13.1`. The latest `5.2.1` was tried and reverted: `@astrojs/starlight`
+  does a default import (`import yaml from 'js-yaml'`) that `5.x` no longer
+  exports, which breaks `npm run build` outright. `4.2.0` already remediates
+  the CVE, so staying on it is not a security regression — re-evaluate when
+  `@astrojs/starlight` drops (or updates) its `js-yaml` default import.
 
 ## Validation toolchain (required for schema validation and docs)
 
