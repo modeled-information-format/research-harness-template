@@ -286,7 +286,7 @@ while IFS=$'\t' read -r rpath rdigest rmiftype; do
   fi
 done < <(jq -r '.resources[] | [.path, .digest, .mifType] | @tsv' "$MANIFEST")
 [ -z "$BAD_DIGESTS" ] || fail "per-resource digest mismatch: $BAD_DIGESTS"
-[ -z "$BAD_SCHEMAS" ] || fail "finding resource(s) do not validate against schemas/findings.schema.json (passed digest verification but are not schema-valid): $BAD_SCHEMAS"
+[ -z "$BAD_SCHEMAS" ] || fail "resource(s) failed pre-write validation (passed digest verification but are not otherwise safe to write -- see each entry for the specific reason: a bad findings.schema.json validation, a bad reconciliation merge against an existing destination finding, or a non-array destination ontology-map.json): $BAD_SCHEMAS"
 
 MANIFEST_DIGEST_DECLARED="$(jq -r '.manifestDigest' "$MANIFEST")"
 MANIFEST_DIGEST_ACTUAL="$(jq -r '.resources[].digest' "$MANIFEST" | scripts/mif-container-digest.sh manifest)" \

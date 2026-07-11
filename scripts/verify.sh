@@ -2950,17 +2950,30 @@ gate_m29() {
     || { bad "gate_m29: failed to back up harness.config.json before mutating it"; rm -rf "$T"; return 1; }
   local badontmap_topic="gate-m29-badontmap-test"
   restore_snapshot() {
+    # Every restore below is checked (Copilot review, PR #385): unlike the
+    # guarded BACKUP calls above (issue #377), a restore step failing here
+    # runs inside the EXIT/RETURN trap itself, so there is no caller left to
+    # propagate a non-zero return to -- `bad` is the only way to surface
+    # "the real corpus may still be mutated" instead of silently proceeding
+    # as if the restore succeeded. Every step still runs regardless (this is
+    # best-effort cleanup, not a fail-fast sequence): one failed restore
+    # should not skip restoring everything else.
     rm -rf "$TOPIC_DIR/findings"
     mkdir -p "$TOPIC_DIR/findings"
-    cp -r "$T/snapshot/findings/." "$TOPIC_DIR/findings/"
-    cp "$T/snapshot/README.md" "$TOPIC_DIR/README.md"
-    cp "$T/snapshot/concordance.json" reports/concordance.json
+    cp -r "$T/snapshot/findings/." "$TOPIC_DIR/findings/" \
+      || bad "gate_m29 restore_snapshot: failed to restore $TOPIC_DIR/findings -- real corpus may be left mutated"
+    cp "$T/snapshot/README.md" "$TOPIC_DIR/README.md" \
+      || bad "gate_m29 restore_snapshot: failed to restore $TOPIC_DIR/README.md -- real corpus may be left mutated"
+    cp "$T/snapshot/concordance.json" reports/concordance.json \
+      || bad "gate_m29 restore_snapshot: failed to restore reports/concordance.json -- real corpus may be left mutated"
     if [ "$had_sameas_proposals" -eq 1 ]; then
-      cp "$T/snapshot/concordance-sameas-proposals.json" reports/concordance-sameas-proposals.json
+      cp "$T/snapshot/concordance-sameas-proposals.json" reports/concordance-sameas-proposals.json \
+        || bad "gate_m29 restore_snapshot: failed to restore reports/concordance-sameas-proposals.json"
     else
       rm -f reports/concordance-sameas-proposals.json
     fi
-    cp "$T/snapshot/harness.config.json" harness.config.json
+    cp "$T/snapshot/harness.config.json" harness.config.json \
+      || bad "gate_m29 restore_snapshot: failed to restore harness.config.json -- real corpus may be left mutated"
     rm -rf "reports/$badontmap_topic"
     rm -f "$TOPIC_DIR/knowledge-graph.json"
     rm -rf "$TOPIC_DIR/.container.lock"
@@ -3248,13 +3261,22 @@ gate_m30() {
       || { bad "gate_m30: failed to back up reports/concordance-sameas-proposals.json"; rm -rf "$T"; return 1; }
   }
   restore_snapshot() {
+    # Every restore below is checked (Copilot review, PR #385) -- same
+    # rationale as gate_m29's identical restore_snapshot(): a restore step
+    # runs inside the EXIT/RETURN trap itself, so `bad` is the only way to
+    # surface a failed restore instead of silently proceeding as if it
+    # succeeded. Every step still runs regardless of an earlier one failing.
     rm -rf "$TOPIC_DIR/findings"
     mkdir -p "$TOPIC_DIR/findings"
-    cp -r "$T/snapshot/findings/." "$TOPIC_DIR/findings/"
-    cp "$T/snapshot/README.md" "$TOPIC_DIR/README.md"
-    cp "$T/snapshot/concordance.json" reports/concordance.json
+    cp -r "$T/snapshot/findings/." "$TOPIC_DIR/findings/" \
+      || bad "gate_m30 restore_snapshot: failed to restore $TOPIC_DIR/findings -- real corpus may be left mutated"
+    cp "$T/snapshot/README.md" "$TOPIC_DIR/README.md" \
+      || bad "gate_m30 restore_snapshot: failed to restore $TOPIC_DIR/README.md -- real corpus may be left mutated"
+    cp "$T/snapshot/concordance.json" reports/concordance.json \
+      || bad "gate_m30 restore_snapshot: failed to restore reports/concordance.json -- real corpus may be left mutated"
     if [ "$had_sameas_proposals" -eq 1 ]; then
-      cp "$T/snapshot/concordance-sameas-proposals.json" reports/concordance-sameas-proposals.json
+      cp "$T/snapshot/concordance-sameas-proposals.json" reports/concordance-sameas-proposals.json \
+        || bad "gate_m30 restore_snapshot: failed to restore reports/concordance-sameas-proposals.json"
     else
       rm -f reports/concordance-sameas-proposals.json
     fi
@@ -3479,10 +3501,18 @@ gate_m31() {
   # despite restore_state()'s trap claiming to fully restore state).
   local malformed_topic="gate-m31-malformed-test"
   restore_state() {
-    cp "$T/harness.config.json.orig" harness.config.json
-    cp "$T/concordance.json.orig" reports/concordance.json
+    # Every restore below is checked (Copilot review, PR #385) -- same
+    # rationale as gate_m29/gate_m30's restore_snapshot(): a restore step
+    # runs inside the EXIT/RETURN trap itself, so `bad` is the only way to
+    # surface a failed restore instead of silently proceeding as if it
+    # succeeded. Every step still runs regardless of an earlier one failing.
+    cp "$T/harness.config.json.orig" harness.config.json \
+      || bad "gate_m31 restore_state: failed to restore harness.config.json -- real corpus may be left mutated"
+    cp "$T/concordance.json.orig" reports/concordance.json \
+      || bad "gate_m31 restore_state: failed to restore reports/concordance.json -- real corpus may be left mutated"
     if [ "$had_sameas_proposals" -eq 1 ]; then
-      cp "$T/concordance-sameas-proposals.json.orig" reports/concordance-sameas-proposals.json
+      cp "$T/concordance-sameas-proposals.json.orig" reports/concordance-sameas-proposals.json \
+        || bad "gate_m31 restore_state: failed to restore reports/concordance-sameas-proposals.json"
     else
       rm -f reports/concordance-sameas-proposals.json
     fi
