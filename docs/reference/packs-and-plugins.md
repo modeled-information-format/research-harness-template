@@ -2,7 +2,7 @@
 id: reference-packs-and-plugins
 type: semantic
 created: '2026-06-23T09:41:01-04:00'
-modified: '2026-07-12T14:37:25.581Z'
+modified: '2026-07-12T14:52:09.913Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -44,16 +44,18 @@ packs/
 │   ├── market-sizing/
 │   └── regulatory-review/
 ├── channels/           # family: render adapters (10 plugins)
+│   ├── ai-spec/
 │   ├── book/
 │   ├── diataxis/
 │   ├── pdf/
-│   └── …               #   7 more — see the Bundled inventory below
-├── trend-modeling/     # family: scenario methodology (1 plugin)
-│   └── trend-modeling/
-└── ontologies/         # family: MIF entity/relationship extensions (21 plugins)
-    ├── scientific/
-    └── …               #   20 more — see the Bundled inventory below
+│   └── …               #   6 more — see the Bundled inventory below
+└── trend-modeling/     # family: scenario methodology (1 plugin)
+    └── trend-modeling/
 ```
+
+There is no `packs/ontologies/` directory: domain ontologies are vendored on
+demand from the canonical registry (ADR-0012), not bundled — see
+[Ontology packs](packs/ontologies.md) and `scripts/fetch-ontology.sh`.
 
 There is no `packs/reports/` directory: all 18 report genres are consumed
 externally from `mif-docs-plugin` (SHA-pinned via `harness.config.json`
@@ -69,10 +71,12 @@ per ADR-0018 and
 [research-harness-template#409](https://github.com/modeled-information-format/research-harness-template/issues/409)
 — see [Genre packs](packs/genres.md).
 
-The harness bundles **37 pack plugins** across four families: 10 channels,
-5 market-research methodologies, 21 ontologies, and 1 trend-modeling
-methodology. The [Packs reference](packs/index.md) and the per-family pages
-document every bundled one — its use, constraints, and goals.
+The harness bundles **16 pack plugins** across three families: 10 channels,
+5 market-research methodologies, and 1 trend-modeling methodology. Report
+genres (18), spec genres (5), and domain ontologies (23) are all consumed
+externally or vendored on demand rather than bundled — see each family's
+own page for its full inventory. The [Packs reference](packs/index.md) and
+the per-family pages document every one — its use, constraints, and goals.
 
 Each `packs/<family>/<plugin>/` is self-contained: a `.claude-plugin/plugin.json`
 (validated against `schemas/pack.schema.json`), a flat `skills/<skill>/SKILL.md`,
