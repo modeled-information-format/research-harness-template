@@ -2,13 +2,22 @@
 id: reference-packs-index
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-05T10:10:09-04:00'
+modified: '2026-07-12T14:36:46.357Z'
 namespace: docs/reference/packs
 tags:
   - documentation
   - reference
 title: "Packs Reference"
 diataxis_type: reference
+provenance:
+  '@type': Provenance
+  sourceType: agent_inferred
+  agent: claude-code/claude-sonnet-5
+  wasGeneratedBy:
+    '@id': urn:mif:activity:claude-code-session:ae91b6b6-8d5c-4bea-963d-9e4b7907cf09
+    '@type': prov:Activity
+  trustLevel: user_stated
+  agentVersion: 2.1.207
 ---
 
 # Packs Reference
@@ -57,8 +66,10 @@ For control-plane mechanics — enabling, disabling, and listing packs — see
 | xbrl | channels | channel | Renders surviving findings into an inline XBRL (iXBRL) regulatory disclosure | jq |
 | ectd | channels | channel | Packages findings into the FDA eCTD module tree (M1-M5) plus the XML backbone | jq |
 | ai-spec | channels | channel | Renders surviving findings into an AI-ready, agent-executable architecture spec | none |
-| architecture-spec | genres | genre | AI-ready architecture spec (arc42/C4 §1–§12 + EARS acceptance criteria) | none |
-| kiro-spec | genres | genre | Kiro three-file spec (requirements → design → tasks) for a single feature | none |
+| ai-architecture-doc | genres | genre | AI-ready architecture spec (arc42/C4 §1–§12 + EARS acceptance criteria) | none |
+| kiro-requirements | genres | genre | Kiro requirements document (numbered, EARS acceptance criteria) for a single feature | none |
+| kiro-design | genres | genre | Kiro design document, traced to its requirements, for a single feature | none |
+| kiro-tasks | genres | genre | Kiro implementation task list for a single feature | none |
 | feature-spec | genres | genre | GitHub Spec Kit single-capability feature spec for a coding agent | none |
 | trend-modeling | trend-modeling | methodology | Three-valued logic (INC/DEC/CONST) scenario modeling | @mermaid-js/mermaid-cli (optional) |
 | biology-research-lab | ontologies | ontology | Full research lab lifecycle entity vocabulary | none |
