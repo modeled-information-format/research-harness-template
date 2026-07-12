@@ -3,6 +3,10 @@
     "mif-rh": {
       "command": "bin/mif-rh-mcp",
       "args": []
+    },
+    "mif-mcp": {
+      "command": "mif-mcp",
+      "args": []
     }
   }
 }

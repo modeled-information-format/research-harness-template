@@ -66,6 +66,15 @@ markdownlint-cli2 --config .markdownlint-cli2.jsonc "**/*.md"   # must be 0 erro
   `python3`, `mif-rh-cli` (the ontology engine, installed by
   `scripts/fetch-engine.sh`; CI installs it before `verify.sh`, ADR-0016). No
   `make`/`npm`/`pyproject` build — scripts are invoked directly.
+- **Document tooling is `mif-docs-plugin`, not a harness-local mechanism.**
+  Frontmatter authoring, MIF conformance validation, and provenance for
+  document-shaped deliverables route through `mif-docs-plugin`'s
+  `mif-frontmatter`/`mif-validate`/`mif-provenance` skills (pinned in
+  `harness.config.json` `marketplaces[]`, `mif-mcp` wired in `.mcp.json`) —
+  see `docs/reference/dependencies.md`. This is separate from the
+  harness-local `ajv` schema conformance gate for findings/knowledge-graph
+  data (ADR-0002), which is unchanged. Provenance capture is enabled by
+  default via `.claude/settings.json`'s `mifProvenance` key.
 
 ## Generated code — do not hand-edit
 
