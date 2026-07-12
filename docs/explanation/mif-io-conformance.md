@@ -79,16 +79,16 @@ JSON-LD projection matches `findings.schema.json`, including a well-formed
 `provenance` block — but a schema gate cannot distinguish a witnessed
 provenance block from a model-asserted one that merely has the right shape.
 `report-synthesizer`'s Step 4d closes that gap by stamping **witnessed**
-provenance via `mif-docs-plugin`'s `mif-provenance` skill (ADR-0018,
-research-harness-template#407, pending) after
+provenance via `mif-docs-plugin`'s `mif-provenance` skill (the mif-docs-as-
+substrate decision, research-harness-template#407, pending) after
 `render-artifact.sh` has already write-then-validated the report's schema
 conformance. The two mechanisms are complementary, not redundant:
 
 - **Schema conformance** (this document's invariant, ADR-0002): does the
   report's frontmatter/body project losslessly to a valid MIF L3 document?
-  Enforced deterministically by `render-artifact.sh` → `mif-project.sh`.
-- **Witnessed provenance** (`mif-provenance`, ADR-0018,
-  research-harness-template#407, pending): does the
+  Enforced deterministically by `render-artifact.sh` → `scripts/mif-project.sh`.
+- **Witnessed provenance** (`mif-provenance`, per the pending
+  research-harness-template#407 decision): does the
   `provenance` block's `agent`/`agentVersion`/`wasGeneratedBy` actually
   match what the session's hook-observed ledger recorded touching this
   file? A schema-valid block can still be fabricated; a witnessed one
