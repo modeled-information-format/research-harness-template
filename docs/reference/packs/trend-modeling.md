@@ -2,13 +2,21 @@
 id: reference-packs-trend-modeling
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-06-28T22:36:14-04:00'
+modified: '2026-07-12T15:00:20.934Z'
 namespace: docs/reference/packs
 tags:
   - documentation
   - reference
 title: "Trend-modeling pack"
 diataxis_type: reference
+provenance:
+  '@type': Provenance
+  agent: claude-code/claude-sonnet-5
+  wasGeneratedBy:
+    '@id': urn:mif:activity:claude-code-session:ae91b6b6-8d5c-4bea-963d-9e4b7907cf09
+    '@type': prov:Activity
+  trustLevel: user_stated
+  agentVersion: 2.1.207
 ---
 
 # Trend-modeling pack
@@ -17,6 +25,14 @@ The trend-modeling pack is a methodology dimension. It applies three-valued logi
 INC (increasing), DEC (decreasing), CONST (constant) — to analyze markets when precise
 numerical data is unavailable. It enables meaningful directional analysis with minimal
 information and produces a complete enumeration of consistent scenarios.
+
+**Not a `mif-docs-plugin` duplicate** (audited research-harness-template#411): this is
+a methodology dimension, not a document genre — its scenario-analysis output feeds the
+findings corpus rather than rendering a standalone document. It is conceptually adjacent
+to but structurally distinct from `mif-docs`' `trend-analysis` report genre (that genre
+tracks a trajectory over time for publication; this pack enumerates three-valued-logic
+scenarios from qualitative inputs) — neither duplicates the other, and the Epic #405
+deprecation policy (ADR-0018) does not apply here.
 
 For control-plane mechanics see [Packs and Plugins](../packs-and-plugins.md).
 
