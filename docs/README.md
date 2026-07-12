@@ -27,3 +27,37 @@ agent, and script, plus what you must install and how to verify a release.
 | [Core skills](reference/core-skills.md) · [Commands](reference/commands.md) · [Agents](reference/agents.md) · [Scripts](reference/scripts.md) | The non-pack core surface |
 | [How to adopt a pack](how-to/adopt-packs.md) | Enable/disable a pack and satisfy its prerequisites |
 | [How to verify a release](how-to/verify-a-release.md) | Confirm a downloaded artifact with `gh attestation verify` |
+
+## Authoring a new doc
+
+Every doc in this tree routes through `mif-docs-plugin`'s shared substrate
+(ADR-0018) — never hand-write frontmatter from scratch:
+
+- **ADRs** (`docs/adr/`): use `mif-docs-plugin`'s `adr` skill. The `adr`
+  genre is exempt from `mif-validate` (it's validated by the
+  `structured-madr` Action instead, per that plugin's own ADR-0001) — follow
+  `docs/adr/template.md`'s Structured MADR shape.
+- **Diátaxis docs** (`docs/explanation/`, `docs/how-to/`, `docs/reference/`,
+  `docs/tutorials/`): use the matching `diataxis-explanation` /
+  `diataxis-how-to` / `diataxis-reference` / `diataxis-tutorial` skill.
+- **Proposals** (`docs/proposals/`): use the genre skill matching the
+  proposal's actual shape (`ai-architecture-doc`, `feature-spec`, `prd`,
+  `rust-rfc`, …) — the filename should name the skill that produced it.
+
+After authoring, run `mif-validate --level 1|2|3` (via the `mif-validate`
+skill or `mif-mcp`'s `validate_mif_document` tool) before committing, and
+`mif-provenance stamp` if the session's capture ledger witnessed the write
+(`mifProvenance.capture` is enabled by default in `.claude/settings.json` —
+see [Dependencies and requirements](reference/dependencies.md)).
+
+Audited 2026-07-12 (research-harness-template#410): every existing
+non-ADR Diátaxis doc already passes `mif-validate --level 1`
+(schema-conformant, lossless round-trip) under this repo's existing
+frontmatter convention. Reaching L3 (`temporal` + witnessed `provenance`)
+on the existing corpus is a retrofit, not a one-time backfill this story
+performs wholesale — `mif-provenance stamp` declines on any file the
+current session's ledger never touched, so retroactively fabricating a
+provenance block would misrepresent authorship. Existing docs climb to L3
+the next time they're genuinely re-authored or substantively edited in a
+live session; new docs should be authored at L3 from the start via the
+skills above.
