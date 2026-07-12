@@ -273,6 +273,39 @@ and just synthesized them — so do not leave it a deterministic skeleton.
    A `synthesis not applied` failure means step 2 was skipped or too shallow — go
    back and write real cross-finding bullets.
 
+## Step 4d — Stamp mif-docs provenance on the rendered report
+
+The generic report rendered in Step 4b (`reports/<topic>/<slug>.md`) additionally
+gets **witnessed** provenance via `mif-docs-plugin`'s `mif-provenance` skill —
+this is on top of, not instead of, the L3 schema conformance Step 4b already
+enforces (ADR-0002 stays the schema-conformance authority; ADR-0018
+(research-harness-template#407) makes
+`mif-docs-plugin` the provenance authority):
+
+Invoke it via the `Skill` tool — `mif-provenance` is `mif-docs-plugin`'s own
+skill, addressed the same way genre skills are in Step 2
+(`<pack-name>:<skill-name>`, here `mif-docs:mif-provenance`), never a
+hand-rolled script path into the plugin's install cache:
+
+```text
+Skill(mif-docs:mif-provenance) — "stamp $REPORTS_DIR/<slug>.md"
+```
+
+- If capture is disabled (`mifProvenance.capture` unset or `false` at every
+  settings scope) or the session ledger has no witnessed touch of the file,
+  `stamp` declines (exit `3`) — this is expected and not a failure to
+  surface as broken; it means provenance stays whatever it already was
+  (typically absent or model-asserted). Do not hand-author a provenance
+  block to work around a decline.
+- On success, the report's `provenance` block now carries hook-observed
+  `agent`/`agentVersion`/`wasGeneratedBy` fields rather than only
+  model-asserted ones. `trustLevel` stays `user_stated` (the ledger is a
+  local, unsigned witness) — state this ceiling if reporting the stamp
+  result.
+- Stamping never trades conformance for provenance: if it would drop the
+  report below the MIF level it already satisfies, it declines and leaves
+  the file untouched.
+
 ## Step 5 — Self-review before handoff (blocking)
 
 - **Traceability:** every factual assertion maps to a surviving finding `@id` that
