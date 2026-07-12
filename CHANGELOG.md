@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.1] - 2026-07-12
+
+### Fixed
+
+- Added the `[0.13.0]` footer compare-link now that the `v0.13.0` tag exists,
+  per #393's convention — it could not be added in the same PR that stripped
+  `0.12.3`'s heading brackets, since the tag didn't exist yet at that point.
+
 ## [0.13.0] - 2026-07-12
 
 Epic #405: `mif-docs-plugin` adopted as the single document-tooling and
