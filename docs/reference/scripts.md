@@ -2,7 +2,7 @@
 id: reference-scripts
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-12T15:28:52.791Z'
+modified: '2026-07-12T22:05:48.709Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -19,7 +19,7 @@ provenance:
   sourceType: agent_inferred
   agent: claude-code/claude-sonnet-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:ae91b6b6-8d5c-4bea-963d-9e4b7907cf09
+    '@id': urn:mif:activity:claude-code-session:581ee0b6-ce7b-4099-a6dd-2fbb44ce2e1c
     '@type': prov:Activity
   trustLevel: user_stated
   agentVersion: 2.1.207
@@ -164,6 +164,24 @@ These are dev/build-time only; generated files are committed.
 | `scripts/mif-container-export.sh` | The export builder (Story #328, Task #329): read-only against `reports/<topic>/`'s corpus content (AC10; `reports/<topic>/.container.lock` is acquired and released around the read, issue #375, the same mkdir-based mutual exclusion `mif-container-import.sh` uses, so a concurrent export/import against the same topic fails closed instead of racing) — builds a self-contained `mif-package.json` + resource files under a fresh `<output-dir>` for a full topic or (`--subset <in-scope-ids.json>` [`--closure`]) a scope resolved via `scripts/mif-container-resolve-scope.sh`. Copies in-scope findings plus a filtered `ontology-map.json` (full: the whole file; subset: only in-scope entries), derives `ontologyBindings[]` from the in-scope entries' `resolved_ontology` (falling back to the topic's full set when the subset resolves to zero findings, since the schema requires a non-empty `ontologyBindings[]` even for a valid empty-scope export), and self-validates the finished manifest against `schemas/mif-container.schema.json` before reporting success. Wrapped by the `/export` command; `/import` wraps `mif-container-import.sh`. | `jq`, `ajv` |
 
 ---
+
+## Continuous monitoring (Epic #416)
+
+Pipeline scripts behind `.github/workflows/monitor.yml`/`monitor-gate.yml` (ADR-0019); see
+[enable-continuous-monitoring.md](../how-to/enable-continuous-monitoring.md) for the
+operator-facing how-to. Source Connectors: `scripts/monitoring/connectors/{arxiv,openalex,crossref,semantic-scholar,pubmed,biorxiv,gdelt,hn}.sh` (documented per-source in [dependencies.md](dependencies.md#continuous-monitoring-source-apis-optional)).
+
+| Script | What it does | Key dependency |
+| --- | --- | --- |
+| `scripts/monitoring/run-monitoring.sh` | Phase 1 orchestrator: runs enabled Source Connectors under a budget, rebuilds the concordance/index (AD-2 ordering), scores via Interest-Inference, and writes `reports/<topic>/monitoring/runs/<run-id>/recommendations.json`. Stops before the Editorial Gate. | `jq`, `python3` |
+| `scripts/monitoring/run-with-budget.sh` | Wraps one connector in a hard wall-clock `timeout` (NFR1); on timeout or failure, records the specific reason in the Continuity Log and fails closed rather than partial-succeeding. | `timeout` |
+| `scripts/monitoring/interest-inference.sh` | Scores candidates against `reports/concordance.json` (AD-2), with a dependency-light TF-IDF fallback for uncovered topics (NFR4). Refuses to run against a concordance that predates the latest committed finding (git-log-based, not mtime-based). | `python3`, `git` |
+| `scripts/monitoring/recommend.sh` | Two modes: `interest-match` ranks Interest-Inference-scored candidates; `gap-detect` reuses `.claude/skills/discover`'s own coverage-gap heuristic. Every recommendation carries at least one MIF citation (NFR5), enforced in code. | `python3` |
+| `scripts/monitoring/editorial-gate.sh` | The mandatory human-review checkpoint (AD-4/NFR6): splits recommendations into accepted/rejected per an explicit decisions map (in production, derived from the review PR's merge/close state), fail-safe default (no decision = rejected), rejections logged to the Continuity Log. | `jq`, `python3` |
+| `scripts/monitoring/output-router.sh` | Hands Editorial-Gate-accepted recommendations to `scripts/write-finding.sh`/`scripts/check-citation-integrity.sh` unmodified (no bespoke publish path); gap-detect suggestions are surfaced separately in `reports/<topic>/monitoring/recommended-research-areas.jsonl`, never forced into the finding shape. | `jq`, `python3` |
+| `scripts/monitoring/run-gate-and-publish.sh` | Phase 2 orchestrator (the PR-close-triggered half): builds a whole-batch accept/reject decision from a PR's merged state, runs `editorial-gate.sh` then `output-router.sh`. | `jq` |
+| `scripts/monitoring/lib/connector-common.sh` | Shared connector helpers: fail-closed `curl` fetch with timeout/retry, Atom/RSS→JSON normalization (`lib/xml_to_json.py`), and `connector_emit`'s `jq`-based array-shape validation every connector pipes its output through. | `curl`, `python3`, `jq` |
+| `scripts/monitoring/lib/continuity-log.sh` | Appends one schema-validated JSON line per event to `reports/<topic>/monitoring/continuity-log.jsonl` (`schemas/monitoring-continuity-log-entry.schema.json`) — an explicitly scoped extension, not a MIF finding. | `jq`, `ajv` |
 
 ## Release and verification
 

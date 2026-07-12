@@ -1,6 +1,6 @@
 {
   "$schema": "./harness.config.schema.json",
-  "version": "0.13.1",
+  "version": "0.14.0",
   "mifConformanceLevel": 3,
   "features": {
     "internalCitations": false
@@ -25,7 +25,26 @@
         "scientific",
         "market-research",
         "trend-analysis"
-      ]
+      ],
+      "continuousMonitoring": {
+        "enabled": false,
+        "schedule": "0 6 * * 1",
+        "queryTerms": [
+          "knowledge graph",
+          "MIF",
+          "OKF",
+          "provenance"
+        ],
+        "sources": [
+          "arxiv",
+          "openalex",
+          "crossref",
+          "hn"
+        ],
+        "budgetSeconds": 30,
+        "maxResultsPerSource": 20,
+        "recommendationThreshold": 0.02
+      }
     }
   ],
   "dimensions": [

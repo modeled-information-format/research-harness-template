@@ -2,7 +2,7 @@
 id: reference-coverage
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-12T14:42:57.056Z'
+modified: '2026-07-12T21:38:12.254Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -18,7 +18,7 @@ provenance:
   '@type': Provenance
   agent: claude-code/claude-sonnet-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:ae91b6b6-8d5c-4bea-963d-9e4b7907cf09
+    '@id': urn:mif:activity:claude-code-session:581ee0b6-ce7b-4099-a6dd-2fbb44ce2e1c
     '@type': prov:Activity
   trustLevel: user_stated
   agentVersion: 2.1.207
@@ -35,23 +35,22 @@ the **discovered** set equals the **documented** set.
 
 | Category | Discovered | Documented | Source of truth |
 | --- | --- | --- | --- |
-| Packs | 58 | 58 | `harness.config.json` `packs[]` (37) + `packs/ontologies/` (21) |
+| Packs | 62 | 58 | `harness.config.json` `packs[]` + `packs/ontologies/` — stale, see #481 |
 | Core skills | 10 | 10 | `.claude/skills/*/SKILL.md` |
-| Commands | 9 | 9 | `.claude/commands/*.md` |
+| Commands | 11 | 9 | `.claude/commands/*.md` — stale, see #481 |
 | Agents | 7 | 7 | `.claude/agents/*.md` |
-| Scripts | 42 | 42 | `scripts/**` (excludes `__pycache__`) |
-| **Total** | **126** | **126** | — |
+| Scripts | 74 | 65 | `scripts/**` (excludes `__pycache__`) — the 9-script gap predates Epic #416 and shares #481's root cause; the 23 scripts Epic #416 added (`scripts/monitoring/**`) are fully itemized below |
+| **Total** | **164** | **149** | — |
 
 Reproduce the discovered counts:
 
 ```sh
-# packs: 37 plugin packs + 21 ontology packs = 58
-echo $(( $(jq '.packs | length' harness.config.json) + $(jq '.ontologies | length' harness.config.json) ))
+echo $(( $(jq '.packs | length' harness.config.json) + $(jq '.ontologies | length' harness.config.json) )) # 62 packs
 ls .claude/skills | wc -l        # 10 core skills
-ls .claude/commands/*.md | wc -l # 9 commands
+ls .claude/commands/*.md | wc -l # 11 commands
 ls .claude/agents/*.md | wc -l   # 7 agents
 find scripts -type f \( -name '*.sh' -o -name '*.py' -o -name '*.jq' \) \
-  | grep -v __pycache__ | wc -l  # 42 scripts
+  | grep -v __pycache__ | wc -l  # 74 scripts
 ```
 
 Domain ontology packs are vendored on demand (ADR-0012) — `packs/ontologies/`
@@ -150,9 +149,10 @@ All documented in [agents.md](agents.md): `orchestrator`, `dimension-analyst`,
 `falsification-analyst`, `report-synthesizer`, `corpus-synthesizer`,
 `harness-configurator`, `source-chunker`.
 
-## Scripts (42)
+## Scripts (74 discovered, 65 documented — see #481)
 
-All documented in [scripts.md](scripts.md): `assert-graph-mif`,
+Pre-Epic-#416 baseline, all documented in [scripts.md](scripts.md):
+`assert-graph-mif`,
 `author-ontology`, `backfill-report-slugs`, `build-concordance`,
 `build-graph-viz`, `build-graph`, `build-index`, `build-topic-readme`,
 `bump-version`, `check-citation-integrity`, `check-mermaid.py`,
@@ -164,7 +164,20 @@ All documented in [scripts.md](scripts.md): `assert-graph-mif`,
 `resolve-membership`, `resolve-ontology`, `run-lock`, `site-toggle`,
 `sync-packs`, `sync-registry-ontologies`, `synthesize-artifact`,
 `synthesize-corpus`, `update`, `validate-concordance`, `verify`,
-`wrap-source`, `write-finding`.
+`wrap-source`, `write-finding` — 42 named here, though the pre-Epic
+baseline is actually 51 (a 9-script gap that predates and is unrelated
+to Epic #416, see #481).
+
+Added by Epic #416 (continuous monitoring, all documented in
+[scripts.md](scripts.md#continuous-monitoring-epic-416)):
+`monitoring/run-monitoring.sh`, `monitoring/run-with-budget.sh`,
+`monitoring/interest-inference.sh`, `monitoring/recommend.sh`,
+`monitoring/editorial-gate.sh`, `monitoring/output-router.sh`,
+`monitoring/run-gate-and-publish.sh`,
+`monitoring/connectors/{arxiv,openalex,crossref,semantic-scholar,pubmed,biorxiv,gdelt,hn}.sh`,
+`monitoring/lib/connector-common.sh`, `monitoring/lib/continuity-log.sh`,
+`monitoring/lib/{editorial_gate,interest_inference,mif_tokenize,recommend,recommendation_to_finding,xml_to_json}.py`
+— 23 scripts, fully itemized.
 
 ## Assertion
 

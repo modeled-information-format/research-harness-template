@@ -45,8 +45,8 @@
       "topics": [
         "example-okf-mif-knowledge-spine"
       ],
-      "entityType": "data-provenance",
-      "ontology": "scientific@0.1.0",
+      "entityType": "technology",
+      "ontology": "mif-generic@1.0.0",
       "verdict": "survived",
       "flagged": false
     },
@@ -57,8 +57,8 @@
       "topics": [
         "example-okf-mif-knowledge-spine"
       ],
-      "entityType": "data-provenance",
-      "ontology": "scientific@0.1.0",
+      "entityType": "technology",
+      "ontology": "mif-generic@1.0.0",
       "verdict": "survived",
       "flagged": false
     },
@@ -69,8 +69,8 @@
       "topics": [
         "example-okf-mif-knowledge-spine"
       ],
-      "entityType": "data-provenance",
-      "ontology": "scientific@0.1.0",
+      "entityType": "technology",
+      "ontology": "mif-generic@1.0.0",
       "verdict": "survived",
       "flagged": false
     },
@@ -81,8 +81,8 @@
       "topics": [
         "example-okf-mif-knowledge-spine"
       ],
-      "entityType": "data-provenance",
-      "ontology": "scientific@0.1.0",
+      "entityType": "technology",
+      "ontology": "mif-generic@1.0.0",
       "verdict": "survived",
       "flagged": false
     },
@@ -94,7 +94,7 @@
         "example-okf-mif-knowledge-spine"
       ],
       "entityType": "market-demand",
-      "ontology": "market-research@0.1.0",
+      "ontology": "market-research@0.4.0",
       "verdict": "weakened",
       "flagged": false
     },
@@ -106,7 +106,7 @@
         "example-okf-mif-knowledge-spine"
       ],
       "entityType": "segment",
-      "ontology": "market-research@0.1.0",
+      "ontology": "market-research@0.4.0",
       "verdict": "weakened",
       "flagged": false
     },
@@ -118,7 +118,7 @@
         "example-okf-mif-knowledge-spine"
       ],
       "entityType": "value-proposition",
-      "ontology": "market-research@0.1.0",
+      "ontology": "market-research@0.4.0",
       "verdict": "survived",
       "flagged": false
     },
@@ -129,8 +129,8 @@
       "topics": [
         "example-okf-mif-knowledge-spine"
       ],
-      "entityType": "data-provenance",
-      "ontology": "scientific@0.1.0",
+      "entityType": "concept",
+      "ontology": "mif-generic@1.0.0",
       "verdict": "survived",
       "flagged": false
     },
@@ -142,7 +142,7 @@
         "example-okf-mif-knowledge-spine"
       ],
       "entityType": "sizing-estimate",
-      "ontology": "market-research@0.1.0",
+      "ontology": "market-research@0.4.0",
       "verdict": "survived",
       "flagged": false
     },
@@ -154,7 +154,7 @@
         "example-okf-mif-knowledge-spine"
       ],
       "entityType": "critical-uncertainty",
-      "ontology": "trend-analysis@0.1.0",
+      "ontology": "trend-analysis@0.4.0",
       "verdict": "survived",
       "flagged": false
     },
@@ -166,7 +166,7 @@
         "example-okf-mif-knowledge-spine"
       ],
       "entityType": "segment",
-      "ontology": "market-research@0.1.0",
+      "ontology": "market-research@0.4.0",
       "verdict": "weakened",
       "flagged": false
     },
@@ -178,7 +178,7 @@
         "example-okf-mif-knowledge-spine"
       ],
       "entityType": "market-intelligence-report",
-      "ontology": "market-research@0.1.0",
+      "ontology": "market-research@0.4.0",
       "verdict": "weakened",
       "flagged": false
     },
@@ -213,8 +213,8 @@
       "topics": [
         "example-okf-mif-knowledge-spine"
       ],
-      "entityType": "data-platform",
-      "ontology": "data-engineering@0.2.0",
+      "entityType": "concept",
+      "ontology": "mif-generic@1.0.0",
       "verdict": "survived",
       "flagged": false
     },
@@ -225,8 +225,8 @@
       "topics": [
         "example-okf-mif-knowledge-spine"
       ],
-      "entityType": "data-provenance",
-      "ontology": "scientific@0.1.0",
+      "entityType": "concept",
+      "ontology": "mif-generic@1.0.0",
       "verdict": "survived",
       "flagged": false
     },
@@ -249,8 +249,8 @@
       "topics": [
         "example-okf-mif-knowledge-spine"
       ],
-      "entityType": "dataset",
-      "ontology": "scientific@0.1.0",
+      "entityType": "concept",
+      "ontology": "mif-generic@1.0.0",
       "verdict": "weakened",
       "flagged": false
     },
@@ -273,8 +273,8 @@
       "topics": [
         "example-okf-mif-knowledge-spine"
       ],
-      "entityType": "data-provenance",
-      "ontology": "scientific@0.1.0",
+      "entityType": "concept",
+      "ontology": "mif-generic@1.0.0",
       "verdict": "survived",
       "flagged": false
     },
@@ -333,8 +333,8 @@
       "topics": [
         "example-okf-mif-knowledge-spine"
       ],
-      "entityType": "data-provenance",
-      "ontology": "scientific@0.1.0",
+      "entityType": "emerging-issue",
+      "ontology": "trend-analysis@0.4.0",
       "verdict": "survived",
       "flagged": false
     },
@@ -346,7 +346,7 @@
         "example-okf-mif-knowledge-spine"
       ],
       "entityType": "trend",
-      "ontology": "trend-analysis@0.1.0",
+      "ontology": "trend-analysis@0.4.0",
       "verdict": "survived",
       "flagged": false
     },
@@ -357,8 +357,8 @@
       "topics": [
         "example-okf-mif-knowledge-spine"
       ],
-      "entityType": "data-provenance",
-      "ontology": "scientific@0.1.0",
+      "entityType": "trend",
+      "ontology": "trend-analysis@0.4.0",
       "verdict": "survived",
       "flagged": false
     },
@@ -369,8 +369,8 @@
       "topics": [
         "example-okf-mif-knowledge-spine"
       ],
-      "entityType": "data-provenance",
-      "ontology": "scientific@0.1.0",
+      "entityType": "trend",
+      "ontology": "trend-analysis@0.4.0",
       "verdict": "survived",
       "flagged": false
     },
@@ -381,8 +381,8 @@
       "topics": [
         "example-okf-mif-knowledge-spine"
       ],
-      "entityType": "data-provenance",
-      "ontology": "scientific@0.1.0",
+      "entityType": "trend",
+      "ontology": "trend-analysis@0.4.0",
       "verdict": "survived",
       "flagged": false
     },
@@ -394,7 +394,7 @@
         "example-okf-mif-knowledge-spine"
       ],
       "entityType": "emerging-issue",
-      "ontology": "trend-analysis@0.1.0",
+      "ontology": "trend-analysis@0.4.0",
       "verdict": "survived",
       "flagged": false
     },
@@ -406,7 +406,7 @@
         "example-okf-mif-knowledge-spine"
       ],
       "entityType": "signal",
-      "ontology": "trend-analysis@0.1.0",
+      "ontology": "trend-analysis@0.4.0",
       "verdict": "survived",
       "flagged": false
     },
@@ -417,8 +417,8 @@
       "topics": [
         "example-okf-mif-knowledge-spine"
       ],
-      "entityType": "data-provenance",
-      "ontology": "scientific@0.1.0",
+      "entityType": "trend",
+      "ontology": "trend-analysis@0.4.0",
       "verdict": "survived",
       "flagged": false
     },
@@ -429,8 +429,8 @@
       "topics": [
         "example-okf-mif-knowledge-spine"
       ],
-      "entityType": "data-provenance",
-      "ontology": "scientific@0.1.0",
+      "entityType": "trend",
+      "ontology": "trend-analysis@0.4.0",
       "verdict": "survived",
       "flagged": false
     }

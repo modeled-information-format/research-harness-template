@@ -7,6 +7,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-07-12
+
+Epic #416: Continuous Research-Monitoring Capability. A periodically-triggered
+scan of weekly news, academic/preprint papers, and current-events signals,
+scored against the harness's existing knowledge, with every candidate
+recommendation gated through human PR review before anything publishes.
+
+### Added
+
+- **ADR-0019** settles the scheduling/trigger primitive: GitHub Actions cron,
+  not a cloud Routine, with write-back via a review PR that doubles as the
+  Editorial Gate (research-harness-template#417).
+- **Eight Source Connectors** (`scripts/monitoring/connectors/`): arXiv,
+  OpenAlex, Crossref, Semantic Scholar, PubMed, bioRxiv/medRxiv, GDELT DOC 2.0,
+  Hacker News — each a free, keyless `curl`+`jq` client, no SDK, opt-in
+  enhancement env vars default off (research-harness-template#418).
+- **Interest-Inference Engine** (`scripts/monitoring/interest-inference.sh`)
+  scores candidates against `reports/concordance.json` with a dependency-light
+  TF-IDF fallback for uncovered topics; refuses to score against a stale
+  concordance (research-harness-template#419).
+- **Recommendation Engine** (`scripts/monitoring/recommend.sh`): interest-match
+  and gap-detect modes, every recommendation carrying at least one MIF
+  citation enforced in code (research-harness-template#420).
+- **Continuity Log + fail-closed budget** (`scripts/monitoring/lib/continuity-log.sh`,
+  `run-with-budget.sh`): every ingestion failure or budget breach is recorded,
+  never silent (research-harness-template#421).
+- **Editorial Gate** (`scripts/monitoring/editorial-gate.sh`): structural
+  human-review checkpoint, fail-safe default (no decision = rejected), with a
+  no-bypass invariant enforced before publish (research-harness-template#422).
+- **Output Router** (`scripts/monitoring/output-router.sh`) hands accepted
+  recommendations to the existing `publish-report`/`publish-blog` skills
+  unmodified — no new output channel (research-harness-template#423).
+- **`.github/workflows/monitor.yml` + `monitor-gate.yml`** implement ADR-0019
+  end to end: a scheduled run opens one review PR per topic; merging or
+  closing it drives accept/reject (research-harness-template#424).
+- **`harness.config.json`'s per-topic `continuousMonitoring` block** (schedule,
+  queryTerms, sources, budgetSeconds, maxResultsPerSource,
+  recommendationThreshold), shipped disabled on the bundled example topic.
+- **`evals/monitoring-pipeline.sh`** dry-run eval covering the fail-closed,
+  Editorial Gate no-bypass, and full accept-to-publish paths
+  (research-harness-template#425).
+- **`docs/how-to/enable-continuous-monitoring.md`** operator how-to.
+
+### Fixed
+
+- `reports/concordance.json` had drifted stale since #229 (PR #253's
+  retro-classification never triggered a rebuild) — caught by the new
+  Interest-Inference freshness guard, rebuilt.
+- ADR-0019 initially used this repo's `docs/adr/template.md` shape, which
+  cannot be provenance-stamped or pass real `structured-madr` validation
+  (missing `## Links`, invalid Audit status). Authored via the `mif-docs:adr`
+  skill instead; now passes `smadr` strict mode and MIF conformance levels
+  1-3 against the real Action. The same gap affects every other ADR in this
+  repo (already tracked, research-harness-template#435).
+
 ## [0.13.1] - 2026-07-12
 
 ### Fixed

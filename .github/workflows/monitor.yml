@@ -1,0 +1,184 @@
+name: continuous-monitoring
+
+# Phase 1 (research-harness-template#424, ADR-0019): run the monitoring
+# pipeline (Source Connectors -> Interest-Inference -> Recommendation
+# Engine) for every topic that opts in via harness.config.json's
+# continuousMonitoring.enabled, then open ONE review PR per topic. That PR
+# IS the Editorial Gate (research-harness-template#422): merging it is the
+# accept path, closing it without merge is the reject path. Phase 2
+# (monitor-gate.yml) reacts to that PR closing and does the actual
+# publish/reject-logging -- this workflow never calls editorial-gate.sh or
+# output-router.sh itself.
+#
+# NOTE on the app token below: mirrors ci.yml's App-token pattern per
+# ADR-0019, but this job requests WRITE scopes (contents, pull-requests)
+# that ci.yml's read-only CI app may not have installed -- confirm with an
+# org admin before relying on this in production, or provision a dedicated
+# app per the org's six-app least-privilege model
+# (repos/.github/docs/onboarding/app/).
+on:
+  schedule:
+    # GitHub Actions supports only one schedule cadence per workflow file,
+    # so every topic is bounded by this single firing cadence -- a topic
+    # whose own continuousMonitoring.schedule wants a tighter cadence than
+    # this (e.g. daily) will never fire more often than here, regardless of
+    # its own configured cron. The "resolve topics" step below (via
+    # scripts/monitoring/lib/cron_match.py) filters OUT topics whose own
+    # schedule doesn't match a given firing (e.g. a topic configured for
+    # Wednesdays is skipped on this Monday-only trigger) -- it can only
+    # narrow which topics run on a firing, never widen how often a firing
+    # happens. A topic wanting a genuinely different cadence than every
+    # other topic needs its own separate workflow file.
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: 'Topic id to run (omit for all enabled topics)'
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: '3.14'
+
+      - name: Install toolchain (ajv-cli -- continuity-log.sh's schema gate hard-requires it)
+        run: npm install -g ajv-cli ajv-formats
+
+      - name: "Mint an app token (write: contents, pull-requests)"
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.CI_CLIENT_APP_ID }}
+          private-key: ${{ secrets.CI_CLIENT_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: research-harness-template
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: fetch the mif-rh engine (ADR-0016)
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: bash scripts/fetch-engine.sh
+
+      - name: vendor enabled domain ontologies (ADR-0012)
+        run: bash scripts/fetch-ontology.sh --all-enabled
+
+      - name: resolve topics to run and check each one's schedule
+        id: resolve
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          INPUT_TOPIC="${{ github.event.inputs.topic }}"
+          if [ -n "$INPUT_TOPIC" ]; then
+            # workflow_dispatch names one topic explicitly: always run it,
+            # bypassing the schedule check below (a manual trigger IS the
+            # override).
+            TOPICS="$INPUT_TOPIC"
+          else
+            ENABLED_TOPICS="$(jq -r '.topics[] | select(.continuousMonitoring.enabled == true) | .id' harness.config.json)"
+            if [ "$EVENT_NAME" = "schedule" ]; then
+              # This workflow has exactly one schedule: trigger (GitHub
+              # Actions supports only one cadence per workflow), so it fires
+              # at a fixed cadence independent of any topic's own
+              # continuousMonitoring.schedule. Filter down to topics whose
+              # OWN cron actually matches the current firing, rather than
+              # running every enabled topic on every firing regardless of
+              # its configured cadence (that field was otherwise decorative
+              # -- never read anywhere in the pipeline).
+              TOPICS=""
+              while IFS= read -r t; do
+                [ -n "$t" ] || continue
+                SCHEDULE="$(jq -r --arg t "$t" '.topics[] | select(.id == $t) | .continuousMonitoring.schedule // "0 6 * * 1"' harness.config.json)"
+                if python3 scripts/monitoring/lib/cron_match.py "$SCHEDULE"; then
+                  TOPICS="$TOPICS$t"$'\n'
+                else
+                  echo "monitor.yml: skipping $t this firing, schedule '$SCHEDULE' does not match now" >&2
+                fi
+              done <<< "$ENABLED_TOPICS"
+            else
+              TOPICS="$ENABLED_TOPICS"
+            fi
+          fi
+          {
+            echo "topics<<MONITOR_EOF"
+            echo "$TOPICS"
+            echo "MONITOR_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: run the monitoring pipeline per topic and open review PRs
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          RUN_ID="run-$(date -u +%Y%m%dT%H%M%SZ)-${GITHUB_RUN_ID}"
+          git config user.name "research-harness-template[bot]"
+          git config user.email "research-harness-template[bot]@users.noreply.github.com"
+          # Without this, git push/fetch fall back to the checkout's
+          # default credential (actions/checkout's own token), NOT the
+          # minted app token in GH_TOKEN -- the commit/push would carry
+          # the wrong identity and (per GitHub's own limitation) a push
+          # made with the default GITHUB_TOKEN does not trigger other
+          # workflows.
+          gh auth setup-git
+
+          while IFS= read -r topic; do
+            [ -n "$topic" ] || continue
+            echo "::group::monitoring run for $topic"
+            # Always start each topic from a clean, identical base -- without
+            # this, topic N's branch (and PR) would fork from topic N-1's
+            # already-committed branch tip instead of main whenever more than
+            # one topic is enabled in the same run, and any uncommitted
+            # working-tree residue from a topic that produced zero
+            # recommendations (which never reaches the commit step below)
+            # would otherwise carry into the next topic's branch.
+            git checkout main
+            git reset --hard origin/main
+            git clean -fd reports/
+            bash scripts/monitoring/run-monitoring.sh "$topic" "$RUN_ID" || {
+              echo "monitor.yml: run-monitoring.sh failed for $topic, skipping PR" >&2
+              echo "::endgroup::"
+              continue
+            }
+
+            REC_FILE="reports/$topic/monitoring/runs/$RUN_ID/recommendations.json"
+            [ -f "$REC_FILE" ] || { echo "::endgroup::"; continue; }
+            COUNT="$(jq 'length' "$REC_FILE")"
+            if [ "$COUNT" -eq 0 ]; then
+              echo "monitor.yml: no recommendations for $topic this run, nothing to review"
+              echo "::endgroup::"
+              continue
+            fi
+
+            BRANCH="monitor/$topic/$RUN_ID"
+            git checkout -b "$BRANCH"
+            git add "reports/$topic/monitoring/runs/$RUN_ID" reports/concordance.json "reports/$topic/research-index.json"
+            git commit -m "monitor($topic): $COUNT candidate recommendation(s), $RUN_ID"
+            git push origin "$BRANCH"
+
+            PR_BODY_FILE="$(mktemp)"
+            jq -r '.[] | "- **" + (.title // ("gap: " + .dimension)) + "** (" + .mode + ", score " + ((.score // .finding_count // 0) | tostring) + ")"' "$REC_FILE" > "$PR_BODY_FILE"
+            {
+              echo ""
+              echo "Merging this PR accepts every recommendation above (Editorial Gate accept path). Closing it without merging rejects all of them (logged to the Continuity Log)."
+            } >> "$PR_BODY_FILE"
+
+            gh pr create \
+              --title "monitor($topic): $COUNT candidate recommendation(s) for review" \
+              --body-file "$PR_BODY_FILE" \
+              --base main --head "$BRANCH" --label "continuous-monitoring"
+            rm -f "$PR_BODY_FILE"
+            echo "::endgroup::"
+          done <<< "${{ steps.resolve.outputs.topics }}"

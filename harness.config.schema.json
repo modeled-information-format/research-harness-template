@@ -110,6 +110,60 @@
               "type": "string",
               "pattern": "^[a-z][a-z0-9-]*(@\\d+\\.\\d+\\.\\d+)?$"
             }
+          },
+          "continuousMonitoring": {
+            "type": "object",
+            "description": "Continuous research-monitoring config for this topic (research-harness-template#416). Opt-in per topic, disabled unless explicitly enabled -- no monitoring runs for a topic that omits this block or sets enabled:false. NOTE (deliberate deviation, not doc-backed precedent): this is implemented as a core capability (scripts/monitoring/**, gated by this config flag) rather than a packs/<family>/<skill>/ plugin, even though docs/explanation/pack-structure.md states every optional capability ships as a plugin. Rationale: the pipeline runs unattended from two GitHub Actions workflows (not an interactive Claude Code session invoking a SKILL.md), and writes directly through core substrate (write-finding.sh, check-citation-integrity.sh, build-concordance.sh/build-index.sh) rather than through a plugin's own isolated skill surface -- a shape the packs[] control plane isn't designed around. Flagged as a real architectural question worth revisiting, not silently resolved.",
+            "required": ["enabled"],
+            "additionalProperties": false,
+            "properties": {
+              "enabled": {
+                "type": "boolean",
+                "description": "Master switch. false (or the block absent) means the scheduled workflow skips this topic entirely."
+              },
+              "schedule": {
+                "type": "string",
+                "description": "5-field cron expression for the GitHub Actions schedule trigger (ADR-0019). Defaults to weekly (Monday 06:00 UTC) if omitted.",
+                "pattern": "^\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+$"
+              },
+              "queryTerms": {
+                "type": "array",
+                "description": "Terms the Source Connectors search for and the Interest-Inference TF-IDF fallback scores against. Typically the topic's title/keywords.",
+                "items": { "type": "string" },
+                "minItems": 1
+              },
+              "sources": {
+                "type": "array",
+                "description": "Which Source Connectors to run for this topic. Omit for all eight.",
+                "items": {
+                  "type": "string",
+                  "enum": ["arxiv", "openalex", "crossref", "semantic-scholar", "pubmed", "biorxiv", "gdelt", "hn"]
+                }
+              },
+              "budgetSeconds": {
+                "type": "integer",
+                "description": "Per-connector wall-clock budget (NFR1). A connector that exceeds this fails closed and is recorded in the Continuity Log rather than the run hanging or partial-succeeding silently.",
+                "minimum": 5,
+                "default": 30
+              },
+              "maxResultsPerSource": {
+                "type": "integer",
+                "minimum": 1,
+                "default": 20
+              },
+              "biorxivDaysBack": {
+                "type": "integer",
+                "description": "biorxiv.sh has no free-text search (bioRxiv/medRxiv's public API only lists preprints by posting-date interval) -- this is its own days-back window, independent of queryTerms, used only when 'biorxiv' is included in sources.",
+                "minimum": 1,
+                "default": 7
+              },
+              "recommendationThreshold": {
+                "type": "number",
+                "description": "Minimum Interest-Inference score for the Recommendation Engine's interest-match mode to surface a candidate.",
+                "minimum": 0,
+                "default": 0.02
+              }
+            }
           }
         }
       }

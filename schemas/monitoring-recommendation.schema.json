@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-harness.dev/schema/monitoring-recommendation.schema.json",
+  "title": "Continuous-Monitoring Recommendation",
+  "description": "A Recommendation Engine output (research-harness-template#420): either an interest-matched candidate or a gap-detected research area. Every recommendation carries at least one citation (NFR5) -- enforced in code, not just by this schema. This is the shape the Editorial Gate (research-harness-template#422) reviews; it is not itself a MIF finding.",
+  "type": "object",
+  "required": ["mode", "citations"],
+  "properties": {
+    "mode": { "type": "string", "enum": ["interest-match", "gap-detect"] },
+    "source": { "type": "string" },
+    "id": { "type": "string" },
+    "title": { "type": "string" },
+    "url": { "type": "string" },
+    "published": { "type": "string" },
+    "score": { "type": "number" },
+    "inference_method": { "type": "string", "enum": ["concordance", "tfidf-fallback"] },
+    "dimension": { "type": "string" },
+    "description": { "type": "string" },
+    "finding_count": { "type": "integer" },
+    "corpus_mean": { "type": "number" },
+    "citations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "type": { "type": "string", "enum": ["concordance-node", "primary-source", "internal"] },
+          "target": { "type": "string", "minLength": 1 },
+          "url": { "type": "string", "minLength": 1 },
+          "note": { "type": "string" }
+        },
+        "anyOf": [
+          { "required": ["target"] },
+          { "required": ["url"] }
+        ]
+      }
+    },
+    "gate": {
+      "description": "Stamped only by scripts/monitoring/editorial-gate.sh (research-harness-template#422) once a candidate has an explicit accept decision. The Output Router (research-harness-template#423) requires gate.passed === true and refuses anything else -- this is the structural enforcement that no recommendation reaches publish without passing through the gate.",
+      "type": "object",
+      "required": ["passed", "decided_by", "decided_at"],
+      "properties": {
+        "passed": { "const": true },
+        "decided_by": { "type": "string" },
+        "decided_at": { "type": "string", "format": "date-time" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

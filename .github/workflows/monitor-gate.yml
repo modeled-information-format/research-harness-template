@@ -1,0 +1,95 @@
+name: continuous-monitoring-gate
+
+# Phase 2 (research-harness-template#424, ADR-0019): reacts to a
+# continuous-monitoring review PR (opened by monitor.yml) actually
+# closing. Per ADR-0019, that PR IS the Editorial Gate
+# (research-harness-template#422): merged == true is the accept path,
+# closed-without-merge is the reject path. Runs editorial-gate.sh and
+# output-router.sh, then commits the result directly to main -- this runs
+# only AFTER the human review the PR represents has already happened, so
+# no further review gate applies here.
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: read
+
+jobs:
+  gate-and-publish:
+    if: startsWith(github.event.pull_request.head.ref, 'monitor/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.base.ref }}
+
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: '3.14'
+
+      - name: Install toolchain (ajv-cli -- continuity-log.sh's schema gate hard-requires it)
+        run: npm install -g ajv-cli ajv-formats
+
+      - name: "Mint an app token (write: contents)"
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.CI_CLIENT_APP_ID }}
+          private-key: ${{ secrets.CI_CLIENT_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: research-harness-template
+          permission-contents: write
+
+      - name: fetch the mif-rh engine (ADR-0016)
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: bash scripts/fetch-engine.sh
+
+      - name: parse topic and run-id, gate and publish
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          # Untrusted (PR head ref / base ref / head sha are attacker-
+          # influenceable): passed through env vars, never interpolated
+          # directly into the script, per actionlint's script-injection
+          # guidance.
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PR_MERGED: ${{ github.event.pull_request.merged }}
+        run: |
+          set -euo pipefail
+          # monitor/<topic>/<run-id>
+          TOPIC="$(printf '%s' "$PR_HEAD_REF" | cut -d/ -f2)"
+          RUN_ID="$(printf '%s' "$PR_HEAD_REF" | cut -d/ -f3-)"
+          REC_PATH="reports/$TOPIC/monitoring/runs/$RUN_ID/recommendations.json"
+
+          # recommendations.json only ever exists on the PR's own head
+          # commit -- it reaches the base branch ONLY once the PR is
+          # merged. On the reject path (closed without merge) it is NEVER
+          # on $PR_BASE_REF, so read it from the head commit directly
+          # (fetchable by SHA even if the branch ref itself was deleted on
+          # close) rather than assuming it's already checked out.
+          git fetch origin "$PR_HEAD_SHA"
+          REC_FILE="$(mktemp).json"
+          if ! git show "$PR_HEAD_SHA:$REC_PATH" > "$REC_FILE" 2>/dev/null; then
+            echo "monitor-gate.yml: $REC_PATH not found at $PR_HEAD_SHA" >&2
+            exit 1
+          fi
+
+          bash scripts/monitoring/run-gate-and-publish.sh "$TOPIC" "$RUN_ID" "$REC_FILE" "$PR_MERGED"
+
+          git config user.name "research-harness-template[bot]"
+          git config user.email "research-harness-template[bot]@users.noreply.github.com"
+          # Without this, git push falls back to the checkout's default
+          # credential instead of the minted app token in GH_TOKEN -- see
+          # the identical note in monitor.yml.
+          gh auth setup-git
+          git add "reports/$TOPIC"
+          if ! git diff --cached --quiet; then
+            git commit -m "monitor($TOPIC): gate decision for $RUN_ID (merged=$PR_MERGED)"
+            git push origin "$PR_BASE_REF"
+          fi
