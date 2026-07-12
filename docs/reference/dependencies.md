@@ -9,6 +9,11 @@ tags:
   - reference
 title: "Reference: dependencies and requirements"
 diataxis_type: reference
+temporal:
+  '@type': TemporalMetadata
+  validFrom: '2026-06-24T10:25:46-04:00'
+  ttl: P6M
+  recordedAt: '2026-06-24T10:25:46-04:00'
 provenance:
   '@type': Provenance
   sourceType: agent_inferred

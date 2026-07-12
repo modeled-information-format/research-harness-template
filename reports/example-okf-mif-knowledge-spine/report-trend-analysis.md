@@ -8,6 +8,12 @@ conceptType: semantic
 namespace: harness/example-okf-mif-knowledge-spine
 title: 'Trend Analysis: Adoption & Standards Momentum for an OKF+MIF Spine'
 created: "2026-06-28T14:17:00Z"
+modified: "2026-06-28T14:17:00Z"
+temporal:
+  "@type": TemporalMetadata
+  validFrom: "2026-06-28T14:17:00Z"
+  ttl: P6M
+  recordedAt: "2026-06-28T14:17:00Z"
 provenance:
   '@type': Provenance
   sourceType: system_generated

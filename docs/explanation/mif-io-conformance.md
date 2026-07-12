@@ -9,6 +9,11 @@ tags:
   - explanation
 title: "MIF I/O conformance"
 diataxis_type: explanation
+temporal:
+  '@type': TemporalMetadata
+  validFrom: '2026-06-20T06:10:40-04:00'
+  ttl: P6M
+  recordedAt: '2026-06-20T06:10:40-04:00'
 provenance:
   '@type': Provenance
   sourceType: agent_inferred

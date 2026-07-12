@@ -9,6 +9,11 @@ tags:
   - reference
 title: "Reference: mif-rh MCP server"
 diataxis_type: reference
+temporal:
+  '@type': TemporalMetadata
+  validFrom: '2026-07-05T10:16:37-04:00'
+  ttl: P6M
+  recordedAt: '2026-07-05T10:16:37-04:00'
 provenance:
   '@type': Provenance
   sourceType: agent_inferred

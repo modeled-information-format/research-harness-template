@@ -8,6 +8,12 @@ conceptType: semantic
 namespace: harness/example-okf-mif-knowledge-spine
 title: 'Competitive Quadrant: Structured-vs-Accessible Knowledge Formats'
 created: "2026-06-28T14:13:53Z"
+modified: "2026-06-28T14:13:53Z"
+temporal:
+  "@type": TemporalMetadata
+  validFrom: "2026-06-28T14:13:53Z"
+  ttl: P6M
+  recordedAt: "2026-06-28T14:13:53Z"
 provenance:
   '@type': Provenance
   sourceType: system_generated
