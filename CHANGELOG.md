@@ -84,7 +84,7 @@ witnessed, hook-observed provenance and no wiring for `docs/` at all).
   concurrent PRs were missing the same required `temporal:` block `gate_m32`
   enforces.
 
-## [0.12.3] - 2026-07-12
+## 0.12.3 - 2026-07-12
 
 ### Fixed
 
@@ -986,7 +986,7 @@ First release of the domain-general research harness template.
 
 <!--
 Dated sections above with no bracketed heading (0.6.0, 0.6.1, 0.7.0, 0.7.1,
-0.8.2, 0.8.4, 0.10.1, 0.11.1, 0.11.2) moved the `harness.config.json` version
+0.8.2, 0.8.4, 0.10.1, 0.11.1, 0.11.2, 0.12.3) moved the `harness.config.json` version
 pointer per ADR-0010's change-driven model but were folded into a later
 release before a GitHub Release/tag was ever published for them, so they omit
 a footer compare-link — nothing real exists to compare against. Convention
