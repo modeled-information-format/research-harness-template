@@ -27,7 +27,7 @@
         "trend-analysis"
       ],
       "continuousMonitoring": {
-        "enabled": true,
+        "enabled": false,
         "schedule": "0 6 * * 1",
         "queryTerms": [
           "knowledge graph",
