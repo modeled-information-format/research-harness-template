@@ -97,7 +97,10 @@ push and pull request. Toolchain: `jq` and `yq` (the YAML analog of jq, used by
 the MIF report projector), `ajv-cli` + `ajv-formats`, `copier` for the
 distribution gate, and `mif-rh-cli` (the compiled ontology engine, installed
 by `scripts/fetch-engine.sh`; its ontology-resolution gates delegate to it,
-ADR-0016).
+ADR-0016). Document-shaped deliverables (frontmatter, MIF conformance,
+provenance) are authored and validated through
+[`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)
+— see [Reference: dependencies and requirements](docs/reference/dependencies.md).
 
 ## Supply-chain verification
 

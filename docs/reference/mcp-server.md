@@ -2,13 +2,22 @@
 id: reference-mcp-server
 type: semantic
 created: '2026-07-05T10:16:37-04:00'
-modified: '2026-07-05T10:16:37-04:00'
+modified: '2026-07-12T14:26:33.819Z'
 namespace: docs/reference
 tags:
   - documentation
   - reference
 title: "Reference: mif-rh MCP server"
 diataxis_type: reference
+provenance:
+  '@type': Provenance
+  sourceType: agent_inferred
+  agent: claude-code/claude-sonnet-5
+  wasGeneratedBy:
+    '@id': urn:mif:activity:claude-code-session:ae91b6b6-8d5c-4bea-963d-9e4b7907cf09
+    '@type': prov:Activity
+  trustLevel: user_stated
+  agentVersion: 2.1.207
 ---
 
 # Reference: mif-rh MCP server
@@ -23,13 +32,20 @@ tools wrap, see [engine-cli.md](engine-cli.md).
 
 ## Registration
 
-`.mcp.json` at the instance root:
+`.mcp.json` at the instance root registers `mif-rh` alongside `mif-mcp`
+(`mif-docs-plugin`'s own document-tooling server — see
+[dependencies.md](dependencies.md) — unrelated to this page's `mif-rh-mcp`,
+scoped here for completeness only):
 
 ```json
 {
   "mcpServers": {
     "mif-rh": {
       "command": "bin/mif-rh-mcp",
+      "args": []
+    },
+    "mif-mcp": {
+      "command": "mif-mcp",
       "args": []
     }
   }

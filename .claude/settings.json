@@ -1,4 +1,8 @@
 {
+  "mifProvenance": {
+    "capture": true,
+    "stamp": "auto"
+  },
   "hooks": {
     "SessionStart": [
       {

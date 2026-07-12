@@ -2,13 +2,22 @@
 id: reference-dependencies
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-05T10:16:37-04:00'
+modified: '2026-07-12T14:26:16.362Z'
 namespace: docs/reference
 tags:
   - documentation
   - reference
 title: "Reference: dependencies and requirements"
 diataxis_type: reference
+provenance:
+  '@type': Provenance
+  sourceType: agent_inferred
+  agent: claude-code/claude-sonnet-5
+  wasGeneratedBy:
+    '@id': urn:mif:activity:claude-code-session:ae91b6b6-8d5c-4bea-963d-9e4b7907cf09
+    '@type': prov:Activity
+  trustLevel: user_stated
+  agentVersion: 2.1.207
 ---
 
 # Reference: dependencies and requirements
@@ -83,6 +92,33 @@ validate with `ajv` too, so it is effectively a core dependency.
 | --- | --- | --- | --- |
 | `ajv-cli` + `ajv-formats` | current | `verify.sh` plus the finding/session scripts (`write-finding.sh`, `wrap-source.sh`, `reconcile-session.sh`, …) — schema validation against draft-2020 schemas | `npm install -g ajv-cli ajv-formats` · `ajv help` |
 | `markdownlint-cli2` | current | Documentation lint gate (`.markdownlint-cli2.jsonc`) | `npm install -g markdownlint-cli2` · `markdownlint-cli2 --version` |
+
+## Document tooling (`mif-docs-plugin`)
+
+The harness's document-level frontmatter authoring, validation, and provenance
+(as distinct from the findings/knowledge-graph schema substrate above, which
+stays harness-local per ADR-0002) route through the
+[`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin),
+declared as a `marketplaces[]` entry in `harness.config.json` and consumed by
+several `packs[]` genres already (`docs/reference/packs/reports.md`).
+
+| Tool | Minimum | Required by | Check |
+| --- | --- | --- | --- |
+| `mif-docs-plugin` | pinned ref in `harness.config.json` `marketplaces[]` (`mif-docs`) | `mif-frontmatter`, `mif-validate`, `mif-provenance` skills; every externally-sourced report genre | n/a — Claude Code plugin, resolved via the marketplace pin |
+| `mif-mcp` (from `mif-docs-plugin`) | matches the plugin pin above | `.mcp.json`'s `mif-mcp` server — `validate_mif_document`, `ingest_mif_document`, `resolve_ontology_reference`, `search_documents`, `find_similar_documents`, `corpus_stats` | `which mif-mcp` |
+
+Provenance capture (`mif-provenance`'s hook-observed stamping) is opt-in and
+configured via the `mifProvenance` key in `.claude/settings.json`
+(`capture`/`stamp`) — this repo enables it by default
+(`capture: true, stamp: "auto"`) so a document authored in a **fresh** harness
+session, with capture already active when the session started, gets witnessed
+provenance instead of only asserted frontmatter. This does **not** retroactively
+cover a session where capture was just enabled or the plugin just updated —
+Claude Code snapshots the hook set at session start, so enablement mid-session
+does not wire hooks into that already-running session. Run the `mif-provenance`
+`status` command to confirm hooks are actually active for the current session
+before relying on stamping; if `status` reports no `session_start` line,
+restart the session rather than continuing to author and hoping.
 
 ## Instantiation (the recommended adoption path)
 
