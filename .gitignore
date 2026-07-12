@@ -72,3 +72,4 @@ packs/ontologies/
 # "the trust root moved", regardless of the instance's own actual pin state.
 ontologies.lock.json
 bin/
+.mif-docs-plugin-cache/

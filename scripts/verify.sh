@@ -4028,6 +4028,63 @@ gate_m31() {
   fi
 }
 
+gate_m32() {
+  info "Milestone 32 — mif-docs conformance floor (research-harness-template#413, ADR-0018)"
+  # Structurally enforces that document-shaped deliverables produced by this
+  # repo's own template content stay MIF L1-conformant per mif-docs-plugin's
+  # own mif-validate, not just self-reported. Scoped to FIXTURE/template
+  # content this repo commits — the same fixtures-vs-live-corpus split the
+  # rest of verify.sh already draws (an instance's imported reports/ corpus is
+  # gated separately by scripts/ontology-review.sh, never here). ADRs are
+  # exempt (structured-madr, not mif-validate, per mif-docs-plugin's own
+  # ADR-0001 — tracked separately in research-harness-template#435).
+  local PLUGIN_CACHE="${MIF_DOCS_PLUGIN_ROOT:-$PWD/.mif-docs-plugin-cache}"
+  if [ ! -f "$PLUGIN_CACHE/scripts/mif-validate.mjs" ]; then
+    bad "mif-docs-plugin cache NOT FETCHED at $PLUGIN_CACHE — run scripts/fetch-mif-docs-plugin.sh first"
+    return
+  fi
+  if ! command -v node >/dev/null 2>&1; then
+    bad "gate_m32: node is required to run mif-validate.mjs but is not on PATH"
+    return
+  fi
+
+  local fail_count=0 checked_count=0 f rc out
+
+  # Diátaxis docs — confirmed L1-conformant across the whole set (audited
+  # research-harness-template#410); enforce it stays that way going forward.
+  for f in docs/explanation/*.md docs/how-to/*.md docs/reference/*.md docs/reference/packs/*.md docs/tutorials/*.md; do
+    [ -f "$f" ] || continue
+    checked_count=$((checked_count + 1))
+    if ! out="$(node "$PLUGIN_CACHE/scripts/mif-validate.mjs" "$f" --level 1 2>&1)"; then
+      fail_count=$((fail_count + 1))
+      bad "mif-validate L1 FAILED: $f"
+      printf '%s\n' "$out" | sed 's/^/      /' >&2
+    fi
+  done
+
+  # The committed example-corpus fixture's rendered deliverables — same
+  # fixtures-not-live-corpus scoping as gate_m31. Skip navigation/log files
+  # that are deliberately not MIF documents (README.md, research-progress.md,
+  # *-falsification-report.md — see report-synthesizer.md Step 4c).
+  for f in reports/example-okf-mif-knowledge-spine/report-*.md \
+           reports/example-okf-mif-knowledge-spine/synthesis-*.md \
+           reports/example-okf-mif-knowledge-spine/*-build-spec.md; do
+    [ -f "$f" ] || continue
+    checked_count=$((checked_count + 1))
+    if ! out="$(node "$PLUGIN_CACHE/scripts/mif-validate.mjs" "$f" --level 1 2>&1)"; then
+      fail_count=$((fail_count + 1))
+      bad "mif-validate L1 FAILED: $f"
+      printf '%s\n' "$out" | sed 's/^/      /' >&2
+    fi
+  done
+
+  if [ "$fail_count" -eq 0 ]; then
+    ok "mif-docs conformance floor: $checked_count document(s) pass mif-validate --level 1"
+  else
+    bad "mif-docs conformance floor: $fail_count of $checked_count document(s) failed mif-validate"
+  fi
+}
+
 gate_ontology_lock() {
   info "Ontology vendoring — pinned-lock integrity (ADR-0012)"
   # On-demand vendored domain ontologies must match their pinned sha256 (no local
@@ -4154,7 +4211,7 @@ gate_changelog_links() {
 # ---------------------------------------------------------------------------
 # Gate registry — each milestone appends its function name here.
 # ---------------------------------------------------------------------------
-GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18 gate_m19 gate_m20 gate_m21 gate_m22 gate_m23 gate_m24 gate_m25 gate_m26 gate_m27 gate_m28 gate_m29 gate_m30 gate_m31 gate_ontology_lock gate_versions gate_changelog_links)
+GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18 gate_m19 gate_m20 gate_m21 gate_m22 gate_m23 gate_m24 gate_m25 gate_m26 gate_m27 gate_m28 gate_m29 gate_m30 gate_m31 gate_m32 gate_ontology_lock gate_versions gate_changelog_links)
 
 for g in "${GATES[@]}"; do "$g"; done
 

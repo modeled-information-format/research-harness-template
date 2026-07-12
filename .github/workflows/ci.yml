@@ -101,6 +101,9 @@ jobs:
         # it, same as resolve-ontology.sh/ontology-review.sh already did.
         run: bash scripts/fetch-ontology.sh --all-enabled  # sha256-verified; pins ontologies.lock.json
 
+      - name: fetch mif-docs-plugin at its pinned ref (ADR-0018; before verify's gate_m32)
+        run: bash scripts/fetch-mif-docs-plugin.sh
+
       - name: verify.sh (build gate — schemas, citation gate, per-milestone gates, evals)
         # evals/copier-update.sh instantiates a fresh copier clone whose own
         # `_tasks` re-runs `bash scripts/fetch-engine.sh` for that instance
