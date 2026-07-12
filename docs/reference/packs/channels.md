@@ -2,7 +2,7 @@
 id: reference-packs-channels
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-12T14:42:10.115Z'
+modified: '2026-07-12T15:05:36.198Z'
 namespace: docs/reference/packs
 tags:
   - documentation
@@ -11,6 +11,7 @@ title: "Channel packs"
 diataxis_type: reference
 provenance:
   '@type': Provenance
+  sourceType: agent_inferred
   agent: claude-code/claude-sonnet-5
   wasGeneratedBy:
     '@id': urn:mif:activity:claude-code-session:ae91b6b6-8d5c-4bea-963d-9e4b7907cf09
@@ -31,6 +32,26 @@ Channel packs are **opt-in**: each is disabled by default and enabled with
 `scripts/pack-toggle.sh <name> on`.
 
 For control-plane mechanics see [Packs and Plugins](../packs-and-plugins.md).
+
+## Provenance/citation-grounding audit (research-harness-template#412)
+
+Per-channel disposition against Epic #405 / ADR-0018 — this audit is about
+whether a channel silently drops citation/provenance grounding between the
+SOURCES it's built from and its rendered output, not about forcing every
+channel into MIF-document shape (most are legitimately not MIF documents):
+
+| Channel | Disposition |
+| --- | --- |
+| `ai-spec` | Renders the `ai-architecture-doc`/`feature-spec`/`kiro-*` genres externalized in #409/#432. MIF-exempt by design (an agent-consumable build artifact, not a narrative MIF document) — confirmed its output is still traceable to `finding_refs[]`/citations via the artifact.json contract. No action. |
+| `diataxis` | Renders MIF **Level-1** frontmatter per page (asserted, script-generated from findings — not agent-authored prose, so `mif-provenance`'s witnessed-authorship model doesn't map onto it the way it does an authored document). Every page's content traces to a specific finding `@id` and its citations by construction. Not upgraded to L3/witnessed provenance in this pass — that would require redesigning the channel's own generation model, a bigger change than this audit's scope; flagged as a candidate for a future story, not silently left unconsidered. |
+| `book` | Long-form narrative through the same artifact.json pipeline as `report`/`blog`. Carries the same MIF L1 published-projection frontmatter as `blog` per ADR-0007's framing. No action. |
+| `github-issues`, `github-discuss` | Explicitly built "directly FROM THE SOURCES... NEVER a rendered report" per their own `SKILL.md`. Not MIF documents by design (real GitHub issue/discussion bodies) — citation grounding is structural to how they're built (atomized from findings' own citations), not optional. No action. |
+| `pdf`, `jats`, `xbrl`, `ectd`, `notebooklm` | All explicitly built "directly FROM THE SOURCES... NEVER built from a rendered report" (each `SKILL.md` states this in nearly identical language) — legitimate non-MIF-document projections (print PDF, XBRL facts, eCTD packaging, JATS scholarly XML, NotebookLM audio/video/slide assets). Citation/provenance grounding traces back to MIF-conformant findings by construction (each channel's own References/citation section is built from the findings' citations, never invented). No forced migration — the output *format* is intentionally orthogonal to MIF, per this file's own stated MIF-exemption default. |
+
+**Summary:** no channel drops citation grounding between SOURCES and
+rendered output. `diataxis` is the one channel worth a closer look in a
+future story if its per-page frontmatter is ever raised to L3 — noted here,
+not silently skipped.
 
 ---
 
