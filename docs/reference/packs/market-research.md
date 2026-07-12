@@ -2,7 +2,7 @@
 id: reference-packs-market-research
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-12T14:59:59.324Z'
+modified: '2026-07-12T15:04:45.999Z'
 namespace: docs/reference/packs
 tags:
   - documentation
@@ -11,6 +11,7 @@ title: "Market-research packs"
 diataxis_type: reference
 provenance:
   '@type': Provenance
+  sourceType: agent_inferred
   agent: claude-code/claude-sonnet-5
   wasGeneratedBy:
     '@id': urn:mif:activity:claude-code-session:ae91b6b6-8d5c-4bea-963d-9e4b7907cf09
