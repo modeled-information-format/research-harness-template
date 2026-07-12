@@ -45,17 +45,17 @@ def interest_match(scored_candidates, threshold=0.02):
         if score < threshold:
             continue
         matched_nodes = inference.get("matched_nodes", [])
-        if matched_nodes:
-            citations = [
-                {"type": "concordance-node", "target": n} for n in matched_nodes
-            ]
-        else:
-            # TF-IDF fallback: no existing corpus coverage to cite yet, so
-            # cite the candidate's own primary source instead. This is a
-            # deliberate design choice (documented, not a shortcut): NFR5
-            # requires traceability, and the source item itself is the
-            # only real evidence available for an as-yet-uncovered topic.
-            citations = [{"type": "primary-source", "url": c.get("url", "")}]
+        # ALWAYS cite the candidate's own primary source (a real http(s)
+        # URL): harness.config.json's features.internalCitations defaults
+        # false in this repo, so a concordance-node citation alone (an
+        # internal graph reference, no URL) is not traceable per
+        # check-citation-integrity.sh and would be blocked at publish --
+        # discovered by live-testing Story #423's Output Router against
+        # this repo's actual config, not assumed. Concordance-node
+        # citations are added as supplementary context explaining *why*
+        # the source is relevant, never as the only evidence.
+        citations = [{"type": "primary-source", "url": c.get("url", "")}]
+        citations += [{"type": "concordance-node", "target": n} for n in matched_nodes]
         rec = {
             "mode": "interest-match",
             "source": c.get("source"),
