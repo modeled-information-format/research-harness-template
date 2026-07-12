@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.1] - 2026-07-12
+
+### Fixed
+
+- **`scripts/build-topic-readme.sh` trims a truncated title's trailing
+  whitespace.** The `mif-rh-cli` engine's `harness topic-metadata` cuts a
+  long `goal_statement` to build `TITLE` at a fixed character count with no
+  word-boundary awareness (modeled-information-format/mif-rs#86); when the
+  cut lands right after a space, the generated README's H1 kept the
+  trailing space and failed markdownlint's MD009. The script now trims
+  `TITLE` defensively after the engine `eval`, independent of when the
+  upstream engine bug itself is fixed.
+
 ## [0.13.0] - 2026-07-12
 
 Epic #405: `mif-docs-plugin` adopted as the single document-tooling and
