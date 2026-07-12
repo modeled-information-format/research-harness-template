@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-harness.dev/schema/monitoring-continuity-log-entry.schema.json",
+  "title": "Continuous-Monitoring Continuity Log Entry",
+  "description": "One record in a topic's continuity log (research-harness-template#421): reports/<topic>/monitoring/continuity-log.jsonl, one JSON object per line, append-only. An explicitly scoped extension distinct from schemas/findings.schema.json (per Story #421's own acceptance criteria) rather than a MIF finding: an ingestion failure, a budget breach, or an Editorial Gate rejection is operational telemetry, not a research finding, and forcing it through the finding shape's citation/ontology-entity-type machinery would misrepresent it as one. Still git-native under reports/<topic>/ per NFR7.",
+  "type": "object",
+  "required": ["run_id", "timestamp", "topic", "event_type", "reason"],
+  "properties": {
+    "run_id": { "type": "string", "minLength": 1 },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "topic": { "type": "string" },
+    "event_type": {
+      "type": "string",
+      "enum": ["ingestion_failure", "budget_exceeded", "gate_rejected"]
+    },
+    "source": {
+      "type": "string",
+      "description": "Which connector or pipeline stage this event came from."
+    },
+    "reason": { "type": "string", "minLength": 1 },
+    "details": { "type": "object" }
+  },
+  "additionalProperties": false
+}
