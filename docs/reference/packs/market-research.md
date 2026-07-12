@@ -2,13 +2,22 @@
 id: reference-packs-market-research
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-06-28T22:36:14-04:00'
+modified: '2026-07-12T15:04:45.999Z'
 namespace: docs/reference/packs
 tags:
   - documentation
   - reference
 title: "Market-research packs"
 diataxis_type: reference
+provenance:
+  '@type': Provenance
+  sourceType: agent_inferred
+  agent: claude-code/claude-sonnet-5
+  wasGeneratedBy:
+    '@id': urn:mif:activity:claude-code-session:ae91b6b6-8d5c-4bea-963d-9e4b7907cf09
+    '@type': prov:Activity
+  trustLevel: user_stated
+  agentVersion: 2.1.207
 ---
 
 # Market-research packs
@@ -17,6 +26,13 @@ Market-research packs are methodology dimensions. Each one adds a research skill
 the core engine invokes to analyze a specific aspect of a market. Methodology packs
 contribute structured analytical frameworks; they do not produce standalone deliverables —
 their outputs feed the findings corpus that report and channel packs consume.
+
+**Not `mif-docs-plugin` duplicates** (audited research-harness-template#411): none of
+the five packs below render a document — each produces findings-with-confidence-tiers
+that feed the already-externalized `mif-docs` report genres downstream (e.g.
+`market-research-report`, `competitive-quadrant` — see [Report packs](reports.md)).
+The Epic #405 deprecation policy (ADR-0018) applies to document-genre duplicates; it
+does not apply here.
 Market-research packs have no *required* external dependencies beyond the core engine. Some packs emit Mermaid diagrams, which you can optionally render with `@mermaid-js/mermaid-cli` (for example in PDF/HTML output).
 For control-plane mechanics see [Packs and Plugins](../packs-and-plugins.md).
 
