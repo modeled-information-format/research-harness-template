@@ -62,6 +62,22 @@ recommendation gated through human PR review before anything publishes.
   1-3 against the real Action. The same gap affects every other ADR in this
   repo (already tracked, research-harness-template#435).
 
+## [0.13.1] - 2026-07-12
+
+### Fixed
+
+- Added the `[0.13.0]` footer compare-link now that the `v0.13.0` tag exists,
+  per #393's convention — it could not be added in the same PR that stripped
+  `0.12.3`'s heading brackets, since the tag didn't exist yet at that point.
+- **`scripts/build-topic-readme.sh` trims a truncated title's trailing
+  whitespace.** The `mif-rh-cli` engine's `harness topic-metadata` cuts a
+  long `goal_statement` to build `TITLE` at a fixed character count with no
+  word-boundary awareness (modeled-information-format/mif-rs#86); when the
+  cut lands right after a space, the generated README's H1 kept the
+  trailing space and failed markdownlint's MD009. The script now trims
+  `TITLE` defensively after the engine `eval`, independent of when the
+  upstream engine bug itself is fixed.
+
 ## [0.13.0] - 2026-07-12
 
 Epic #405: `mif-docs-plugin` adopted as the single document-tooling and
@@ -1019,7 +1035,8 @@ First release of the domain-general research harness template.
 - **Distribution** as a Copier living template and a Claude Code plugin
   marketplace.
 
-[Unreleased]: https://github.com/modeled-information-format/research-harness-template/compare/v0.12.2...HEAD
+[Unreleased]: https://github.com/modeled-information-format/research-harness-template/compare/v0.13.0...HEAD
+[0.13.0]: https://github.com/modeled-information-format/research-harness-template/compare/v0.12.2...v0.13.0
 [0.12.2]: https://github.com/modeled-information-format/research-harness-template/compare/v0.12.1...v0.12.2
 [0.12.1]: https://github.com/modeled-information-format/research-harness-template/compare/v0.12.0...v0.12.1
 [0.12.0]: https://github.com/modeled-information-format/research-harness-template/compare/v0.11.0...v0.12.0
