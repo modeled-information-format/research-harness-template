@@ -2,13 +2,21 @@
 id: reference-commands
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-05T10:10:09-04:00'
+modified: '2026-07-12T15:46:11.442Z'
 namespace: docs/reference
 tags:
   - documentation
   - reference
 title: "Reference: commands"
 diataxis_type: reference
+provenance:
+  '@type': Provenance
+  agent: claude-code/claude-sonnet-5
+  wasGeneratedBy:
+    '@id': urn:mif:activity:claude-code-session:3eeb65b8-4027-4e9e-afbe-ccfe2ae33a26
+    '@type': prov:Activity
+  trustLevel: user_stated
+  agentVersion: 2.1.207
 ---
 
 # Reference: commands
@@ -70,6 +78,9 @@ The finished `<output-dir>/mif-package.json` is self-validated against
 
 **Dependencies:** `scripts/mif-container-resolve-scope.sh`,
 `scripts/mif-container-digest.sh`, `schemas/mif-container.schema.json`, `jq`, `ajv`.
+
+**Docs:** [how-to](../how-to/export-and-import-a-topic.md) ·
+[explanation](../explanation/mif-container-format.md).
 
 ---
 
@@ -151,6 +162,9 @@ there.
 
 **Dependencies:** `scripts/mif-container-digest.sh`,
 `schemas/mif-container.schema.json`, `schemas/findings.schema.json`, `jq`, `ajv`.
+
+**Docs:** [how-to](../how-to/export-and-import-a-topic.md) ·
+[explanation](../explanation/mif-container-format.md).
 
 ---
 
