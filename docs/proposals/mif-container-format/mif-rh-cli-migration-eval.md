@@ -1,15 +1,32 @@
 ---
+id: mif-rh-cli-migration-eval
 title: "mif-rh-cli migration evaluation (Story #334, AD-7)"
 description: "Real measured benchmark data on whether scripts/mif-container-export.sh / -import.sh's shell/jq implementation has a performance bottleneck at ADR-0014-comparable corpus scale, per AD-7's trigger condition for migrating this logic into mif-rh-cli."
-type: doc
+type: semantic
+namespace: spec/architecture/mif-container-format
 category: architecture
 tags: [mif-container-format, performance, benchmark, mif-rh-cli, ad-7]
 status: draft
-created: 2026-07-10
+created: '2026-07-10T00:00:00Z'
 author: zircote
 project: research-harness-template
 related: [ai-architecture-doc.md, feature-spec.md, 0017-mif-container-instance-scoped-export-import-format.md, 0014-compiled-ontology-engine-cli-and-mcp.md]
 audience: [developers, architects]
+temporal:
+  '@type': TemporalMetadata
+  validFrom: '2026-07-10T00:00:00Z'
+  ttl: P6M
+  recordedAt: '2026-07-10T00:00:00Z'
+provenance:
+  '@type': Provenance
+  sourceType: agent_inferred
+  agent: claude-code/claude-sonnet-5
+  wasGeneratedBy:
+    '@id': urn:mif:activity:claude-code-session:ae91b6b6-8d5c-4bea-963d-9e4b7907cf09
+    '@type': prov:Activity
+  trustLevel: user_stated
+  agentVersion: 2.1.207
+modified: '2026-07-12T14:55:45.711Z'
 ---
 
 # mif-rh-cli migration evaluation (Story #334)
