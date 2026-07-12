@@ -2,16 +2,29 @@
 id: how-to-import-a-corpus
 type: semantic
 created: '2026-06-19T17:03:52-04:00'
-modified: '2026-06-27T20:18:19-04:00'
+modified: '2026-07-12T15:45:42.819Z'
 namespace: docs/how-to
 tags:
   - documentation
   - how-to
 title: "How to import an existing corpus"
 diataxis_type: how-to
+provenance:
+  '@type': Provenance
+  agent: claude-code/claude-sonnet-5
+  wasGeneratedBy:
+    '@id': urn:mif:activity:claude-code-session:3eeb65b8-4027-4e9e-afbe-ccfe2ae33a26
+    '@type': prov:Activity
+  trustLevel: user_stated
+  agentVersion: 2.1.207
 ---
 
 # How to import an existing corpus
+
+> Looking to move a topic between two already-running harnesses instead of
+> bootstrapping a fresh one? That's a different feature —
+> [export and import a topic](export-and-import-a-topic.md) via the MIF
+> Container format.
 
 The harness can import an existing research corpus — and, above all, its
 knowledge graph — into a **freshly instantiated harness**, with provenance and
