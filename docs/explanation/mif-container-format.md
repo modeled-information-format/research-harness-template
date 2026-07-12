@@ -1,8 +1,8 @@
 ---
 id: explanation-mif-container-format
 type: semantic
-created: '2026-07-12T16:00:00Z'
-modified: '2026-07-12T15:45:25.711Z'
+created: '2026-07-12T15:54:17Z'
+modified: '2026-07-12T16:22:20.007Z'
 namespace: docs/explanation
 tags:
   - documentation
@@ -12,11 +12,16 @@ tags:
 title: "Understanding the MIF Container format"
 description: "Why topic export/import is a research-harness-template-local format, what the manifest actually holds, and what origin-scoped reconciliation keeps versus overwrites on import."
 diataxis_type: explanation
+temporal:
+  '@type': TemporalMetadata
+  validFrom: '2026-07-12T15:54:17Z'
+  ttl: P6M
+  recordedAt: '2026-07-12T15:54:17Z'
 provenance:
   '@type': Provenance
   agent: claude-code/claude-sonnet-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:3eeb65b8-4027-4e9e-afbe-ccfe2ae33a26
+    '@id': urn:mif:activity:claude-code-session:ae91b6b6-8d5c-4bea-963d-9e4b7907cf09
     '@type': prov:Activity
   trustLevel: user_stated
   agentVersion: 2.1.207

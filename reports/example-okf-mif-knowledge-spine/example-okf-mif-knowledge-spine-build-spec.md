@@ -8,8 +8,8 @@ conceptType: semantic
 namespace: harness/example-okf-mif-knowledge-spine
 title: "OKF+MIF Knowledge-Spine Build Spec — an AI-ready architecture spec for layering MIF's modeling/provenance/temporal spine on OKF packaging"
 created: "2026-06-29T00:00:00Z"
-modified: "2026-06-29T00:00:00Z"
-genre: architecture-spec
+modified: '2026-07-12T16:12:59.935Z'
+genre: ai-architecture-doc
 audience: implementer
 status: proposed
 mif:
@@ -21,10 +21,15 @@ temporal:
   ttl: P6M
   recordedAt: "2026-06-29T00:00:00Z"
 provenance:
-  "@type": Provenance
+  '@type': Provenance
   sourceType: system_generated
   confidence: 0.9
-  trustLevel: moderate_confidence
+  trustLevel: user_stated
+  agent: claude-code/claude-sonnet-5
+  wasGeneratedBy:
+    '@id': urn:mif:activity:claude-code-session:ae91b6b6-8d5c-4bea-963d-9e4b7907cf09
+    '@type': prov:Activity
+  agentVersion: 2.1.207
 citations:
   - "@type": Citation
     citationType: specification
@@ -42,7 +47,7 @@ citations:
     title: "W3C PROV-O — The Provenance Ontology"
     url: "https://www.w3.org/TR/prov-o/"
 tags:
-  - architecture-spec
+  - ai-architecture-doc
   - ai-ready-spec
   - knowledge-spine
   - okf
@@ -55,7 +60,7 @@ tags:
 This is an AI-ready architecture specification for building a **knowledge spine** that layers
 **MIF** (Modeled Information Format) as the modeling, provenance, and temporal layer over **OKF**
 (Google Cloud's Open Knowledge Format) as the accessible, git-distributable packaging layer. It is
-a **worked specimen** in the `architecture-spec` genre the `ai-spec` channel targets: every design
+a **worked specimen** in the `ai-architecture-doc` genre the `ai-spec` channel targets: every design
 claim below is grounded in a surviving finding, and the acceptance criteria are drawn from the goal's
 completion checks. It is written in the genre it demonstrates.
 

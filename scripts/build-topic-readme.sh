@@ -452,11 +452,14 @@ build_readme() {
         genre="—"
       fi
       case "$base" in
-        # *-build-spec.md is intentionally excluded from the site's rendered
-        # collection (content.config.ts) so re-rendering it never breaks
-        # copier-update (see ADR/#204, #217, #234) — linking it as a page
-        # would 404, so list the filename in code, not a page link.
-        *-build-spec.md) rows+=$(printf '%s\t| %s | %s | %s (`%s`, not site-rendered) |' "$rank" "$label" "$genre" "$title" "$base")$'\n' ;;
+        # *-build-spec.md and the *-kiro-{requirements,design,tasks}.md set
+        # (#414: the retired kiro-spec pack's 1:1 successors) are intentionally
+        # excluded from the site's rendered collection (content.config.ts) so
+        # re-rendering them never breaks copier-update (see ADR/#204, #217,
+        # #234) — linking them as a page would 404, so list the filename in
+        # code, not a page link.
+        *-build-spec.md|*-kiro-requirements.md|*-kiro-design.md|*-kiro-tasks.md)
+          rows+=$(printf '%s\t| %s | %s | %s (`%s`, not site-rendered) |' "$rank" "$label" "$genre" "$title" "$base")$'\n' ;;
         *) rows+=$(printf '%s\t| %s | %s | [%s](%s) |' "$rank" "$label" "$genre" "$title" "$base")$'\n' ;;
       esac
     done <<< "$docs"
