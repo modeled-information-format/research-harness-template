@@ -4,12 +4,12 @@ version: 1
 "@context": "https://mif-spec.dev/context/v1.jsonld"
 "@type": "Concept"
 "@id": "urn:mif:blog:harness/example-okf-mif-knowledge-spine:synthesis"
-conceptType: synthesis
+conceptType: semantic
 genre: blog
 channel: blog
 mifLevel: 1
 mifExempt: true
-created: 2026-06-28
+created: "2026-06-28T00:00:00Z"
 topic: example-okf-mif-knowledge-spine
 surviving_findings: 36
 verdict_breakdown: { survived: 31, weakened: 5, falsified: 0 }

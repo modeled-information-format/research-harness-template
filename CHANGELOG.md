@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.3] - 2026-07-12
+
+### Fixed
+
+- `gate_changelog_links` (#397) no longer runs in an instantiated clone, where
+  it always failed: an instance's own git remote never carries the template's
+  `v*` release tags, so the gate had no real tag history to check footer
+  compare-links against. Guarded with the existing `IS_TEMPLATE` flag
+  (`scripts/verify.sh:31`), the same template-only-skip pattern `gate_m7`
+  already uses (#401).
+- `reports/example-okf-mif-knowledge-spine/synthesis-okf-mif-knowledge-spine.md`
+  (part of the shipped, AS-IS example corpus) had an invalid
+  `conceptType: synthesis` (not one of `semantic`/`episodic`/`procedural`) and
+  a bare `created: 2026-06-28` date instead of a `date-time` string, failing
+  external MIF tooling (`mif-rs`/`mif-mcp`) schema validation on every
+  instance. Changed to `conceptType: semantic` and
+  `created: "2026-06-28T00:00:00Z"` (#402).
+
 ## [0.12.2] - 2026-07-11
 
 ### Added
@@ -869,7 +887,8 @@ First release of the domain-general research harness template.
 - **Distribution** as a Copier living template and a Claude Code plugin
   marketplace.
 
-[Unreleased]: https://github.com/modeled-information-format/research-harness-template/compare/v0.12.1...HEAD
+[Unreleased]: https://github.com/modeled-information-format/research-harness-template/compare/v0.12.2...HEAD
+[0.12.2]: https://github.com/modeled-information-format/research-harness-template/compare/v0.12.1...v0.12.2
 [0.12.1]: https://github.com/modeled-information-format/research-harness-template/compare/v0.12.0...v0.12.1
 [0.12.0]: https://github.com/modeled-information-format/research-harness-template/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/modeled-information-format/research-harness-template/compare/v0.10.0...v0.11.0

@@ -4086,6 +4086,10 @@ gate_versions() {
 }
 
 gate_changelog_links() {
+  if [ "$IS_TEMPLATE" != 1 ]; then
+    info "CHANGELOG footer compare-links (template-only; skipped in instance, #401)"
+    return
+  fi
   info "CHANGELOG footer compare-links reference only real tags (#397)"
 
   # Deliberately narrow: only flags an EXISTING link whose compare target(s)
