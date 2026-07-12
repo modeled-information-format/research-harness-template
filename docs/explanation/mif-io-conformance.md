@@ -2,13 +2,22 @@
 id: explanation-mif-io-conformance
 type: semantic
 created: '2026-06-20T06:10:40-04:00'
-modified: '2026-06-26T09:21:24-04:00'
+modified: '2026-07-12T14:31:47.403Z'
 namespace: docs/explanation
 tags:
   - documentation
   - explanation
 title: "MIF I/O conformance"
 diataxis_type: explanation
+provenance:
+  '@type': Provenance
+  sourceType: agent_inferred
+  agent: claude-code/claude-sonnet-5
+  wasGeneratedBy:
+    '@id': urn:mif:activity:claude-code-session:ae91b6b6-8d5c-4bea-963d-9e4b7907cf09
+    '@type': prov:Activity
+  trustLevel: user_stated
+  agentVersion: 2.1.207
 ---
 
 # MIF I/O conformance
@@ -52,7 +61,7 @@ not:
 
 - **What the gate enforces (deterministic):** a report cannot ship without a
   verification block that is *present, well-formed, non-`falsified`, and
-  citation-clean*. `mif-project.sh` + the citation-integrity gate reject anything
+  citation-clean*. `scripts/mif-project.sh` + the citation-integrity gate reject anything
   else, and a `falsified` report is quarantined. This is structural conformance,
   and it fails closed.
 - **What rests on agent discipline (not deterministic):** that the verdict was
@@ -62,6 +71,34 @@ not:
   was honestly derived. A fabricated verdict is an agent-integrity violation for a
   report precisely as it is for a finding; the harness gives reports the same
   rigor as findings, and the same residual trust assumption, no more.
+
+## Two-layer conformance: schema shape vs. witnessed provenance
+
+The invariant above is a **schema-conformance** gate: it proves a report's
+JSON-LD projection matches `findings.schema.json`, including a well-formed
+`provenance` block — but a schema gate cannot distinguish a witnessed
+provenance block from a model-asserted one that merely has the right shape.
+`report-synthesizer`'s Step 4d closes that gap by stamping **witnessed**
+provenance via `mif-docs-plugin`'s `mif-provenance` skill (the mif-docs-as-
+substrate decision, ADR-0018, research-harness-template#407) after
+`scripts/render-artifact.sh` has already write-then-validated the report's schema
+conformance. The two mechanisms are complementary, not redundant:
+
+- **Schema conformance** (this document's invariant, ADR-0002): does the
+  report's frontmatter/body project losslessly to a valid MIF L3 document?
+  Enforced deterministically by `render-artifact.sh` → `scripts/mif-project.sh`.
+- **Witnessed provenance** (`mif-provenance`, per ADR-0018,
+  research-harness-template#407): does the
+  `provenance` block's `agent`/`agentVersion`/`wasGeneratedBy` actually
+  match what the session's hook-observed ledger recorded touching this
+  file? A schema-valid block can still be fabricated; a witnessed one
+  cannot — `stamp` declines rather than write an unwitnessed claim.
+
+A report can be schema-conformant without being witnessed (if capture was
+never enabled, or the file predates capture) — this is a legitimate,
+lower-provenance-tier state the harness reports honestly rather than
+silently upgrading. See `docs/reference/dependencies.md` for how capture is
+enabled.
 
 ## Exemption — declared, never silent
 

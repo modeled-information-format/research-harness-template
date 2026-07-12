@@ -270,12 +270,25 @@ gate_m3() {
   #     was applied). Also guard against a hardcoded `reports:<genre>` Skill()
   #     namespace -- the actual genre skills in this harness are namespaced by the
   #     pack's source (e.g. `mif-docs:engineering`), never a local `reports:` family.
+  #     `Skill(mif-docs:<X>)` is a real #383 regression ONLY when X is a harness
+  #     packs[]-registered genre pack incorrectly resolved from its marketplace name
+  #     instead of its own packs[].name; it is legitimate (ADR-0018,
+  #     research-harness-template#406) when X is one of mif-docs-plugin's own
+  #     always-on substrate skills, addressed directly by the plugin's real
+  #     registered name -- those never go through packs[]/sync-packs.sh at all, so
+  #     the pack:pack convention this guard protects doesn't apply to them.
   local RS=".claude/agents/report-synthesizer.md" rs_fail=""
   grep -qE 'select\(\.name=="reports"' "$RS" && rs_fail="${rs_fail}still greps for a nonexistent 'reports' family pack; "
   grep -qE '`reports`[^`]{0,24}(pack|genre)' "$RS" && rs_fail="${rs_fail}still describes a \`reports\` family pack in prose (review caught this leftover in the frontmatter description, worked example, and axis definition even after Step 2's own check was fixed); "
   grep -qE -- '--arg g "\$GENRE"' "$RS" || rs_fail="${rs_fail}missing the per-genre parameterized jq check; "
   grep -qE 'Skill\(reports:' "$RS" && rs_fail="${rs_fail}still hardcodes a reports: Skill() namespace; "
-  grep -qE 'Skill\(mif-docs:' "$RS" && rs_fail="${rs_fail}resolves the Skill() namespace from source.marketplace, e.g. Skill(mif-docs:...) (Copilot review, round 2: the real convention is pack:pack, self-named from packs[].name -- source.marketplace only says where the code is FETCHED from, sync-packs.sh registers every enabled pack under this harness's own plugin namespace regardless of upstream source); "
+  # Extract every Skill(mif-docs:<X>) call and flag any X that is not one of
+  # mif-docs-plugin's own always-on substrate skills (see comment above).
+  if grep -oE 'Skill\(mif-docs:[A-Za-z0-9_-]+\)' "$RS" \
+      | grep -vE '^Skill\(mif-docs:(mif-frontmatter|mif-validate|mif-provenance)\)$' \
+      | grep -q .; then
+    rs_fail="${rs_fail}resolves the Skill() namespace from source.marketplace, e.g. Skill(mif-docs:...) (Copilot review, round 2: the real convention is pack:pack, self-named from packs[].name -- source.marketplace only says where the code is FETCHED from, sync-packs.sh registers every enabled pack under this harness's own plugin namespace regardless of upstream source); "
+  fi
   if [ -z "$rs_fail" ]; then
     ok "report-synthesizer.md (#383): genre gate checks the specific requested pack, not a nonexistent 'reports' family; no hardcoded reports: Skill() namespace"
   else
