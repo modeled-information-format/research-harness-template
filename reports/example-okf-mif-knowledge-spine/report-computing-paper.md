@@ -8,6 +8,12 @@ conceptType: semantic
 namespace: harness/example-okf-mif-knowledge-spine
 title: 'Toward a Layered Knowledge Spine: MIF Provenance/Temporal Semantics over OKF Markdown Packaging'
 created: "2026-06-28T14:15:17Z"
+modified: "2026-06-28T14:15:17Z"
+temporal:
+  "@type": TemporalMetadata
+  validFrom: "2026-06-28T14:15:17Z"
+  ttl: P6M
+  recordedAt: "2026-06-28T14:15:17Z"
 provenance:
   '@type': Provenance
   sourceType: system_generated

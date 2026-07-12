@@ -8,6 +8,12 @@ conceptType: semantic
 namespace: harness/example-okf-mif-knowledge-spine
 title: 'Competitive Analysis: OKF+MIF vs Knowledge-Representation Prior Art'
 created: "2026-06-28T14:12:17Z"
+modified: "2026-06-28T14:12:17Z"
+temporal:
+  "@type": TemporalMetadata
+  validFrom: "2026-06-28T14:12:17Z"
+  ttl: P6M
+  recordedAt: "2026-06-28T14:12:17Z"
 provenance:
   '@type': Provenance
   sourceType: system_generated

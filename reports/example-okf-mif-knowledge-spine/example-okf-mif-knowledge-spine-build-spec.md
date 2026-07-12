@@ -8,12 +8,18 @@ conceptType: semantic
 namespace: harness/example-okf-mif-knowledge-spine
 title: "OKF+MIF Knowledge-Spine Build Spec — an AI-ready architecture spec for layering MIF's modeling/provenance/temporal spine on OKF packaging"
 created: "2026-06-29T00:00:00Z"
+modified: "2026-06-29T00:00:00Z"
 genre: architecture-spec
 audience: implementer
 status: proposed
 mif:
   conformanceLevel: 1
 evidence_base: "36 active findings (example-okf-mif-knowledge-spine) — 12 technical, 7 landscape, 9 trajectory, 8 market; 31 survived, 5 weakened, 0 falsified"
+temporal:
+  "@type": TemporalMetadata
+  validFrom: "2026-06-29T00:00:00Z"
+  ttl: P6M
+  recordedAt: "2026-06-29T00:00:00Z"
 provenance:
   "@type": Provenance
   sourceType: system_generated

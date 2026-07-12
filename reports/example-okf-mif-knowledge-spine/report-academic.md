@@ -8,6 +8,12 @@ conceptType: semantic
 namespace: harness/example-okf-mif-knowledge-spine
 title: 'Layering MIF Provenance and Temporal Semantics over the Open Knowledge Format: A Feasibility and Differentiation Study'
 created: "2026-06-28T14:12:52Z"
+modified: "2026-06-28T14:12:52Z"
+temporal:
+  "@type": TemporalMetadata
+  validFrom: "2026-06-28T14:12:52Z"
+  ttl: P6M
+  recordedAt: "2026-06-28T14:12:52Z"
 provenance:
   '@type': Provenance
   sourceType: system_generated

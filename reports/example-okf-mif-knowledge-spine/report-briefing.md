@@ -8,6 +8,12 @@ conceptType: semantic
 namespace: harness/example-okf-mif-knowledge-spine
 title: 'Decision Briefing: OKF+MIF as a Foundational Research Knowledge Spine'
 created: "2026-06-28T14:10:31Z"
+modified: "2026-06-28T14:10:31Z"
+temporal:
+  "@type": TemporalMetadata
+  validFrom: "2026-06-28T14:10:31Z"
+  ttl: P6M
+  recordedAt: "2026-06-28T14:10:31Z"
 provenance:
   '@type': Provenance
   sourceType: system_generated

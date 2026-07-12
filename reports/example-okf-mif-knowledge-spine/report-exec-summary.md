@@ -8,6 +8,12 @@ conceptType: semantic
 namespace: harness/example-okf-mif-knowledge-spine
 title: 'Executive Summary: Should MIF Be the Spine Beneath OKF for a Research Knowledge Spine?'
 created: "2026-06-28T14:09:45Z"
+modified: "2026-06-28T14:09:45Z"
+temporal:
+  "@type": TemporalMetadata
+  validFrom: "2026-06-28T14:09:45Z"
+  ttl: P6M
+  recordedAt: "2026-06-28T14:09:45Z"
 provenance:
   '@type': Provenance
   sourceType: system_generated

@@ -9,6 +9,11 @@ tags:
   - reference
 title: "Reference: genre packs"
 diataxis_type: reference
+temporal:
+  '@type': TemporalMetadata
+  validFrom: '2026-06-30T03:12:58-04:00'
+  ttl: P6M
+  recordedAt: '2026-06-30T03:12:58-04:00'
 provenance:
   '@type': Provenance
   sourceType: agent_inferred

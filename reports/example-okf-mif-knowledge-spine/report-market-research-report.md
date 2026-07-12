@@ -8,6 +8,12 @@ conceptType: semantic
 namespace: harness/example-okf-mif-knowledge-spine
 title: 'Market Research Report: An OKF+MIF Knowledge-Spine Offering'
 created: "2026-06-28T14:09:25Z"
+modified: "2026-06-28T14:09:25Z"
+temporal:
+  "@type": TemporalMetadata
+  validFrom: "2026-06-28T14:09:25Z"
+  ttl: P6M
+  recordedAt: "2026-06-28T14:09:25Z"
 provenance:
   '@type': Provenance
   sourceType: system_generated

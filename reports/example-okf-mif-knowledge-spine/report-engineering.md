@@ -8,6 +8,12 @@ conceptType: semantic
 namespace: harness/example-okf-mif-knowledge-spine
 title: 'Engineering Report: Feasibility of Layering MIF over OKF (Extension Seam, Conflicts, Round-Trip)'
 created: "2026-06-28T14:08:33Z"
+modified: "2026-06-28T14:08:33Z"
+temporal:
+  "@type": TemporalMetadata
+  validFrom: "2026-06-28T14:08:33Z"
+  ttl: P6M
+  recordedAt: "2026-06-28T14:08:33Z"
 provenance:
   '@type': Provenance
   sourceType: system_generated

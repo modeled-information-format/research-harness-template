@@ -8,6 +8,12 @@ conceptType: semantic
 namespace: harness/example-okf-mif-knowledge-spine
 title: 'Market Sizing: The Structured Knowledge-Spine (OKF+MIF) Opportunity'
 created: "2026-06-28T14:07:44Z"
+modified: "2026-06-28T14:07:44Z"
+temporal:
+  "@type": TemporalMetadata
+  validFrom: "2026-06-28T14:07:44Z"
+  ttl: P6M
+  recordedAt: "2026-06-28T14:07:44Z"
 provenance:
   '@type': Provenance
   sourceType: system_generated

@@ -8,6 +8,12 @@ conceptType: semantic
 namespace: harness/example-okf-mif-knowledge-spine
 title: 'Trend Modeling: Trajectories & Scenarios for OKF+MIF Knowledge Persistence'
 created: "2026-06-28T14:15:08Z"
+modified: "2026-06-28T14:15:08Z"
+temporal:
+  "@type": TemporalMetadata
+  validFrom: "2026-06-28T14:15:08Z"
+  ttl: P6M
+  recordedAt: "2026-06-28T14:15:08Z"
 provenance:
   '@type': Provenance
   sourceType: system_generated
