@@ -183,6 +183,14 @@ build, or explain to instance owners.
 - ADR-0008: the attested, fail-closed supply-chain posture the new workflow
   follows (SHA-pinned actions, App-token auth).
 
+## Links
+
+- `.github/workflows/monitor.yml` — the scheduled workflow implementing this
+  decision (research-harness-template#424).
+- `.github/workflows/monitor-gate.yml` — the PR-close-triggered gate/publish
+  workflow this decision's write-back mechanism depends on.
+- [Run prompts on a schedule — Claude Code Docs](https://code.claude.com/docs/en/scheduled-tasks)
+
 ## More Information
 
 - **Date:** 2026-07-12
@@ -198,13 +206,15 @@ build, or explain to instance owners.
 
 ### 2026-07-12
 
-**Status:** Accepted
+**Status:** Compliant
+
+**Findings:**
 
 | Finding | Files | Assessment |
 | --- | --- | --- |
 | Scheduling primitive comparison sourced from current Claude Code docs, not assumed from training data | this ADR's More Information section | compliant |
-| Write-back mechanism named concretely (PR-based, not a stub) | `.github/workflows/monitor.yml` (research-harness-template#424, not yet landed at ADR authoring time) | pending — tracked by #424 |
+| Write-back mechanism named concretely and implemented (PR-based, not a stub) | `.github/workflows/monitor.yml`, `.github/workflows/monitor-gate.yml` (research-harness-template#424) | compliant |
 
-**Summary:** Decision settled and documented; concrete workflow implementation tracked by Story #424 per the Epic's build order.
+**Summary:** Decision settled and documented; concrete workflow implementation (Story #424) landed in the same epic and is live-tested end to end.
 
-**Action Required:** None for this ADR; research-harness-template#424 implements the decision.
+**Action Required:** None.
