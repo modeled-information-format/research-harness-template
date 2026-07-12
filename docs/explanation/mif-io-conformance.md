@@ -2,13 +2,21 @@
 id: explanation-mif-io-conformance
 type: semantic
 created: '2026-06-20T06:10:40-04:00'
-modified: '2026-06-26T09:21:24-04:00'
+modified: '2026-07-12T14:24:33.354Z'
 namespace: docs/explanation
 tags:
   - documentation
   - explanation
 title: "MIF I/O conformance"
 diataxis_type: explanation
+provenance:
+  '@type': Provenance
+  agent: claude-code/claude-sonnet-5
+  wasGeneratedBy:
+    '@id': urn:mif:activity:claude-code-session:ae91b6b6-8d5c-4bea-963d-9e4b7907cf09
+    '@type': prov:Activity
+  trustLevel: user_stated
+  agentVersion: 2.1.207
 ---
 
 # MIF I/O conformance
@@ -62,6 +70,32 @@ not:
   was honestly derived. A fabricated verdict is an agent-integrity violation for a
   report precisely as it is for a finding; the harness gives reports the same
   rigor as findings, and the same residual trust assumption, no more.
+
+## Two-layer conformance: schema shape vs. witnessed provenance
+
+The invariant above is a **schema-conformance** gate: it proves a report's
+JSON-LD projection matches `findings.schema.json`, including a well-formed
+`provenance` block — but a schema gate cannot distinguish a witnessed
+provenance block from a model-asserted one that merely has the right shape.
+`report-synthesizer`'s Step 4d closes that gap by stamping **witnessed**
+provenance via `mif-docs-plugin`'s `mif-provenance` skill (ADR-0018) after
+`render-artifact.sh` has already write-then-validated the report's schema
+conformance. The two mechanisms are complementary, not redundant:
+
+- **Schema conformance** (this document's invariant, ADR-0002): does the
+  report's frontmatter/body project losslessly to a valid MIF L3 document?
+  Enforced deterministically by `render-artifact.sh` → `mif-project.sh`.
+- **Witnessed provenance** (`mif-provenance`, ADR-0018): does the
+  `provenance` block's `agent`/`agentVersion`/`wasGeneratedBy` actually
+  match what the session's hook-observed ledger recorded touching this
+  file? A schema-valid block can still be fabricated; a witnessed one
+  cannot — `stamp` declines rather than write an unwitnessed claim.
+
+A report can be schema-conformant without being witnessed (if capture was
+never enabled, or the file predates capture) — this is a legitimate,
+lower-provenance-tier state the harness reports honestly rather than
+silently upgrading. See `docs/reference/dependencies.md` for how capture is
+enabled.
 
 ## Exemption — declared, never silent
 
