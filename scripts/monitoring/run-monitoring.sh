@@ -30,6 +30,7 @@ fi
 
 BUDGET="$(printf '%s' "$MONITORING_CFG" | jq -r '.budgetSeconds // 30')"
 MAX_RESULTS="$(printf '%s' "$MONITORING_CFG" | jq -r '.maxResultsPerSource // 20')"
+BIORXIV_DAYS_BACK="$(printf '%s' "$MONITORING_CFG" | jq -r '.biorxivDaysBack // 7')"
 THRESHOLD="$(printf '%s' "$MONITORING_CFG" | jq -r '.recommendationThreshold // 0.02')"
 # Not `mapfile`/`readarray` -- bash 4+ only, and this needs to run on
 # stock macOS bash (3.2, verified locally) as well as GitHub Actions'
@@ -49,11 +50,18 @@ echo "run-monitoring[$TOPIC/$RUN_ID]: sources=${SOURCES[*]} budget=${BUDGET}s qu
 
 CANDIDATE_FILES=()
 for source in "${SOURCES[@]}"; do
-  CONNECTOR="$ROOT/scripts/monitoring/connectors/$source.sh"
-  [ -x "$CONNECTOR" ] || CONNECTOR="bash $ROOT/scripts/monitoring/connectors/$source.sh"
   OUT_FILE="$RUN_DIR/candidates-$source.json"
+  # biorxiv.sh has a different signature (<days-back> [max_results] [server])
+  # -- bioRxiv/medRxiv's API has no free-text search, only date-range
+  # listing (see the connector's own header comment) -- every other
+  # connector takes (<query> [max_results]).
+  if [ "$source" = "biorxiv" ]; then
+    CONNECTOR_ARGS=("$BIORXIV_DAYS_BACK" "$MAX_RESULTS")
+  else
+    CONNECTOR_ARGS=("$QUERY_STRING" "$MAX_RESULTS")
+  fi
   if bash "$ROOT/scripts/monitoring/run-with-budget.sh" "$TOPIC" "$source" "$BUDGET" "$RUN_ID" \
-      -- bash "$ROOT/scripts/monitoring/connectors/$source.sh" "$QUERY_STRING" "$MAX_RESULTS" > "$OUT_FILE" 2>>"$RUN_DIR/run.log"; then
+      -- bash "$ROOT/scripts/monitoring/connectors/$source.sh" "${CONNECTOR_ARGS[@]}" > "$OUT_FILE" 2>>"$RUN_DIR/run.log"; then
     CANDIDATE_FILES+=("$OUT_FILE")
     echo "run-monitoring[$TOPIC/$RUN_ID]: $source ok ($(jq 'length' "$OUT_FILE") candidates)" >&2
   else

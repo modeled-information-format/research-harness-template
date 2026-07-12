@@ -42,7 +42,15 @@ continuity_log_append() {
   }
 
   local schema="$root/schemas/monitoring-continuity-log-entry.schema.json"
-  if command -v ajv >/dev/null 2>&1 && [ -f "$schema" ]; then
+  # Hard-required, not "validate if available": this header's own contract
+  # is "an entry that fails to validate is refused", which a missing ajv
+  # would otherwise silently bypass. Fail closed instead, matching
+  # write-finding.sh's precedent (ajv is unconditional there too).
+  if ! command -v ajv >/dev/null 2>&1; then
+    echo "continuity_log_append: 'ajv' is required on PATH to schema-validate log entries and was not found" >&2
+    return 1
+  fi
+  if [ -f "$schema" ]; then
     # A real temp file, not /dev/stdin -- ajv-cli does not reliably read a
     # piped special file as -d's data argument (verified empirically: it
     # reports the JSON's own top-level keys as "missing"). The .json suffix

@@ -23,11 +23,19 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT" || exit 2
 
 TMP="$(mktemp -d)"
-trap 'rm -rf "$TMP"' EXIT
+TOPIC="eval-monitoring-topic"
+# run-with-budget.sh, editorial-gate.sh, and output-router.sh all resolve
+# their own paths from the repo root, not a tmpdir, so every case below
+# runs against a throwaway topic under the REAL reports/ tree. Cleaned up
+# by the same EXIT trap as $TMP, not a trailing rm -rf -- a CI cancellation
+# or timeout partway through must not leave residue in the tracked tree
+# (CLAUDE.md: "Ephemeral artifacts go to mktemp outside the tree, never
+# into reports/").
+REAL_TOPIC_DIR="$ROOT/reports/$TOPIC"
+trap 'rm -rf "$TMP" "$REAL_TOPIC_DIR"' EXIT
 fail=0
 note() { printf '  monitoring-pipeline: %s\n' "$1"; }
 
-TOPIC="eval-monitoring-topic"
 TOPIC_DIR="$TMP/reports/$TOPIC"
 mkdir -p "$TOPIC_DIR/findings" "$TOPIC_DIR/monitoring"
 
@@ -47,10 +55,6 @@ cat > "$TMP/concordance.json" <<'EOF'
 EOF
 
 # --- Case 1: fail-closed on timeout ---------------------------------------
-# run-with-budget.sh resolves its own paths from the repo root, not a
-# tmpdir, so this (like every case below) runs against a throwaway topic
-# under the REAL reports/ tree and self-cleans at the end.
-REAL_TOPIC_DIR="$ROOT/reports/$TOPIC"
 mkdir -p "$REAL_TOPIC_DIR/monitoring"
 rm -f "$REAL_TOPIC_DIR/monitoring/continuity-log.jsonl"
 bash "$ROOT/scripts/monitoring/run-with-budget.sh" "$TOPIC" "eval-slow-source" 1 "eval-run-1" \
@@ -130,10 +134,9 @@ else
   fi
 fi
 
-# Cleanup: this eval writes under the REAL reports/<eval-topic>/ (Continuity
-# Log and write-finding.sh both resolve paths from the repo root, not a
-# tmpdir), so it must self-clean regardless of pass/fail.
-rm -rf "$REAL_TOPIC_DIR"
+# $REAL_TOPIC_DIR cleanup happens in the EXIT trap above, not here -- it
+# must fire even if this script is killed/cancelled before reaching this
+# line.
 
 if [ "$fail" -eq 0 ]; then
   echo "monitoring-pipeline: PASS"

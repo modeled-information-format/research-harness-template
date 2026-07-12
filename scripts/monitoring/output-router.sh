@@ -40,9 +40,9 @@ GAP_LOG="$ROOT/reports/$TOPIC/monitoring/recommended-research-areas.jsonl"
 
 # The one gate that matters: refuse to run at all if ANYTHING here lacks a
 # valid Editorial Gate stamp. This is the actual NFR6 enforcement point.
-python3 - "$ACCEPTED" <<'PYEOF' || exit 5
+python3 - "$ACCEPTED" "$ROOT/scripts/monitoring/lib" <<'PYEOF' || exit 5
 import json, sys
-sys.path.insert(0, "scripts/monitoring/lib")
+sys.path.insert(0, sys.argv[2])
 from editorial_gate import assert_all_gated
 with open(sys.argv[1], encoding="utf-8") as fh:
     recs = json.load(fh)

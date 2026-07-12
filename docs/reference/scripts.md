@@ -2,7 +2,7 @@
 id: reference-scripts
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-12T21:37:19.395Z'
+modified: '2026-07-12T22:05:48.709Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -180,7 +180,7 @@ operator-facing how-to. Source Connectors: `scripts/monitoring/connectors/{arxiv
 | `scripts/monitoring/editorial-gate.sh` | The mandatory human-review checkpoint (AD-4/NFR6): splits recommendations into accepted/rejected per an explicit decisions map (in production, derived from the review PR's merge/close state), fail-safe default (no decision = rejected), rejections logged to the Continuity Log. | `jq`, `python3` |
 | `scripts/monitoring/output-router.sh` | Hands Editorial-Gate-accepted recommendations to `scripts/write-finding.sh`/`scripts/check-citation-integrity.sh` unmodified (no bespoke publish path); gap-detect suggestions are surfaced separately in `reports/<topic>/monitoring/recommended-research-areas.jsonl`, never forced into the finding shape. | `jq`, `python3` |
 | `scripts/monitoring/run-gate-and-publish.sh` | Phase 2 orchestrator (the PR-close-triggered half): builds a whole-batch accept/reject decision from a PR's merged state, runs `editorial-gate.sh` then `output-router.sh`. | `jq` |
-| `scripts/monitoring/lib/connector-common.sh` | Shared connector helpers: fail-closed `curl` fetch with timeout/retry, Atom/RSS→JSON normalization (`lib/xml_to_json.py`). | `curl`, `python3` |
+| `scripts/monitoring/lib/connector-common.sh` | Shared connector helpers: fail-closed `curl` fetch with timeout/retry, Atom/RSS→JSON normalization (`lib/xml_to_json.py`), and `connector_emit`'s `jq`-based array-shape validation every connector pipes its output through. | `curl`, `python3`, `jq` |
 | `scripts/monitoring/lib/continuity-log.sh` | Appends one schema-validated JSON line per event to `reports/<topic>/monitoring/continuity-log.jsonl` (`schemas/monitoring-continuity-log-entry.schema.json`) — an explicitly scoped extension, not a MIF finding. | `jq`, `ajv` |
 
 ## Release and verification

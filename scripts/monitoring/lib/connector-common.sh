@@ -53,6 +53,35 @@ connector_emit() {
     echo "connector_emit[$source]: filter did not produce a JSON array" >&2
     return 1
   fi
+
+  # Schema-validate each item against monitoring-candidate.schema.json,
+  # dropping (not failing the whole connector over) any item that doesn't
+  # conform -- an external API's occasional malformed record shouldn't take
+  # down an otherwise-good batch the way a connector-level network failure
+  # should (NFR1's fail-closed posture is about the connector call itself).
+  local schema="${ROOT:-}/schemas/monitoring-candidate.schema.json"
+  if command -v ajv >/dev/null 2>&1 && [ -f "$schema" ]; then
+    local count total kept=0 dropped=0 item tmp_item
+    total="$(printf '%s' "$result" | jq 'length')"
+    local valid_items="[]"
+    for ((count = 0; count < total; count++)); do
+      item="$(printf '%s' "$result" | jq -c ".[$count]")"
+      tmp_item="$(mktemp).json"
+      printf '%s' "$item" > "$tmp_item"
+      if ajv validate --spec=draft2020 --strict=false -c ajv-formats -s "$schema" -d "$tmp_item" >/dev/null 2>&1; then
+        valid_items="$(printf '%s' "$valid_items" | jq -c --argjson it "$item" '. + [$it]')"
+        kept=$((kept + 1))
+      else
+        dropped=$((dropped + 1))
+      fi
+      rm -f "$tmp_item"
+    done
+    if [ "$dropped" -gt 0 ]; then
+      echo "connector_emit[$source]: dropped $dropped/$total item(s) failing monitoring-candidate.schema.json" >&2
+    fi
+    result="$valid_items"
+  fi
+
   printf '%s\n' "$result"
 }
 

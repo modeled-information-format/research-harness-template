@@ -6,7 +6,8 @@
 # An API key raises the rate limit but is never required for the default
 # path; if SEMANTIC_SCHOLAR_API_KEY is set it is used, otherwise the
 # connector runs fully keyless (opt-in enhancement, never a hard
-# dependency — see docs/reference/monitoring-connectors.md, #455).
+# dependency — see docs/reference/dependencies.md's "Continuous monitoring
+# source APIs" section, #455).
 #
 # Usage: semantic-scholar.sh <query> [max_results]
 set -uo pipefail

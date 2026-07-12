@@ -25,6 +25,26 @@ ACCEPTED_OUT="${5:?missing accepted-out.json}"
 [ -f "$RECOMMENDATIONS" ] || { echo "editorial-gate: recommendations file not found: $RECOMMENDATIONS" >&2; exit 2; }
 [ -f "$DECISIONS" ] || { echo "editorial-gate: decisions file not found: $DECISIONS" >&2; exit 2; }
 
+# Every recommendation reaching the gate must already conform to
+# schemas/monitoring-recommendation.schema.json -- a violation here means a
+# real bug upstream in recommend.sh, so (unlike a connector's occasional
+# malformed item) this fails the whole run rather than silently dropping
+# one entry.
+RECOMMENDATION_SCHEMA="$ROOT/schemas/monitoring-recommendation.schema.json"
+if command -v ajv >/dev/null 2>&1 && [ -f "$RECOMMENDATION_SCHEMA" ]; then
+  REC_COUNT="$(jq 'length' "$RECOMMENDATIONS")"
+  for ((_i = 0; _i < REC_COUNT; _i++)); do
+    _tmp_rec="$(mktemp).json"
+    jq -c ".[$_i]" "$RECOMMENDATIONS" > "$_tmp_rec"
+    if ! ajv validate --spec=draft2020 --strict=false -c ajv-formats -s "$RECOMMENDATION_SCHEMA" -d "$_tmp_rec" >/dev/null 2>&1; then
+      echo "editorial-gate: recommendation at index $_i does not conform to monitoring-recommendation.schema.json" >&2
+      rm -f "$_tmp_rec"
+      exit 1
+    fi
+    rm -f "$_tmp_rec"
+  done
+fi
+
 DECIDED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 RESULT="$(python3 "$ROOT/scripts/monitoring/lib/editorial_gate.py" "$RECOMMENDATIONS" "$DECISIONS" "editorial-gate" "$DECIDED_AT")" || {
   echo "editorial-gate: gate evaluation failed" >&2

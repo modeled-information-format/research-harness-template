@@ -18,12 +18,17 @@ name: continuous-monitoring
 # (repos/.github/docs/onboarding/app/).
 on:
   schedule:
-    # Placeholder cadence; each topic's own continuousMonitoring.schedule
-    # in harness.config.json is the source of truth for whether a given
-    # topic actually runs on a given trigger (checked in the "resolve
-    # topics" step below). GitHub Actions supports only one schedule
-    # cadence per workflow, so this fires more often than any single
-    # topic's cron and the per-topic check filters it down.
+    # GitHub Actions supports only one schedule cadence per workflow file,
+    # so every topic is bounded by this single firing cadence -- a topic
+    # whose own continuousMonitoring.schedule wants a tighter cadence than
+    # this (e.g. daily) will never fire more often than here, regardless of
+    # its own configured cron. The "resolve topics" step below (via
+    # scripts/monitoring/lib/cron_match.py) filters OUT topics whose own
+    # schedule doesn't match a given firing (e.g. a topic configured for
+    # Wednesdays is skipped on this Monday-only trigger) -- it can only
+    # narrow which topics run on a firing, never widen how often a firing
+    # happens. A topic wanting a genuinely different cadence than every
+    # other topic needs its own separate workflow file.
     - cron: '0 6 * * 1'
   workflow_dispatch:
     inputs:
@@ -49,6 +54,9 @@ jobs:
         with:
           python-version: '3.14'
 
+      - name: Install toolchain (ajv-cli -- continuity-log.sh's schema gate hard-requires it)
+        run: npm install -g ajv-cli ajv-formats
+
       - name: "Mint an app token (write: contents, pull-requests)"
         id: app-token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
@@ -70,12 +78,39 @@ jobs:
 
       - name: resolve topics to run and check each one's schedule
         id: resolve
+        env:
+          EVENT_NAME: ${{ github.event_name }}
         run: |
           INPUT_TOPIC="${{ github.event.inputs.topic }}"
           if [ -n "$INPUT_TOPIC" ]; then
+            # workflow_dispatch names one topic explicitly: always run it,
+            # bypassing the schedule check below (a manual trigger IS the
+            # override).
             TOPICS="$INPUT_TOPIC"
           else
-            TOPICS="$(jq -r '.topics[] | select(.continuousMonitoring.enabled == true) | .id' harness.config.json)"
+            ENABLED_TOPICS="$(jq -r '.topics[] | select(.continuousMonitoring.enabled == true) | .id' harness.config.json)"
+            if [ "$EVENT_NAME" = "schedule" ]; then
+              # This workflow has exactly one schedule: trigger (GitHub
+              # Actions supports only one cadence per workflow), so it fires
+              # at a fixed cadence independent of any topic's own
+              # continuousMonitoring.schedule. Filter down to topics whose
+              # OWN cron actually matches the current firing, rather than
+              # running every enabled topic on every firing regardless of
+              # its configured cadence (that field was otherwise decorative
+              # -- never read anywhere in the pipeline).
+              TOPICS=""
+              while IFS= read -r t; do
+                [ -n "$t" ] || continue
+                SCHEDULE="$(jq -r --arg t "$t" '.topics[] | select(.id == $t) | .continuousMonitoring.schedule // "0 6 * * 1"' harness.config.json)"
+                if python3 scripts/monitoring/lib/cron_match.py "$SCHEDULE"; then
+                  TOPICS="$TOPICS$t"$'\n'
+                else
+                  echo "monitor.yml: skipping $t this firing, schedule '$SCHEDULE' does not match now" >&2
+                fi
+              done <<< "$ENABLED_TOPICS"
+            else
+              TOPICS="$ENABLED_TOPICS"
+            fi
           fi
           {
             echo "topics<<MONITOR_EOF"
@@ -95,6 +130,16 @@ jobs:
           while IFS= read -r topic; do
             [ -n "$topic" ] || continue
             echo "::group::monitoring run for $topic"
+            # Always start each topic from a clean, identical base -- without
+            # this, topic N's branch (and PR) would fork from topic N-1's
+            # already-committed branch tip instead of main whenever more than
+            # one topic is enabled in the same run, and any uncommitted
+            # working-tree residue from a topic that produced zero
+            # recommendations (which never reaches the commit step below)
+            # would otherwise carry into the next topic's branch.
+            git checkout main
+            git reset --hard origin/main
+            git clean -fd reports/
             bash scripts/monitoring/run-monitoring.sh "$topic" "$RUN_ID" || {
               echo "monitor.yml: run-monitoring.sh failed for $topic, skipping PR" >&2
               echo "::endgroup::"

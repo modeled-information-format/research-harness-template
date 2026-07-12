@@ -54,8 +54,17 @@ def interest_match(scored_candidates, threshold=0.02):
         # this repo's actual config, not assumed. Concordance-node
         # citations are added as supplementary context explaining *why*
         # the source is relevant, never as the only evidence.
-        citations = [{"type": "primary-source", "url": c.get("url", "")}]
+        citations = []
+        url = c.get("url") or ""
+        if url:
+            citations.append({"type": "primary-source", "url": url})
         citations += [{"type": "concordance-node", "target": n} for n in matched_nodes]
+        if not citations:
+            # A connector's API contract doesn't always guarantee a
+            # non-empty url (verified: semantic-scholar.sh's does not).
+            # Skip this one candidate rather than let _require_citations
+            # crash the entire interest-match run over it.
+            continue
         rec = {
             "mode": "interest-match",
             "source": c.get("source"),
