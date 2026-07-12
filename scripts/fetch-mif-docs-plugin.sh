@@ -5,10 +5,14 @@
 # contributor to keep a separate sibling checkout.
 #
 # Usage: fetch-mif-docs-plugin.sh [--dest <dir>]
+# Destination precedence: --dest, then $MIF_DOCS_PLUGIN_ROOT (the same env var
+# gate_m32 in verify.sh reads), then the default cache path. Keeping these two
+# in agreement matters: a MIF_DOCS_PLUGIN_ROOT override that only one of the
+# two scripts honors makes fetch succeed and verify fail (or vice versa).
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
-DEST="${repo_root}/.mif-docs-plugin-cache"
+DEST="${MIF_DOCS_PLUGIN_ROOT:-${repo_root}/.mif-docs-plugin-cache}"
 
 while [ "$#" -gt 0 ]; do
   case "$1" in

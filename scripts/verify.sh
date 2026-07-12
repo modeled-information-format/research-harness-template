@@ -4031,13 +4031,28 @@ gate_m31() {
 gate_m32() {
   info "Milestone 32 — mif-docs conformance floor (research-harness-template#413, ADR-0018)"
   # Structurally enforces that document-shaped deliverables produced by this
-  # repo's own template content stay MIF L1-conformant per mif-docs-plugin's
-  # own mif-validate, not just self-reported. Scoped to FIXTURE/template
-  # content this repo commits — the same fixtures-vs-live-corpus split the
-  # rest of verify.sh already draws (an instance's imported reports/ corpus is
-  # gated separately by scripts/ontology-review.sh, never here). ADRs are
-  # exempt (structured-madr, not mif-validate, per mif-docs-plugin's own
-  # ADR-0001 — tracked separately in research-harness-template#435).
+  # repo's own template content stay MIF-conformant per mif-docs-plugin's own
+  # mif-validate, not just self-reported. Scoped to FIXTURE/template content
+  # this repo commits — the same fixtures-vs-live-corpus split the rest of
+  # verify.sh already draws (an instance's imported reports/ corpus is gated
+  # separately by scripts/ontology-review.sh, never here). ADRs are exempt
+  # (structured-madr, not mif-validate, per mif-docs-plugin's own ADR-0001 —
+  # tracked separately in research-harness-template#435).
+  #
+  # Two tiers, not one (Copilot review on #439 correctly flagged that an
+  # L1-only gate undersells #413's own stated scope, which named provenance):
+  #   - EVERY checked file: mif-validate --level 1 (schema shape + lossless
+  #     round-trip). This is the floor every document here already clears.
+  #   - A file whose frontmatter already declares a `provenance:` block:
+  #     ALSO mif-validate --level 3 (proves the declared provenance is
+  #     structurally well-formed, not just present). This does NOT prove the
+  #     provenance is witnessed — a fresh CI runner has no session ledger to
+  #     check against, so "is this witnessed" is inherently a
+  #     mif-provenance-in-a-live-session question this gate cannot answer.
+  #     What it CAN and does enforce: an asserted provenance block is never
+  #     malformed. Coverage grows organically as more docs gain real
+  #     provenance through live authoring sessions (#408/#410's own framing),
+  #     not as a one-time backfill this gate performs.
   local PLUGIN_CACHE="${MIF_DOCS_PLUGIN_ROOT:-$PWD/.mif-docs-plugin-cache}"
   if [ ! -f "$PLUGIN_CACHE/scripts/mif-validate.mjs" ]; then
     bad "mif-docs-plugin cache NOT FETCHED at $PLUGIN_CACHE — run scripts/fetch-mif-docs-plugin.sh first"
@@ -4048,18 +4063,32 @@ gate_m32() {
     return
   fi
 
-  local fail_count=0 checked_count=0 f rc out
+  local fail_count=0 checked_count=0 provenance_checked_count=0 f out
 
-  # Diátaxis docs — confirmed L1-conformant across the whole set (audited
-  # research-harness-template#410); enforce it stays that way going forward.
-  for f in docs/explanation/*.md docs/how-to/*.md docs/reference/*.md docs/reference/packs/*.md docs/tutorials/*.md; do
-    [ -f "$f" ] || continue
+  check_one_doc() {
+    local f="$1"
     checked_count=$((checked_count + 1))
     if ! out="$(node "$PLUGIN_CACHE/scripts/mif-validate.mjs" "$f" --level 1 2>&1)"; then
       fail_count=$((fail_count + 1))
       bad "mif-validate L1 FAILED: $f"
       printf '%s\n' "$out" | sed 's/^/      /' >&2
+      return
     fi
+    if grep -qE '^provenance:' "$f"; then
+      provenance_checked_count=$((provenance_checked_count + 1))
+      if ! out="$(node "$PLUGIN_CACHE/scripts/mif-validate.mjs" "$f" --level 3 2>&1)"; then
+        fail_count=$((fail_count + 1))
+        bad "mif-validate L3 FAILED (declares provenance: but it's malformed): $f"
+        printf '%s\n' "$out" | sed 's/^/      /' >&2
+      fi
+    fi
+  }
+
+  # Diátaxis docs — confirmed L1-conformant across the whole set (audited
+  # research-harness-template#410); enforce it stays that way going forward.
+  for f in docs/explanation/*.md docs/how-to/*.md docs/reference/*.md docs/reference/packs/*.md docs/tutorials/*.md; do
+    [ -f "$f" ] || continue
+    check_one_doc "$f"
   done
 
   # The committed example-corpus fixture's rendered deliverables — same
@@ -4070,16 +4099,18 @@ gate_m32() {
            reports/example-okf-mif-knowledge-spine/synthesis-*.md \
            reports/example-okf-mif-knowledge-spine/*-build-spec.md; do
     [ -f "$f" ] || continue
-    checked_count=$((checked_count + 1))
-    if ! out="$(node "$PLUGIN_CACHE/scripts/mif-validate.mjs" "$f" --level 1 2>&1)"; then
-      fail_count=$((fail_count + 1))
-      bad "mif-validate L1 FAILED: $f"
-      printf '%s\n' "$out" | sed 's/^/      /' >&2
-    fi
+    check_one_doc "$f"
+  done
+
+  # docs/proposals/ — audited research-harness-template#410, all 8 currently
+  # pass L1 (7 were already L3; the 8th was fixed to L3 in that story).
+  for f in docs/proposals/*/*.md; do
+    [ -f "$f" ] || continue
+    check_one_doc "$f"
   done
 
   if [ "$fail_count" -eq 0 ]; then
-    ok "mif-docs conformance floor: $checked_count document(s) pass mif-validate --level 1"
+    ok "mif-docs conformance floor: $checked_count document(s) pass mif-validate --level 1, $provenance_checked_count of those also pass --level 3 (provenance well-formed where declared)"
   else
     bad "mif-docs conformance floor: $fail_count of $checked_count document(s) failed mif-validate"
   fi
