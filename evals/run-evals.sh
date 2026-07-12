@@ -302,6 +302,13 @@ run "relationship-targets" bash evals/relationship-targets.sh
 # -> export again reproduces a byte-identical manifest digest.
 run "mif-container-nfr-verification" bash evals/mif-container-nfr-verification.sh
 
+# Continuous research monitoring (Epic #416, Story #425): dry-run over
+# fixture source data (no live network calls), real pipeline logic --
+# covers the fail-closed budget path, the Editorial Gate's no-bypass and
+# fail-safe-default paths, and a full accept-to-publish run producing a
+# real schema+citation-integrity-valid MIF finding.
+run "monitoring-pipeline" bash evals/monitoring-pipeline.sh
+
 # 7. Progress-log markdownlint conformance (issue #85 Defect 2): a multi-session
 #    research-progress.md built per orchestrator.md's template — one H1 (file
 #    creation only) + date-qualified per-session H2s — lints clean, while each old

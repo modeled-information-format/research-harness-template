@@ -40,9 +40,16 @@ QUERY_TERMS=("$@")
 # COMMITTED changes -- locally edited, uncommitted findings are invisible to
 # it, the same caveat CLAUDE.md already documents for verify.sh vs a
 # corpus's real reports/ (rebuild explicitly after uncommitted edits).
-if command -v git >/dev/null 2>&1 && git -C "$ROOT" rev-parse --git-dir >/dev/null 2>&1; then
+# Only meaningful for a git-TRACKED concordance -- a fixture/throwaway
+# concordance (e.g. an eval's own test data, evals/monitoring-pipeline.sh)
+# has no commit history to compare, and "not yet committed" must never
+# read as "infinitely stale". Skip the check entirely for an untracked
+# file rather than always failing it closed.
+CONCORDANCE_RELPATH="$(python3 -c "import os,sys; print(os.path.relpath(sys.argv[1], sys.argv[2]))" "$CONCORDANCE" "$ROOT")"
+if command -v git >/dev/null 2>&1 && git -C "$ROOT" rev-parse --git-dir >/dev/null 2>&1 \
+   && git -C "$ROOT" ls-files --error-unmatch "$CONCORDANCE_RELPATH" >/dev/null 2>&1; then
   FINDINGS_TS="$(git -C "$ROOT" log -1 --format=%ct -- 'reports/*/findings/*.json' 2>/dev/null || echo 0)"
-  CONCORDANCE_TS="$(git -C "$ROOT" log -1 --format=%ct -- "$(python3 -c "import os,sys; print(os.path.relpath(sys.argv[1], sys.argv[2]))" "$CONCORDANCE" "$ROOT")" 2>/dev/null || echo 0)"
+  CONCORDANCE_TS="$(git -C "$ROOT" log -1 --format=%ct -- "$CONCORDANCE_RELPATH" 2>/dev/null || echo 0)"
   FINDINGS_TS="${FINDINGS_TS:-0}"; CONCORDANCE_TS="${CONCORDANCE_TS:-0}"
   if [ -n "$FINDINGS_TS" ] && [ -n "$CONCORDANCE_TS" ] && [ "$FINDINGS_TS" -gt "$CONCORDANCE_TS" ] 2>/dev/null; then
     echo "interest-inference: concordance predates the latest committed finding — run scripts/build-concordance.sh before scoring" >&2
