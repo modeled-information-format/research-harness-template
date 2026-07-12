@@ -36,3 +36,4 @@ Start a new record from [`template.md`](template.md), numbered sequentially.
 | [0016](0016-engine-only-classification.md) | Engine-only classification: hard cutover to mif-rh | accepted |
 | [0017](0017-mif-container-instance-scoped-export-import-format.md) | MIF Container: an instance-scoped export/import manifest format | accepted |
 | [0018](0018-mif-docs-plugin-as-document-tooling-substrate.md) | mif-docs-plugin as the document-tooling and provenance substrate | accepted |
+| [0019](0019-github-actions-cron-scheduling-primitive.md) | GitHub Actions cron as the continuous-monitoring scheduling/trigger primitive | accepted |
