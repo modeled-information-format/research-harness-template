@@ -10,6 +10,11 @@
 # Requires: jq and yq (the YAML analog of jq), plus ajv (ajv-cli) + ajv-formats.
 # The MIF report projector scripts/mif-project.sh reads YAML frontmatter with yq
 # (MIF is markdown-native). markdownlint-cli2 is run separately by CI / G5.
+# Document-level frontmatter authoring, conformance, and provenance for
+# document-shaped deliverables route through mif-docs-plugin (mif-mcp wired in
+# .mcp.json, mifProvenance capture in .claude/settings.json) — see
+# docs/reference/dependencies.md. This gate's own ajv/yq checks stay scoped to
+# the findings/knowledge-graph schema substrate (ADR-0002); they are unchanged.
 
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 2

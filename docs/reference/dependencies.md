@@ -2,7 +2,7 @@
 id: reference-dependencies
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-12T14:17:14.002Z'
+modified: '2026-07-12T14:26:16.362Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -11,6 +11,7 @@ title: "Reference: dependencies and requirements"
 diataxis_type: reference
 provenance:
   '@type': Provenance
+  sourceType: agent_inferred
   agent: claude-code/claude-sonnet-5
   wasGeneratedBy:
     '@id': urn:mif:activity:claude-code-session:ae91b6b6-8d5c-4bea-963d-9e4b7907cf09
@@ -109,11 +110,15 @@ several `packs[]` genres already (`docs/reference/packs/reports.md`).
 Provenance capture (`mif-provenance`'s hook-observed stamping) is opt-in and
 configured via the `mifProvenance` key in `.claude/settings.json`
 (`capture`/`stamp`) — this repo enables it by default
-(`capture: true, stamp: "auto"`) so every document authored in a harness
-session gets witnessed provenance, not just asserted. Run the `mif-provenance`
-`status` command after enabling or updating the plugin mid-session to confirm
-hooks are actually wired (capture enablement is not guaranteed to reach an
-already-running session's hook dispatch).
+(`capture: true, stamp: "auto"`) so a document authored in a **fresh** harness
+session, with capture already active when the session started, gets witnessed
+provenance instead of only asserted frontmatter. This does **not** retroactively
+cover a session where capture was just enabled or the plugin just updated —
+Claude Code snapshots the hook set at session start, so enablement mid-session
+does not wire hooks into that already-running session. Run the `mif-provenance`
+`status` command to confirm hooks are actually active for the current session
+before relying on stamping; if `status` reports no `session_start` line,
+restart the session rather than continuing to author and hoping.
 
 ## Instantiation (the recommended adoption path)
 
