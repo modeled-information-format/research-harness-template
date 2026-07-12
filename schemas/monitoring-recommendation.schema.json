@@ -30,6 +30,17 @@
           "note": { "type": "string" }
         }
       }
+    },
+    "gate": {
+      "description": "Stamped only by scripts/monitoring/editorial-gate.sh (research-harness-template#422) once a candidate has an explicit accept decision. The Output Router (research-harness-template#423) requires gate.passed === true and refuses anything else -- this is the structural enforcement that no recommendation reaches publish without passing through the gate.",
+      "type": "object",
+      "required": ["passed", "decided_by", "decided_at"],
+      "properties": {
+        "passed": { "const": true },
+        "decided_by": { "type": "string" },
+        "decided_at": { "type": "string", "format": "date-time" }
+      },
+      "additionalProperties": false
     }
   },
   "additionalProperties": false
