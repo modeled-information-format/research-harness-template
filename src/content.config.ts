@@ -22,7 +22,8 @@ import { readFileSync } from 'node:fs';
 //      so it is the landing page for the topic, the way a per-directory README reads on GitHub.
 //
 // We still exclude `reports/_meta/` (the gate fixture), `findings/*.json` (raw MIF data,
-// not pages), and the `*-delta.md` / `*-build-spec.md` build logs (no stable page shape).
+// not pages), and the `*-delta.md` / `*-build-spec.md` / `*-kiro-{requirements,design,tasks}.md`
+// build logs (no stable page shape).
 //
 // Routing and the sidebar derive from each entry's id (path relative to base): docs keep
 // their root routes, reports route under `reports/`. The leading body H1 of a derived-title
@@ -104,6 +105,9 @@ export const collections = {
         // Build logs with no stable page shape — not deliverables.
         '!reports/**/*-delta.md',
         '!reports/**/*-build-spec.md',
+        '!reports/**/*-kiro-requirements.md',
+        '!reports/**/*-kiro-design.md',
+        '!reports/**/*-kiro-tasks.md',
       ],
     }),
     schema: docsSchema(),

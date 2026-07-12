@@ -2330,7 +2330,9 @@ gate_m23() {
   #      FULL topic deliverable tree renders (ADR-0009) instead of being excluded. The base
   #      stays `./src/content/docs` (the relative-links plugin relies on it) and reports/ is
   #      reached via the committed `docs/reports` symlink. README is re-slugged to the topic
-  #      index. Only _meta/findings + the *-delta/*-build-spec build logs stay excluded.
+  #      index. Only _meta/findings + the *-delta/*-build-spec/*-kiro-{requirements,design,tasks}
+  #      build logs stay excluded (research-harness-template#414: the kiro-spec split added the
+  #      last three).
   #      Regression guard: the three deliverable negations MUST be absent (so they serve), the
   #      loader markers + kept negations + both symlinks MUST be present.
   local cc=src/content.config.ts
@@ -2343,6 +2345,9 @@ gate_m23() {
      && grep -qF "!reports/**/findings/**" "$cc" \
      && grep -qF "!reports/**/*-delta.md" "$cc" \
      && grep -qF "!reports/**/*-build-spec.md" "$cc" \
+     && grep -qF "!reports/**/*-kiro-requirements.md" "$cc" \
+     && grep -qF "!reports/**/*-kiro-design.md" "$cc" \
+     && grep -qF "!reports/**/*-kiro-tasks.md" "$cc" \
      && ! grep -qF "!reports/**/README.md" "$cc" \
      && ! grep -qF "!reports/**/*-falsification-report.md" "$cc" \
      && ! grep -qF "!reports/**/research-progress.md" "$cc" \
@@ -2350,7 +2355,7 @@ gate_m23() {
      && [ "$(readlink src/content/docs 2>/dev/null)" = "../../docs" ]; then
     ok "content.config.ts serves the full deliverable tree via the derived-title loader (README index re-slug; _meta/findings/build-log negations kept; the README/falsification/progress negations removed; both site symlinks)"
   else
-    bad "reports binding regressed (need the reportsLoader/deriveTitleFromH1/generateId glob at base './src/content/docs', the README+falsification+research-progress negations REMOVED so they render, _meta/findings/*-delta/*-build-spec kept, and the docs/reports + src/content/docs symlinks)"
+    bad "reports binding regressed (need the reportsLoader/deriveTitleFromH1/generateId glob at base './src/content/docs', the README+falsification+research-progress negations REMOVED so they render, _meta/findings/*-delta/*-build-spec/*-kiro-* kept, and the docs/reports + src/content/docs symlinks)"
   fi
 
   # 23b. astro.config.mjs reads harness.config.json and GATES each site enhancement on
@@ -4097,7 +4102,10 @@ gate_m32() {
   # *-falsification-report.md — see report-synthesizer.md Step 4c).
   for f in reports/example-okf-mif-knowledge-spine/report-*.md \
            reports/example-okf-mif-knowledge-spine/synthesis-*.md \
-           reports/example-okf-mif-knowledge-spine/*-build-spec.md; do
+           reports/example-okf-mif-knowledge-spine/*-build-spec.md \
+           reports/example-okf-mif-knowledge-spine/*-kiro-requirements.md \
+           reports/example-okf-mif-knowledge-spine/*-kiro-design.md \
+           reports/example-okf-mif-knowledge-spine/*-kiro-tasks.md; do
     [ -f "$f" ] || continue
     check_one_doc "$f"
   done

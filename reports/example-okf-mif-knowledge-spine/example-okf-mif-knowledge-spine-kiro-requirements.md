@@ -1,21 +1,40 @@
 ---
-slug: reports/example-okf-mif-knowledge-spine/example-okf-mif-knowledge-spine-kiro-build-spec
+slug: reports/example-okf-mif-knowledge-spine/example-okf-mif-knowledge-spine-kiro-requirements
 version: 1
 "@context": https://mif-spec.dev/schema/context.jsonld
 "@type": Concept
-"@id": urn:mif:report:harness/example-okf-mif-knowledge-spine:kiro-build-spec
+"@id": urn:mif:report:harness/example-okf-mif-knowledge-spine:kiro-requirements
 conceptType: semantic
 namespace: harness/example-okf-mif-knowledge-spine
-title: "MIF Provenance Layer over OKF — Kiro spec (requirements → design → tasks)"
-created: "2026-06-29T00:00:00Z"
-genre: kiro-spec
+title: "MIF Provenance Layer over OKF — Kiro Requirements"
+created: "2026-07-12T16:11:16Z"
+modified: '2026-07-12T16:11:39.923Z'
+genre: kiro-requirements
 audience: implementer
 status: proposed
 mif:
   conformanceLevel: 1
 evidence_base: "Drawn from the example-okf-mif-knowledge-spine technical dimension (MIF's first-class provenance block; OKF's informal log.md/citations provenance; the OKF+MIF extension seam) — all survived"
+temporal:
+  "@type": TemporalMetadata
+  validFrom: "2026-07-12T16:11:16Z"
+  ttl: P6M
+  recordedAt: "2026-07-12T16:11:16Z"
+provenance:
+  '@type': Provenance
+  sourceType: system_generated
+  confidence: 0.9
+  trustLevel: user_stated
+  wasDerivedFrom:
+    '@id': urn:mif:report:harness/example-okf-mif-knowledge-spine:kiro-build-spec
+    '@type': prov:Entity
+  agent: claude-code/claude-sonnet-5
+  wasGeneratedBy:
+    '@id': urn:mif:activity:claude-code-session:ae91b6b6-8d5c-4bea-963d-9e4b7907cf09
+    '@type': prov:Activity
+  agentVersion: 2.1.207
 tags:
-  - kiro-spec
+  - kiro-requirements
   - ai-ready-spec
   - provenance
   - okf
@@ -23,13 +42,17 @@ tags:
   - worked-specimen
 ---
 
-# MIF Provenance Layer over OKF — Kiro Spec
+# MIF Provenance Layer over OKF — Kiro Requirements
 
-A worked specimen in the `kiro-spec` genre: one **feature** of the OKF+MIF build — adding MIF's
-first-class provenance to OKF packages — decomposed as requirements → design → tasks for a coding
-agent. It is a worked example in the genre, grounded in this topic's surviving technical findings.
+A worked specimen in the `kiro-requirements` genre: the requirements phase of one **feature** of
+the OKF+MIF build — adding MIF's first-class provenance to OKF packages — grounded in this topic's
+surviving technical findings. Split out from a single combined `kiro-spec` document
+(research-harness-template#409/#432 retired the bundled `kiro-spec` pack in favor of three
+independently selectable `mif-docs-plugin` genres: `kiro-requirements`, `kiro-design`,
+`kiro-tasks`; see the sibling `-kiro-design.md`/`-kiro-tasks.md` files for the rest of this
+feature's spec).
 
-## 1. Requirements
+## Requirements
 
 The feature replaces OKF's informal, prose-only provenance (`log.md` notes and inline citations —
 *OKF's Informal Provenance Model*) with MIF's first-class, PROV-O-compatible attribution block
@@ -45,21 +68,6 @@ Mechanics*) without altering OKF's markdown shape.
   ≥1 surviving finding. Verify: `thesis_mif_advantage` holds.
 - **AC-3** WHEN the layer is applied, THE SYSTEM SHALL leave OKF's existing fields unchanged.
   Verify: an OKF-only reader still parses the package.
-
-## 2. Design
-
-The MIF provenance block is a sibling object at the extension seam: OKF's `log.md`/citation prose
-maps to MIF `provenance` (`sourceType`, `wasDerivedFrom`, `wasAttributedTo`, `generation_time`),
-PROV-O-compatible (*MIF's First-Class Provenance Block*). The seam writes MIF fields only; no OKF
-field is overwritten (*OKF+MIF Layering Mechanics*). Every design claim above carries its grounding
-finding.
-
-## 3. Tasks
-
-1. Map OKF `log.md` + citation conventions to the MIF `provenance` fields (grounds AC-1).
-2. Implement the seam writer: attach the provenance block, never mutate OKF fields (grounds AC-3).
-3. Validate each packaged node against the MIF findings schema (grounds AC-1).
-4. Add a round-trip check: an OKF-only reader parses the package unchanged (grounds AC-3).
 
 ## Sources
 

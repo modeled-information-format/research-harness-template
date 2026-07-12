@@ -12,6 +12,11 @@ tags:
 title: "Export and import a topic between harness instances"
 description: "Move a research-harness topic — findings, ontology typing, tags, verification verdicts — from one instantiated harness to another using the MIF Container manifest, via /export and /import."
 diataxis_type: how-to
+temporal:
+  '@type': TemporalMetadata
+  validFrom: '2026-07-12T16:00:00Z'
+  ttl: P6M
+  recordedAt: '2026-07-12T16:00:00Z'
 provenance:
   '@type': Provenance
   agent: claude-code/claude-sonnet-5

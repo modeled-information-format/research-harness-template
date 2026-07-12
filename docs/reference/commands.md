@@ -9,6 +9,11 @@ tags:
   - reference
 title: "Reference: commands"
 diataxis_type: reference
+temporal:
+  '@type': TemporalMetadata
+  validFrom: '2026-06-24T10:25:46-04:00'
+  ttl: P6M
+  recordedAt: '2026-06-24T10:25:46-04:00'
 provenance:
   '@type': Provenance
   agent: claude-code/claude-sonnet-5

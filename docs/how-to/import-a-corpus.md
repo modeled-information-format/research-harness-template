@@ -9,6 +9,11 @@ tags:
   - how-to
 title: "How to import an existing corpus"
 diataxis_type: how-to
+temporal:
+  '@type': TemporalMetadata
+  validFrom: '2026-06-19T17:03:52-04:00'
+  ttl: P6M
+  recordedAt: '2026-06-19T17:03:52-04:00'
 provenance:
   '@type': Provenance
   agent: claude-code/claude-sonnet-5
