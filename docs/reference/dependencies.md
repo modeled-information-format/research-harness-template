@@ -2,7 +2,7 @@
 id: reference-dependencies
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-12T20:37:34.161Z'
+modified: '2026-07-12T22:28:11.598Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -180,10 +180,16 @@ Notes:
 
 ## Continuous monitoring source APIs (optional)
 
-Enabling continuous monitoring (research-harness-template#416) needs no new
-local tool — every connector (`scripts/monitoring/connectors/`) is a plain
-`curl` + `jq` client against a free, keyless REST/RSS API (NFR2/NFR3). No
-connector requires an account or payment for its default path.
+Every connector (`scripts/monitoring/connectors/`) is keyless by design
+(NFR2/NFR3): each is a plain `curl` + `jq` client against a free REST/RSS
+API, no account or payment required for its default path. The pipeline
+around the connectors does add two hard runtime dependencies beyond the
+core toolchain: `timeout` (`scripts/monitoring/run-with-budget.sh`'s
+per-connector budget enforcement) and `ajv`/`ajv-formats` (the Continuity
+Log's schema validation, `scripts/monitoring/lib/continuity-log.sh` —
+already a required part of this repo's toolchain per the table above, but
+called out here since a from-scratch environment running only the
+connectors in isolation would still need it).
 
 | Connector | Endpoint | Keyless default | Opt-in enhancement |
 | --- | --- | --- | --- |

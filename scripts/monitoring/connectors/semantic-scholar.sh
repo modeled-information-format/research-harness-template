@@ -35,10 +35,14 @@ connector_emit "semantic-scholar" '
         id: (.externalIds.DOI // .paperId // ""),
         title: (.title // ""),
         summary: (.abstract // ""),
-        url: (.url // ""),
+        # The API doesn't always populate .url; fall back to a DOI-derived
+        # url rather than emitting an empty one -- a candidate with no
+        # primary-source URL and no concordance match fails
+        # recommend.py's citation requirement downstream.
+        url: (.url // (if .externalIds.DOI != null then "https://doi.org/" + .externalIds.DOI else "" end)),
         published: (.publicationDate // ""),
         authors: [ (.authors // [])[]?.name ],
         raw: .
       }
-    | select(.id != "" and .title != "") ]
+    | select(.id != "" and .title != "" and .url != "") ]
 ' - <<<"$JSON"

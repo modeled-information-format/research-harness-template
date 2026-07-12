@@ -23,12 +23,17 @@
       "minItems": 1,
       "items": {
         "type": "object",
+        "required": ["type"],
         "properties": {
           "type": { "type": "string", "enum": ["concordance-node", "primary-source", "internal"] },
-          "target": { "type": "string" },
-          "url": { "type": "string" },
+          "target": { "type": "string", "minLength": 1 },
+          "url": { "type": "string", "minLength": 1 },
           "note": { "type": "string" }
-        }
+        },
+        "anyOf": [
+          { "required": ["target"] },
+          { "required": ["url"] }
+        ]
       }
     },
     "gate": {

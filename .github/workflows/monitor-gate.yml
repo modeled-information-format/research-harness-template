@@ -84,6 +84,10 @@ jobs:
 
           git config user.name "research-harness-template[bot]"
           git config user.email "research-harness-template[bot]@users.noreply.github.com"
+          # Without this, git push falls back to the checkout's default
+          # credential instead of the minted app token in GH_TOKEN -- see
+          # the identical note in monitor.yml.
+          gh auth setup-git
           git add "reports/$TOPIC"
           if ! git diff --cached --quiet; then
             git commit -m "monitor($TOPIC): gate decision for $RUN_ID (merged=$PR_MERGED)"

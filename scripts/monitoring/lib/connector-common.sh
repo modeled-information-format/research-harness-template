@@ -16,15 +16,18 @@ set -uo pipefail
 # it is exactly the signal Story #421's budget enforcement fails-closed on.
 connector_fetch() {
   local url="$1"; shift || true
-  local out
+  local out err_file
+  # mktemp, not a predictable /tmp/name.$$ path (symlink/clobber attack on
+  # a shared multi-user /tmp -- a fixed PID-based name is guessable).
+  err_file="$(mktemp)"
   if ! out="$(curl -fsSL --max-time "${CONNECTOR_TIMEOUT_SECONDS:-20}" --retry 2 --retry-delay 1 \
       -H "User-Agent: research-harness-template-continuous-monitoring/1.0 (+https://github.com/modeled-information-format/research-harness-template)" \
-      "$@" "$url" 2>/tmp/connector-fetch-err.$$)"; then
-    echo "connector_fetch: request failed: $url ($(cat /tmp/connector-fetch-err.$$ 2>/dev/null))" >&2
-    rm -f /tmp/connector-fetch-err.$$
+      "$@" "$url" 2>"$err_file")"; then
+    echo "connector_fetch: request failed: $url ($(cat "$err_file" 2>/dev/null))" >&2
+    rm -f "$err_file"
     return 1
   fi
-  rm -f /tmp/connector-fetch-err.$$
+  rm -f "$err_file"
   printf '%s' "$out"
 }
 
@@ -35,20 +38,24 @@ connector_fetch() {
 connector_emit() {
   local source="$1" filter="$2" input="$3"
   local result
+  # mktemp, not a predictable /tmp/name.$$ path -- same rationale as
+  # connector_fetch above.
+  local err_file
+  err_file="$(mktemp)"
   if [ "$input" = "-" ]; then
-    result="$(jq -c "$filter" 2>/tmp/connector-emit-err.$$)" || {
-      echo "connector_emit[$source]: jq filter failed: $(cat /tmp/connector-emit-err.$$)" >&2
-      rm -f /tmp/connector-emit-err.$$
+    result="$(jq -c "$filter" 2>"$err_file")" || {
+      echo "connector_emit[$source]: jq filter failed: $(cat "$err_file")" >&2
+      rm -f "$err_file"
       return 1
     }
   else
-    result="$(jq -c "$filter" "$input" 2>/tmp/connector-emit-err.$$)" || {
-      echo "connector_emit[$source]: jq filter failed: $(cat /tmp/connector-emit-err.$$)" >&2
-      rm -f /tmp/connector-emit-err.$$
+    result="$(jq -c "$filter" "$input" 2>"$err_file")" || {
+      echo "connector_emit[$source]: jq filter failed: $(cat "$err_file")" >&2
+      rm -f "$err_file"
       return 1
     }
   fi
-  rm -f /tmp/connector-emit-err.$$
+  rm -f "$err_file"
   if ! printf '%s' "$result" | jq -e 'type == "array"' >/dev/null 2>&1; then
     echo "connector_emit[$source]: filter did not produce a JSON array" >&2
     return 1

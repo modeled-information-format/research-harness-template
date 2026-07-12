@@ -126,6 +126,13 @@ jobs:
           RUN_ID="run-$(date -u +%Y%m%dT%H%M%SZ)-${GITHUB_RUN_ID}"
           git config user.name "research-harness-template[bot]"
           git config user.email "research-harness-template[bot]@users.noreply.github.com"
+          # Without this, git push/fetch fall back to the checkout's
+          # default credential (actions/checkout's own token), NOT the
+          # minted app token in GH_TOKEN -- the commit/push would carry
+          # the wrong identity and (per GitHub's own limitation) a push
+          # made with the default GITHUB_TOKEN does not trigger other
+          # workflows.
+          gh auth setup-git
 
           while IFS= read -r topic; do
             [ -n "$topic" ] || continue

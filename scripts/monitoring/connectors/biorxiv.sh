@@ -19,6 +19,19 @@ DAYS_BACK="${1:?usage: biorxiv.sh <days-back> [max_results] [server]}"
 MAX="${2:-20}"
 SERVER="${3:-biorxiv}"
 
+# Defense in depth: run-monitoring.sh always passes a real day count
+# (harness.config.json's biorxivDaysBack), but this connector's usage
+# contract is exactly the arg shape every other connector's ISN'T
+# (<query> [max_results]) -- if it's ever invoked with a non-numeric arg1,
+# `date` would silently fail on some platforms rather than erroring
+# loudly. Fall back to a sane default instead.
+case "$DAYS_BACK" in
+  ''|*[!0-9]*)
+    echo "biorxiv: '$DAYS_BACK' is not a day count, defaulting to 7" >&2
+    DAYS_BACK=7
+    ;;
+esac
+
 START_DATE="$(date -u -v-"${DAYS_BACK}"d +%Y-%m-%d 2>/dev/null || date -u -d "${DAYS_BACK} days ago" +%Y-%m-%d)"
 END_DATE="$(date -u +%Y-%m-%d)"
 
@@ -37,5 +50,5 @@ connector_emit "biorxiv" '
         authors: ((.authors // "") | split("; ") | map(select(. != ""))),
         raw: .
       }
-    | select(.doi != "doi:" and .title != "") ]
+    | select(.id != "doi:" and .title != "" and .url != "") ]
 ' - <<<"$JSON" | jq -c --arg max "$MAX" '.[0:($max | tonumber)]'

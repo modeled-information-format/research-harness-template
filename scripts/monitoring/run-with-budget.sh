@@ -3,10 +3,13 @@
 #
 # Wraps one ingestion step (a Source Connector, typically) in a hard wall-
 # clock budget. On success, passes the wrapped command's stdout through
-# unchanged. On timeout OR any non-zero exit, fails closed: it does NOT
-# partial-succeed silently -- it records the specific failure (which
-# source, why) in the topic's Continuity Log and exits non-zero, stopping
-# the run rather than continuing on incomplete data.
+# unchanged. On timeout OR any non-zero exit, fails closed for THIS
+# connector: it does NOT partial-succeed silently -- it records the
+# specific failure (which source, why) in the topic's Continuity Log and
+# exits non-zero, rather than returning incomplete/truncated data as if it
+# were complete. Whether one connector's failure stops the WHOLE monitoring
+# run is the orchestrator's call (run-monitoring.sh continues with the
+# remaining sources), not this wrapper's.
 #
 # Usage: run-with-budget.sh <topic> <source-name> <budget-seconds> <run-id> -- <command...>
 set -uo pipefail

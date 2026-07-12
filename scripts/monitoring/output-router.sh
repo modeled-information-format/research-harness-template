@@ -62,16 +62,19 @@ jq -c '.[] | select(.mode == "interest-match")' "$ACCEPTED" | while IFS= read -r
   TMP_FINDING="$(mktemp).json"
   printf '%s' "$FINDING" > "$TMP_FINDING"
 
-  if ! bash "$ROOT/scripts/check-citation-integrity.sh" "$TMP_FINDING" >/tmp/output-router-citation-check.$$ 2>&1; then
-    REASON="citation-integrity check failed: $(cat /tmp/output-router-citation-check.$$)"
+  # mktemp, not a predictable /tmp/name.$$ path (symlink/clobber attack on
+  # a shared multi-user /tmp).
+  CITATION_CHECK_OUT="$(mktemp)"
+  if ! bash "$ROOT/scripts/check-citation-integrity.sh" "$TMP_FINDING" >"$CITATION_CHECK_OUT" 2>&1; then
+    REASON="citation-integrity check failed: $(cat "$CITATION_CHECK_OUT")"
     continuity_log_append "$ROOT" "$TOPIC" "$RUN_ID" "ingestion_failure" "output-router" \
       "$TITLE: blocked, not published with a warning" \
       "$(jq -nc --arg reason "$REASON" '{reason: $reason}')"
     echo "output-router: BLOCKED (citation-integrity failed): $TITLE" >&2
-    rm -f "$TMP_REC" "$TMP_FINDING" /tmp/output-router-citation-check.$$
+    rm -f "$TMP_REC" "$TMP_FINDING" "$CITATION_CHECK_OUT"
     continue
   fi
-  rm -f /tmp/output-router-citation-check.$$
+  rm -f "$CITATION_CHECK_OUT"
 
   SLUG="$(printf '%s' "$FINDING" | jq -r '."@id" | split(":") | last').json"
   if bash "$ROOT/scripts/write-finding.sh" "$TMP_FINDING" "$FINDINGS_DIR" "$SLUG"; then
