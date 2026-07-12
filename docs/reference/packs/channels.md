@@ -2,7 +2,7 @@
 id: reference-packs-channels
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-12T15:05:36.198Z'
+modified: '2026-07-12T16:53:20.475Z'
 namespace: docs/reference/packs
 tags:
   - documentation
@@ -636,6 +636,8 @@ scripts/pack-toggle.sh ectd on
 ```
 
 ## ai-spec
+
+**Version:** 0.13.0 | **Kind:** channel | **MIF level:** L1 output (L3 where mif-docs provenance is populated) | **Skill:** `ai-spec:ai-spec`
 
 **Source:** [`packs/channels/ai-spec/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/channels/ai-spec)
 

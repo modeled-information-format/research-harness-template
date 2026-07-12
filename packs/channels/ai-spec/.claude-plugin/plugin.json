@@ -1,6 +1,6 @@
 {
   "name": "ai-spec",
-  "version": "0.2.0",
+  "version": "0.13.0",
   "kind": "channel",
   "mif": {
     "exempt": true,
@@ -8,6 +8,15 @@
   },
   "description": "Render surviving findings into an AI-ready, agent-executable architecture spec (genre-shaping of the artifact -> markdown pipeline; finding_refs -> evidence sections, goal checks -> EARS criteria, sections -> structure)",
   "license": "MIT",
-  "author": { "name": "zircote" },
-  "provides": { "skills": ["ai-spec"], "channels": ["ai-spec"] }
+  "author": {
+    "name": "zircote"
+  },
+  "provides": {
+    "skills": [
+      "ai-spec"
+    ],
+    "channels": [
+      "ai-spec"
+    ]
+  }
 }

@@ -7,6 +7,83 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-07-12
+
+Epic #405: `mif-docs-plugin` adopted as the single document-tooling and
+provenance substrate for every document-shaped deliverable this harness
+produces — closing the gap #228's genre-consolidation left open (schema
+conformance via the harness's own vendored `ajv` closure, ADR-0002, but no
+witnessed, hook-observed provenance and no wiring for `docs/` at all).
+
+### Added
+
+- **`mif-docs-plugin` wired as a declared, pinned dependency.** `.mcp.json`
+  gains the `mif-mcp` server; `.claude/settings.json` gains a top-level
+  `mifProvenance: {capture: true, stamp: "auto"}` key read directly by the
+  plugin's own `provenance-config.mjs` (research-harness-template#406).
+- **ADR-0018** documents `mif-docs-plugin` as the document-tooling and
+  provenance substrate, and the deprecation policy every retirement in this
+  Epic follows: a document type duplicating an existing `mif-docs` genre gets
+  retired outright, not kept in parallel (research-harness-template#407).
+- **The canonical report channel now stamps `mif-docs`-witnessed provenance**
+  on every rendered `reports/<topic>/<slug>.md` — `report-synthesizer.md`'s
+  new Step 4d invokes `Skill(mif-docs:mif-provenance)` after rendering
+  (research-harness-template#408).
+- **`verify.sh`'s new `gate_m32`** structurally enforces the mif-docs
+  conformance floor on every tracked document deliverable: `mif-validate
+  --level 1` on every checked file, and `--level 3` (unconditionally, no
+  exemptions) on every file that declares a `provenance:` block — proving
+  the block is structurally well-formed, not merely present. A fresh CI
+  runner has no session ledger, so this can only ever prove structural
+  well-formedness, never witnessed authorship — that remains a live-session
+  question. New `scripts/fetch-mif-docs-plugin.sh` clones the plugin at its
+  pinned SHA into a fail-closed, gitignored cache so CI (and any contributor)
+  can run `mif-validate` without a separate sibling checkout
+  (research-harness-template#413).
+
+### Changed
+
+- **`architecture-spec`, `feature-spec`, and `kiro-spec` bundled genre packs
+  are retired**, in favor of direct `marketplace-ref` consumption of five
+  `mif-docs-plugin` genres: `ai-architecture-doc`, `feature-spec`,
+  `kiro-requirements`, `kiro-design`, `kiro-tasks`. The `kiro-spec` genre had
+  no 1:1 successor — it is replaced by three independently selectable
+  genres, each rendered by a separate invocation of the `ai-spec` channel
+  (research-harness-template#409, #414).
+- **`docs/` (ADRs, Diátaxis explanation/how-to/reference/tutorials, proposals)
+  audited against `mif-docs` conformance.** ADRs stay exempt (structured-madr,
+  not `mif-validate`, per `mif-docs-plugin`'s own ADR-0001); every other
+  tracked doc confirmed or brought to MIF Level 1, with a documented
+  authoring convention added to `docs/README.md`
+  (research-harness-template#410).
+- **`packs/market-research/*` and `packs/trend-modeling/*` audited for
+  `mif-docs` duplication** — confirmed no overlap (they are findings-
+  methodology skills, not rendered-document genres) and given explicit
+  non-duplication disposition notes (research-harness-template#411).
+- **All ten channel packs audited for provenance/citation-grounding
+  compliance** against Epic #405 / ADR-0018 — confirmed no channel drops
+  citation grounding between its sources and its rendered output; `diataxis`
+  flagged as a candidate for a future L3/witnessed-provenance upgrade, not
+  silently left unconsidered (research-harness-template#412).
+
+### Fixed
+
+- Two files declared `provenance:` without the separately required
+  `temporal:` block (`docs/reference/dependencies.md`,
+  `docs/reference/mcp-server.md`, among 22 total across `docs/` and the
+  example-corpus fixtures) — real gaps `gate_m32`'s uniform, no-exemption
+  L3 check caught, not waved through with a carve-out
+  (research-harness-template#413).
+- Post-migration deprecation sweep (research-harness-template#414): two
+  fixture files declared retired genre names with no valid successor
+  reference (`architecture-spec` → renamed to its 1:1 successor
+  `ai-architecture-doc`; `kiro-spec` → split into the three fixture files
+  matching its three genre successors, since no 1:1 successor exists); an
+  orphaned worktree lock tied to a three-day-dead process was removed after
+  verifying it held zero unmerged commits; four files from unrelated
+  concurrent PRs were missing the same required `temporal:` block `gate_m32`
+  enforces.
+
 ## [0.12.3] - 2026-07-12
 
 ### Fixed

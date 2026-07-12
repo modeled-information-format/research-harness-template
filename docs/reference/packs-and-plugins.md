@@ -2,7 +2,7 @@
 id: reference-packs-and-plugins
 type: semantic
 created: '2026-06-23T09:41:01-04:00'
-modified: '2026-07-12T14:52:09.913Z'
+modified: '2026-07-12T16:55:34.042Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -86,6 +86,35 @@ the per-family pages document every one — its use, constraints, and goals.
 Each `packs/<family>/<plugin>/` is self-contained: a `.claude-plugin/plugin.json`
 (validated against `schemas/pack.schema.json`), a flat `skills/<skill>/SKILL.md`,
 and that skill's `evals/`.
+
+## mif-docs-plugin: the document-tooling and provenance substrate
+
+`mif-docs-plugin` is more than a genre source. Since Epic #405 (ADR-0018),
+it is the single document-tooling and provenance substrate for every
+document-shaped deliverable this harness produces — not just the report/spec
+genres it externally sources (above), but the frontmatter authoring,
+conformance validation, and witnessed-provenance stamping mechanism itself:
+
+- **`mif-frontmatter`, `mif-validate`, `mif-provenance`** — the shared skills
+  that author, validate, and stamp MIF frontmatter on any document-shaped
+  file, independent of which genre (if any) renders it. `.mcp.json` wires
+  the `mif-mcp` server; `.claude/settings.json`'s `mifProvenance` key
+  enables capture by default. See
+  [Dependencies](dependencies.md#document-tooling-mif-docs-plugin).
+- **`verify.sh`'s `gate_m32`** structurally enforces this floor on every
+  tracked document deliverable: MIF Level 1 always, and Level 3
+  (unconditionally, no exemptions) on every file that declares a
+  `provenance:` block — see [Scripts](scripts.md).
+- **Scope boundary, unchanged by this Epic:** `mif-docs`'s conformance
+  validation is a different, complementary mechanism from the harness-local
+  `ajv` schema-conformance gate for findings/knowledge-graph data
+  (ADR-0002) — a finding's `entity_type`/`ontology.id` typing and the
+  concordance it composes into are not document-shaped and stay outside
+  `mif-docs`'s remit entirely.
+
+See [ADR-0018](../adr/0018-mif-docs-plugin-as-document-tooling-substrate.md)
+for the full rationale and the deprecation policy every genre retirement in
+Epic #405 followed.
 
 ## Pack taxonomy
 

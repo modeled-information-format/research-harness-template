@@ -2,13 +2,26 @@
 id: explanation-architecture
 type: semantic
 created: '2026-06-19T15:19:39-04:00'
-modified: '2026-07-05T10:10:09-04:00'
+modified: '2026-07-12T17:05:27.032Z'
 namespace: docs/explanation
 tags:
   - documentation
   - explanation
 title: "Explanation: architecture"
 diataxis_type: explanation
+temporal:
+  '@type': TemporalMetadata
+  validFrom: '2026-06-19T15:19:39-04:00'
+  ttl: P6M
+  recordedAt: '2026-06-19T15:19:39-04:00'
+provenance:
+  '@type': Provenance
+  agent: claude-code/claude-sonnet-5
+  wasGeneratedBy:
+    '@id': urn:mif:activity:claude-code-session:ae91b6b6-8d5c-4bea-963d-9e4b7907cf09
+    '@type': prov:Activity
+  trustLevel: user_stated
+  agentVersion: 2.1.207
 ---
 
 # Explanation: architecture
@@ -51,6 +64,25 @@ Where the harness needs a pattern MIF core does not carry (the falsification
 lifecycle, quarantine state, session lineage), it closes the gap **locally** as
 a harness-owned MIF extension under `extensions.harness` — never by forking MIF
 (§8b).
+
+## mif-docs-plugin is the document-tooling substrate
+
+The MIF spine above governs findings and the knowledge graph; a parallel,
+complementary substrate governs *document-shaped deliverables* — reports,
+specs, ADRs, and the Diátaxis doc set itself. Since Epic #405
+([ADR-0018](../adr/0018-mif-docs-plugin-as-document-tooling-substrate.md)),
+that substrate is
+[`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin),
+not a harness-local mechanism: its `mif-frontmatter`/`mif-validate`/
+`mif-provenance` skills author, validate, and stamp witnessed provenance on
+any document this harness produces, and every deliverable genre this repo
+externally sources (report genres, spec genres) is one of its skills. The two
+substrates never merge — a finding's `ontology.id`/`entity_type` typing and
+the ADR-0002 `ajv` schema-conformance gate that enforces it stay entirely
+outside `mif-docs`'s remit, since findings are not document-shaped.
+`verify.sh`'s `gate_m32` is the structural floor tying documents to this
+substrate: MIF Level 1 always, Level 3 wherever a document declares
+provenance.
 
 ## Packs are the only extension surface
 
