@@ -278,7 +278,8 @@ and just synthesized them — so do not leave it a deterministic skeleton.
 The generic report rendered in Step 4b (`reports/<topic>/<slug>.md`) additionally
 gets **witnessed** provenance via `mif-docs-plugin`'s `mif-provenance` skill —
 this is on top of, not instead of, the L3 schema conformance Step 4b already
-enforces (ADR-0002 stays the schema-conformance authority; ADR-0018 makes
+enforces (ADR-0002 stays the schema-conformance authority; ADR-0018,
+research-harness-template#407, pending, makes
 `mif-docs-plugin` the provenance authority):
 
 Invoke it via the `Skill` tool — `mif-provenance` is `mif-docs-plugin`'s own

@@ -2,7 +2,7 @@
 id: explanation-mif-io-conformance
 type: semantic
 created: '2026-06-20T06:10:40-04:00'
-modified: '2026-07-12T14:24:33.354Z'
+modified: '2026-07-12T14:31:47.403Z'
 namespace: docs/explanation
 tags:
   - documentation
@@ -11,6 +11,7 @@ title: "MIF I/O conformance"
 diataxis_type: explanation
 provenance:
   '@type': Provenance
+  sourceType: agent_inferred
   agent: claude-code/claude-sonnet-5
   wasGeneratedBy:
     '@id': urn:mif:activity:claude-code-session:ae91b6b6-8d5c-4bea-963d-9e4b7907cf09
@@ -60,7 +61,7 @@ not:
 
 - **What the gate enforces (deterministic):** a report cannot ship without a
   verification block that is *present, well-formed, non-`falsified`, and
-  citation-clean*. `mif-project.sh` + the citation-integrity gate reject anything
+  citation-clean*. `scripts/mif-project.sh` + the citation-integrity gate reject anything
   else, and a `falsified` report is quarantined. This is structural conformance,
   and it fails closed.
 - **What rests on agent discipline (not deterministic):** that the verdict was
@@ -78,14 +79,16 @@ JSON-LD projection matches `findings.schema.json`, including a well-formed
 `provenance` block — but a schema gate cannot distinguish a witnessed
 provenance block from a model-asserted one that merely has the right shape.
 `report-synthesizer`'s Step 4d closes that gap by stamping **witnessed**
-provenance via `mif-docs-plugin`'s `mif-provenance` skill (ADR-0018) after
+provenance via `mif-docs-plugin`'s `mif-provenance` skill (ADR-0018,
+research-harness-template#407, pending) after
 `render-artifact.sh` has already write-then-validated the report's schema
 conformance. The two mechanisms are complementary, not redundant:
 
 - **Schema conformance** (this document's invariant, ADR-0002): does the
   report's frontmatter/body project losslessly to a valid MIF L3 document?
   Enforced deterministically by `render-artifact.sh` → `mif-project.sh`.
-- **Witnessed provenance** (`mif-provenance`, ADR-0018): does the
+- **Witnessed provenance** (`mif-provenance`, ADR-0018,
+  research-harness-template#407, pending): does the
   `provenance` block's `agent`/`agentVersion`/`wasGeneratedBy` actually
   match what the session's hook-observed ledger recorded touching this
   file? A schema-valid block can still be fabricated; a witnessed one
