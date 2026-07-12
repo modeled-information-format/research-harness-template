@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-harness.dev/schema/monitoring-candidate.schema.json",
+  "title": "Continuous-Monitoring Candidate Item",
+  "description": "Normalized output shape every Source Connector (research-harness-template#418) emits, one object per item, before Interest-Inference scoring. This is an internal pipeline contract, not a MIF finding: a candidate only becomes a MIF-conformant artifact once it survives the Editorial Gate and is handed to the Output Router (research-harness-template#423), which persists it via publish-report/publish-blog under schemas/findings.schema.json.",
+  "type": "object",
+  "required": ["source", "id", "title", "url", "published"],
+  "properties": {
+    "source": {
+      "type": "string",
+      "description": "Connector identifier, e.g. arxiv, openalex, crossref, semantic-scholar, pubmed, biorxiv, gdelt, hn.",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Source-native stable identifier (DOI, arXiv id, GDELT article URL, HN object id, ...)."
+    },
+    "title": { "type": "string", "minLength": 1 },
+    "summary": { "type": "string" },
+    "url": { "type": "string", "format": "uri" },
+    "published": {
+      "type": "string",
+      "description": "ISO-8601 date or date-time; a source that only publishes a date uses YYYY-MM-DD."
+    },
+    "authors": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "raw": {
+      "description": "The source's own record, verbatim (post XML->JSON normalization for feed-based connectors), kept so the Recommendation Engine can cite it precisely (NFR5).",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false
+}

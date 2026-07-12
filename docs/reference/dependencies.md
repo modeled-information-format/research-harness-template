@@ -2,7 +2,7 @@
 id: reference-dependencies
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-12T14:26:16.362Z'
+modified: '2026-07-12T20:37:34.161Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -19,7 +19,7 @@ provenance:
   sourceType: agent_inferred
   agent: claude-code/claude-sonnet-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:ae91b6b6-8d5c-4bea-963d-9e4b7907cf09
+    '@id': urn:mif:activity:claude-code-session:581ee0b6-ce7b-4099-a6dd-2fbb44ce2e1c
     '@type': prov:Activity
   trustLevel: user_stated
   agentVersion: 2.1.207
@@ -177,6 +177,33 @@ Notes:
 - The `pdf` pack needs **both** `pandoc` and at least one PDF engine; install
   one engine (for example `brew install --cask mactex-no-gui`, or
   `pip3 install weasyprint`).
+
+## Continuous monitoring source APIs (optional)
+
+Enabling continuous monitoring (research-harness-template#416) needs no new
+local tool — every connector (`scripts/monitoring/connectors/`) is a plain
+`curl` + `jq` client against a free, keyless REST/RSS API (NFR2/NFR3). No
+connector requires an account or payment for its default path.
+
+| Connector | Endpoint | Keyless default | Opt-in enhancement |
+| --- | --- | --- | --- |
+| `arxiv.sh` | `export.arxiv.org/api/query` (Atom) | Yes, no rate-limit tier | none |
+| `openalex.sh` | `api.openalex.org/works` | Yes | `mailto` param (already sent) joins the polite pool; no key exists |
+| `crossref.sh` | `api.crossref.org/works` | Yes | `mailto` param (already sent) joins the polite pool; no key exists |
+| `semantic-scholar.sh` | `api.semanticscholar.org/graph/v1` | Yes | `SEMANTIC_SCHOLAR_API_KEY` env var raises the rate limit; unset by default, never required |
+| `pubmed.sh` | `eutils.ncbi.nlm.nih.gov/entrez/eutils` | Yes | `NCBI_API_KEY` env var raises the rate limit; unset by default, never required |
+| `biorxiv.sh` | `api.biorxiv.org/details` | Yes | none |
+| `gdelt.sh` | `api.gdeltproject.org/api/v2/doc/doc` | Yes | none |
+| `hn.sh` | `hn.algolia.com/api/v1` | Yes | none |
+
+Both optional environment variables default unset, keeping every connector on
+its free/keyless path unless an operator deliberately opts in — per NFR2, a
+paid or higher-tier source is never the default. Public keyless APIs
+(Semantic Scholar and GDELT observed directly) apply their own rate limits
+regardless of key; a connector that hits one fails closed with the HTTP
+status on stderr rather than returning a silently truncated or stale result
+(Story: Continuity Log + fail-closed ingestion budget, research-harness-template#421,
+is what a monitoring run wires this into).
 
 ## Install quick reference
 

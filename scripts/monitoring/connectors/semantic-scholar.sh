@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# semantic-scholar.sh — Semantic Scholar Source Connector
+# (research-harness-template#418, #451).
+#
+# Free, keyless REST API (NFR2): https://api.semanticscholar.org/graph/v1.
+# An API key raises the rate limit but is never required for the default
+# path; if SEMANTIC_SCHOLAR_API_KEY is set it is used, otherwise the
+# connector runs fully keyless (opt-in enhancement, never a hard
+# dependency — see docs/reference/monitoring-connectors.md, #455).
+#
+# Usage: semantic-scholar.sh <query> [max_results]
+set -uo pipefail
+ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
+# shellcheck source=scripts/monitoring/lib/connector-common.sh
+. "$ROOT/scripts/monitoring/lib/connector-common.sh"
+
+QUERY="${1:?usage: semantic-scholar.sh <query> [max_results]}"
+MAX="${2:-20}"
+
+ENC_QUERY="$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1]))' "$QUERY")"
+URL="https://api.semanticscholar.org/graph/v1/paper/search?query=${ENC_QUERY}&limit=${MAX}&fields=title,abstract,url,publicationDate,authors,externalIds"
+
+EXTRA_ARGS=()
+if [ -n "${SEMANTIC_SCHOLAR_API_KEY:-}" ]; then
+  EXTRA_ARGS+=(-H "x-api-key: ${SEMANTIC_SCHOLAR_API_KEY}")
+fi
+
+JSON="$(connector_fetch "$URL" "${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"}")" || exit 1
+
+connector_emit "semantic-scholar" '
+  [ .data[]?
+    | {
+        source: "semantic-scholar",
+        id: (.externalIds.DOI // .paperId // ""),
+        title: (.title // ""),
+        summary: (.abstract // ""),
+        url: (.url // ""),
+        published: (.publicationDate // ""),
+        authors: [ (.authors // [])[]?.name ],
+        raw: .
+      }
+    | select(.id != "" and .title != "") ]
+' - <<<"$JSON"
