@@ -2,13 +2,21 @@
 id: reference-packs-channels
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-06-30T03:12:58-04:00'
+modified: '2026-07-12T14:42:10.115Z'
 namespace: docs/reference/packs
 tags:
   - documentation
   - reference
 title: "Channel packs"
 diataxis_type: reference
+provenance:
+  '@type': Provenance
+  agent: claude-code/claude-sonnet-5
+  wasGeneratedBy:
+    '@id': urn:mif:activity:claude-code-session:ae91b6b6-8d5c-4bea-963d-9e4b7907cf09
+    '@type': prov:Activity
+  trustLevel: user_stated
+  agentVersion: 2.1.207
 ---
 
 # Channel packs
@@ -615,25 +623,28 @@ mappings: `finding_refs[]` → grounded evidence sections; the goal's `completio
 ### When to use
 
 When research should produce a *buildable spec* a downstream coding agent executes, rather than a
-prose report. Pair with a spec-genre pack (`architecture-spec`, `kiro-spec`, or `feature-spec`).
+prose report. Pair with a spec-genre skill (`ai-architecture-doc`, `feature-spec`,
+`kiro-requirements`, `kiro-design`, or `kiro-tasks` — all external `mif-docs-plugin` skills per
+ADR-0018, research-harness-template#409).
 
 ### What it provides
 
 The `ai-spec` skill; output written to the `<out.md>` path passed to `render-artifact.sh`. The
-architecture-spec default is `reports/<topic>/<topic>-build-spec.md`; non-architecture genres take
-a genre-qualified path (`<topic>-kiro-build-spec.md`, `<topic>-feature-build-spec.md`) so changing
-genre does not overwrite a sibling spec. Each carries MIF frontmatter + the genre markers
-(`genre`, `audience: implementer`, `status`, `evidence_base`).
+`ai-architecture-doc` default is `reports/<topic>/<topic>-build-spec.md`; other genres take a
+genre-qualified path (`<topic>-kiro-requirements.md`, `<topic>-kiro-design.md`,
+`<topic>-kiro-tasks.md`, `<topic>-feature-build-spec.md`) so changing genre does not overwrite a
+sibling spec. Each carries MIF frontmatter + the genre markers (`genre`, `audience: implementer`,
+`status`, `evidence_base`).
 
 ### Dependencies
 
-`scripts/synthesize-artifact.sh`, `scripts/render-artifact.sh`, a bound spec-genre pack,
+`scripts/synthesize-artifact.sh`, `scripts/render-artifact.sh`, a bound spec-genre skill,
 `schemas/artifact.schema.json`, `reports/<topic>/goal.json`.
 
 ### Enable
 
 ```bash
 bash scripts/pack-toggle.sh ai-spec on
-bash scripts/pack-toggle.sh architecture-spec on   # plus a spec-genre pack
+bash scripts/pack-toggle.sh ai-architecture-doc on   # plus a spec-genre skill
 bash scripts/sync-packs.sh
 ```

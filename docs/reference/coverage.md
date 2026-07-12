@@ -2,13 +2,21 @@
 id: reference-coverage
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-05T10:16:37-04:00'
+modified: '2026-07-12T14:42:57.056Z'
 namespace: docs/reference
 tags:
   - documentation
   - reference
 title: "Reference: documentation coverage"
 diataxis_type: reference
+provenance:
+  '@type': Provenance
+  agent: claude-code/claude-sonnet-5
+  wasGeneratedBy:
+    '@id': urn:mif:activity:claude-code-session:ae91b6b6-8d5c-4bea-963d-9e4b7907cf09
+    '@type': prov:Activity
+  trustLevel: user_stated
+  agentVersion: 2.1.207
 ---
 
 # Reference: documentation coverage
@@ -67,8 +75,10 @@ Plugin packs (37, registered in `harness.config.json` `packs[]`):
 | financial-analysis | market-research | [packs/market-research.md](packs/market-research.md#financial-analysis) |
 | market-sizing | market-research | [packs/market-research.md](packs/market-research.md#market-sizing) |
 | regulatory-review | market-research | [packs/market-research.md](packs/market-research.md#regulatory-review) |
-| architecture-spec | genres | [packs/genres.md](packs/genres.md#architecture-spec) |
-| kiro-spec | genres | [packs/genres.md](packs/genres.md#kiro-spec) |
+| ai-architecture-doc | genres | [packs/genres.md](packs/genres.md#ai-architecture-doc) |
+| kiro-requirements | genres | [packs/genres.md](packs/genres.md#kiro-requirements) |
+| kiro-design | genres | [packs/genres.md](packs/genres.md#kiro-design) |
+| kiro-tasks | genres | [packs/genres.md](packs/genres.md#kiro-tasks) |
 | feature-spec | genres | [packs/genres.md](packs/genres.md#feature-spec) |
 | trend-modeling | trend-modeling | [packs/trend-modeling.md](packs/trend-modeling.md#trend-modeling) |
 | academic | reports | [packs/reports.md](packs/reports.md#academic) |

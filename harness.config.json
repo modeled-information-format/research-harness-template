@@ -313,19 +313,44 @@
       "source": "bundled"
     },
     {
-      "name": "architecture-spec",
+      "name": "ai-architecture-doc",
       "enabled": false,
-      "source": "bundled"
-    },
-    {
-      "name": "kiro-spec",
-      "enabled": false,
-      "source": "bundled"
+      "source": {
+        "type": "marketplace-ref",
+        "marketplace": "mif-docs"
+      }
     },
     {
       "name": "feature-spec",
       "enabled": false,
-      "source": "bundled"
+      "source": {
+        "type": "marketplace-ref",
+        "marketplace": "mif-docs"
+      }
+    },
+    {
+      "name": "kiro-requirements",
+      "enabled": false,
+      "source": {
+        "type": "marketplace-ref",
+        "marketplace": "mif-docs"
+      }
+    },
+    {
+      "name": "kiro-design",
+      "enabled": false,
+      "source": {
+        "type": "marketplace-ref",
+        "marketplace": "mif-docs"
+      }
+    },
+    {
+      "name": "kiro-tasks",
+      "enabled": false,
+      "source": {
+        "type": "marketplace-ref",
+        "marketplace": "mif-docs"
+      }
     },
     {
       "name": "ai-spec",

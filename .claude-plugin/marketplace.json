@@ -84,21 +84,6 @@
       "description": "[trend-modeling/methodology] Use when the user asks to \"model trends with limited data\", \"three-valued logic analysis\", \"scenario generation\", \"transitional graphs\", \"qualitative trend analysis\", \"uncertain data analysis\", \"minimal-information modeling\", or needs trend"
     },
     {
-      "name": "architecture-spec",
-      "source": "./packs/genres/architecture-spec",
-      "description": "[genres/genre] Genre template for an AI-ready architecture specification (arc42/C4): cross-cutting entity types, relationships, namespaces, decisions-with-alternatives, and EARS acceptance criteria an AI coding agent can execute"
-    },
-    {
-      "name": "kiro-spec",
-      "source": "./packs/genres/kiro-spec",
-      "description": "[genres/genre] Genre template for a Kiro three-file spec (requirements -> design -> tasks): a single-feature, task-decomposed build spec for an AI coding agent"
-    },
-    {
-      "name": "feature-spec",
-      "source": "./packs/genres/feature-spec",
-      "description": "[genres/genre] Genre template for a GitHub Spec Kit single-capability feature spec authored for a coding agent"
-    },
-    {
       "name": "ai-spec",
       "source": "./packs/channels/ai-spec",
       "description": "[channels/channel] Render surviving findings into an AI-ready, agent-executable architecture spec (genre-shaping of the artifact -> markdown pipeline; finding_refs -> evidence, goal checks -> EARS, sections -> structure)"

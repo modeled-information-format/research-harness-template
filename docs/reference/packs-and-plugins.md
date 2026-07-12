@@ -2,13 +2,22 @@
 id: reference-packs-and-plugins
 type: semantic
 created: '2026-06-23T09:41:01-04:00'
-modified: '2026-07-05T10:10:09-04:00'
+modified: '2026-07-12T14:37:25.581Z'
 namespace: docs/reference
 tags:
   - documentation
   - reference
 title: "Reference: packs and plugins"
 diataxis_type: reference
+provenance:
+  '@type': Provenance
+  sourceType: agent_inferred
+  agent: claude-code/claude-sonnet-5
+  wasGeneratedBy:
+    '@id': urn:mif:activity:claude-code-session:ae91b6b6-8d5c-4bea-963d-9e4b7907cf09
+    '@type': prov:Activity
+  trustLevel: user_stated
+  agentVersion: 2.1.207
 ---
 
 # Reference: packs and plugins
@@ -39,10 +48,6 @@ packs/
 │   ├── diataxis/
 │   ├── pdf/
 │   └── …               #   7 more — see the Bundled inventory below
-├── genres/             # family: AI-ready agent-executable specs (3 plugins)
-│   ├── architecture-spec/
-│   ├── kiro-spec/
-│   └── feature-spec/
 ├── trend-modeling/     # family: scenario methodology (1 plugin)
 │   └── trend-modeling/
 └── ontologies/         # family: MIF entity/relationship extensions (21 plugins)
@@ -57,8 +62,15 @@ migration in
 [discussion #228](https://github.com/modeled-information-format/research-harness-template/discussions/228).
 See [Report packs](packs/reports.md) for the full genre-by-genre reference.
 
-The harness bundles **40 pack plugins** across five families: 10 channels,
-5 market-research methodologies, 3 genres, 21 ontologies, and 1 trend-modeling
+There is likewise no `packs/genres/` directory: all 5 spec genres
+(`ai-architecture-doc`, `feature-spec`, `kiro-requirements`, `kiro-design`,
+`kiro-tasks`) are consumed externally from `mif-docs-plugin` the same way,
+per ADR-0018 and
+[research-harness-template#409](https://github.com/modeled-information-format/research-harness-template/issues/409)
+— see [Genre packs](packs/genres.md).
+
+The harness bundles **37 pack plugins** across four families: 10 channels,
+5 market-research methodologies, 21 ontologies, and 1 trend-modeling
 methodology. The [Packs reference](packs/index.md) and the per-family pages
 document every bundled one — its use, constraints, and goals.
 
