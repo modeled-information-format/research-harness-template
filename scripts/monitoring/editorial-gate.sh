@@ -31,6 +31,7 @@ RESULT="$(python3 "$ROOT/scripts/monitoring/lib/editorial_gate.py" "$RECOMMENDAT
   exit 1
 }
 
+mkdir -p "$(dirname "$ACCEPTED_OUT")"
 printf '%s' "$RESULT" | jq '.accepted' > "$ACCEPTED_OUT"
 
 REJECTED_COUNT="$(printf '%s' "$RESULT" | jq '.rejected | length')"

@@ -35,31 +35,33 @@ def to_finding(rec, topic, namespace, now_iso):
         raise ValueError("only interest-match recommendations project to findings")
 
     slug = f"monitoring-{slugify(rec.get('title', rec.get('id', 'candidate')))}"
-    citations = []
-    for c in rec.get("citations", []):
-        if c.get("type") == "primary-source" and c.get("url"):
-            citations.append(
-                {
-                    "@type": "Citation",
-                    "url": c["url"],
-                    "title": rec.get("title", ""),
-                    "citationType": "article",
-                    "citationRole": "supports",
-                    "accessed": now_iso[:10],
-                }
-            )
-        elif c.get("type") == "concordance-node" and c.get("target"):
-            citations.append(
-                {
-                    "@type": "Citation",
-                    "url": c["target"],
-                    "title": "related concordance concept",
-                    "citationType": "internal:concordance-node",
-                    "citationRole": "background",
-                    "note": f"Matched via Interest-Inference concordance overlap: {c['target']}",
-                    "accessed": now_iso[:10],
-                }
-            )
+    # ONLY the primary-source citation becomes a MIF Citation. A
+    # concordance-node reference is relevance-scoring metadata (why the
+    # Interest-Inference Engine surfaced this candidate), not evidence for
+    # the finding's own content -- putting an internal urn:mif: id into a
+    # citation's `url` is neither a real http(s) URL nor (this repo's
+    # harness.config.json ships features.internalCitations: false) an
+    # accepted internal citation, and check-citation-integrity.sh correctly
+    # rejects it (verified empirically: it failed all 11 real
+    # recommendations from the first end-to-end run before this fix).
+    # Matched concordance nodes are folded into `content` as descriptive
+    # context instead.
+    citations = [
+        {
+            "@type": "Citation",
+            "url": c["url"],
+            "title": rec.get("title", ""),
+            "citationType": "article",
+            "citationRole": "supports",
+            "accessed": now_iso[:10],
+        }
+        for c in rec.get("citations", [])
+        if c.get("type") == "primary-source" and c.get("url")
+    ]
+    matched_node_ids = [
+        c["target"] for c in rec.get("citations", [])
+        if c.get("type") == "concordance-node" and c.get("target")
+    ]
 
     finding = {
         "@context": "https://mif-spec.dev/schema/context.jsonld",
@@ -72,7 +74,12 @@ def to_finding(rec, topic, namespace, now_iso):
             f"Surfaced by continuous research monitoring (source: "
             f"{rec.get('source', 'unknown')}, published {rec.get('published', 'unknown')}). "
             f"Interest-Inference method: {rec.get('inference_method', 'unknown')}, "
-            f"score {rec.get('score', 0)}. Primary source: {rec.get('url', '')}"
+            f"score {rec.get('score', 0)}. Primary source: {rec.get('url', '')}."
+            + (
+                f" Related to existing concordance concepts: {', '.join(matched_node_ids)}."
+                if matched_node_ids
+                else ""
+            )
         ),
         "created": now_iso,
         "namespace": namespace,

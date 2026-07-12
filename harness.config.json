@@ -25,7 +25,16 @@
         "scientific",
         "market-research",
         "trend-analysis"
-      ]
+      ],
+      "continuousMonitoring": {
+        "enabled": false,
+        "schedule": "0 6 * * 1",
+        "queryTerms": ["knowledge graph", "MIF", "OKF", "provenance"],
+        "sources": ["arxiv", "openalex", "crossref", "hn"],
+        "budgetSeconds": 30,
+        "maxResultsPerSource": 20,
+        "recommendationThreshold": 0.02
+      }
     }
   ],
   "dimensions": [
