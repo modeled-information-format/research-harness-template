@@ -243,6 +243,13 @@ METADATA_SCRIPT=$("$ENGINE" harness topic-metadata "$TOPIC" --config "$CONFIG" -
 bash -n <<<"$METADATA_SCRIPT" || die "topic-metadata emitted output that isn't valid shell syntax — refusing to eval"
 eval "$METADATA_SCRIPT"
 
+# The engine truncates a long goal_statement to build TITLE at a fixed character
+# count with no word-boundary awareness, so a cut that lands right after a space
+# leaves TITLE (and thus the emitted H1) with trailing whitespace -- which then
+# fails markdownlint's MD009 (no-trailing-spaces) on the generated README. Trim
+# defensively rather than trusting engine output verbatim (mif-rs#86).
+TITLE="${TITLE%"${TITLE##*[![:space:]]}"}"
+
 TODAY=$(date -u +%Y-%m-%d)
 [ -n "$CREATED" ] || CREATED="$TODAY"
 CREATED="${CREATED:0:10}"   # normalize ISO datetime -> date-only

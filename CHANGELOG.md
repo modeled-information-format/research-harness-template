@@ -14,6 +14,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added the `[0.13.0]` footer compare-link now that the `v0.13.0` tag exists,
   per #393's convention — it could not be added in the same PR that stripped
   `0.12.3`'s heading brackets, since the tag didn't exist yet at that point.
+- **`scripts/build-topic-readme.sh` trims a truncated title's trailing
+  whitespace.** The `mif-rh-cli` engine's `harness topic-metadata` cuts a
+  long `goal_statement` to build `TITLE` at a fixed character count with no
+  word-boundary awareness (modeled-information-format/mif-rs#86); when the
+  cut lands right after a space, the generated README's H1 kept the
+  trailing space and failed markdownlint's MD009. The script now trims
+  `TITLE` defensively after the engine `eval`, independent of when the
+  upstream engine bug itself is fixed.
 
 ## [0.13.0] - 2026-07-12
 
