@@ -131,8 +131,9 @@ unchanged — it answers a different question (schema shape) than
 ## Decision
 
 Adopt **Option 3**. `mif-docs-plugin` (pinned via `harness.config.json`
-`marketplaces[]`, `mif-mcp` wired in `.mcp.json`,
-research-harness-template#406) is the single substrate for document-level
+`marketplaces[]`; `mif-mcp` wiring in `.mcp.json` and `mifProvenance` capture
+in `.claude/settings.json` tracked by research-harness-template#406) is the
+single substrate for document-level
 frontmatter authoring, MIF conformance validation, and provenance across
 every document-shaped deliverable this harness produces or the harness repo
 itself contains. `packs/genres/architecture-spec`, `feature-spec`,
@@ -201,18 +202,20 @@ substrate ADR-0002 established is unaffected.
 
 ### 2026-07-12
 
-**Status:** Compliant
+**Status:** Pending
 
 | Finding | Files | Assessment |
 | --- | --- | --- |
-| `mif-docs-plugin` declared and pinned | `harness.config.json` `marketplaces[]`, `.mcp.json` (`mif-mcp`) | compliant |
-| Provenance capture enabled | `.claude/settings.json` (`mifProvenance.capture: true`) | compliant |
+| `mif-docs-plugin` marketplace pin present | `harness.config.json` `marketplaces[]` | compliant |
+| `mif-mcp` wired in `.mcp.json` | tracked — research-harness-template#406 | pending |
+| Provenance capture enabled | tracked — research-harness-template#406 (`.claude/settings.json` `mifProvenance.capture`) | pending |
 | Duplicate genre packs retired | pending — research-harness-template#409 | pending |
 | `docs/` migrated onto plugin skills | pending — research-harness-template#410 | pending |
 
-**Summary:** The dependency is declared and pinned (research-harness-template#406);
-the deprecation and migration work this ADR authorizes is tracked and not yet
-complete.
+**Summary:** The marketplace pin this decision builds on already exists; the
+`mif-mcp`/`mifProvenance` wiring (#406), the deprecation of duplicate genre
+packs (#409), and the `docs/` migration (#410) this ADR authorizes are all
+tracked and not yet complete as of this ADR's own branch.
 
-**Action Required:** Land research-harness-template#409 and #410 to close the
-pending items above.
+**Action Required:** Land research-harness-template#406, #409, and #410 to
+close the pending items above.
