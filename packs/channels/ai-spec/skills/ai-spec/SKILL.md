@@ -1,7 +1,7 @@
 ---
 name: ai-spec
 description: Render a topic's surviving findings into an AI-ready, agent-executable architecture spec. A genre-shaping of the artifact -> Markdown pipeline (not a new mechanism) — finding_refs become grounded evidence sections, the goal's completion checks become EARS acceptance criteria, and the artifact sections become the document structure. Use to turn research into a buildable spec a downstream coding agent executes.
-version: 0.2.0
+version: 0.13.0
 argument-hint: "<topic> [--genre ai-architecture-doc|feature-spec|kiro-requirements|kiro-design|kiro-tasks] [-o <out.md>]"
 allowed-tools: Read, Write, Bash, Glob, Grep
 ---
