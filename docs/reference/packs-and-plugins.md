@@ -2,7 +2,7 @@
 id: reference-packs-and-plugins
 type: semantic
 created: '2026-06-23T09:41:01-04:00'
-modified: '2026-07-12T16:55:34.042Z'
+modified: '2026-07-13T12:14:19.331Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -19,7 +19,7 @@ provenance:
   sourceType: agent_inferred
   agent: claude-code/claude-sonnet-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:ae91b6b6-8d5c-4bea-963d-9e4b7907cf09
+    '@id': urn:mif:activity:claude-code-session:878c53f7-09b4-4f64-bb13-e210d7c2f073
     '@type': prov:Activity
   trustLevel: user_stated
   agentVersion: 2.1.207
@@ -231,7 +231,7 @@ before `harness.config.json` can reference it by name.
 
 ## Bundled inventory
 
-The harness bundles **27 pack plugins** across four families. Each family has a
+The harness bundles **34 pack plugins** across four families. Each family has a
 dedicated reference page documenting every component's purpose, constraints, and
 goals; for channels, market-research, and trend-modeling, the counts below
 match `ls packs/<family>/` exactly. Report genres are the exception: all 18
@@ -239,8 +239,8 @@ are consumed externally from `mif-docs-plugin` (no `packs/reports/`
 directory exists to `ls`), so that count instead matches the family's
 reference page and `harness.config.json` `packs[]`.
 
-**Channels** — render adapters ([`packs/channels/`](packs/channels.md), 9 plugins):
-`book`, `diataxis`, `ectd`, `github-discuss`, `github-issues`, `jats`,
+**Channels** — render adapters ([`packs/channels/`](packs/channels.md), 10 plugins):
+`ai-spec`, `book`, `diataxis`, `ectd`, `github-discuss`, `github-issues`, `jats`,
 `notebooklm`, `pdf`, `xbrl`.
 
 **Report genres** — deliverable templates ([`packs/reports.md`](packs/reports.md),
@@ -262,12 +262,11 @@ opt-in): `academic`, `briefing`, `clinical-submission`, `competitive-quadrant`,
 **Trend-modeling** — three-valued scenario methodology
 ([`packs/trend-modeling/`](packs/trend-modeling.md), 1 plugin): `trend-modeling`.
 
-**Ontologies** — MIF entity/relationship/trait vocabularies
-([`packs/ontologies/`](packs/ontologies.md), 12 plugins):
-`biology-research-lab`, `data-engineering`, `market-research`, `observability`,
-`psycholinguistics`, `regenerative-agriculture`, `regenerative-agriculture-research`,
-`regulatory-legal`, `scientific`, `software-engineering`, `software-security`,
-`trend-analysis`.
+Domain ontologies are not one of the four bundled families above — there is no
+`packs/ontologies/` directory. They are vendored on demand from the canonical
+registry per ADR-0012 (23 currently enabled per `harness.config.json`
+`ontologies[]`); see [Ontology packs](packs/ontologies.md) and
+`scripts/fetch-ontology.sh`.
 
 The blog channel is a first-class, always-on harness output (not a pack). The
 report channel is the canonical MIF Level-3 source of truth.

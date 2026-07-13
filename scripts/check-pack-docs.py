@@ -137,6 +137,60 @@ def shared_ontology_layers() -> set[str]:
     return {p.name for p in sch.iterdir() if p.is_dir()}
 
 
+# The "## Bundled inventory" narrative in packs-and-plugins.md restates each of
+# these four families' plugin count and a grand total in prose, separate from
+# the per-component headings this script already cross-links (research-harness-template#431:
+# that prose drifted to a stale total/count with nothing catching it). Maps the
+# section's bold family label to its real FAMILIES key; deliberately excludes
+# "genres" and "ontologies", which that section explicitly documents as not
+# among its "four families" (spec genres aren't mentioned there at all;
+# ontologies are vendored on demand, called out by name as the exception).
+BUNDLED_INVENTORY_FAMILIES = {
+    "Channels": "channels",
+    "Report genres": "reports",
+    "Market-research methodologies": "market-research",
+    "Trend-modeling": "trend-modeling",
+}
+
+
+def check_bundled_inventory_counts(comps: dict[str, list[str]], errors: list[str]) -> None:
+    """Cross-check packs-and-plugins.md's "## Bundled inventory" prose counts
+    (total + per-family) against the real counts already computed in `comps`."""
+    doc = REPO / "docs" / "reference" / "packs-and-plugins.md"
+    if not doc.is_file():
+        errors.append(f"[bundled-inventory] missing {doc.relative_to(REPO)}")
+        return
+    text = doc.read_text(encoding="utf-8")
+    section = text.split("## Bundled inventory", 1)
+    if len(section) < 2:
+        errors.append("[bundled-inventory] no '## Bundled inventory' section found")
+        return
+    body = section[1].split("\n## ", 1)[0]
+
+    real_total = sum(len(comps.get(fam, [])) for fam in BUNDLED_INVENTORY_FAMILIES.values())
+    m = re.search(r"bundles \*\*(\d+) pack plugins\*\*", body)
+    if not m:
+        errors.append("[bundled-inventory] no '**N pack plugins**' total statement found")
+    elif int(m.group(1)) != real_total:
+        errors.append(
+            f"[bundled-inventory] stated total {m.group(1)} pack plugins != real total {real_total}"
+        )
+
+    for label, fam in BUNDLED_INVENTORY_FAMILIES.items():
+        real = len(comps.get(fam, []))
+        # Non-greedy + DOTALL: the count parenthetical can wrap onto the next
+        # line, a single-component family says "1 plugin)" (singular), and the
+        # "Report genres" entry's count is followed by a comma, not ")"
+        # ("18 plugins, all consumed externally from...").
+        fm = re.search(rf"\*\*{re.escape(label)}\*\*.*?(\d+) plugins?[),]", body, re.DOTALL)
+        if not fm:
+            errors.append(f"[bundled-inventory] no '**{label}** (... N plugin(s))' statement found")
+        elif int(fm.group(1)) != real:
+            errors.append(
+                f"[bundled-inventory] {label} stated {fm.group(1)} plugins != real {real}"
+            )
+
+
 def main() -> int:
     comps = components()
     layers = shared_ontology_layers()
@@ -276,6 +330,8 @@ def main() -> int:
                     errors.append(f"[{fam}] component '{n}' README.md missing explicit Dependencies")
                 else:
                     inbound_total += 1
+
+    check_bundled_inventory_counts(comps, errors)
 
     print("\n=== Cross-link tallies ===")
     print(f"Documented components (section present): {documented_total}/{total}")
