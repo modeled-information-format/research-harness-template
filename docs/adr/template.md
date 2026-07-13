@@ -90,6 +90,11 @@ Summarize what the decision achieves and how the negatives are mitigated.
 
 - Link each related ADR by its `NNNN-kebab.md` filename (one bullet per related decision).
 
+## Links
+
+- Link each concrete artifact this decision produced or depends on
+  (a schema, a script, a workflow file, a companion doc) — one bullet per link.
+
 ## More Information
 
 - **Date:** YYYY-MM-DD
@@ -100,6 +105,8 @@ Summarize what the decision achieves and how the negatives are mitigated.
 ### YYYY-MM-DD
 
 **Status:** Pending
+
+**Findings:**
 
 | Finding | Files | Assessment |
 | --- | --- | --- |
