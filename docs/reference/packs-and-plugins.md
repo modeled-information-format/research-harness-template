@@ -2,7 +2,7 @@
 id: reference-packs-and-plugins
 type: semantic
 created: '2026-06-23T09:41:01-04:00'
-modified: '2026-07-13T12:30:03.129Z'
+modified: '2026-07-13T12:38:22.676Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -273,8 +273,8 @@ per ADR-0018 — no `packs/genres/` directory):
 
 Domain ontologies are not one of the five families above — there is no
 `packs/ontologies/` directory. They are vendored on demand from the canonical
-registry per ADR-0012 (23 currently enabled per `harness.config.json`
-`ontologies[]`); see [Ontology packs](packs/ontologies.md) and
+registry per ADR-0012, with the enabled set declared in `harness.config.json`
+`ontologies[]`; see [Ontology packs](packs/ontologies.md) and
 `scripts/fetch-ontology.sh`.
 
 The blog channel is a first-class, always-on harness output (not a pack). The
