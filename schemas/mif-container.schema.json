@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://research-harness.dev/schema/mif-container.schema.json",
   "title": "MIF Container Manifest (mif-package.json)",
-  "description": "Manifest for a lossless topic export/import unit between two research-harness-template instances (ADR-0017, research-harness-template#194/#275). Modeled on datapackage.json's resources[] array, extended with mandatory per-resource+manifest-level digests, ontology-pack bindings, an export-scope descriptor, a sourceInstance tag, and an explicit boundaryReferences[] mechanism for excluded subset-export cross-references. research-harness-template-local; independent of the org-wide MIF Container Profile (modeled-information-format/MIF#77) per ADR-0017's Context section. Field names are deliberately camelCase (mifType, sourceInstance, exportScope, ontologyBindings, boundaryReferences, manifestDigest), not this repo's usual harness-local snake_case -- ADR-0017 and feature-spec.md already name these fields verbatim in camelCase as the accepted manifest vocabulary; this schema follows that ratified naming rather than the repo default.",
+  "description": "Manifest for a lossless topic export/import unit between two research-harness-template instances (ADR-0017, research-harness-template#194/#275). Modeled on datapackage.json's resources[] array, extended with mandatory per-resource+manifest-level digests, ontology-pack bindings, an export-scope descriptor, a sourceInstance tag, and an explicit boundaryReferences[] mechanism for excluded subset-export cross-references. research-harness-template-local; independent of the org-wide MIF Container Profile (modeled-information-format/MIF#77) per ADR-0017's Context section. Field names are deliberately camelCase (mifType, sourceInstance, exportScope, ontologyBindings, boundaryReferences, manifestDigest), not this repo's usual harness-local snake_case -- ADR-0017 and feature-spec.md already name these fields verbatim in camelCase as the accepted manifest vocabulary; this schema follows that ratified naming rather than the repo default. resources[].mifType also covers the topic's own deliverables (report, falsification-report, readme, goal, artifact -- research-harness-template#437), not just per-finding data: a topic export originally packaged only findings/ontology-map/concordance, silently excluding the reports/goal/README/synthesized-artifact a topic actually produces.",
   "type": "object",
   "required": ["profile", "sourceInstance", "exportScope", "ontologyBindings", "resources", "boundaryReferences", "manifestDigest", "createdAt"],
   "additionalProperties": false,
@@ -94,8 +94,8 @@
         "properties": {
           "mifType": {
             "type": "string",
-            "enum": ["finding", "ontology-map", "concordance"],
-            "description": "Discriminator for the kind of MIF concept this resource packages -- a container packages more than one kind of thing, unlike a plain Data Package resource."
+            "enum": ["finding", "ontology-map", "concordance", "report", "falsification-report", "readme", "goal", "artifact"],
+            "description": "Discriminator for the kind of MIF concept this resource packages -- a container packages more than one kind of thing, unlike a plain Data Package resource. report/falsification-report/readme/goal/artifact are the topic's own deliverables (research-harness-template#437) -- packaged whenever the corresponding source file exists, regardless of export scope, since they are topic-level documents rather than per-finding data."
           },
           "path": {
             "type": "string",
@@ -105,7 +105,7 @@
           },
           "ontologyType": {
             "type": ["string", "null"],
-            "description": "The resolved ontology entity_type for this resource. Required and non-null for mifType=finding; must be null for mifType=ontology-map/concordance (enforced below, not just descriptively)."
+            "description": "The resolved ontology entity_type for this resource. Required and non-null for mifType=finding; must be null for every other mifType (enforced below, not just descriptively)."
           },
           "digest": {
             "type": "string",
@@ -121,7 +121,7 @@
             }
           },
           {
-            "if": { "properties": { "mifType": { "enum": ["ontology-map", "concordance"] } } },
+            "if": { "properties": { "mifType": { "enum": ["ontology-map", "concordance", "report", "falsification-report", "readme", "goal", "artifact"] } } },
             "then": {
               "properties": { "ontologyType": { "const": null } }
             }

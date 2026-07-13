@@ -3789,13 +3789,28 @@ gate_m31() {
 
   # 31a. Full export: every finding in the topic, corpus untouched.
   local real_finding_count; real_finding_count="$(find "$TOPIC_DIR/findings" -maxdepth 1 -name '*.json' | wc -l | tr -d ' ')"
+  # research-harness-template#437: the topic's own deliverables (report(s),
+  # falsification report, README, goal, artifact) now travel UNCONDITIONALLY
+  # -- same count regardless of full vs. subset scope, since they are
+  # topic-level documents, not per-finding data. Computed here (not
+  # hardcoded) the same way mif-container-export.sh itself enumerates them,
+  # so this expectation tracks the topic's real fixture content rather than
+  # a number that silently drifts if the bundled example topic's own files
+  # change.
+  local expected_docs; expected_docs="$(find "$TOPIC_DIR" -maxdepth 1 -name '*.md' \
+    ! -name 'README.md' ! -name '*-delta.md' ! -name 'research-progress.md' 2>/dev/null | wc -l | tr -d ' ')"
+  local expected_wellknown=0
+  [ -f "$TOPIC_DIR/README.md" ] && expected_wellknown=$((expected_wellknown + 1))
+  [ -f "$TOPIC_DIR/goal.json" ] && expected_wellknown=$((expected_wellknown + 1))
+  [ -f "$TOPIC_DIR/artifact.json" ] && expected_wellknown=$((expected_wellknown + 1))
+  local expected_deliverables=$((expected_docs + expected_wellknown))
   got="$("$EXPORT" "$TOPIC" "$T/full-export" 2>&1)"
   local full_resource_count; full_resource_count="$(jq '.resources | length' "$T/full-export/mif-package.json" 2>/dev/null)"
   if printf '%s' "$got" | grep -q "exported $real_finding_count finding(s) (full scope)" \
-     && [ "$full_resource_count" = "$((real_finding_count + 1))" ]; then
-    ok "full export includes every finding plus the topic's ontology-map.json, corpus untouched"
+     && [ "$full_resource_count" = "$((real_finding_count + 1 + expected_deliverables))" ]; then
+    ok "full export includes every finding plus the topic's ontology-map.json and its $expected_deliverables own deliverable(s), corpus untouched"
   else
-    bad "full export check failed: got='$got' resource_count=$full_resource_count expected_findings=$real_finding_count"
+    bad "full export check failed: got='$got' resource_count=$full_resource_count expected_findings=$real_finding_count expected_deliverables=$expected_deliverables"
   fi
   if [ -z "$(git status --porcelain "$TOPIC_DIR" 2>/dev/null)" ]; then
     ok "export never modifies reports/<topic>/ (AC10)"
@@ -3909,10 +3924,12 @@ gate_m31() {
   "$EXPORT" "$TOPIC" "$T/subset-export" --subset "$T/subset-ids.json" > /dev/null 2>&1
   local subset_resource_count; subset_resource_count="$(jq '.resources | length' "$T/subset-export/mif-package.json" 2>/dev/null)"
   local subset_scope_type; subset_scope_type="$(jq -r '.exportScope.type' "$T/subset-export/mif-package.json" 2>/dev/null)"
-  if [ "$subset_resource_count" = "3" ] && [ "$subset_scope_type" = "subset" ]; then
-    ok "subset export resolves exactly the requested findings plus ontology-map.json"
+  # 2 requested findings + ontology-map.json + the topic's deliverables,
+  # which travel unconditionally regardless of scope (#437, see 31a above).
+  if [ "$subset_resource_count" = "$((3 + expected_deliverables))" ] && [ "$subset_scope_type" = "subset" ]; then
+    ok "subset export resolves exactly the requested findings plus ontology-map.json and the topic's $expected_deliverables deliverable(s)"
   else
-    bad "subset export check failed (resource_count=$subset_resource_count scope_type=$subset_scope_type)"
+    bad "subset export check failed (resource_count=$subset_resource_count expected=$((3 + expected_deliverables)) scope_type=$subset_scope_type)"
   fi
 
   # 31d. A selector matching zero findings is a VALID export (schema's own
@@ -3972,6 +3989,73 @@ gate_m31() {
     ok "export -> import round-trip into a fresh topic reproduces the exact same @id set AND ontology-map.json"
   else
     bad "round-trip check failed (rc=$rc_roundtrip count=$roundtrip_count/$real_finding_count ids_match=$([ "$source_ids" = "$dest_ids" ] && echo yes || echo no) ontmap_match=$ontmap_match)"
+  fi
+
+  # 31f2. The topic's own deliverables (research-harness-template#437) also
+  #       travel on the same round-trip. goal.json is never touched by any
+  #       of step 5's rebuilders (build-graph.sh/build-topic-readme.sh/
+  #       build-concordance.sh act on findings/ontology-map/concordance,
+  #       never goal.json), so it is the one deliverable safe to assert
+  #       BYTE-IDENTICAL -- report-*.md and the falsification report are
+  #       likewise untouched by step 5 and checked the same way. README.md
+  #       is NOT checked this way: build-topic-readme.sh's own "build" mode
+  #       (step 5) deliberately REGENERATES it from the freshly-imported
+  #       corpus (counts, tables) while only PRESERVING the human-authored
+  #       Purpose/Key Findings sections from whatever is already at $OUT --
+  #       which, thanks to this fix, is now the just-imported README rather
+  #       than a stale skeleton. A byte-identical assertion on README.md
+  #       would be asserting the WRONG thing (it's supposed to differ in the
+  #       mechanical backbone); instead this checks that the source's
+  #       curated Key Findings prose specifically survived the rebuild --
+  #       proof the imported README participated in step 5, not proof it
+  #       was overwritten from scratch. artifact.json is not present in this
+  #       bundled example topic (this gate is deliberately read-only against
+  #       the real corpus, so one isn't fabricated here) -- its code path is
+  #       the same generic doc_dest branch goal.json already exercises, so
+  #       goal.json's coverage stands in for it; schemas/mif-container.schema.json's
+  #       own ajv checks above (31a-e) already cover the manifest-shape side
+  #       of an artifact resource.
+  local one_report; one_report="$(find "$TOPIC_DIR" -maxdepth 1 -name 'report-*.md' 2>/dev/null | LC_ALL=C sort | head -1)"
+  local one_fals; one_fals="$(find "$TOPIC_DIR" -maxdepth 1 -name '*-falsification-report.md' 2>/dev/null | LC_ALL=C sort | head -1)"
+  local report_match="no" fals_match="no" goal_match="no" readme_key_match="no"
+  if [ -n "$one_report" ] \
+     && diff -q "$one_report" "reports/$roundtrip_topic/$(basename "$one_report")" > /dev/null 2>&1; then
+    report_match="yes"
+  fi
+  if [ -n "$one_fals" ] \
+     && diff -q "$one_fals" "reports/$roundtrip_topic/$(basename "$one_fals")" > /dev/null 2>&1; then
+    fals_match="yes"
+  fi
+  if [ -f "$TOPIC_DIR/goal.json" ] \
+     && diff -q "$TOPIC_DIR/goal.json" "reports/$roundtrip_topic/goal.json" > /dev/null 2>&1; then
+    goal_match="yes"
+  fi
+  if [ -f "$TOPIC_DIR/README.md" ] && [ -f "reports/$roundtrip_topic/README.md" ]; then
+    # Inline equivalent of build-topic-readme.sh's own extract_section(): grab
+    # the "## Key Findings" section body (this test intentionally does not
+    # source that script, which would execute its whole top-level body).
+    local source_key_line
+    source_key_line="$(awk '
+      /^## Key Findings/ { grab=1; next }
+      grab && /^## / { grab=0 }
+      grab { print }
+    ' "$TOPIC_DIR/README.md" | grep -m1 -E '^- ' || true)"
+    # `--` is required: $source_key_line is a markdown bullet, so it always
+    # starts with "- " -- without `--` to end option parsing, a grep
+    # implementation that treats a leading "-" as a flag (verified: this
+    # env's `grep` resolves to ugrep, which does exactly that) silently
+    # misparses the whole pattern as invalid options instead of searching
+    # for it, and the FROM-EMPTY-STDOUT lookup wouldn't even err loudly --
+    # it errors, but "$?" alone won't say why without checking stderr, which
+    # is exactly how this was missed until run for real.
+    [ -n "$source_key_line" ] \
+      && grep -qF -- "$source_key_line" "reports/$roundtrip_topic/README.md" \
+      && readme_key_match="yes"
+  fi
+  if [ "$report_match" = "yes" ] && [ "$fals_match" = "yes" ] && [ "$goal_match" = "yes" ] && [ "$readme_key_match" = "yes" ]; then
+    ok "export -> import round-trip also carries the topic's own deliverables: a report, the falsification report, and goal.json land byte-identical; README.md's curated Key Findings prose survives step 5's rebuild (#437)"
+  else
+    bad "topic-deliverable round-trip failed (report=$report_match falsification-report=$fals_match goal=$goal_match readme-key-findings=$readme_key_match)"
   fi
 
   # 31g. Regression test for a real review-found data-loss bug: importing a

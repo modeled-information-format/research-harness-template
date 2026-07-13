@@ -25,6 +25,11 @@
 #      entries; full: the whole file) under <output-dir>/ontology-map.json.
 #      A failure partway through this validation pass leaves <output-dir>
 #      exactly as empty as it started (see the cleanup trap below).
+#   2b. Package the topic's own deliverables, if present (issue #437):
+#      rendered report(s), the falsification report, README.md, goal.json,
+#      and artifact.json -- unconditionally, regardless of full/subset
+#      scope, since these are topic-level documents rather than per-finding
+#      data. All optional.
 #   3. Compute per-resource + manifest-level digests (scripts/mif-container-
 #      digest.sh), derive ontologyBindings[] from the in-scope ontology-map
 #      entries' resolved_ontology values, and write mif-package.json.
@@ -303,6 +308,60 @@ ONTMAP_DIGEST="$(scripts/mif-container-digest.sh resource "$OUTPUT_DIR/ontology-
   || fail "failed to compute the digest of $OUTPUT_DIR/ontology-map.json"
 echo "$ONTMAP_DIGEST" >> "$DIGESTS_FILE"
 jq -n -c --arg d "$ONTMAP_DIGEST" '{mifType: "ontology-map", path: "ontology-map.json", ontologyType: null, digest: $d}' >> "$RESOURCES_JSON"
+
+# --- Step 2b: the topic's own deliverables (research-harness-template#437) --
+# Findings and ontology-map.json are the topic's DATA; the topic also
+# produces its own rendered reports, falsification report, README, goal, and
+# the report-synthesizer's typed artifact -- a topic export previously
+# omitted all of these, so a container could never actually carry a topic's
+# real deliverables between two instances (only its underlying finding
+# data). These are topic-LEVEL documents, not tied to any specific finding
+# -- unlike ontology-map.json's full-vs-subset filtering above, they are
+# packaged UNCONDITIONALLY whenever the source file exists, regardless of
+# $SCOPE_TYPE: a subset export narrows which FINDINGS travel, not which of
+# the topic's own deliverables do. All optional -- an older or
+# still-in-progress topic may legitimately lack goal.json/artifact.json/a
+# falsification report, and that is not an export failure.
+TOPIC_DIR="reports/$TOPIC"
+# Same file-classification glob build-topic-readme.sh's own Reports-table
+# uses (README.md and build-log *-delta.md are never deliverables in their
+# own right; research-progress.md is the continuity log, deliberately left
+# out of this container -- issue #437 did not ask for it, and it is instance
+# process-state rather than a portable deliverable).
+DOC_FILES="$(find "$TOPIC_DIR" -maxdepth 1 -name '*.md' \
+  ! -name 'README.md' ! -name '*-delta.md' ! -name 'research-progress.md' 2>/dev/null | LC_ALL=C sort)"
+if [ -n "$DOC_FILES" ]; then
+  mkdir -p "$OUTPUT_DIR/reports" || fail "failed to create $OUTPUT_DIR/reports"
+  while IFS= read -r docf; do
+    [ -n "$docf" ] || continue
+    container_lock_refresh "$LOCK_DIR"
+    docbase="$(basename "$docf")"
+    case "$docbase" in
+      *-falsification-report.md) doc_type="falsification-report" ;;
+      *)                         doc_type="report" ;;
+    esac
+    cp "$docf" "$OUTPUT_DIR/reports/$docbase" || fail "failed to copy $docf"
+    doc_digest="$(scripts/mif-container-digest.sh resource "$OUTPUT_DIR/reports/$docbase")" \
+      || fail "failed to compute the digest of $docbase"
+    echo "$doc_digest" >> "$DIGESTS_FILE"
+    jq -n -c --arg path "reports/$docbase" --arg t "$doc_type" --arg d "$doc_digest" \
+      '{mifType: $t, path: $path, ontologyType: null, digest: $d}' >> "$RESOURCES_JSON"
+  done <<< "$DOC_FILES"
+fi
+
+for wellknown in README.md:readme goal.json:goal artifact.json:artifact; do
+  wk_name="${wellknown%%:*}"
+  wk_type="${wellknown##*:}"
+  wk_src="$TOPIC_DIR/$wk_name"
+  [ -f "$wk_src" ] || continue
+  container_lock_refresh "$LOCK_DIR"
+  cp "$wk_src" "$OUTPUT_DIR/$wk_name" || fail "failed to copy $wk_src"
+  wk_digest="$(scripts/mif-container-digest.sh resource "$OUTPUT_DIR/$wk_name")" \
+    || fail "failed to compute the digest of $wk_name"
+  echo "$wk_digest" >> "$DIGESTS_FILE"
+  jq -n -c --arg path "$wk_name" --arg t "$wk_type" --arg d "$wk_digest" \
+    '{mifType: $t, path: $path, ontologyType: null, digest: $d}' >> "$RESOURCES_JSON"
+done
 
 # --- Step 3: ontologyBindings[] + manifest ---------------------------------
 # schemas/mif-container.schema.json requires ontologyBindings[] to be

@@ -61,6 +61,11 @@
 #      both sides; every other field (content, summary, title, citations,
 #      relationships, ontology, entity) reconciles toward the incoming
 #      container's value, same as before this story.
+#      The topic's own deliverables (research-harness-template#437) --
+#      report, falsification-report, readme, goal, artifact resources -- are
+#      also written here: a verbatim overwrite-if-digest-differs (same
+#      mktemp+mv pattern, no per-field reconciliation, since there is
+#      nothing to merge field-by-field in a whole rendered report/goal).
 #   5. Trigger the existing deterministic rebuilders (Task #323):
 #      build-graph.sh, build-topic-readme.sh, build-concordance.sh, THEN
 #      scan the rebuilt concordance for candidate cross-@id sameAs matches
@@ -188,6 +193,26 @@ while IFS=$'\t' read -r rpath rdigest rmiftype; do
     continue
   }
   [ "$actual" = "$rdigest" ] || BAD_DIGESTS="${BAD_DIGESTS}${rpath} (expected $rdigest, got $actual); "
+
+  # goal/artifact resources (research-harness-template#437) have their own
+  # schemas -- validate them here, in this same bulk pre-pass, so a
+  # schema-invalid one is rejected before ANY resource in this manifest is
+  # written, matching the "validate everything before writing anything"
+  # invariant this step already enforces for findings. README/report/
+  # falsification-report resources are free-form markdown with no schema to
+  # validate against here -- their digest check above is the only pre-write
+  # guarantee, which is sufficient (mif-project.sh's L3 gate does not apply
+  # to them; they are not finding-shaped documents).
+  if [ "$rmiftype" = "goal" ]; then
+    ajv validate --spec=draft2020 --strict=false -c ajv-formats \
+      -s schemas/goal.schema.json -d "$rfile" > /dev/null 2>&1 \
+      || BAD_SCHEMAS="${BAD_SCHEMAS}${rpath} (fails goal.schema.json); "
+  fi
+  if [ "$rmiftype" = "artifact" ]; then
+    ajv validate --spec=draft2020 --strict=false -c ajv-formats \
+      -s schemas/artifact.schema.json -d "$rfile" > /dev/null 2>&1 \
+      || BAD_SCHEMAS="${BAD_SCHEMAS}${rpath} (fails artifact.schema.json); "
+  fi
 
   if [ "$rmiftype" = "finding" ]; then
     ajv validate --spec=draft2020 --strict=false -c ajv-formats \
@@ -353,6 +378,7 @@ EXPORT_SCOPE_TYPE="$(jq -r '.exportScope.type // empty' "$MANIFEST")"
 UPSERTED=0
 SKIPPED=0
 ONTMAP_WRITTEN=0
+DOCS_WRITTEN=0
 while IFS=$'\t' read -r rpath rdigest rmiftype; do
   if [ "$rmiftype" = "ontology-map" ]; then
     rfile="$CONTAINER_DIR/$rpath"
@@ -409,6 +435,40 @@ while IFS=$'\t' read -r rpath rdigest rmiftype; do
     ONTMAP_WRITTEN=1
     continue
   fi
+
+  # The topic's own deliverables (research-harness-template#437): report,
+  # falsification-report, readme, goal, artifact. These are topic-level
+  # documents, not per-finding data, so there is no reconciliation policy to
+  # apply -- a verbatim overwrite-if-digest-differs, the same semantics as
+  # the FULL-scope ontology-map.json write above, is the only sensible
+  # meaning of "import a topic's report/goal/README/artifact": there is
+  # nothing to merge field-by-field in a whole rendered report or a goal.
+  case "$rmiftype" in
+    report|falsification-report) doc_dest="reports/$TOPIC/$(basename "$rpath")" ;;
+    readme)                      doc_dest="reports/$TOPIC/README.md" ;;
+    goal)                        doc_dest="reports/$TOPIC/goal.json" ;;
+    artifact)                    doc_dest="reports/$TOPIC/artifact.json" ;;
+    *)                           doc_dest="" ;;
+  esac
+  if [ -n "$doc_dest" ]; then
+    container_lock_refresh "$LOCK_DIR"
+    rfile="$CONTAINER_DIR/$rpath"
+    if [ -f "$doc_dest" ]; then
+      dest_digest="$(scripts/mif-container-digest.sh resource "$doc_dest" 2>/dev/null)" || dest_digest=""
+      if [ "$dest_digest" = "$rdigest" ]; then
+        SKIPPED=$((SKIPPED + 1))
+        continue
+      fi
+    fi
+    doc_stage="$(mktemp "reports/$TOPIC/.doc-import.XXXXXX")" \
+      || fail "failed to create a staging file for $rpath"
+    cp "$rfile" "$doc_stage" || { rm -f "$doc_stage"; fail "failed to stage $rpath for $TOPIC"; }
+    mv -f "$doc_stage" "$doc_dest" \
+      || { rm -f "$doc_stage"; fail "failed to publish $rpath for $TOPIC"; }
+    DOCS_WRITTEN=$((DOCS_WRITTEN + 1))
+    continue
+  fi
+
   [ "$rmiftype" = "finding" ] || continue
   # Refresh the lock every iteration (issue #382 review): a topic large
   # enough to genuinely run past CONTAINER_LOCK_STALE_MIN must not have its
@@ -507,7 +567,7 @@ while IFS=$'\t' read -r rpath rdigest rmiftype; do
     || fail "failed to write new finding $rpath via write-finding.sh"
   UPSERTED=$((UPSERTED + 1))
 done < <(jq -r '.resources[] | [.path, .digest, .mifType] | @tsv' "$MANIFEST")
-echo "mif-container-import: step 4/5 idempotent upsert OK ($UPSERTED written, $SKIPPED already up to date, ontology-map.json $([ "$ONTMAP_WRITTEN" -eq 1 ] && echo written || echo unchanged))"
+echo "mif-container-import: step 4/5 idempotent upsert OK ($UPSERTED written, $SKIPPED already up to date, ontology-map.json $([ "$ONTMAP_WRITTEN" -eq 1 ] && echo written || echo unchanged), $DOCS_WRITTEN topic deliverable(s) written)"
 
 # --- Step 5: trigger the existing deterministic rebuilders (Task #323) ------
 bash scripts/build-graph.sh "$FINDINGS_DIR" "reports/$TOPIC/knowledge-graph.json" \
