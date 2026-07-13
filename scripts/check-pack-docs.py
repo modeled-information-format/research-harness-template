@@ -12,6 +12,10 @@ Checks, all of which must pass (exit 0):
    (``packs/<family>/<component>``). Count must equal the component count.
 3. Inbound cross-links: each component dir carries a ``README.md`` linking back to
    its published doc anchor. Count must equal the component count.
+4. Bundled-inventory prose: ``packs-and-plugins.md``'s "## Bundled inventory"
+   section states a grand total and a per-family plugin count in prose (not
+   headings); both must match the real counts computed above (#431 — this
+   prose drifted twice before with nothing catching it).
 
 A pack whose ``harness.config.json`` ``packs[]`` entry declares an external
 ``source`` (``{"type": "git"|"marketplace", "url": ...}`` — see ADR/discussion
@@ -135,6 +139,80 @@ def shared_ontology_layers() -> set[str]:
     if not sch.is_dir():
         return set()
     return {p.name for p in sch.iterdir() if p.is_dir()}
+
+
+# The "## Bundled inventory" narrative in packs-and-plugins.md restates each of
+# these five families' plugin count and a grand total in prose, separate from
+# the per-component headings this script already cross-links (research-harness-template#431:
+# that prose drifted to a stale total/count twice with nothing catching it).
+# Maps the section's bold family label to its real FAMILIES key; deliberately
+# excludes "ontologies", which that section explicitly documents as not one of
+# its families (vendored on demand, called out by name as the exception).
+BUNDLED_INVENTORY_FAMILIES = {
+    "Channels": "channels",
+    "Report genres": "reports",
+    "Spec genres": "genres",
+    "Market-research methodologies": "market-research",
+    "Trend-modeling": "trend-modeling",
+}
+
+
+def _family_paragraph(body: str, label: str) -> str | None:
+    """The bold-labeled family's own paragraph: from its label up to (but not
+    including) the next blank-line-delimited bold label, or end of section.
+    Bounding the slice first (rather than searching `body` directly with an
+    unbounded regex) stops a family whose own paragraph has no matching
+    "N plugin(s)" text from silently picking up the NEXT family's count."""
+    start = body.find(f"**{label}**")
+    if start == -1:
+        return None
+    nxt = re.search(r"\n\n\*\*", body[start + 1 :])
+    end = start + 1 + nxt.start() if nxt else len(body)
+    return body[start:end]
+
+
+def check_bundled_inventory_counts(comps: dict[str, list[str]], errors: list[str]) -> None:
+    """Cross-check packs-and-plugins.md's "## Bundled inventory" prose counts
+    (total + per-family) against the real counts already computed in `comps`."""
+    doc = REPO / "docs" / "reference" / "packs-and-plugins.md"
+    if not doc.is_file():
+        errors.append(f"[bundled-inventory] missing {doc.relative_to(REPO)}")
+        return
+    text = doc.read_text(encoding="utf-8")
+    section = text.split("## Bundled inventory", 1)
+    if len(section) < 2:
+        errors.append("[bundled-inventory] no '## Bundled inventory' section found")
+        return
+    body = section[1].split("\n## ", 1)[0]
+
+    real_total = sum(len(comps.get(fam, [])) for fam in BUNDLED_INVENTORY_FAMILIES.values())
+    # Matches the emphasized "**N pack plugins**" token alone (not a specific
+    # verb like "bundles"/"covers") so a harmless wording edit can't silently
+    # break this check the way a hard-coded verb would.
+    m = re.search(r"\*\*(\d+) pack plugins\*\*", body)
+    if not m:
+        errors.append("[bundled-inventory] no '**N pack plugins**' total statement found")
+    elif int(m.group(1)) != real_total:
+        errors.append(
+            f"[bundled-inventory] stated total {m.group(1)} pack plugins != real total {real_total}"
+        )
+
+    for label, fam in BUNDLED_INVENTORY_FAMILIES.items():
+        real = len(comps.get(fam, []))
+        para = _family_paragraph(body, label)
+        if para is None:
+            errors.append(f"[bundled-inventory] no '**{label}**' paragraph found")
+            continue
+        # A single-component family says "1 plugin)" (singular); "Report
+        # genres"/"Spec genres" are followed by a comma, not ")"
+        # ("18 plugins, all consumed externally from...").
+        fm = re.search(r"(\d+) plugins?[),]", para)
+        if not fm:
+            errors.append(f"[bundled-inventory] no '(... N plugin(s))' statement found for '{label}'")
+        elif int(fm.group(1)) != real:
+            errors.append(
+                f"[bundled-inventory] {label} stated {fm.group(1)} plugins != real {real}"
+            )
 
 
 def main() -> int:
@@ -277,10 +355,15 @@ def main() -> int:
                 else:
                     inbound_total += 1
 
+    errors_before_bundled_check = len(errors)
+    check_bundled_inventory_counts(comps, errors)
+    bundled_check_problems = len(errors) - errors_before_bundled_check
+
     print("\n=== Cross-link tallies ===")
     print(f"Documented components (section present): {documented_total}/{total}")
     print(f"Outbound doc -> pack source links:       {outbound_total}/{total}")
     print(f"Inbound pack -> doc back-links:          {inbound_total}/{inbound_expected} (ontologies vendored on demand; external packs exempt)")
+    print(f"Bundled-inventory prose (total + per-family counts): {'OK' if bundled_check_problems == 0 else f'{bundled_check_problems} problem(s)'}")
 
     print("\n=== Result ===")
     if errors:
