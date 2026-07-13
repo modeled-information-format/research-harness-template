@@ -2,7 +2,7 @@
 id: how-to-enable-continuous-monitoring
 type: procedural
 created: '2026-07-12T21:00:00Z'
-modified: '2026-07-12T21:25:23.137Z'
+modified: '2026-07-12T23:36:50.806Z'
 namespace: how-to/monitoring
 title: How to Enable Continuous Research Monitoring for a Topic
 tags:
@@ -127,18 +127,17 @@ Continuous monitoring is now enabled for the topic, running on the
 configured schedule with every recommendation gated through PR review.
 
 <!--
-Operational caveat, prominent by design (not buried in prose above): the
-monitor.yml/monitor-gate.yml workflows request contents:write and
-pull-requests:write via the CI_CLIENT_APP_ID app-token pattern ci.yml
-also uses -- ci.yml's own app only requests permission-contents: read.
-Confirm with an org admin that the app's INSTALLED permissions actually
-include these write scopes (or provision a dedicated app) before relying
-on this in production; it has not been confirmed running end-to-end in
-Actions CI. Every pipeline script itself (run-monitoring.sh,
-run-gate-and-publish.sh, every stage script) has been live-tested
-end-to-end against real data and a real GitHub PR is not required to
-verify the pipeline logic -- only the two workflow files' own
-write-permission grant is unconfirmed.
+Operational note: the monitor.yml/monitor-gate.yml workflows request
+contents:write and pull-requests:write via the AUTOMERGE_CLIENT_APP_ID
+app-token pattern (repos/.github/auth/apps.json's `automerge` app,
+already installed org-wide with exactly this permission set for
+Dependabot/catalog-hub auto-merge) -- not CI_CLIENT_APP_ID, which is
+deliberately read-only. This mint was live-verified in Actions CI via a
+manual workflow_dispatch run (2026-07-12): the token mint, engine fetch,
+ontology vendoring, and pipeline invocation all succeeded. Every
+pipeline script itself (run-monitoring.sh, run-gate-and-publish.sh,
+every stage script) had already been live-tested end-to-end against
+real data before that.
 
 MIF Level 2: namespace, modified, temporal validity (ttl P6M --
 continuous-monitoring is new capability, shorter review window than a

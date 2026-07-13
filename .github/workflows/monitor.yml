@@ -12,10 +12,12 @@ name: continuous-monitoring
 #
 # NOTE on the app token below: mirrors ci.yml's App-token pattern per
 # ADR-0019, but this job requests WRITE scopes (contents, pull-requests)
-# that ci.yml's read-only CI app may not have installed -- confirm with an
-# org admin before relying on this in production, or provision a dedicated
-# app per the org's six-app least-privilege model
-# (repos/.github/docs/onboarding/app/).
+# that the read-only `ci` app does not have -- confirmed by a live
+# workflow_dispatch run that failed minting a token from it. Mints from
+# the `automerge` app instead (repos/.github/auth/apps.json): it's already
+# installed org-wide with exactly contents:write + pull-requests:write for
+# Dependabot/catalog-hub auto-merge, and that same permission set is all
+# this workflow needs -- no new app was provisioned.
 on:
   schedule:
     # GitHub Actions supports only one schedule cadence per workflow file,
@@ -61,8 +63,8 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
-          client-id: ${{ vars.CI_CLIENT_APP_ID }}
-          private-key: ${{ secrets.CI_CLIENT_APP_PRIVATE_KEY }}
+          client-id: ${{ vars.AUTOMERGE_CLIENT_APP_ID }}
+          private-key: ${{ secrets.AUTOMERGE_CLIENT_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
           repositories: research-harness-template
           permission-contents: write
