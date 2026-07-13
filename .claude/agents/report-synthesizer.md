@@ -240,7 +240,7 @@ this channel and held to L3. Exemption is for orthogonal *formats*, never genres
 stage → validate → atomic `mv`) — a write invisible to `mif-docs-plugin`'s
 provenance-capture hook, which only observes `Write`/`Edit`/`MultiEdit` tool
 calls (research-harness-template#479). Without this step, Step 4d's `stamp`
-call always DECLINEs: the session ledger has no witnessed touch of the path,
+call always DECLINES: the session ledger has no witnessed touch of the path,
 no matter how faithfully Step 4d itself is executed.
 
 Immediately after `render-artifact.sh` succeeds, re-publish the identical,
