@@ -90,8 +90,17 @@ T="$(mktemp -d)" || { note "FAIL: could not create scratch dir"; exit 1; }
 # harness.config.json/concordance.json pair, not one topic's directory.
 . "$ROOT/scripts/lib/container-lock.sh"
 LOCK_DIR="$ROOT/.eval-corpus-mutation.lock"
-container_lock_acquire "$LOCK_DIR" "mif-container-nfr-verification" \
-  || { note "FAIL: another verify.sh/eval run is already mutating harness.config.json/concordance.json (lock: $LOCK_DIR) -- wait for it to finish and retry"; rm -rf "$T"; exit 1; }
+container_lock_acquire "$LOCK_DIR" "mif-container-nfr-verification"
+acquire_rc=$?
+if [ "$acquire_rc" -ne 0 ]; then
+  if [ "$acquire_rc" -eq 3 ]; then
+    note "FAIL: another verify.sh/eval run is already mutating harness.config.json/concordance.json (lock: $LOCK_DIR) -- wait for it to finish and retry"
+  else
+    note "FAIL: could not acquire the lock at $LOCK_DIR (not contention -- rc=$acquire_rc): ${CONTAINER_LOCK_LAST_ERROR:-unknown error}"
+  fi
+  rm -rf "$T"
+  exit 1
+fi
 
 # --- Guarded backup of everything this eval mutates (real corpus, global
 #     concordance files, harness.config.json) -- same pattern gate_m31 uses,
@@ -122,20 +131,29 @@ ROUNDTRIP_TOPIC="nfr-verification-roundtrip"
 ALL_SYNTHETIC_TOPICS=("$NFR2_TOPIC" "$NFR3_TOPIC" "$NFR8_TOPIC" "$DUP_TOPIC" "$ROUNDTRIP_TOPIC")
 
 cleanup() {
+  local restore_failed=0
   cp "$T/harness.config.json.orig" harness.config.json \
-    || note "FAIL: could not restore harness.config.json from backup -- check $T/harness.config.json.orig manually"
+    || { note "FAIL: could not restore harness.config.json from backup -- check $T/harness.config.json.orig manually"; restore_failed=1; }
   cp "$T/concordance.json.orig" reports/concordance.json \
-    || note "FAIL: could not restore reports/concordance.json from backup -- check $T/concordance.json.orig manually"
+    || { note "FAIL: could not restore reports/concordance.json from backup -- check $T/concordance.json.orig manually"; restore_failed=1; }
   if [ "$had_sameas" -eq 1 ]; then
     cp "$T/concordance-sameas-proposals.json.orig" reports/concordance-sameas-proposals.json \
-      || note "FAIL: could not restore reports/concordance-sameas-proposals.json from backup -- check $T/concordance-sameas-proposals.json.orig manually"
+      || { note "FAIL: could not restore reports/concordance-sameas-proposals.json from backup -- check $T/concordance-sameas-proposals.json.orig manually"; restore_failed=1; }
   else
     rm -f reports/concordance-sameas-proposals.json
   fi
   for t in "${ALL_SYNTHETIC_TOPICS[@]}"; do
     rm -rf "reports/$t"
   done
-  rm -rf "$T"
+  # On a restore failure, the backups under $T are exactly what an operator
+  # needs to recover manually -- deleting $T here (as an earlier version of
+  # this fix did unconditionally) would destroy the only copies of the
+  # pre-mutation content the FAIL message above just told them to go check.
+  if [ "$restore_failed" -eq 0 ]; then
+    rm -rf "$T"
+  else
+    note "preserving $T (contains the pre-mutation backups) for manual recovery"
+  fi
   # Release last: a second invocation denied by the lock must never see it
   # freed before harness.config.json/concordance.json are actually restored.
   container_lock_release "$LOCK_DIR"
