@@ -18,7 +18,7 @@ related: [0007-report-channel-canonical-blog-mif-exempt.md, 0005-packs-and-plugi
 
 ## Status
 
-accepted
+Accepted
 
 ## Context
 

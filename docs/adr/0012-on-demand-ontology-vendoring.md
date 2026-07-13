@@ -18,7 +18,7 @@ related: [0008-attested-fail-closed-supply-chain.md, 0011-fail-closed-ontology-c
 
 ## Status
 
-accepted
+Accepted
 
 ## Context
 

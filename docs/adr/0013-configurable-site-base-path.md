@@ -18,7 +18,7 @@ related: [0009-site-renders-full-instance-corpus.md]
 
 ## Status
 
-accepted
+Accepted
 
 ## Context
 
