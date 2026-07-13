@@ -114,6 +114,12 @@ manifest edit. The cost is more registry entries, contained by schema-validated
 - [ADR-0001: Four-layer single-repository architecture](0001-four-layer-single-repository-architecture.md)
 - [ADR-0003: Domain-general, config-declared research dimensions](0003-config-declared-research-dimensions.md)
 
+## Links
+
+- `docs/explanation/pack-structure.md`
+- `.claude-plugin/marketplace.json`
+- `harness.config.json`
+
 ## More Information
 
 - **Date:** 2026-06-23
@@ -124,6 +130,8 @@ manifest edit. The cost is more registry entries, contained by schema-validated
 ### 2026-06-23
 
 **Status:** Compliant
+
+**Findings:**
 
 | Finding | Files | Assessment |
 | --- | --- | --- |

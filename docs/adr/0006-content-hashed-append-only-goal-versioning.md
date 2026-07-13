@@ -118,6 +118,11 @@ lineage, scope-resolution pass, and freshness fields are implemented.
 - [ADR-0003: Domain-general, config-declared research dimensions](0003-config-declared-research-dimensions.md)
 - [ADR-0004: Single adversarial falsification gate](0004-single-adversarial-falsification-gate.md)
 
+## Links
+
+- `docs/explanation/living-corpus.md`
+- `schemas/goal.schema.json`
+
 ## More Information
 
 - **Date:** 2026-06-23
@@ -128,6 +133,8 @@ lineage, scope-resolution pass, and freshness fields are implemented.
 ### 2026-06-23
 
 **Status:** Pending
+
+**Findings:**
 
 | Finding | Files | Assessment |
 | --- | --- | --- |

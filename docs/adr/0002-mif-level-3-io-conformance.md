@@ -117,6 +117,12 @@ on-demand vendoring from the canonical registry (ADR-0012).
 - [ADR-0004: Single adversarial falsification gate](0004-single-adversarial-falsification-gate.md)
 - [ADR-0007: Canonical report channel; blog MIF-exempt](0007-report-channel-canonical-blog-mif-exempt.md)
 
+## Links
+
+- `docs/explanation/mif-io-conformance.md`
+- `schemas/findings.schema.json`
+- `harness.config.json`
+
 ## More Information
 
 - **Date:** 2026-06-23
@@ -127,6 +133,8 @@ on-demand vendoring from the canonical registry (ADR-0012).
 ### 2026-06-23
 
 **Status:** Compliant
+
+**Findings:**
 
 | Finding | Files | Assessment |
 | --- | --- | --- |

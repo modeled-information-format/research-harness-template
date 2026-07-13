@@ -18,7 +18,7 @@ related: [0007-report-channel-canonical-blog-mif-exempt.md, 0005-packs-and-plugi
 
 ## Status
 
-Accepted
+accepted
 
 ## Context
 
@@ -48,19 +48,62 @@ and falsification output:
 4. **The sidebar is unusable at corpus scale.** With dozens of topics every group
    expanded by default, the navigation is an unscannable wall.
 
-### Decision Drivers
+## Decision Drivers
 
-- The site must build and navigate the *clone's* corpus, not just the template's
-  example — the corpus is the product.
-- Fixes belong at the template source (`.jinja`, `copier.yml` tasks, gates,
-  config), never as instance hand-patches, so `copier update` propagates them.
-- No regression of the existing report channel: canonical L3 reports and genre
-  deliverables stay pages; continuity logs and nav indexes stay out of the
-  collection (ADR-0007).
+### Primary Decision Drivers
+
+1. PDD-1: The site must build and navigate the *clone's* corpus, not just the
+   template's example — the corpus is the product.
+2. PDD-2: Fixes belong at the template source (`.jinja`, `copier.yml` tasks,
+   gates, config), never as instance hand-patches, so `copier update`
+   propagates them.
+
+### Secondary Decision Drivers
+
+1. SDD-1: No regression of the existing report channel: canonical L3 reports
+   and genre deliverables stay pages; continuity logs and nav indexes stay out
+   of the collection (ADR-0007).
+
+## Considered Options
+
+### Option 1: Hand-patch each instantiated clone as gaps surface
+
+Leave the template source as-is and fix each gap directly in an instantiated
+clone whenever it's hit (frontmatter, symlinks, glob exclusions, sidebar).
+
+**Advantages:** No template-level change required; a fix can land immediately
+in the one clone that hit the problem.
+
+**Disadvantages:** Violates PDD-2 directly — a hand-patch never propagates via
+`copier update`, so every other clone (and every future clone) hits the same
+four gaps independently; the fixes never converge into one maintained source.
+
+**Risk Assessment:** Technical — the same four gaps recur in every clone
+indefinitely; Schedule — fast for one clone, unbounded across the fleet;
+Ecosystem — no convergence, growing maintenance burden per instance.
+
+### Option 2: Fix all four gaps at the template source (chosen)
+
+Close each gap in the template itself — the `.jinja` template, Copier `_tasks`,
+`gate_m23`'s assertions, and the content-glob/sidebar config — so every current
+and future clone gets the fix automatically via `copier update`.
+
+**Advantages:** One fix propagates to every clone via the normal update path;
+gate-enforced so a regression (like the second symlink silently flattening) is
+caught in CI, not discovered by a user; consistent with how every other
+template-level fix in this repo is made.
+
+**Disadvantages:** The gaps are invisible in the template's own CI (single
+example topic), so each one had to be discovered via a real instantiated
+clone first, then back-ported to the template source.
+
+**Risk Assessment:** Technical — low, reuses `gate_m23`'s existing assertion
+pattern; Schedule — one coordinated fix across four gaps; Ecosystem — every
+`copier`-instantiated clone benefits without per-instance action.
 
 ## Decision
 
-Close the four gaps at the source:
+Option 2. Close the four gaps at the source:
 
 1. **`harness-instance.md.jinja` ships Starlight frontmatter** (`title`,
    `description`) and drops the duplicate H1 (Starlight renders the title).
@@ -90,14 +133,27 @@ remain pages.
 - The fixes propagate through `copier update` because they live in the template
   source and are gate-enforced.
 
-### Negative / Trade-offs
+### Negative
 
-- The audit/continuity artifacts (falsification reports, deltas, build specs) are
-  not browsable as site pages. They remain in `reports/` for the corpus and the
-  gates; only the site projection omits them.
+- The audit/continuity artifacts (falsification reports, deltas, build specs) were
+  not browsable as site pages under the original decision. They remain in `reports/`
+  for the corpus and the gates; only the site projection omitted them.
   *(Falsification reports are now served — see the amendment.)*
-- The per-topic README is still not a navigable page (follow-up).
-  *(Now served as the topic index — see the amendment.)*
+- The per-topic README was still not a navigable page under the original decision
+  (follow-up). *(Now served as the topic index — see the amendment.)*
+
+### Neutral
+
+- This decision was amended the same day (2026-06-28) to reverse part of point
+  3's exclusions once the original trade-off proved wrong for the product — see
+  the Amendment below.
+
+## Decision Outcome
+
+Fixing all four gaps at the template source (Option 2) lets every instantiated
+clone build and navigate its own full corpus without per-instance hand-patches,
+with `gate_m23` enforcing the symlinks and exclusions so a regression is caught
+in CI rather than discovered by a user in a real clone.
 
 ## Amendment (2026-06-28): serve the full deliverable tree
 
@@ -129,3 +185,40 @@ Only `reports/_meta/`, `findings/*.json`, and the `*-delta.md` / `*-build-spec.m
 logs remain excluded (data/logs with no stable page shape). `gate_m23` is updated to assert
 the loader markers, that the README/falsification/research-progress negations are gone, and
 that the example topic's deliverables each carry a derivable H1.
+
+## Related Decisions
+
+- ADR-0005: the packs/plugins extension model whose optional channels (book,
+  diataxis, …) this site projection must not break.
+- ADR-0007: the canonical report channel and MIF-exempt blog projection this
+  site renders without regression.
+
+## Links
+
+- `src/content.config.ts` — the content-loader wrapper (derived titles, README re-slug).
+- `astro.config.mjs` — sidebar config, `collapsed: true`, the `Sidebar` filter override.
+- `scripts/build-topic-readme.sh` — the canonical Type → Title ordering the README index uses.
+- `scripts/verify.sh` (`gate_m23`) — the gate asserting both symlinks, the exclusions, and the loader markers.
+
+## More Information
+
+- **Date:** 2026-06-28
+- **Source:** `src/content.config.ts`, `astro.config.mjs`, `scripts/verify.sh` (`gate_m23`), issues #164/#165.
+
+## Audit
+
+### 2026-06-28
+
+**Status:** Compliant
+
+**Findings:**
+
+| Finding | Files | Assessment |
+| --- | --- | --- |
+| Both symlinks re-established and gate-asserted | Copier `_tasks`, `gate_m23` | compliant |
+| Content-glob excludes audit/continuity artifacts, gate-enforced | `src/content.config.ts`, `gate_m23` | compliant |
+| Full deliverable tree served per the same-day amendment | `src/content.config.ts` (`reportsLoader`/`deriveTitleFromH1`), `scripts/build-topic-readme.sh` | compliant |
+
+**Summary:** All four original gaps closed at the template source; the same-day amendment additionally reversed the README/falsification-report exclusion so the full deliverable tree renders.
+
+**Action Required:** None.

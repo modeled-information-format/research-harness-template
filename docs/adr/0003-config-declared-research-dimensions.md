@@ -110,6 +110,11 @@ schema validation of the manifest.
 - [ADR-0005: Packs and plugins extension model](0005-packs-and-plugins-extension-model.md)
 - [ADR-0006: Content-hashed, append-only goal versioning](0006-content-hashed-append-only-goal-versioning.md)
 
+## Links
+
+- `harness.config.json`
+- `schemas/goal.schema.json`
+
 ## More Information
 
 - **Date:** 2026-06-23
@@ -120,6 +125,8 @@ schema validation of the manifest.
 ### 2026-06-23
 
 **Status:** Compliant
+
+**Findings:**
 
 | Finding | Files | Assessment |
 | --- | --- | --- |

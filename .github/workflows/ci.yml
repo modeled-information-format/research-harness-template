@@ -213,3 +213,22 @@ jobs:
             exit 1
           fi
           echo "pin-check: every action is pinned to a 40-char commit SHA"
+
+  # Issue #435: docs/adr/*.md follow the Structured MADR shape by convention
+  # but were never actually validated by CI. Wired in smadr (strict) mode
+  # only -- not mif mode -- per the explicit scope decision for this issue;
+  # every existing ADR was remediated to pass strict mode before this gate
+  # went live (fixed research-harness-template#435).
+  adr-smadr:
+    name: adr-smadr
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Validate ADRs — structured-MADR mode (strict)
+        uses: modeled-information-format/structured-madr@325eafe9a17a23e716daffddac5db10ee178c08e # main: internal actions SHA-pinned (org policy)
+        with:
+          mode: smadr
+          path: docs/adr
+          pattern: "[0-9]*.md"
+          strict: "true"
+          fail-on-error: "true"

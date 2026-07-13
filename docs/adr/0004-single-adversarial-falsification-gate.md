@@ -114,6 +114,10 @@ is the same assumption that applies to any agent-driven research step.
 - [ADR-0002: MIF Level-3 I/O conformance](0002-mif-level-3-io-conformance.md)
 - [ADR-0007: Canonical report channel; blog MIF-exempt](0007-report-channel-canonical-blog-mif-exempt.md)
 
+## Links
+
+- `scripts/falsify.sh`, design spec §6b (falsification-analyst)
+
 ## More Information
 
 - **Date:** 2026-06-23
@@ -124,6 +128,8 @@ is the same assumption that applies to any agent-driven research step.
 ### 2026-06-23
 
 **Status:** Compliant
+
+**Findings:**
 
 | Finding | Files | Assessment |
 | --- | --- | --- |
