@@ -2,7 +2,7 @@
 id: reference-packs-and-plugins
 type: semantic
 created: '2026-06-23T09:41:01-04:00'
-modified: '2026-07-13T12:38:22.676Z'
+modified: '2026-07-13T13:18:47.755Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -58,8 +58,10 @@ packs/
     └── trend-modeling/
 ```
 
-There is no `packs/ontologies/` directory: domain ontologies are vendored on
-demand from the canonical registry (ADR-0012), not bundled — see
+`packs/ontologies/` is not a bundled directory: domain ontologies are vendored
+on demand from the canonical registry (ADR-0012), materializing under
+`packs/ontologies/<id>/` only once `scripts/fetch-ontology.sh` vendors one — it
+may be absent or empty on a fresh, unvendored clone. See
 [Ontology packs](packs/ontologies.md) and `scripts/fetch-ontology.sh`.
 
 There is no `packs/reports/` directory: all 18 report genres are consumed
@@ -271,8 +273,8 @@ per ADR-0018 — no `packs/genres/` directory):
 **Trend-modeling** — three-valued scenario methodology
 ([`packs/trend-modeling/`](packs/trend-modeling.md), 1 plugin): `trend-modeling`.
 
-Domain ontologies are not one of the five families above — there is no
-`packs/ontologies/` directory. They are vendored on demand from the canonical
+Domain ontologies are not one of the five families above — `packs/ontologies/`
+isn't a bundled directory; it's populated on demand from the canonical
 registry per ADR-0012, with the enabled set declared in `harness.config.json`
 `ontologies[]`; see [Ontology packs](packs/ontologies.md) and
 `scripts/fetch-ontology.sh`.

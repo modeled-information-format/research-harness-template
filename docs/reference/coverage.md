@@ -2,7 +2,7 @@
 id: reference-coverage
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-13T13:00:25.927Z'
+modified: '2026-07-13T13:18:58.812Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -105,8 +105,9 @@ Plugin packs (39, registered in `harness.config.json` `packs[]`):
 | nist-sp | reports | [packs/reports.md](packs/reports.md#nist-sp) |
 
 Ontology data packs (23, enabled in `harness.config.json` `ontologies[]`,
-vendored on demand per ADR-0012 — there is no `packs/ontologies/` directory
-to `ls`, see [Ontology packs](packs/ontologies.md)):
+vendored on demand per ADR-0012 — `packs/ontologies/` isn't a bundled
+directory and may be absent on a fresh, unvendored clone, see
+[Ontology packs](packs/ontologies.md)):
 
 | Pack | Documented in |
 | --- | --- |
