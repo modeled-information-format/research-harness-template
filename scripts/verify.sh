@@ -3798,7 +3798,7 @@ gate_m31() {
   # a number that silently drifts if the bundled example topic's own files
   # change.
   local expected_docs; expected_docs="$(find "$TOPIC_DIR" -maxdepth 1 -name '*.md' \
-    ! -name 'README.md' ! -name '*-delta.md' ! -name 'research-progress.md' 2>/dev/null | wc -l | tr -d ' ')"
+    \( -name 'report-*.md' -o -name '*-falsification-report.md' \) 2>/dev/null | wc -l | tr -d ' ')"
   local expected_wellknown=0
   [ -f "$TOPIC_DIR/README.md" ] && expected_wellknown=$((expected_wellknown + 1))
   [ -f "$TOPIC_DIR/goal.json" ] && expected_wellknown=$((expected_wellknown + 1))
@@ -3996,8 +3996,9 @@ gate_m31() {
   #       of step 5's rebuilders (build-graph.sh/build-topic-readme.sh/
   #       build-concordance.sh act on findings/ontology-map/concordance,
   #       never goal.json), so it is the one deliverable safe to assert
-  #       BYTE-IDENTICAL -- report-*.md and the falsification report are
-  #       likewise untouched by step 5 and checked the same way. README.md
+  #       BYTE-IDENTICAL -- any report deliverable and the falsification
+  #       report are likewise untouched by step 5 and checked the same way.
+  #       README.md
   #       is NOT checked this way: build-topic-readme.sh's own "build" mode
   #       (step 5) deliberately REGENERATES it from the freshly-imported
   #       corpus (counts, tables) while only PRESERVING the human-authored
@@ -4015,7 +4016,21 @@ gate_m31() {
   #       goal.json's coverage stands in for it; schemas/mif-container.schema.json's
   #       own ajv checks above (31a-e) already cover the manifest-shape side
   #       of an artifact resource.
-  local one_report; one_report="$(find "$TOPIC_DIR" -maxdepth 1 -name 'report-*.md' 2>/dev/null | LC_ALL=C sort | head -1)"
+  # Scoped to the `report-*.md` convention deliberately, matching export.sh's
+  # own inclusion-based glob: only genuine report-channel L3 documents (no
+  # top-level `genre:` frontmatter key, per build-topic-readme.sh's
+  # file_genre() discriminator) travel as mifType "report". This topic's own
+  # kiro-*/build-spec.md/synthesis-*.md files carry an explicit `genre:` key
+  # (synthesis-*.md is even `mifExempt: true`) and are a different document
+  # family that export.sh does NOT sweep into the container -- validating
+  # them via mif-project.sh's L3 findings-schema gate on import would reject
+  # them, since they were never produced by report-synthesizer in the first
+  # place (discovered chasing a false premise while fixing PR #491's
+  # report-validation-gap finding: the original fix applied mif-project.sh to
+  # every mifType "report" resource, which regressed on this exact topic
+  # before the export-side glob was narrowed to match).
+  local one_report; one_report="$(find "$TOPIC_DIR" -maxdepth 1 -name 'report-*.md' \
+    2>/dev/null | LC_ALL=C sort | head -1)"
   local one_fals; one_fals="$(find "$TOPIC_DIR" -maxdepth 1 -name '*-falsification-report.md' 2>/dev/null | LC_ALL=C sort | head -1)"
   local report_match="no" fals_match="no" goal_match="no" readme_key_match="no"
   if [ -n "$one_report" ] \

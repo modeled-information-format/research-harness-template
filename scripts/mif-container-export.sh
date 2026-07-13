@@ -323,13 +323,25 @@ jq -n -c --arg d "$ONTMAP_DIGEST" '{mifType: "ontology-map", path: "ontology-map
 # still-in-progress topic may legitimately lack goal.json/artifact.json/a
 # falsification report, and that is not an export failure.
 TOPIC_DIR="reports/$TOPIC"
-# Same file-classification glob build-topic-readme.sh's own Reports-table
-# uses (README.md and build-log *-delta.md are never deliverables in their
-# own right; research-progress.md is the continuity log, deliberately left
-# out of this container -- issue #437 did not ask for it, and it is instance
-# process-state rather than a portable deliverable).
+# Inclusion-based, not exclusion-based: only files matching the genuine
+# report-channel naming convention travel as mifType report/falsification-report.
+# build-topic-readme.sh's own file_genre() names the discriminator this glob
+# follows -- a true report-channel L3 document (report-synthesizer output,
+# report_type()'s "report-<genre>.md" bucket) carries NO top-level `genre:`
+# frontmatter key; build-spec/kiro-*/synthesis(blog) deliverables are a
+# different document family entirely and DO stamp their own `genre:` key
+# (confirmed empirically: report-*.md files never carry genre:, while
+# example-okf-mif-knowledge-spine-kiro-design.md/-build-spec.md/-kiro-*.md and
+# synthesis-*.md all do -- the latter is even explicitly `mifExempt: true`,
+# i.e. deliberately outside the L3 findings-schema gate). Validating those
+# non-report genres via mif-project.sh on import would reject legitimate
+# exports, so they are out of scope here (not asked for by issue #437) rather
+# than swept in as mifType "report". README.md, *-delta.md, and
+# research-progress.md are excluded for the same reason as before: none of
+# them are report-channel deliverables either (research-progress.md is the
+# continuity log, instance process-state, not a portable deliverable).
 DOC_FILES="$(find "$TOPIC_DIR" -maxdepth 1 -name '*.md' \
-  ! -name 'README.md' ! -name '*-delta.md' ! -name 'research-progress.md' 2>/dev/null | LC_ALL=C sort)"
+  \( -name 'report-*.md' -o -name '*-falsification-report.md' \) 2>/dev/null | LC_ALL=C sort)"
 if [ -n "$DOC_FILES" ]; then
   mkdir -p "$OUTPUT_DIR/reports" || fail "failed to create $OUTPUT_DIR/reports"
   while IFS= read -r docf; do

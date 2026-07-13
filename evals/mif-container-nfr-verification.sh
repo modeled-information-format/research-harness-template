@@ -315,20 +315,28 @@ rm -rf "reports/$NFR8_TOPIC"
 # lives, not lie about its origin), not a regression. The invariant this
 # eval actually cares about -- every piece of real CONTENT survives the
 # round-trip byte-for-byte -- still holds and is what is checked here:
-# every non-readme resource's digest set is unchanged.
+# every non-readme resource's path+digest is unchanged.
 # =====================================================================
 register_topic "$ROUNDTRIP_TOPIC"
 "$IMPORT" "$T/build-a" "$ROUNDTRIP_TOPIC" > /dev/null 2>&1
 rc_roundtrip_import=$?
 "$EXPORT" "$ROUNDTRIP_TOPIC" "$T/build-c" > /dev/null 2>&1
 rc_roundtrip_export=$?
-content_digests_a="$(jq -r '.resources[] | select(.mifType != "readme") | .digest' "$T/build-a/mif-package.json" 2>/dev/null | LC_ALL=C sort)"
-content_digests_c="$(jq -r '.resources[] | select(.mifType != "readme") | .digest' "$T/build-c/mif-package.json" 2>/dev/null | LC_ALL=C sort)"
+# path+digest PAIRS, not just the digest multiset (Copilot review, PR #491):
+# a bare digest-set comparison would false-green if a resource were dropped
+# and a different one added whose digest happened to coincide (or if any
+# two resources ever shared a digest) -- resources[].path never encodes the
+# topic id (paths are "findings/<slug>.json", "reports/<name>.md",
+# "goal.json", ...), so a real round-trip's paths are stable across a
+# destination with a different registered title/namespace, same as the
+# digests themselves.
+content_pairs_a="$(jq -r '.resources[] | select(.mifType != "readme") | "\(.path)\t\(.digest)"' "$T/build-a/mif-package.json" 2>/dev/null | LC_ALL=C sort)"
+content_pairs_c="$(jq -r '.resources[] | select(.mifType != "readme") | "\(.path)\t\(.digest)"' "$T/build-c/mif-package.json" 2>/dev/null | LC_ALL=C sort)"
 if [ "$rc_roundtrip_import" -eq 0 ] && [ "$rc_roundtrip_export" -eq 0 ] \
-   && [ -n "$content_digests_a" ] && [ "$content_digests_a" = "$content_digests_c" ]; then
-  pass "round-trip content-digest byte-identity (export -> import into fresh instance -> export again: every non-readme resource unchanged; README.md is expected to differ, since it deterministically reflects the destination topic's own identity)"
+   && [ -n "$content_pairs_a" ] && [ "$content_pairs_a" = "$content_pairs_c" ]; then
+  pass "round-trip content-digest byte-identity (export -> import into fresh instance -> export again: every non-readme resource's path+digest unchanged; README.md is expected to differ, since it deterministically reflects the destination topic's own identity)"
 else
-  bad "round-trip content-digest byte-identity (rc_import=$rc_roundtrip_import rc_export=$rc_roundtrip_export match=$([ "$content_digests_a" = "$content_digests_c" ] && echo yes || echo no))"
+  bad "round-trip content-digest byte-identity (rc_import=$rc_roundtrip_import rc_export=$rc_roundtrip_export match=$([ "$content_pairs_a" = "$content_pairs_c" ] && echo yes || echo no))"
 fi
 
 if [ -z "$(git status --porcelain "$TOPIC_DIR" 2>/dev/null)" ]; then

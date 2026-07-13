@@ -198,11 +198,21 @@ while IFS=$'\t' read -r rpath rdigest rmiftype; do
   # schemas -- validate them here, in this same bulk pre-pass, so a
   # schema-invalid one is rejected before ANY resource in this manifest is
   # written, matching the "validate everything before writing anything"
-  # invariant this step already enforces for findings. README/report/
-  # falsification-report resources are free-form markdown with no schema to
-  # validate against here -- their digest check above is the only pre-write
-  # guarantee, which is sufficient (mif-project.sh's L3 gate does not apply
-  # to them; they are not finding-shaped documents).
+  # invariant this step already enforces for findings. README and
+  # falsification-report resources are genuinely free-form markdown with no
+  # schema to validate against -- their digest check above is the only
+  # pre-write guarantee, which is sufficient for them.
+  #
+  # `report` resources are NOT in that same "no schema" bucket (code-comment-
+  # compliance review, PR #491 caught this): report-synthesizer.md's Step 4b
+  # states the report channel "is the canonical MIF Level-3 source of
+  # truth ... it is a basic markdown report and is therefore never exempt,"
+  # write-then-validated at render time via scripts/mif-project.sh against
+  # schemas/findings.schema.json plus the citation-integrity gate (which
+  # rejects a falsified verdict). A digest-only check here would let a
+  # corrupted or falsified report be written into the destination corpus
+  # with zero content validation, while finding/goal/artifact all get one --
+  # so run the same mif-project.sh gate here too, before any write.
   if [ "$rmiftype" = "goal" ]; then
     ajv validate --spec=draft2020 --strict=false -c ajv-formats \
       -s schemas/goal.schema.json -d "$rfile" > /dev/null 2>&1 \
@@ -212,6 +222,10 @@ while IFS=$'\t' read -r rpath rdigest rmiftype; do
     ajv validate --spec=draft2020 --strict=false -c ajv-formats \
       -s schemas/artifact.schema.json -d "$rfile" > /dev/null 2>&1 \
       || BAD_SCHEMAS="${BAD_SCHEMAS}${rpath} (fails artifact.schema.json); "
+  fi
+  if [ "$rmiftype" = "report" ]; then
+    scripts/mif-project.sh "$rfile" > /dev/null 2>&1 \
+      || BAD_SCHEMAS="${BAD_SCHEMAS}${rpath} (does not project to a valid MIF L3 finding -- fails schema, citation-integrity, or carries a falsified verdict); "
   fi
 
   if [ "$rmiftype" = "finding" ]; then
@@ -460,6 +474,14 @@ while IFS=$'\t' read -r rpath rdigest rmiftype; do
         continue
       fi
     fi
+    # Re-verify the incoming file's digest immediately before staging/
+    # publishing (Copilot review, PR #491) -- closes the same TOCTOU window
+    # between step 2's bulk verification and this write that the finding
+    # overwrite-in-place path below already closes with its own `recheck`.
+    doc_recheck="$(scripts/mif-container-digest.sh resource "$rfile" 2>/dev/null)" \
+      || fail "failed to re-verify the digest of $rpath immediately before writing"
+    [ "$doc_recheck" = "$rdigest" ] \
+      || fail "$rpath's digest changed between verification and write (expected $rdigest, got $doc_recheck) -- refusing to write unverified content"
     doc_stage="$(mktemp "reports/$TOPIC/.doc-import.XXXXXX")" \
       || fail "failed to create a staging file for $rpath"
     cp "$rfile" "$doc_stage" || { rm -f "$doc_stage"; fail "failed to stage $rpath for $TOPIC"; }
