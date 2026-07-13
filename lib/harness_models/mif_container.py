@@ -23,7 +23,16 @@ class OntologyBinding(TypedDict):
 
 
 class Resource(TypedDict):
-    mifType: Literal["finding", "ontology-map", "concordance"]
+    mifType: Literal[
+        "finding",
+        "ontology-map",
+        "concordance",
+        "report",
+        "falsification-report",
+        "readme",
+        "goal",
+        "artifact",
+    ]
     path: str
     ontologyType: str | None
     digest: str
