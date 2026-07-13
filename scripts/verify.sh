@@ -294,6 +294,17 @@ gate_m3() {
   else
     bad "report-synthesizer.md (#383) regression: $rs_fail"
   fi
+
+  # research-harness-template#479: render-artifact.sh's report-channel publish
+  # is a raw filesystem mv, invisible to mif-docs-plugin's Write/Edit/MultiEdit-
+  # only provenance-capture hook. Step 4d's `stamp` call can only ever succeed
+  # if the rendered content is re-published through the Write tool first --
+  # require that instruction survive between Step 4b and Step 4d.
+  if grep -qE 're-publish the identical' "$RS" && grep -qiE 'Write.*that exact same content back' "$RS"; then
+    ok "report-synthesizer.md (#479): Write-tool re-publish step present between render and provenance-stamp"
+  else
+    bad "report-synthesizer.md (#479) regression: missing the Write-tool re-publish step render-artifact.sh's raw mv needs to make Step 4d's stamp reachable"
+  fi
 }
 
 # ---------------------------------------------------------------------------

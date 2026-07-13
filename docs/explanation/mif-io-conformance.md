@@ -2,7 +2,7 @@
 id: explanation-mif-io-conformance
 type: semantic
 created: '2026-06-20T06:10:40-04:00'
-modified: '2026-07-13T14:57:33.850Z'
+modified: '2026-07-13T15:33:35.524Z'
 namespace: docs/explanation
 tags:
   - documentation
@@ -87,7 +87,12 @@ provenance block from a model-asserted one that merely has the right shape.
 provenance via `mif-docs-plugin`'s `mif-provenance` skill (the mif-docs-as-
 substrate decision, ADR-0018, research-harness-template#407) after
 `scripts/render-artifact.sh` has already write-then-validated the report's schema
-conformance. The two mechanisms are complementary, not redundant:
+conformance. `render-artifact.sh` publishes via a raw filesystem `mv`, which the
+capture hook cannot see (it only observes `Write`/`Edit`/`MultiEdit` tool calls)
+— so Step 4b's own instructions now re-publish the identical, already-validated
+content through the `Write` tool immediately afterward, purely to make that
+write ledger-visible before Step 4d runs (research-harness-template#479). The
+two conformance mechanisms are complementary, not redundant:
 
 - **Schema conformance** (this document's invariant, ADR-0002): does the
   report's frontmatter/body project losslessly to a valid MIF L3 document?
