@@ -26,6 +26,7 @@ on:
       - "package-lock.json"
       - "patches/**"
       - "scripts/check-pack-docs.py"
+      - "scripts/check-coverage-doc.py"
       - ".github/workflows/docs.yml"
   # NOT path-filtered: `build` is a REQUIRED status check on main. A required check
   # that is path-filtered never reports on a PR that misses the filter — it sits
@@ -64,6 +65,9 @@ jobs:
 
       - name: Pack docs coverage (bidirectional docs <-> packs cross-links)
         run: python3 scripts/check-pack-docs.py
+
+      - name: Coverage doc counts (research-harness-template#481)
+        run: python3 scripts/check-coverage-doc.py
 
   # Auto-publish: after a green build on a push to main, tell the org Pages site to
   # rebuild and redeploy by firing the `source-updated` repository_dispatch its
