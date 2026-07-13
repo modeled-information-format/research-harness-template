@@ -69,20 +69,44 @@ fi
 
 T="$(mktemp -d)" || { note "FAIL: could not create scratch dir"; exit 1; }
 
+# research-harness-template#492: this eval is the ONLY one that mutates the
+# real, shared, tracked harness.config.json/concordance.json in place (every
+# other eval and verify.sh's own Milestone 8 corpus-import test operate on an
+# isolated copy under their own mktemp dir instead). Nothing protected that
+# mutation window before this fix -- an orphaned leftover process from a
+# killed prior run (killing a parent script's PID does NOT stop its
+# already-spawned children; confirmed empirically -- they keep mutating
+# shared repo state in the background, unnoticed) or a second, genuinely
+# concurrent session running verify.sh/run-evals.sh in the SAME worktree
+# (this workspace routinely runs several sessions at once) could race this
+# exact backup/mutate/restore window against a second overlapping
+# invocation, producing exactly the class of transient, hard-to-reproduce
+# "engine smoke test failed"/"eval suite failed" flake #492 reports (a
+# later Milestone reading harness.config.json mid-mutation by the OTHER
+# invocation). Guarded with the same mkdir-based lock
+# scripts/mif-container-export.sh/import.sh already use for per-topic
+# locking (scripts/lib/container-lock.sh) -- a repo-root lock instead of a
+# per-topic one, since the resource being protected here is the shared
+# harness.config.json/concordance.json pair, not one topic's directory.
+. "$ROOT/scripts/lib/container-lock.sh"
+LOCK_DIR="$ROOT/.eval-corpus-mutation.lock"
+container_lock_acquire "$LOCK_DIR" "mif-container-nfr-verification" \
+  || { note "FAIL: another verify.sh/eval run is already mutating harness.config.json/concordance.json (lock: $LOCK_DIR) -- wait for it to finish and retry"; rm -rf "$T"; exit 1; }
+
 # --- Guarded backup of everything this eval mutates (real corpus, global
 #     concordance files, harness.config.json) -- same pattern gate_m31 uses,
 #     hardened after its own Story #328 review finding (an unchecked backup
 #     here would make the restore silently no-op too, corrupting real
 #     tracked files on a rare I/O failure). ---
 cp harness.config.json "$T/harness.config.json.orig" \
-  || { note "FAIL: could not back up harness.config.json"; rm -rf "$T"; exit 1; }
+  || { note "FAIL: could not back up harness.config.json"; container_lock_release "$LOCK_DIR"; rm -rf "$T"; exit 1; }
 cp reports/concordance.json "$T/concordance.json.orig" \
-  || { note "FAIL: could not back up reports/concordance.json"; rm -rf "$T"; exit 1; }
+  || { note "FAIL: could not back up reports/concordance.json"; container_lock_release "$LOCK_DIR"; rm -rf "$T"; exit 1; }
 had_sameas=0
 [ -f reports/concordance-sameas-proposals.json ] && {
   had_sameas=1
   cp reports/concordance-sameas-proposals.json "$T/concordance-sameas-proposals.json.orig" \
-    || { note "FAIL: could not back up concordance-sameas-proposals.json"; rm -rf "$T"; exit 1; }
+    || { note "FAIL: could not back up concordance-sameas-proposals.json"; container_lock_release "$LOCK_DIR"; rm -rf "$T"; exit 1; }
 }
 # Each NFR block below that needs a synthetic destination topic gets its OWN
 # id (never reused across blocks) -- register_topic() appends unconditionally
@@ -112,6 +136,9 @@ cleanup() {
     rm -rf "reports/$t"
   done
   rm -rf "$T"
+  # Release last: a second invocation denied by the lock must never see it
+  # freed before harness.config.json/concordance.json are actually restored.
+  container_lock_release "$LOCK_DIR"
 }
 trap cleanup EXIT
 
