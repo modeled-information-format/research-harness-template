@@ -2,7 +2,7 @@
 id: reference-coverage
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-12T21:38:12.254Z'
+modified: '2026-07-13T13:00:25.927Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -18,7 +18,7 @@ provenance:
   '@type': Provenance
   agent: claude-code/claude-sonnet-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:581ee0b6-ce7b-4099-a6dd-2fbb44ce2e1c
+    '@id': urn:mif:activity:claude-code-session:878c53f7-09b4-4f64-bb13-e210d7c2f073
     '@type': prov:Activity
   trustLevel: user_stated
   agentVersion: 2.1.207
@@ -35,12 +35,12 @@ the **discovered** set equals the **documented** set.
 
 | Category | Discovered | Documented | Source of truth |
 | --- | --- | --- | --- |
-| Packs | 62 | 58 | `harness.config.json` `packs[]` + `packs/ontologies/` — stale, see #481 |
+| Packs | 62 | 62 | `harness.config.json` `packs[]` + `ontologies[]` |
 | Core skills | 10 | 10 | `.claude/skills/*/SKILL.md` |
-| Commands | 11 | 9 | `.claude/commands/*.md` — stale, see #481 |
+| Commands | 11 | 11 | `.claude/commands/*.md` |
 | Agents | 7 | 7 | `.claude/agents/*.md` |
-| Scripts | 74 | 65 | `scripts/**` (excludes `__pycache__`) — the 9-script gap predates Epic #416 and shares #481's root cause; the 23 scripts Epic #416 added (`scripts/monitoring/**`) are fully itemized below |
-| **Total** | **164** | **149** | — |
+| Scripts | 76 | 76 | `scripts/**` (excludes `__pycache__`); the 24 scripts Epic #416 added (`scripts/monitoring/**`) are fully itemized below |
+| **Total** | **166** | **166** | — |
 
 Reproduce the discovered counts:
 
@@ -50,7 +50,7 @@ ls .claude/skills | wc -l        # 10 core skills
 ls .claude/commands/*.md | wc -l # 11 commands
 ls .claude/agents/*.md | wc -l   # 7 agents
 find scripts -type f \( -name '*.sh' -o -name '*.py' -o -name '*.jq' \) \
-  | grep -v __pycache__ | wc -l  # 74 scripts
+  | grep -v __pycache__ | wc -l  # 76 scripts
 ```
 
 Domain ontology packs are vendored on demand (ADR-0012) — `packs/ontologies/`
@@ -58,9 +58,9 @@ may be empty on a fresh clone until `scripts/fetch-ontology.sh --all-enabled`
 runs. `harness.config.json` `ontologies[]` is the enabled/declared set and the
 authoritative count either way.
 
-## Packs (58)
+## Packs (62)
 
-Plugin packs (37, registered in `harness.config.json` `packs[]`):
+Plugin packs (39, registered in `harness.config.json` `packs[]`):
 
 | Pack | Family | Documented in |
 | --- | --- | --- |
@@ -104,8 +104,9 @@ Plugin packs (37, registered in `harness.config.json` `packs[]`):
 | competitive-quadrant | reports | [packs/reports.md](packs/reports.md#competitive-quadrant) |
 | nist-sp | reports | [packs/reports.md](packs/reports.md#nist-sp) |
 
-Ontology data packs (21, enabled in `harness.config.json` `ontologies[]`,
-vendored under `packs/ontologies/`):
+Ontology data packs (23, enabled in `harness.config.json` `ontologies[]`,
+vendored on demand per ADR-0012 — there is no `packs/ontologies/` directory
+to `ls`, see [Ontology packs](packs/ontologies.md)):
 
 | Pack | Documented in |
 | --- | --- |
@@ -116,8 +117,10 @@ vendored under `packs/ontologies/`):
 | data-engineering | [packs/ontologies.md](packs/ontologies.md#data-engineering) |
 | fitness | [packs/ontologies.md](packs/ontologies.md#fitness) |
 | health | [packs/ontologies.md](packs/ontologies.md#health) |
+| heliophysics | [packs/ontologies.md](packs/ontologies.md#heliophysics) |
 | market-research | [packs/ontologies.md](packs/ontologies.md#market-research) |
 | mif-docs | [packs/ontologies.md](packs/ontologies.md#mif-docs) |
+| non-ionizing-radiation | [packs/ontologies.md](packs/ontologies.md#non-ionizing-radiation) |
 | observability | [packs/ontologies.md](packs/ontologies.md#observability) |
 | physical-science-base | [packs/ontologies.md](packs/ontologies.md#physical-science-base) |
 | plasma-physics | [packs/ontologies.md](packs/ontologies.md#plasma-physics) |
@@ -137,11 +140,11 @@ All documented in [core-skills.md](core-skills.md): `discover`, `graph`, `lab`,
 `md-fix`, `ontology-manager`, `publish-blog`, `publish-report`, `readme`,
 `search`, `topics`.
 
-## Commands (9)
+## Commands (11)
 
-All documented in [commands.md](commands.md): `/configure`, `/falsify`,
-`/goal-writer`, `/ontology-review`, `/resume`, `/start`, `/status`,
-`/synthesize-corpus`, `/topics`.
+All documented in [commands.md](commands.md): `/configure`, `/export`,
+`/falsify`, `/goal-writer`, `/import`, `/ontology-review`, `/resume`,
+`/start`, `/status`, `/synthesize-corpus`, `/topics`.
 
 ## Agents (7)
 
@@ -149,26 +152,27 @@ All documented in [agents.md](agents.md): `orchestrator`, `dimension-analyst`,
 `falsification-analyst`, `report-synthesizer`, `corpus-synthesizer`,
 `harness-configurator`, `source-chunker`.
 
-## Scripts (74 discovered, 65 documented — see #481)
+## Scripts (76)
 
-Pre-Epic-#416 baseline, all documented in [scripts.md](scripts.md):
+Pre-Epic-#416 baseline (52, all documented in [scripts.md](scripts.md)):
 `assert-graph-mif`,
 `author-ontology`, `backfill-report-slugs`, `build-concordance`,
 `build-graph-viz`, `build-graph`, `build-index`, `build-topic-readme`,
 `bump-version`, `check-citation-integrity`, `check-mermaid.py`,
-`check-ontology-lock`, `check-pack-docs.py`, `check-relationship-targets`,
+`check-coverage-doc.py`, `check-ontology-lock`, `check-pack-docs.py`, `check-relationship-targets`,
 `check-shippable-typing`, `check-version-bump`, `codegen/bundle_schema.py`,
-`codegen/gen-models`, `falsify`, `fetch-engine`, `fetch-ontology`,
-`goal-version`, `import-corpus`, `lib/engine`, `mif-project`,
-`ontology-review`, `pack-toggle`, `reconcile-session`, `render-artifact`,
-`resolve-membership`, `resolve-ontology`, `run-lock`, `site-toggle`,
-`sync-packs`, `sync-registry-ontologies`, `synthesize-artifact`,
-`synthesize-corpus`, `update`, `validate-concordance`, `verify`,
-`wrap-source`, `write-finding` — 42 named here, though the pre-Epic
-baseline is actually 51 (a 9-script gap that predates and is unrelated
-to Epic #416, see #481).
+`codegen/gen-models`, `falsify`, `fetch-engine`, `fetch-mif-docs-plugin`,
+`fetch-ontology`, `goal-version`, `import-corpus`, `install-hooks`,
+`lib/container-lock`, `lib/engine`, `mif-container-detect-sameas`,
+`mif-container-digest`, `mif-container-export`, `mif-container-import`,
+`mif-container-migration-eval-bench`, `mif-container-resolve-scope`,
+`mif-project`, `ontology-review`, `pack-toggle`, `reconcile-session`,
+`render-artifact`, `resolve-membership`, `resolve-ontology`, `run-lock`,
+`site-toggle`, `sync-packs`, `sync-registry-ontologies`,
+`synthesize-artifact`, `synthesize-corpus`, `update`, `validate-concordance`,
+`verify`, `wrap-source`, `write-finding`.
 
-Added by Epic #416 (continuous monitoring, all documented in
+Added by Epic #416 (continuous monitoring, 24, all documented in
 [scripts.md](scripts.md#continuous-monitoring-epic-416)):
 `monitoring/run-monitoring.sh`, `monitoring/run-with-budget.sh`,
 `monitoring/interest-inference.sh`, `monitoring/recommend.sh`,
@@ -176,10 +180,9 @@ Added by Epic #416 (continuous monitoring, all documented in
 `monitoring/run-gate-and-publish.sh`,
 `monitoring/connectors/{arxiv,openalex,crossref,semantic-scholar,pubmed,biorxiv,gdelt,hn}.sh`,
 `monitoring/lib/connector-common.sh`, `monitoring/lib/continuity-log.sh`,
-`monitoring/lib/{editorial_gate,interest_inference,mif_tokenize,recommend,recommendation_to_finding,xml_to_json}.py`
-— 23 scripts, fully itemized.
+`monitoring/lib/{cron_match,editorial_gate,interest_inference,mif_tokenize,recommend,recommendation_to_finding,xml_to_json}.py`.
 
 ## Assertion
 
-Discovered (126) equals documented (126) across all five categories. No pack,
+Discovered (166) equals documented (166) across all five categories. No pack,
 skill, command, agent, or script is omitted.
