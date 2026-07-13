@@ -47,20 +47,88 @@ its eight internal links duplicated the same `/research-harness-template`
 literal as a static string, independent of any config value at all — the
 only place in the entire `docs/` tree with this anomaly.
 
-Two other approaches were considered and rejected. Leaving `BASE` hardcoded
-and documenting that a clone hand-patches `astro.config.mjs` after
-instantiation was rejected: it directly violates the file's own documented
-byte-identical invariant, and guarantees a merge conflict on every future
-`copier update` for any clone that customizes it. Inferring the base path
-automatically from the repo/project name (`.copier-answers.yml`
-`project_name` or the git remote) was also rejected: a repo name does not
-reliably determine the deploy path — many instances deploy at a custom
-domain's root or a user/org root site, where the repo name plays no part in
-the URL — and a wrong automatic guess breaks every link identically to a
-missing one, so an explicit, documented default is safer than an inference
-that still needs the same override escape hatch.
+## Decision Drivers
+
+### Primary Decision Drivers
+
+1. PDD-1: The site must serve correctly from whatever real deploy target a
+   clone actually uses (root, project-page sub-path, custom domain, or a
+   reverse-proxy sub-path), not just the template's own literal path.
+2. PDD-2: `astro.config.mjs` must remain genuinely byte-identical across
+   instances (its own documented invariant) so `copier update` never
+   conflicts on it — every other site-projection control already reads from
+   `harness.config.json .site` at build time for exactly this reason.
+
+### Secondary Decision Drivers
+
+1. SDD-1: The splash page's internal links must not duplicate the base path
+   as a separate hardcoded string, since that lets them drift independently
+   of whatever the real config says.
+
+## Considered Options
+
+### Option 1: Leave BASE hardcoded, hand-patch astro.config.mjs per clone
+
+Document that a clone hand-edits `astro.config.mjs`'s `BASE` literal after
+instantiation to match its own real deploy target.
+
+**Advantages:** No schema or config-plumbing change required; works for a
+single one-off clone with no other tooling changes.
+
+**Disadvantages:** Directly violates the file's own documented byte-identical
+invariant; guarantees a merge conflict on every future `copier update` for any
+clone that customizes it.
+
+**Risk Assessment:** Technical — every hand-patched clone permanently diverges
+from the template source; Schedule — fast for one clone, but recurring
+`copier update` conflicts forever after; Ecosystem — every clone that deploys
+anywhere but the template's own path must independently discover and repeat
+this hand-patch.
+
+### Option 2: Infer the base path automatically from the repo/project name
+
+Derive `BASE` from `.copier-answers.yml`'s `project_name` or the git remote,
+with no explicit config value at all.
+
+**Advantages:** Zero configuration for the common case where the repo name
+happens to match the deploy path.
+
+**Disadvantages:** A repo name does not reliably determine the deploy path —
+many instances deploy at a custom domain's root or a user/org root site, where
+the repo name plays no part in the URL — and a wrong automatic guess breaks
+every link identically to a missing one.
+
+**Risk Assessment:** Technical — a silently wrong inference breaks navigation
+site-wide with no indication why; Schedule — no explicit config to author, but
+still needs the same override escape hatch once inference is wrong; Ecosystem
+— every custom-domain or user/org-root clone hits the same silent breakage.
+
+### Option 3: Explicit, documented config value in harness.config.json .site.base (chosen)
+
+Add `site.base` to `harness.config.json` (schema-validated, defaulting to
+`/`), read it in `astro.config.mjs` the same way every other site-projection
+control already is, and strip the splash page's duplicated literal so it
+inherits the configured base like every other internal link.
+
+**Advantages:** `astro.config.mjs` stays genuinely byte-identical — the file
+only reads the config, never hardcodes a path; a clone that needs a non-root
+base sets one explicit, documented value; the safe default (`/`) covers the
+common cases (local dev, a custom domain, a GitHub Pages user/org root site)
+with zero configuration.
+
+**Disadvantages:** Requires a one-time schema addition and a reordering of
+`astro.config.mjs`'s existing manifest read so the config value is available
+before `BASE` is computed.
+
+**Risk Assessment:** Technical — low, reuses the same config-read pattern
+every other site-projection control already follows; Schedule — one
+coordinated change across schema, config, and the splash page; Ecosystem —
+every `copier`-instantiated clone gets a working, explicit override with no
+inference risk.
 
 ## Decision
+
+Option 3.
 
 1. **`harness.config.schema.json`**: add `site.properties.base` — `string`,
    pattern anchored to a leading `/`, `default: "/"`.
@@ -108,3 +176,54 @@ links (previously the site root always 404'd), and reverting to
 - A custom-domain deployment still needs `base: "/"` even though it is not
   literally the GitHub Pages account's own root — the schema documents this
   but does not separately validate it.
+
+### Neutral
+
+- The template's own deployment sets `.site.base` explicitly to its real live
+  path (`/research-harness-template`) rather than relying on the default —
+  every other clone chooses its own value the same way, based on its actual
+  deploy target.
+
+## Decision Outcome
+
+An explicit, schema-validated `site.base` config value lets every clone serve
+its site correctly from its own real deploy target while keeping
+`astro.config.mjs` genuinely byte-identical, avoiding both the merge-conflict
+risk of hand-patching (Option 1) and the silent-breakage risk of inferring the
+path from the repo name (Option 2).
+
+## Related Decisions
+
+- ADR-0009: the site-projection decision this config value extends — every
+  other site-projection control it introduced already reads from
+  `harness.config.json .site` the same way `base` now does.
+
+## Links
+
+- `harness.config.schema.json` — the `site.base` schema addition.
+- `astro.config.mjs` — where `BASE` is now read from config instead of hardcoded.
+- `docs/index.mdx` — the splash page whose 8 links were made base-relative.
+- `scripts/verify.sh` (`gate_m23`) — the updated reports-landing-link assertion.
+
+## More Information
+
+- **Date:** 2026-07-01
+- **Source:** `harness.config.schema.json`, `astro.config.mjs`, `docs/index.mdx`, `scripts/verify.sh` (`gate_m23`).
+
+## Audit
+
+### 2026-07-01
+
+**Status:** Compliant
+
+**Findings:**
+
+| Finding | Files | Assessment |
+| --- | --- | --- |
+| Full eval suite (35/35) and verify.sh (142/142) pass | `evals/run-evals.sh`, `scripts/verify.sh` | compliant |
+| `.site.base = "/"` serves the site correctly at root with base-relative links; reverting to the template's own path resolves exactly as before | manually confirmed on a live dev server | compliant |
+| Splash page's 8 internal links made base-relative | `docs/index.mdx` | compliant |
+
+**Summary:** All five decision points verified: schema addition, config-driven `BASE`, template's own explicit config value, base-relative splash links, and the updated gate assertion.
+
+**Action Required:** None.

@@ -1,6 +1,6 @@
 ---
 title: "Confidence-tier consumption and scored-suggestion routing"
-description: "Consume the MIF confidence-tiered entity-type classification capability through a purpose-built scored suggestion queue and tier-3 miss store under reports/_meta, feeding the harness's existing consuming surfaces (/ontology-review --enrich and author-ontology.sh) — never the deterministic fail-closed gate path."
+description: "Consume the MIF confidence-tiered entity-type classification via a scored suggestion queue and tier-3 miss store under reports/_meta, feeding /ontology-review --enrich and author-ontology.sh — never the deterministic fail-closed gate path."
 type: adr
 category: architecture
 tags: [ontology, classification, confidence-tiers, embeddings, suggestion-queue, calibration, fail-closed]
@@ -229,6 +229,12 @@ that the existing gates verify.
 - [ADR-0012: On-demand ontology vendoring](0012-on-demand-ontology-vendoring.md) — expansion candidates drafted via `author-ontology.sh --from-clusters` still contribute upstream through the vendoring/registry flow.
 - [ADR-0014: Compiled ontology engine as a scoped CLI+MCP proof-of-concept](0014-compiled-ontology-engine-cli-and-mcp.md) — the engine whose `review --suggest` / `calibrate` / `expansion-candidates` surfaces this decision routes.
 
+## Links
+
+- `schemas/mif/ontology.schema.json` — re-seeded at 1.1.0 with `aliases`/`exemplars`/`negative_examples`.
+- `scripts/author-ontology.sh` — the expansion-candidate authoring flow this decision's suggestion queue feeds.
+- `.claude/commands/ontology-review.md` — the `--enrich` consuming surface.
+
 ## More Information
 
 - **Date:** 2026-07-04
@@ -241,6 +247,8 @@ that the existing gates verify.
 ### 2026-07-04
 
 **Status:** Pending
+
+**Findings:**
 
 | Finding | Files | Assessment |
 | --- | --- | --- |

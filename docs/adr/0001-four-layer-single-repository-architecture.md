@@ -115,6 +115,11 @@ buys portability of both capability and enforcement.
 - [ADR-0002: MIF Level-3 I/O conformance](0002-mif-level-3-io-conformance.md)
 - [ADR-0005: Packs and plugins extension model](0005-packs-and-plugins-extension-model.md)
 
+## Links
+
+- `docs/explanation/architecture.md`
+- `README.md`
+
 ## More Information
 
 - **Date:** 2026-06-23
@@ -125,6 +130,8 @@ buys portability of both capability and enforcement.
 ### 2026-06-23
 
 **Status:** Compliant
+
+**Findings:**
 
 | Finding | Files | Assessment |
 | --- | --- | --- |

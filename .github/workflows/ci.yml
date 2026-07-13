@@ -213,3 +213,48 @@ jobs:
             exit 1
           fi
           echo "pin-check: every action is pinned to a 40-char commit SHA"
+
+  # Issue #435: docs/adr/*.md follow the Structured MADR shape by convention
+  # but were never actually validated by CI. Wired in smadr (strict) mode
+  # only -- not mif mode -- per the explicit scope decision for this issue;
+  # every existing ADR was remediated to pass strict mode before this gate
+  # went live (fixed research-harness-template#435).
+  adr-smadr:
+    name: adr-smadr
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Validate ADRs — structured-MADR mode (strict)
+        uses: modeled-information-format/structured-madr@325eafe9a17a23e716daffddac5db10ee178c08e # main: internal actions SHA-pinned (org policy)
+        with:
+          mode: smadr
+          path: docs/adr
+          pattern: "[0-9]*.md"
+          strict: "true"
+          fail-on-error: "true"
+      - name: docs/adr/template.md carries every required section heading
+        run: |
+          # template.md is intentionally excluded from the check above --
+          # its placeholder `created`/`updated: YYYY-MM-DD` and `# ADR-NNNN`
+          # title can never pass real frontmatter/title-format validation,
+          # by design (they're placeholders, not real values). But the
+          # underlying drift risk Copilot's review named is real: this
+          # template needed the exact same remediation as every other ADR
+          # (a missing ## Links section, a missing Findings: label) before
+          # this PR, so a future edit to the template could silently drop a
+          # required heading again with nothing to catch it. This is a
+          # structural-only check (heading presence, not full schema
+          # validation) scoped to exactly that risk.
+          set -euo pipefail
+          f=docs/adr/template.md
+          status=0
+          for heading in \
+            "## Status" "## Context" "### Background and Problem Statement" \
+            "## Decision Drivers" "### Primary Decision Drivers" "### Secondary Decision Drivers" \
+            "## Considered Options" "## Decision" "## Consequences" \
+            "### Positive" "### Negative" "### Neutral" "## Decision Outcome" \
+            "## Related Decisions" "## Links" "## More Information" "## Audit"; do
+            grep -qF -- "$heading" "$f" || { echo "::error file=$f::missing required heading: $heading"; status=1; }
+          done
+          grep -qF -- '**Findings:**' "$f" || { echo "::error file=$f::missing **Findings:** label in the Audit example"; status=1; }
+          exit "$status"

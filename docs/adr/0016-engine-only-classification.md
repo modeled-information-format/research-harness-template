@@ -74,6 +74,13 @@ port fixed.
 
 Keep the bash implementations; delegate when the binary is present.
 
+**Advantages:** Lowest immediate effort; the bash pipeline remains as a
+working fallback if the engine binary is ever unavailable.
+
+**Disadvantages:** The fallback path decays silently since CI would
+exercise only one side per run; two dependency stacks (bash's yq/jq/ajv
+plus the engine binary) persist indefinitely.
+
 Risk Assessment: Technical — the fallback path decays silently since
 CI would exercise only one side per run; Schedule — lowest immediate
 effort; Ecosystem — two dependency stacks indefinitely.
@@ -87,6 +94,16 @@ repo-local `bin/mif-rh-cli` installed by `scripts/fetch-engine.sh`,
 which downloads the pinned release and verifies its attestation
 fail-closed before installing.
 
+**Advantages:** One classification implementation, continuously
+parity-proven at the binary level; full-corpus review drops from
+minutes to seconds; the yq/jq/ajv dependency surface for classification
+disappears entirely.
+
+**Disadvantages:** A hard runtime dependency on a released engine
+binary — air-gapped or unsupported-platform environments must build
+from source and point `MIF_RH_CLI` at the result; a regression in a
+released engine affects consumers until a patched release ships.
+
 Risk Assessment: Technical — a hard runtime dependency on a released
 binary, mitigated by three provisioning paths and a version gate;
 Schedule — one migration; Ecosystem — CI and instances must install
@@ -95,6 +112,13 @@ the engine once.
 ### Option 3: Retire the scripts, call the engine directly everywhere
 
 Delete the wrappers too and update every caller.
+
+**Advantages:** Removes the wrapper indirection layer entirely.
+
+**Disadvantages:** Breaks the stable script interface that commands,
+agents, evals, and downstream instances reference; requires a
+coordinated rename across every consumer for no behavioral gain over
+Option 2.
 
 Risk Assessment: Technical — breaks the stable script interface that
 commands, agents, evals, and downstream instances reference; Ecosystem
@@ -163,7 +187,17 @@ parent) should forensic comparison ever be needed.
 
 ## Audit
 
-- 2026-07-05: Pending — cutover PR staged with the wrapper rewrite,
-  fetch script, CI installation, and eval updates.
-- 2026-07-05: Accepted — cutover merged to `main` (PR #265); the MCP
-  server wiring landed alongside it (PR #266).
+### 2026-07-05
+
+**Status:** Compliant
+
+**Findings:**
+
+| Finding | Files | Assessment |
+| --- | --- | --- |
+| Cutover PR staged with the wrapper rewrite, fetch script, CI installation, and eval updates, then merged to `main` | PR #265 | compliant |
+| MCP server wiring landed alongside the cutover | PR #266 | compliant |
+
+**Summary:** Cutover PR #265 merged; MCP server wiring (PR #266) landed alongside it. Decision fully implemented as specified.
+
+**Action Required:** None.

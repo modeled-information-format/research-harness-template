@@ -192,6 +192,12 @@ substrate ADR-0002 established is unaffected.
 - [ADR-0005: Packs and plugins as the only extension surface](0005-packs-and-plugins-extension-model.md)
 - [ADR-0012: On-demand ontology vendoring from a canonical registry](0012-on-demand-ontology-vendoring.md)
 
+## Links
+
+- `docs/reference/packs/reports.md`
+- `docs/reference/dependencies.md`
+- Epic research-harness-template#405, Story research-harness-template#406
+
 ## More Information
 
 - **Date:** 2026-07-12
@@ -203,6 +209,8 @@ substrate ADR-0002 established is unaffected.
 ### 2026-07-12
 
 **Status:** Pending
+
+**Findings:**
 
 | Finding | Files | Assessment |
 | --- | --- | --- |

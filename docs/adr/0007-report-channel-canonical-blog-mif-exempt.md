@@ -119,6 +119,11 @@ exempt surface.
 - [ADR-0002: MIF Level-3 I/O conformance](0002-mif-level-3-io-conformance.md)
 - [ADR-0004: Single adversarial falsification gate](0004-single-adversarial-falsification-gate.md)
 
+## Links
+
+- `docs/explanation/mif-io-conformance.md`
+- `harness.config.json` (`outputs[]`)
+
 ## More Information
 
 - **Date:** 2026-06-23
@@ -129,6 +134,8 @@ exempt surface.
 ### 2026-06-23
 
 **Status:** Compliant
+
+**Findings:**
 
 | Finding | Files | Assessment |
 | --- | --- | --- |

@@ -189,6 +189,12 @@ remediation is explicit and automated through `/resume`.
 - 0004-single-adversarial-falsification-gate.md
 - 0010-change-driven-component-versioning.md
 
+## Links
+
+- `scripts/check-shippable-typing.sh`
+- `.claude/agents/orchestrator.md`
+- `scripts/validate-concordance.sh`
+
 ## More Information
 
 - **Date:** 2026-06-29
@@ -199,6 +205,8 @@ remediation is explicit and automated through `/resume`.
 ### 2026-06-29
 
 **Status:** Pending
+
+**Findings:**
 
 | Finding | Files | Assessment |
 | --- | --- | --- |

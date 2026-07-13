@@ -185,6 +185,14 @@ what they are supposed to mean.
 - 0005-packs-and-plugins-extension-model.md
 - 0008-attested-fail-closed-supply-chain.md
 
+## Links
+
+- `scripts/bump-version.sh`
+- `scripts/check-version-bump.sh`
+- `scripts/verify.sh` (`gate_versions`)
+- `.github/workflows/ci.yml` (`version-bump` job)
+- `CLAUDE.md`
+
 ## More Information
 
 - **Date:** 2026-06-29
@@ -195,6 +203,8 @@ what they are supposed to mean.
 ### 2026-06-29
 
 **Status:** Compliant
+
+**Findings:**
 
 | Finding | Files | Assessment |
 | --- | --- | --- |

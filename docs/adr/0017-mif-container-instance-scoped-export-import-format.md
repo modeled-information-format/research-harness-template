@@ -1,6 +1,6 @@
 ---
 title: "MIF Container: an instance-scoped export/import manifest format"
-description: "Build a Data-Package-style container manifest (schemas/mif-container.schema.json) for lossless topic export/import between research-harness-template instances, correcting Data Package's opt-in integrity and breaking-migration weaknesses; independent of and not blocked by the org-wide MIF Container Profile proposed in MIF#77."
+description: "Build a Data-Package-style container manifest (schemas/mif-container.schema.json) for lossless topic export/import between instances, correcting Data Package's opt-in integrity and breaking-migration weaknesses; independent of the org-wide MIF Container Profile in MIF#77."
 type: adr
 category: architecture
 tags: [container, export-import, portability, integrity, ontology, digest]
@@ -270,6 +270,12 @@ or waiting on an org-wide spec this repo's own need does not depend on.
 - ADR-0016: the engine-only classification cutover -- the precedent AD-7
   weighs against for M1's implementation surface.
 
+## Links
+
+- `schemas/mif-container.schema.json` — the manifest schema this ADR specifies.
+- `scripts/mif-container-export.sh` / `scripts/mif-container-import.sh` — the export/import command pair.
+- `docs/proposals/mif-container-format/feature-spec.md` — the companion M1 scoping doc.
+
 ## More Information
 
 - **Date:** 2026-07-10
@@ -294,3 +300,18 @@ or waiting on an org-wide spec this repo's own need does not depend on.
 open, tracked under Epic #275.
 
 **Action Required:** None (implementation tracked separately).
+
+### 2026-07-13
+
+**Status:** Compliant
+
+**Findings:**
+
+| Finding | Files | Assessment |
+| --- | --- | --- |
+| Manifest schema, digest engine, export resolver, import gate, origin tagging, and the export/import command pair are built and merged | `schemas/mif-container.schema.json`, `scripts/mif-container-digest.sh`, `scripts/mif-container-resolve-scope.sh`, `scripts/mif-container-export.sh`, `scripts/mif-container-import.sh` | compliant |
+| Epic #275's Stories (#308/#312/#315/#318/#324/#328/#331) merged; export now also carries a topic's own deliverables (report/falsification-report/readme/goal/artifact), landed via #437/PR #491 | `scripts/verify.sh` (gate_m31), `evals/mif-container-nfr-verification.sh` | compliant |
+
+**Summary:** The 2026-07-10 entry's "not yet built" status is superseded — the manifest format and its export/import command pair are implemented, tested (`verify.sh` gate_m31, NFR verification suite), and in production use in this repo.
+
+**Action Required:** None.

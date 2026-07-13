@@ -35,11 +35,12 @@ Every doc in this tree routes through `mif-docs-plugin`'s shared substrate
 
 - **ADRs** (`docs/adr/`): use `mif-docs-plugin`'s `adr` skill. The `adr`
   genre is exempt from `mif-validate` — per that plugin's own ADR-0001, its
-  ADRs are validated by the `structured-madr` GitHub Action, but **this
-  repo does not currently run that Action** (`.github/workflows/` has no
-  Structured MADR job). Conform to the [Structured MADR](https://github.com/modeled-information-format/structured-madr)
-  format/tooling by following `docs/adr/template.md`'s shape manually
-  until such a workflow is added here.
+  ADRs are validated by the `structured-madr` GitHub Action instead, and
+  this repo's own `ci.yml` runs it (`adr-smadr` job, `smadr` mode, strict,
+  required — research-harness-template#435). Conform to the
+  [Structured MADR](https://github.com/modeled-information-format/structured-madr)
+  format/tooling by following `docs/adr/template.md`'s shape — a new ADR
+  that departs from it will fail this required CI check.
 - **Diátaxis docs** (`docs/explanation/`, `docs/how-to/`, `docs/reference/`,
   `docs/tutorials/`): use the matching `diataxis-explanation` /
   `diataxis-how-to` / `diataxis-reference` / `diataxis-tutorial` skill.

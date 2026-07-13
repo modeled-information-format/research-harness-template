@@ -117,6 +117,11 @@ supply chain.
 - [ADR-0001: Four-layer single-repository architecture](0001-four-layer-single-repository-architecture.md)
 - [ADR-0005: Packs and plugins extension model](0005-packs-and-plugins-extension-model.md)
 
+## Links
+
+- `.github/workflows/ci.yml`
+- `README.md` ("Supply-chain verification")
+
 ## More Information
 
 - **Date:** 2026-06-23
@@ -127,6 +132,8 @@ supply chain.
 ### 2026-06-23
 
 **Status:** Compliant
+
+**Findings:**
 
 | Finding | Files | Assessment |
 | --- | --- | --- |
