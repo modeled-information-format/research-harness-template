@@ -90,17 +90,25 @@ T="$(mktemp -d)" || { note "FAIL: could not create scratch dir"; exit 1; }
 # harness.config.json/concordance.json pair, not one topic's directory.
 . "$ROOT/scripts/lib/container-lock.sh"
 LOCK_DIR="$ROOT/.eval-corpus-mutation.lock"
-container_lock_acquire "$LOCK_DIR" "mif-container-nfr-verification"
+# Capture container_lock_acquire's own stderr separately from $? -- its
+# hard-coded DENIED message talks about "another export/import...for this
+# topic", which is misleading in this repo-root (not per-topic) lock
+# context. Only that specific message is suppressed and replaced below; a
+# successful acquisition's own stderr (e.g. "stole STALE lock...") is still
+# accurate here and gets surfaced as-is.
+lock_stderr="$(container_lock_acquire "$LOCK_DIR" "mif-container-nfr-verification" 2>&1 1>/dev/null)"
 acquire_rc=$?
 if [ "$acquire_rc" -ne 0 ]; then
   if [ "$acquire_rc" -eq 3 ]; then
-    note "FAIL: another verify.sh/eval run is already mutating harness.config.json/concordance.json (lock: $LOCK_DIR) -- wait for it to finish and retry"
+    holder="$(cat "$LOCK_DIR/owner" 2>/dev/null || echo unknown)"
+    note "FAIL: another verify.sh/eval run is already mutating harness.config.json/concordance.json (lock: $LOCK_DIR, held by '$holder') -- wait for it to finish and retry"
   else
     note "FAIL: could not acquire the lock at $LOCK_DIR (not contention -- rc=$acquire_rc): ${CONTAINER_LOCK_LAST_ERROR:-unknown error}"
   fi
   rm -rf "$T"
   exit 1
 fi
+[ -n "$lock_stderr" ] && printf '%s\n' "$lock_stderr" >&2
 # Minimal early trap for the window between a successful acquisition and the
 # full cleanup() trap being installed further down -- if the script is
 # interrupted (SIGINT/TERM) or hits an early exit in that window, this at
