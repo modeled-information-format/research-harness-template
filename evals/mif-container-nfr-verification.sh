@@ -101,6 +101,13 @@ if [ "$acquire_rc" -ne 0 ]; then
   rm -rf "$T"
   exit 1
 fi
+# Minimal early trap for the window between a successful acquisition and the
+# full cleanup() trap being installed further down -- if the script is
+# interrupted (SIGINT/TERM) or hits an early exit in that window, this at
+# least releases the lock rather than leaving it held until it ages into
+# staleness. `trap cleanup EXIT` below REPLACES this (traps don't stack), so
+# once the full trap is installed it takes over entirely.
+trap 'container_lock_release "$LOCK_DIR"; rm -rf "$T"' EXIT
 
 # --- Guarded backup of everything this eval mutates (real corpus, global
 #     concordance files, harness.config.json) -- same pattern gate_m31 uses,
@@ -157,6 +164,11 @@ cleanup() {
   # Release last: a second invocation denied by the lock must never see it
   # freed before harness.config.json/concordance.json are actually restored.
   container_lock_release "$LOCK_DIR"
+  # A restore failure must never be swallowed by whatever exit code the main
+  # script body was already about to report (e.g. every NFR passing, exit
+  # 0) -- that would report success while leaving the repo in a corrupted,
+  # dirty state. `exit` inside an EXIT trap overrides the pending exit code.
+  [ "$restore_failed" -eq 0 ] || exit 1
 }
 trap cleanup EXIT
 
