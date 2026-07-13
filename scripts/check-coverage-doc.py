@@ -37,7 +37,7 @@ CATEGORIES = ["Packs", "Core skills", "Commands", "Agents", "Scripts"]
 def real_counts() -> dict[str, int]:
     cfg = json.loads((REPO / "harness.config.json").read_text(encoding="utf-8"))
     packs = len(cfg.get("packs", [])) + len(cfg.get("ontologies", []))
-    core_skills = len([p for p in (REPO / ".claude" / "skills").iterdir() if p.is_dir()])
+    core_skills = len(list((REPO / ".claude" / "skills").glob("*/SKILL.md")))
     commands = len(list((REPO / ".claude" / "commands").glob("*.md")))
     agents = len(list((REPO / ".claude" / "agents").glob("*.md")))
     scripts = len(
