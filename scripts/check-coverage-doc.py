@@ -13,8 +13,8 @@ catching it. This script recomputes the same five counts coverage.md's own
 2. Each category's Documented column equals its Discovered column (the page's
    own stated invariant: discovered == documented).
 3. The Total row equals the sum of the five category rows.
-4. Each category's own "## <Category> (N)" heading count matches its row in
-   the summary table.
+4. Each category's own "## <Category> (N)" heading count matches the real
+   count (transitively, the summary table row too, once check 1 passes).
 5. The "## Assertion" line's two numbers match the real Total.
 
 Run from the repository root. Prints a report and exits non-zero on any gap.
