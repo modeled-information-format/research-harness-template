@@ -69,20 +69,83 @@ fi
 
 T="$(mktemp -d)" || { note "FAIL: could not create scratch dir"; exit 1; }
 
+# research-harness-template#492: this eval is the ONLY one that mutates the
+# real, shared, tracked harness.config.json/concordance.json in place (every
+# other eval and verify.sh's own Milestone 8 corpus-import test operate on an
+# isolated copy under their own mktemp dir instead). Nothing protected that
+# mutation window before this fix -- an orphaned leftover process from a
+# killed prior run (killing a parent script's PID does NOT stop its
+# already-spawned children; confirmed empirically -- they keep mutating
+# shared repo state in the background, unnoticed) or a second, genuinely
+# concurrent session running verify.sh/run-evals.sh in the SAME worktree
+# (this workspace routinely runs several sessions at once) could race this
+# exact backup/mutate/restore window against a second overlapping
+# invocation, producing exactly the class of transient, hard-to-reproduce
+# "engine smoke test failed"/"eval suite failed" flake #492 reports (a
+# later Milestone reading harness.config.json mid-mutation by the OTHER
+# invocation). Guarded with the same mkdir-based lock
+# scripts/mif-container-export.sh/import.sh already use for per-topic
+# locking (scripts/lib/container-lock.sh) -- a repo-root lock instead of a
+# per-topic one, since the resource being protected here is the shared
+# harness.config.json/concordance.json pair, not one topic's directory.
+. "$ROOT/scripts/lib/container-lock.sh"
+LOCK_DIR="$ROOT/.eval-corpus-mutation.lock"
+# Capture container_lock_acquire's own stderr separately from $? -- its
+# hard-coded DENIED message talks about "another export/import...for this
+# topic", which is misleading in this repo-root (not per-topic) lock
+# context. ONLY that specific rc=3 message is suppressed and replaced
+# below; every other outcome (success, or a non-contention failure) still
+# surfaces $lock_stderr as-is -- for a non-contention failure this is the
+# only place the real underlying error is guaranteed to be visible if
+# CONTAINER_LOCK_LAST_ERROR is ever empty (e.g. a failure mode the library
+# doesn't set it for).
+#
+# Captured via a temp file, NOT `$(container_lock_acquire ... 2>&1 1>/dev/null)`
+# -- that form runs the function inside a command-substitution SUBSHELL, so
+# CONTAINER_LOCK_LAST_ERROR (a global the function sets on failure) would
+# never propagate back to this shell at all, always reading as empty
+# ("unknown error") regardless of the real cause. Confirmed empirically
+# while testing this exact fix. A redirect-to-file keeps the call in the
+# current shell, so the global assignment is visible here as intended.
+lock_stderr_file="$(mktemp)"
+container_lock_acquire "$LOCK_DIR" "mif-container-nfr-verification" 2>"$lock_stderr_file"
+acquire_rc=$?
+lock_stderr="$(cat "$lock_stderr_file" 2>/dev/null)"
+rm -f "$lock_stderr_file"
+if [ "$acquire_rc" -ne 0 ]; then
+  if [ "$acquire_rc" -eq 3 ]; then
+    holder="$(cat "$LOCK_DIR/owner" 2>/dev/null || echo unknown)"
+    note "FAIL: another verify.sh/eval run is already mutating harness.config.json/concordance.json (lock: $LOCK_DIR, held by '$holder') -- wait for it to finish and retry"
+  else
+    note "FAIL: could not acquire the lock at $LOCK_DIR (not contention -- rc=$acquire_rc): ${CONTAINER_LOCK_LAST_ERROR:-unknown error}"
+    [ -n "$lock_stderr" ] && printf '%s\n' "$lock_stderr" >&2
+  fi
+  rm -rf "$T"
+  exit 1
+fi
+[ -n "$lock_stderr" ] && printf '%s\n' "$lock_stderr" >&2
+# Minimal early trap for the window between a successful acquisition and the
+# full cleanup() trap being installed further down -- if the script is
+# interrupted (SIGINT/TERM) or hits an early exit in that window, this at
+# least releases the lock rather than leaving it held until it ages into
+# staleness. `trap cleanup EXIT` below REPLACES this (traps don't stack), so
+# once the full trap is installed it takes over entirely.
+trap 'container_lock_release "$LOCK_DIR"; rm -rf "$T"' EXIT
+
 # --- Guarded backup of everything this eval mutates (real corpus, global
 #     concordance files, harness.config.json) -- same pattern gate_m31 uses,
 #     hardened after its own Story #328 review finding (an unchecked backup
 #     here would make the restore silently no-op too, corrupting real
 #     tracked files on a rare I/O failure). ---
 cp harness.config.json "$T/harness.config.json.orig" \
-  || { note "FAIL: could not back up harness.config.json"; rm -rf "$T"; exit 1; }
+  || { note "FAIL: could not back up harness.config.json"; container_lock_release "$LOCK_DIR"; rm -rf "$T"; exit 1; }
 cp reports/concordance.json "$T/concordance.json.orig" \
-  || { note "FAIL: could not back up reports/concordance.json"; rm -rf "$T"; exit 1; }
+  || { note "FAIL: could not back up reports/concordance.json"; container_lock_release "$LOCK_DIR"; rm -rf "$T"; exit 1; }
 had_sameas=0
 [ -f reports/concordance-sameas-proposals.json ] && {
   had_sameas=1
   cp reports/concordance-sameas-proposals.json "$T/concordance-sameas-proposals.json.orig" \
-    || { note "FAIL: could not back up concordance-sameas-proposals.json"; rm -rf "$T"; exit 1; }
+    || { note "FAIL: could not back up concordance-sameas-proposals.json"; container_lock_release "$LOCK_DIR"; rm -rf "$T"; exit 1; }
 }
 # Each NFR block below that needs a synthetic destination topic gets its OWN
 # id (never reused across blocks) -- register_topic() appends unconditionally
@@ -98,20 +161,37 @@ ROUNDTRIP_TOPIC="nfr-verification-roundtrip"
 ALL_SYNTHETIC_TOPICS=("$NFR2_TOPIC" "$NFR3_TOPIC" "$NFR8_TOPIC" "$DUP_TOPIC" "$ROUNDTRIP_TOPIC")
 
 cleanup() {
+  local restore_failed=0
   cp "$T/harness.config.json.orig" harness.config.json \
-    || note "FAIL: could not restore harness.config.json from backup -- check $T/harness.config.json.orig manually"
+    || { note "FAIL: could not restore harness.config.json from backup -- check $T/harness.config.json.orig manually"; restore_failed=1; }
   cp "$T/concordance.json.orig" reports/concordance.json \
-    || note "FAIL: could not restore reports/concordance.json from backup -- check $T/concordance.json.orig manually"
+    || { note "FAIL: could not restore reports/concordance.json from backup -- check $T/concordance.json.orig manually"; restore_failed=1; }
   if [ "$had_sameas" -eq 1 ]; then
     cp "$T/concordance-sameas-proposals.json.orig" reports/concordance-sameas-proposals.json \
-      || note "FAIL: could not restore reports/concordance-sameas-proposals.json from backup -- check $T/concordance-sameas-proposals.json.orig manually"
+      || { note "FAIL: could not restore reports/concordance-sameas-proposals.json from backup -- check $T/concordance-sameas-proposals.json.orig manually"; restore_failed=1; }
   else
     rm -f reports/concordance-sameas-proposals.json
   fi
   for t in "${ALL_SYNTHETIC_TOPICS[@]}"; do
     rm -rf "reports/$t"
   done
-  rm -rf "$T"
+  # On a restore failure, the backups under $T are exactly what an operator
+  # needs to recover manually -- deleting $T here (as an earlier version of
+  # this fix did unconditionally) would destroy the only copies of the
+  # pre-mutation content the FAIL message above just told them to go check.
+  if [ "$restore_failed" -eq 0 ]; then
+    rm -rf "$T"
+  else
+    note "preserving $T (contains the pre-mutation backups) for manual recovery"
+  fi
+  # Release last: a second invocation denied by the lock must never see it
+  # freed before harness.config.json/concordance.json are actually restored.
+  container_lock_release "$LOCK_DIR"
+  # A restore failure must never be swallowed by whatever exit code the main
+  # script body was already about to report (e.g. every NFR passing, exit
+  # 0) -- that would report success while leaving the repo in a corrupted,
+  # dirty state. `exit` inside an EXIT trap overrides the pending exit code.
+  [ "$restore_failed" -eq 0 ] || exit 1
 }
 trap cleanup EXIT
 
