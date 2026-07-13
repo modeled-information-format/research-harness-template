@@ -8,22 +8,64 @@
   "content": "Running inference on an edge node rather than a central cloud removes the wide-area round trip, cutting tail latency for time-sensitive local decisions.",
   "summary": "Edge inference cuts tail latency by removing the wide-area round trip.",
   "created": "2025-11-02T09:00:00Z",
-  "tags": ["edge", "latency", "inference"],
+  "modified": "2025-11-02T09:00:00Z",
+  "temporal": {
+    "@type": "TemporalMetadata",
+    "validFrom": "2025-11-02T09:00:00Z"
+  },
+  "tags": [
+    "edge",
+    "latency",
+    "inference"
+  ],
   "entities": [
-    { "@type": "EntityReference", "entity": { "@id": "urn:mif:entity:concept:edge-compute" }, "entityType": "Concept", "name": "edge compute" },
-    { "@type": "EntityReference", "entity": { "@id": "urn:mif:entity:concept:latency" }, "entityType": "Concept", "name": "latency" }
+    {
+      "@type": "EntityReference",
+      "entity": {
+        "@id": "urn:mif:entity:concept:edge-compute"
+      },
+      "entityType": "Concept",
+      "name": "edge compute"
+    },
+    {
+      "@type": "EntityReference",
+      "entity": {
+        "@id": "urn:mif:entity:concept:latency"
+      },
+      "entityType": "Concept",
+      "name": "latency"
+    }
   ],
   "relationships": [
-    { "type": "supports", "target": "urn:mif:concept:sample:gateway-0003", "strength": 0.8 }
+    {
+      "type": "supports",
+      "target": "urn:mif:concept:sample:gateway-0003",
+      "strength": 0.8
+    }
   ],
-  "provenance": { "@type": "Provenance", "sourceType": "external_import", "confidence": 0.88, "trustLevel": "high_confidence" },
+  "provenance": {
+    "@type": "Provenance",
+    "sourceType": "external_import",
+    "confidence": 0.88,
+    "trustLevel": "high_confidence"
+  },
   "citations": [
-    { "@type": "Citation", "citationType": "paper", "citationRole": "supports", "title": "Edge Computing: Vision and Challenges", "url": "https://doi.org/10.1109/JIOT.2016.2579198", "accessed": "2025-11-02" }
+    {
+      "@type": "Citation",
+      "citationType": "paper",
+      "citationRole": "supports",
+      "title": "Edge Computing: Vision and Challenges",
+      "url": "https://doi.org/10.1109/JIOT.2016.2579198",
+      "accessed": "2025-11-02"
+    }
   ],
   "extensions": {
     "harness": {
       "dimension": "technical",
-      "verification": { "verdict": "survived", "verdict_basis": "No disconfirming evidence for the latency reduction claim." }
+      "verification": {
+        "verdict": "survived",
+        "verdict_basis": "No disconfirming evidence for the latency reduction claim."
+      }
     }
   }
 }

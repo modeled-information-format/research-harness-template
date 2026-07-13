@@ -39,6 +39,11 @@
   "conceptType": "semantic",
   "content": "MIF's provenance block is a mandatory structural element at MIF Level 2+ conformance, designed to be W3C PROV-O compatible while remaining expressible as flat JSON properties. The block has '@type': 'Provenance' and carries: 'sourceType' — a closed enum with five values: 'user_explicit' (human-authored fact), 'user_implicit' (inferred from user behavior), 'agent_inferred' (derived by an AI agent from evidence), 'external_import' (imported from an external system), 'system_generated' (automated pipeline output). This enum maps directly to PROV-O's Agent/Activity/Entity attribution model. 'confidence' — a 0.0 to 1.0 numeric score expressing the authoring agent's epistemic certainty. 'trustLevel' — a categorical tier ('high_confidence', 'moderate_confidence', 'low_confidence', 'uncertain', 'verified', 'user_stated') for coarse filtering. 'agent' — an identifier for the originating agent (human, model name, tool). Optional W3C PROV properties 'wasGeneratedBy', 'wasAttributedTo', 'wasDerivedFrom' allow full PROV-O graph construction for systems that need RDF-level provenance interoperability. In the OKF+MIF layering, MIF's provenance block solves the knowledge-decay and trust-erosion problems that OKF's 'timestamp' (last-modified only) and informal log.md cannot address. Specifically: a knowledge spine needs to know not just when a concept was last edited, but whether it was AI-generated or human-verified, how confident the authoring agent was, and whether it derives from an authoritative external source or internal inference. OKF's single 'timestamp' field encodes only last-modified time; MIF's provenance block encodes the epistemic status of the claim itself. When layered over OKF, MIF provenance blocks would be stored as extended frontmatter fields or companion JSON files, making every OKF concept traceable to its authoring process without requiring the full RDF toolchain that PROV-O natively demands.",
   "created": "2026-06-28T00:00:00Z",
+  "modified": "2026-06-28T00:00:00Z",
+  "temporal": {
+    "@type": "TemporalMetadata",
+    "validFrom": "2026-06-28T00:00:00Z"
+  },
   "entity": {
     "entity_type": "concept",
     "name": "MIF's first-class provenance block"

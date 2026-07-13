@@ -8,23 +8,68 @@
   "content": "Because the harness keeps gaining skills, gates, and schema versions, a one-time snapshot freezes every clone at its instantiation date. An update-propagating template engine is therefore the decisive distribution choice.",
   "summary": "Update propagation is mandatory for a harness that keeps evolving.",
   "created": "2026-06-19T12:10:00Z",
-  "tags": ["distribution", "decision"],
+  "modified": "2026-06-19T12:10:00Z",
+  "temporal": {
+    "@type": "TemporalMetadata",
+    "validFrom": "2026-06-19T12:10:00Z"
+  },
+  "tags": [
+    "distribution",
+    "decision"
+  ],
   "entities": [
-    { "@type": "EntityReference", "entity": { "@id": "urn:mif:entity:concept:update-propagation" }, "entityType": "Concept", "name": "update propagation" },
-    { "@type": "EntityReference", "entity": { "@id": "urn:mif:entity:concept:living-template" }, "entityType": "Concept", "name": "living template" }
+    {
+      "@type": "EntityReference",
+      "entity": {
+        "@id": "urn:mif:entity:concept:update-propagation"
+      },
+      "entityType": "Concept",
+      "name": "update propagation"
+    },
+    {
+      "@type": "EntityReference",
+      "entity": {
+        "@id": "urn:mif:entity:concept:living-template"
+      },
+      "entityType": "Concept",
+      "name": "living template"
+    }
   ],
   "relationships": [
-    { "type": "derived-from", "target": "urn:mif:concept:harness:kg-copier-0001", "strength": 0.8 },
-    { "type": "derived-from", "target": "urn:mif:concept:harness:kg-cookiecutter-0002", "strength": 0.6 }
+    {
+      "type": "derived-from",
+      "target": "urn:mif:concept:harness:kg-copier-0001",
+      "strength": 0.8
+    },
+    {
+      "type": "derived-from",
+      "target": "urn:mif:concept:harness:kg-cookiecutter-0002",
+      "strength": 0.6
+    }
   ],
-  "provenance": { "@type": "Provenance", "sourceType": "agent_inferred", "confidence": 0.9, "trustLevel": "high_confidence" },
+  "provenance": {
+    "@type": "Provenance",
+    "sourceType": "agent_inferred",
+    "confidence": 0.9,
+    "trustLevel": "high_confidence"
+  },
   "citations": [
-    { "@type": "Citation", "citationType": "documentation", "citationRole": "supports", "title": "Copier — Updating a project", "url": "https://copier.readthedocs.io/en/stable/updating/", "accessed": "2026-06-19" }
+    {
+      "@type": "Citation",
+      "citationType": "documentation",
+      "citationRole": "supports",
+      "title": "Copier — Updating a project",
+      "url": "https://copier.readthedocs.io/en/stable/updating/",
+      "accessed": "2026-06-19"
+    }
   ],
   "extensions": {
     "harness": {
       "dimension": "trajectory",
-      "verification": { "verdict": "survived", "verdict_basis": "Synthesis of the Copier and Cookiecutter findings; no disconfirming evidence." }
+      "verification": {
+        "verdict": "survived",
+        "verdict_basis": "Synthesis of the Copier and Cookiecutter findings; no disconfirming evidence."
+      }
     }
   }
 }

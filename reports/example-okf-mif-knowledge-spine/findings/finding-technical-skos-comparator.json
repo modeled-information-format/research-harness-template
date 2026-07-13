@@ -31,6 +31,11 @@
   "conceptType": "semantic",
   "content": "SKOS (Simple Knowledge Organization System, W3C Recommendation 2009) represents thesauri, taxonomies, classification schemes, and controlled vocabularies as RDF graphs. A SKOS concept (skos:Concept) carries preferred labels (skos:prefLabel), alternate labels, definitions (skos:definition), scope notes, and three structural relationship types: skos:broader (parent term), skos:narrower (child term), and skos:related (associative, non-hierarchical). SKOS is specifically designed to enable controlled vocabulary alignment and thesaurus interoperability across institutions. The technical gaps relative to OKF+MIF are: (1) Relationship expressiveness: SKOS provides only broader/narrower/related predicates. It cannot express 'derived-from', 'contradicts', 'supersedes', 'depends-on', or other typed predicates needed for a research or agent-knowledge spine. MIF's nine structural-core relationship types go far beyond SKOS's three vocabulary-alignment predicates. (2) No narrative body: SKOS concepts carry only labels, notes, and references — no structured markdown body with Schema, Examples, or Citations sections. OKF's markdown body is the critical affordance for human and agent consumption. (3) RDF dependency: SKOS is expressed in RDF (Turtle, RDF/XML, JSON-LD), requiring the full Semantic Web toolchain for authoring and querying. OKF requires only a text editor. (4) No provenance: SKOS has no built-in provenance or temporal tracking beyond optional Dublin Core metadata annotations. (5) No git-native distribution: SKOS files are typically served from triple stores or vocabulary servers, not git repositories with diff/blame/PR workflows. SKOS solves vocabulary-alignment interoperability in existing triple-store ecosystems where OKF+MIF is irrelevant. OKF+MIF targets teams building AI-agent knowledge bases from scratch who need git-native, markdown-first knowledge with layered formal semantics — a use case SKOS's vocabulary model never targeted.",
   "created": "2026-06-28T00:00:00Z",
+  "modified": "2026-06-28T00:00:00Z",
+  "temporal": {
+    "@type": "TemporalMetadata",
+    "validFrom": "2026-06-28T00:00:00Z"
+  },
   "extensions": {
     "harness": {
       "dimension": "technical",

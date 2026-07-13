@@ -8,22 +8,63 @@
   "content": "Filtering and aggregating sensor data at the edge before transmission reduces the volume sent upstream, lowering bandwidth cost on constrained links.",
   "summary": "Edge preprocessing cuts upstream bandwidth on constrained links.",
   "created": "2025-11-03T10:00:00Z",
-  "tags": ["edge", "bandwidth"],
+  "modified": "2025-11-03T10:00:00Z",
+  "temporal": {
+    "@type": "TemporalMetadata",
+    "validFrom": "2025-11-03T10:00:00Z"
+  },
+  "tags": [
+    "edge",
+    "bandwidth"
+  ],
   "entities": [
-    { "@type": "EntityReference", "entity": { "@id": "urn:mif:entity:concept:edge-compute" }, "entityType": "Concept", "name": "edge compute" },
-    { "@type": "EntityReference", "entity": { "@id": "urn:mif:entity:concept:bandwidth" }, "entityType": "Concept", "name": "bandwidth" }
+    {
+      "@type": "EntityReference",
+      "entity": {
+        "@id": "urn:mif:entity:concept:edge-compute"
+      },
+      "entityType": "Concept",
+      "name": "edge compute"
+    },
+    {
+      "@type": "EntityReference",
+      "entity": {
+        "@id": "urn:mif:entity:concept:bandwidth"
+      },
+      "entityType": "Concept",
+      "name": "bandwidth"
+    }
   ],
   "relationships": [
-    { "type": "supports", "target": "urn:mif:concept:sample:gateway-0003", "strength": 0.7 }
+    {
+      "type": "supports",
+      "target": "urn:mif:concept:sample:gateway-0003",
+      "strength": 0.7
+    }
   ],
-  "provenance": { "@type": "Provenance", "sourceType": "external_import", "confidence": 0.82, "trustLevel": "moderate_confidence" },
+  "provenance": {
+    "@type": "Provenance",
+    "sourceType": "external_import",
+    "confidence": 0.82,
+    "trustLevel": "moderate_confidence"
+  },
   "citations": [
-    { "@type": "Citation", "citationType": "documentation", "citationRole": "supports", "title": "Edge preprocessing patterns", "url": "https://aws.amazon.com/blogs/iot/", "accessed": "2025-11-03" }
+    {
+      "@type": "Citation",
+      "citationType": "documentation",
+      "citationRole": "supports",
+      "title": "Edge preprocessing patterns",
+      "url": "https://aws.amazon.com/blogs/iot/",
+      "accessed": "2025-11-03"
+    }
   ],
   "extensions": {
     "harness": {
       "dimension": "technical",
-      "verification": { "verdict": "weakened", "verdict_basis": "Holds for constrained links; less material on high-capacity backhaul." }
+      "verification": {
+        "verdict": "weakened",
+        "verdict_basis": "Holds for constrained links; less material on high-capacity backhaul."
+      }
     }
   }
 }

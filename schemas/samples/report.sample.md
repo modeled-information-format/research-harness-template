@@ -6,6 +6,10 @@ conceptType: semantic
 namespace: harness/example-topic
 title: "Sample synthesis report"
 created: "2026-06-19T12:00:00Z"
+modified: "2026-06-19T12:00:00Z"
+temporal:
+  "@type": TemporalMetadata
+  validFrom: "2026-06-19T12:00:00Z"
 provenance:
   "@type": Provenance
   sourceType: system_generated

@@ -192,6 +192,13 @@ Each finding is a single MIF concept. The fields **you** are responsible for:
   field — omit it and they record a `null` namespace (broken namespace queries).
   `verify.sh` fails closed if any finding lacks it.
 - `title`, `content`, `summary`, `created`, and `tags` (lowercase-hyphenated).
+- **`modified`** and **`temporal.validFrom`** — canonical MIF Level 3 requires
+  both in addition to `temporal` itself (Level 2), on top of what `created`
+  alone covers (research-harness-template#480). For a freshly authored finding
+  set both to the SAME timestamp as `created` — the finding becomes valid the
+  moment it's recorded; `temporal` is `{"@type": "TemporalMetadata", "validFrom":
+  "<same as created>"}`. `schemas/findings.schema.json` fails closed if either
+  is missing.
 - The MIF **provenance** block (W3C-PROV): `sourceType`, `confidence` (0–1),
   `trustLevel`. `sourceType` MUST be one of the MIF enum values exactly —
   `user_explicit` | `user_implicit` | `agent_inferred` | `external_import` |
@@ -252,6 +259,8 @@ finding = {
     "conceptType": "...",
     "content": "...",          # arbitrary prose — a Python string, never shell-quoted
     "created": "...",
+    "modified": "...",         # same value as created for a freshly authored finding
+    "temporal": {"@type": "TemporalMetadata", "validFrom": "..."},  # same value as created
     # Citation shape (closed): no @id; cite by live http(s) url. See finding.sample.json.
     "citations": [{"@type": "Citation", "citationType": "documentation",
                    "citationRole": "supports", "title": "...", "url": "https://..."}],

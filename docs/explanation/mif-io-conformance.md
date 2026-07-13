@@ -2,7 +2,7 @@
 id: explanation-mif-io-conformance
 type: semantic
 created: '2026-06-20T06:10:40-04:00'
-modified: '2026-07-12T14:31:47.403Z'
+modified: '2026-07-13T14:57:33.850Z'
 namespace: docs/explanation
 tags:
   - documentation
@@ -19,7 +19,7 @@ provenance:
   sourceType: agent_inferred
   agent: claude-code/claude-sonnet-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:ae91b6b6-8d5c-4bea-963d-9e4b7907cf09
+    '@id': urn:mif:activity:claude-code-session:878c53f7-09b4-4f64-bb13-e210d7c2f073
     '@type': prov:Activity
   trustLevel: user_stated
   agentVersion: 2.1.207
@@ -104,6 +104,17 @@ never enabled, or the file predates capture) — this is a legitimate,
 lower-provenance-tier state the harness reports honestly rather than
 silently upgrading. See `docs/reference/dependencies.md` for how capture is
 enabled.
+
+There is a third, distinct layer: **schema conformance** above is checked
+against this harness's OWN `schemas/findings.schema.json` — which had
+silently drifted from the real, canonical schema at `mif-spec.dev` (missing
+`modified`/`temporal`/`temporal.validFrom`, required at canonical Level
+2/3) until research-harness-template#480 reconciled it. `report-synthesizer`'s
+Step 4e closes that gap by running `mif-docs-plugin`'s `mif-validate --level 3`
+skill against the canonical schema directly, after Step 4d's provenance
+stamp — the true final gate before a report is considered done. It also
+proves the markdown↔JSON-LD round-trip is lossless, a check
+`scripts/mif-project.sh` does not perform.
 
 ## Exemption — declared, never silent
 

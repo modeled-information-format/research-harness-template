@@ -5,6 +5,37 @@ from __future__ import annotations
 from typing import Any, Literal, NotRequired, TypedDict
 
 
+class Decay(TypedDict):
+    model: NotRequired[Literal["none", "linear", "exponential", "step"]]
+    halfLife: NotRequired[str]
+    currentStrength: NotRequired[float]
+    strength: NotRequired[float]
+    lastReinforced: NotRequired[str]
+
+
+class ReinforcementHistoryItem(TypedDict):
+    timestamp: str
+    event: str
+    strengthDelta: NotRequired[float]
+    context: NotRequired[str]
+
+
+Temporal = TypedDict(
+    "Temporal",
+    {
+        "@type": NotRequired[Literal["TemporalMetadata"]],
+        "validFrom": str | None,
+        "validUntil": NotRequired[str | None],
+        "recordedAt": NotRequired[str],
+        "ttl": NotRequired[str],
+        "decay": NotRequired[Decay],
+        "accessCount": NotRequired[int],
+        "lastAccessed": NotRequired[str],
+        "reinforcementHistory": NotRequired[list[ReinforcementHistoryItem]],
+    },
+)
+
+
 class Verification(TypedDict):
     verdict: Literal["falsified", "weakened", "survived", "inconclusive"]
     verdict_basis: str
@@ -158,21 +189,6 @@ class Relationship(TypedDict):
     metadata: NotRequired[dict[str, Any]]
 
 
-class Decay(TypedDict):
-    model: NotRequired[Literal["none", "linear", "exponential", "step"]]
-    halfLife: NotRequired[str]
-    currentStrength: NotRequired[float]
-    strength: NotRequired[float]
-    lastReinforced: NotRequired[str]
-
-
-class ReinforcementHistoryItem(TypedDict):
-    timestamp: str
-    event: str
-    strengthDelta: NotRequired[float]
-    context: NotRequired[str]
-
-
 TemporalMetadata = TypedDict(
     "TemporalMetadata",
     {
@@ -305,4 +321,6 @@ Mif = TypedDict(
 
 class ResearchHarnessFindingMifBacked(Mif):
     citations: list[Citation]
+    temporal: Temporal
     extensions: Extensions
+    modified: str

@@ -28,7 +28,9 @@
 # (mif-rh-cli), hard required: install it with scripts/fetch-engine.sh, put
 # mif-rh-cli on PATH, or set MIF_RH_CLI. Path/version arithmetic below (SLUG,
 # SLUGPATH, VERSION, CREATED) stays plain bash, exactly as before — none of it
-# ever used jq.
+# ever used jq. VALID_FROM (research-harness-template#480) is the one exception:
+# it reads/writes the report channel's rendered frontmatter via `yq`, since the
+# engine itself emits neither `modified` nor `temporal.validFrom` (see below).
 #
 # Usage: render-artifact.sh <artifact.json> <report|blog|book> <out.md> [<verification.json>]
 set -uo pipefail
@@ -77,9 +79,11 @@ SLUGPATH="$(dirname "$OUT_REL")/$SLUG"
 
 # Version indicator: a genre re-rendered for the same topic overwrites its file
 # in place (this harness keeps no automatic history), so a real, extractable
-# `version:` field is the only on-disk record that this is revision N, not the
-# first pass. Read the file's OWN prior version (if $OUT already exists) and
-# increment; otherwise this is version 1.
+# `version:` field is the primary on-disk record that this is revision N, not
+# the first pass (a `modified` != `temporal.validFrom` divergence, stamped
+# below, is a secondary signal of the same fact once #480 lands). Read the
+# file's OWN prior version (if $OUT already exists) and increment; otherwise
+# this is version 1.
 VERSION=1
 if [ -f "$OUT" ]; then
   # Anchored at column 0: version is always a top-level key here. An indented
@@ -91,6 +95,18 @@ if [ -f "$OUT" ]; then
   [ -n "$PREV" ] && VERSION=$((PREV + 1))
 fi
 
+# Canonical MIF Level 3 requires temporal.validFrom in addition to modified
+# (research-harness-template#480); the mif-rh engine's render-artifact command
+# does not emit either field itself. Stamp them here, the same way VERSION is
+# carried forward above: validFrom is the report's OWN first-recorded moment,
+# so a re-render must inherit the PRIOR file's validFrom rather than resetting
+# it to "now" every time — only a first-ever render sets it to $CREATED.
+VALID_FROM="$CREATED"
+if [ -f "$OUT" ]; then
+  PREV_VALID_FROM="$(yq --front-matter=extract '.temporal.validFrom // ""' "$OUT" 2>/dev/null)"
+  [ -n "$PREV_VALID_FROM" ] && [ "$PREV_VALID_FROM" != "null" ] && VALID_FROM="$PREV_VALID_FROM"
+fi
+
 RENDER_ARGS=(harness render-artifact "$ART" "$CHANNEL" --slug "$SLUG" --slugpath "$SLUGPATH" --created "$CREATED" --version "$VERSION")
 [ -n "$VERIF" ] && [ -f "$VERIF" ] && RENDER_ARGS+=(--verification "$VERIF")
 
@@ -99,6 +115,17 @@ case "$CHANNEL" in
     RTMPD="$(mktemp -d)"; RTMP="$RTMPD/report.md"; trap 'rm -rf "$RTMPD"' EXIT
     if ! "$ENGINE" "${RENDER_ARGS[@]}" "$RTMP" >/dev/null; then
       echo "render: composing the report failed" >&2
+      exit 1
+    fi
+    # CREATED/VALID_FROM are passed as env vars + strenv(), never interpolated
+    # directly into the yq expression string — CREATED is always this script's
+    # own `date -u` output, but VALID_FROM can carry forward a PRIOR render's
+    # value (read via --front-matter=extract above), so it must never be
+    # trusted as safe-to-interpolate shell/yq syntax.
+    if ! CREATED="$CREATED" VALID_FROM="$VALID_FROM" yq --front-matter=process -i \
+          '.modified = strenv(CREATED) | .temporal["@type"] = "TemporalMetadata" | .temporal.validFrom = strenv(VALID_FROM)' \
+          "$RTMP"; then
+      echo "render: failed to stamp modified/temporal.validFrom into $RTMP frontmatter" >&2
       exit 1
     fi
     if ! scripts/mif-project.sh "$RTMP" >/dev/null 2>&1; then
