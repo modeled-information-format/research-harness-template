@@ -234,6 +234,32 @@ Genres (exec-summary, academic, briefing, engineering, trend-analysis) are L3 by
 default — they shape the report's content but the report is still rendered through
 this channel and held to L3. Exemption is for orthogonal *formats*, never genres.
 
+### Publish through the Write tool (required for Step 4d to succeed)
+
+`render-artifact.sh` publishes `$OUT` via a raw filesystem rename (crash-safe
+stage → validate → atomic `mv`) — a write invisible to `mif-docs-plugin`'s
+provenance-capture hook, which only observes `Write`/`Edit`/`MultiEdit` tool
+calls (research-harness-template#479). Without this step, Step 4d's `stamp`
+call always DECLINES: the session ledger has no witnessed touch of the path,
+no matter how faithfully Step 4d itself is executed.
+
+Immediately after `render-artifact.sh` succeeds, re-publish the identical,
+already-validated content through the `Write` tool so the hook actually
+observes a touch of this file — the call is intended to carry the content
+through unchanged, purely to make an already-correct write ledger-visible:
+
+```text
+Read "$REPORTS_DIR/<slug>.md"
+```
+
+then `Write` that exact same content back to the same path. This repo's own
+`md_guard.py` `PostToolUse` hook may cosmetically auto-fix a markdownlint
+violation on this call (it fires on any `Write`/`Edit`/`MultiEdit` touching
+a `.md` path, unconditionally) — that is expected and harmless here, not a
+defect in this step: Step 4e's `mif-validate --level 3` gate, not this
+re-publish, is what actually guarantees the report's final on-disk state is
+conformant, regardless of any such cosmetic mutation.
+
 ## Step 4c — Reconcile the topic README (navigation index)
 
 The topic's `reports/<topic>/README.md` is the session's navigation index. You are

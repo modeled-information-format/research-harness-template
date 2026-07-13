@@ -294,6 +294,30 @@ gate_m3() {
   else
     bad "report-synthesizer.md (#383) regression: $rs_fail"
   fi
+
+  # research-harness-template#479: render-artifact.sh's report-channel publish
+  # is a raw filesystem mv, invisible to mif-docs-plugin's Write/Edit/MultiEdit-
+  # only provenance-capture hook. Step 4d's `stamp` call can only ever succeed
+  # if the rendered content is re-published through the Write tool first --
+  # require that instruction survive, and land strictly between the Step 4b
+  # and Step 4d headings (line-number check, not just phrase presence: a
+  # regression that moved this step outside that window would otherwise
+  # still pass a presence-only check).
+  local rs4b_line rs4d_line rs_repub_line rs_write_line rs479_fail=""
+  rs4b_line=$(grep -n '^## Step 4b' "$RS" | head -1 | cut -d: -f1)
+  rs4d_line=$(grep -n '^## Step 4d' "$RS" | head -1 | cut -d: -f1)
+  rs_repub_line=$(grep -n 're-publish the identical' "$RS" | head -1 | cut -d: -f1)
+  rs_write_line=$(grep -niE 'Write.*that exact same content back' "$RS" | head -1 | cut -d: -f1)
+  if [ -z "$rs4b_line" ] || [ -z "$rs4d_line" ] || [ -z "$rs_repub_line" ] || [ -z "$rs_write_line" ]; then
+    rs479_fail="one or more required markers (Step 4b/4d headings, re-publish phrase, Write-back phrase) is missing entirely"
+  elif ! { [ "$rs_repub_line" -gt "$rs4b_line" ] && [ "$rs_write_line" -gt "$rs_repub_line" ] && [ "$rs_write_line" -lt "$rs4d_line" ]; }; then
+    rs479_fail="the Write-tool re-publish step no longer lands between the Step 4b and Step 4d headings"
+  fi
+  if [ -z "$rs479_fail" ]; then
+    ok "report-synthesizer.md (#479): Write-tool re-publish step present between Step 4b and Step 4d"
+  else
+    bad "report-synthesizer.md (#479) regression: $rs479_fail -- render-artifact.sh's raw mv needs it there to make Step 4d's stamp reachable."
+  fi
 }
 
 # ---------------------------------------------------------------------------
