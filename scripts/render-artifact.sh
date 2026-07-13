@@ -124,7 +124,7 @@ case "$CHANNEL" in
     # trusted as safe-to-interpolate shell/yq syntax.
     if ! CREATED="$CREATED" VALID_FROM="$VALID_FROM" yq --front-matter=process -i \
           '.modified = strenv(CREATED) | .temporal["@type"] = "TemporalMetadata" | .temporal.validFrom = strenv(VALID_FROM)' \
-          "$RTMP" 2>/dev/null; then
+          "$RTMP"; then
       echo "render: failed to stamp modified/temporal.validFrom into $RTMP frontmatter" >&2
       exit 1
     fi
