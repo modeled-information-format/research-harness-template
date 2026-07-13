@@ -223,33 +223,12 @@ scripts/synthesize-artifact.sh "$REPORTS_DIR/findings" "$GENRE" "$REPORTS_DIR/ar
 #    The gate enforces that SOME well-formed, non-falsified verdict is present; that
 #    it was honestly earned rests on you, exactly as for a finding.
 
-# 3. Render the report, passing the real verdict. render-artifact.sh write-then-
-#    validates via scripts/mif-project.sh and fails closed if the report does not
-#    project to a valid L3 finding.
+# 3. Render the report, passing the real verdict. scripts/render-artifact.sh
+#    write-then-validates via scripts/mif-project.sh and fails closed if the
+#    report does not project to a valid L3 finding.
 scripts/render-artifact.sh "$REPORTS_DIR/artifact.json" report \
   "$REPORTS_DIR/<slug>.md" "$REPORTS_DIR/report.verification.json"
 ```
-
-## Step 4b-bis — Gate against the canonical mif-spec.dev schema (mif-validate)
-
-`render-artifact.sh` already write-then-validates against this harness's OWN
-`schemas/findings.schema.json` via `scripts/mif-project.sh`. That is necessary
-but not sufficient: the harness's bespoke reading of "MIF Level 3" had silently
-drifted from the real, canonical schema at `mif-spec.dev` (a gap this Step
-exists to close — research-harness-template#480, following up on Story #408's
-original, never-fulfilled promise to wire this in). Run the SAME
-`mif-docs-plugin` skill Step 4d below uses for provenance, invoked the same
-way — via the `Skill` tool, namespaced `pack:skill`, never a raw shell command
-(the plugin's own scripts are not a public CLI contract):
-
-```text
-Skill(mif-docs:mif-validate) — "$REPORTS_DIR/<slug>.md --level 3"
-```
-
-This additionally proves the markdown<->JSON-LD round-trip is lossless, a
-check `mif-project.sh` does not perform. Fails closed: if this reports
-INVALID, the report is not done — fix the frontmatter and re-render before
-proceeding to Step 4c.
 
 Genres (exec-summary, academic, briefing, engineering, trend-analysis) are L3 by
 default — they shape the report's content but the report is still rendered through
@@ -326,6 +305,30 @@ Skill(mif-docs:mif-provenance) — "stamp $REPORTS_DIR/<slug>.md"
 - Stamping never trades conformance for provenance: if it would drop the
   report below the MIF level it already satisfies, it declines and leaves
   the file untouched.
+
+## Step 4e — Gate against the canonical mif-spec.dev schema (mif-validate)
+
+Step 4b's `scripts/render-artifact.sh` already write-then-validates against
+this harness's OWN `schemas/findings.schema.json` via `scripts/mif-project.sh`.
+That is necessary but not sufficient: the harness's bespoke reading of "MIF
+Level 3" had silently drifted from the real, canonical schema at
+`mif-spec.dev` (a gap this Step exists to close — research-harness-template#480,
+following up on Story #408's original, never-fulfilled promise to wire this
+in). Run this AFTER Step 4d, once the report's frontmatter has taken its
+final form (including any provenance stamp), so this is the true final gate
+before the report is considered done — not a check on a since-mutated file.
+Invoke it the SAME way Step 4d invokes `mif-provenance` — via the `Skill`
+tool, namespaced `pack:skill`, never a raw shell command (the plugin's own
+scripts are not a public CLI contract):
+
+```text
+Skill(mif-docs:mif-validate) — "$REPORTS_DIR/<slug>.md --level 3"
+```
+
+This additionally proves the markdown<->JSON-LD round-trip is lossless, a
+check `mif-project.sh` does not perform. Fails closed: if this reports
+INVALID, the report is not done — fix the frontmatter and re-render before
+proceeding to Step 5.
 
 ## Step 5 — Self-review before handoff (blocking)
 

@@ -6,20 +6,15 @@ conceptType: semantic
 namespace: harness/example-topic
 title: "Sample synthesis report"
 created: "2026-06-19T12:00:00Z"
-modified: '2026-07-13T14:11:01.729Z'
+modified: "2026-06-19T12:00:00Z"
 temporal:
   "@type": TemporalMetadata
   validFrom: "2026-06-19T12:00:00Z"
 provenance:
-  '@type': Provenance
+  "@type": Provenance
   sourceType: system_generated
   confidence: 0.9
-  trustLevel: user_stated
-  agent: claude-code/claude-sonnet-5
-  wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:878c53f7-09b4-4f64-bb13-e210d7c2f073
-    '@type': prov:Activity
-  agentVersion: 2.1.207
+  trustLevel: moderate_confidence
 citations:
   - "@type": Citation
     citationType: documentation
