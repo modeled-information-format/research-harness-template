@@ -2,17 +2,22 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://research-harness.dev/schema/findings.schema.json",
   "title": "Research Harness Finding (MIF-backed)",
-  "description": "A research finding is a MIF v1.0 memory unit (schemas/mif/mif.schema.json) extended with two harness-local concerns that MIF core does not carry (SPEC §8b): a non-empty citation set (citation-integrity is a core gate, SPEC §6c/§6d) and an adversarial-falsification verification record under extensions.harness. The base $ref points at the REAL vendored MIF schema; this file only adds, never overrides.",
+  "description": "A research finding is a MIF v1.0 memory unit (schemas/mif/mif.schema.json) extended with two harness-local concerns that MIF core does not carry (SPEC §8b): a non-empty citation set (citation-integrity is a core gate, SPEC §6c/§6d) and an adversarial-falsification verification record under extensions.harness. The base $ref points at the REAL vendored MIF schema; this file only adds, never overrides. Also enforces the canonical mif-spec.dev Level 2/3 floor (modified, temporal, temporal.validFrom) that the base schema leaves optional (research-harness-template#480) — every finding and rendered report gates through this file (write-finding.sh, mif-project.sh), so requiring these here is what makes the harness's own MIF Level 3 claim actually true against the canonical schema, not just its own bespoke reading of it.",
   "allOf": [
     { "$ref": "https://mif-spec.dev/schema/mif.schema.json" },
     {
       "type": "object",
-      "required": ["citations", "extensions"],
+      "required": ["citations", "extensions", "modified", "temporal"],
       "properties": {
         "citations": {
           "type": "array",
           "minItems": 1,
           "description": "MIF Level 3 citations; at least one is required so every finding is traceable to a primary source (citation-integrity gate)."
+        },
+        "temporal": {
+          "type": "object",
+          "required": ["validFrom"],
+          "description": "Canonical MIF Level 3 requires temporal.validFrom in addition to temporal being present (Level 2). The shape of temporal itself (validFrom/validUntil/recordedAt/ttl/decay) is governed by the base schema's TemporalMetadata definition; this only adds the validFrom requirement."
         },
         "extensions": {
           "type": "object",

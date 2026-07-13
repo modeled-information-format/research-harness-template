@@ -82,6 +82,8 @@ def to_finding(rec, topic, namespace, now_iso):
             )
         ),
         "created": now_iso,
+        "modified": now_iso,
+        "temporal": {"@type": "TemporalMetadata", "validFrom": now_iso},
         "namespace": namespace,
         "tags": ["continuous-monitoring", rec.get("source", "unknown")],
         "citations": citations,

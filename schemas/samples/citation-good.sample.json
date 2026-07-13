@@ -6,6 +6,11 @@
   "title": "STORM multi-perspective fan-out outperforms single-pass RAG",
   "content": "Fan-out across multiple perspectives before synthesis improves organization (~25%) and coverage (~10%) over single-pass retrieval-augmented generation.",
   "created": "2026-06-19T12:00:00Z",
+  "modified": "2026-06-19T12:00:00Z",
+  "temporal": {
+    "@type": "TemporalMetadata",
+    "validFrom": "2026-06-19T12:00:00Z"
+  },
   "citations": [
     {
       "@type": "Citation",

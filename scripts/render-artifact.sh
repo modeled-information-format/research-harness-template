@@ -91,6 +91,18 @@ if [ -f "$OUT" ]; then
   [ -n "$PREV" ] && VERSION=$((PREV + 1))
 fi
 
+# Canonical MIF Level 3 requires temporal.validFrom in addition to modified
+# (research-harness-template#480); the mif-rh engine's render-artifact command
+# does not emit either field itself. Stamp them here, the same way VERSION is
+# carried forward above: validFrom is the report's OWN first-recorded moment,
+# so a re-render must inherit the PRIOR file's validFrom rather than resetting
+# it to "now" every time — only a first-ever render sets it to $CREATED.
+VALID_FROM="$CREATED"
+if [ -f "$OUT" ]; then
+  PREV_VALID_FROM="$(yq --front-matter=extract '.temporal.validFrom // ""' "$OUT" 2>/dev/null)"
+  [ -n "$PREV_VALID_FROM" ] && [ "$PREV_VALID_FROM" != "null" ] && VALID_FROM="$PREV_VALID_FROM"
+fi
+
 RENDER_ARGS=(harness render-artifact "$ART" "$CHANNEL" --slug "$SLUG" --slugpath "$SLUGPATH" --created "$CREATED" --version "$VERSION")
 [ -n "$VERIF" ] && [ -f "$VERIF" ] && RENDER_ARGS+=(--verification "$VERIF")
 
@@ -99,6 +111,12 @@ case "$CHANNEL" in
     RTMPD="$(mktemp -d)"; RTMP="$RTMPD/report.md"; trap 'rm -rf "$RTMPD"' EXIT
     if ! "$ENGINE" "${RENDER_ARGS[@]}" "$RTMP" >/dev/null; then
       echo "render: composing the report failed" >&2
+      exit 1
+    fi
+    if ! yq --front-matter=process -i \
+          ".modified = \"$CREATED\" | .temporal[\"@type\"] = \"TemporalMetadata\" | .temporal.validFrom = \"$VALID_FROM\"" \
+          "$RTMP" 2>/dev/null; then
+      echo "render: failed to stamp modified/temporal.validFrom into $RTMP frontmatter" >&2
       exit 1
     fi
     if ! scripts/mif-project.sh "$RTMP" >/dev/null 2>&1; then

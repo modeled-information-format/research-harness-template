@@ -23,6 +23,11 @@
   "conceptType": "semantic",
   "content": "The Open Knowledge Format (OKF) v0.1, published by Google Cloud on 12 June 2026, represents an organization's knowledge as a directory tree of markdown files, each with a YAML frontmatter block. The specification is deliberately minimal: the ONLY required frontmatter field is 'type', a short producer-defined string (e.g., 'BigQuery Table', 'API Endpoint', 'Playbook'). No central type registry exists; consumers MUST tolerate unknown type values. Recommended optional fields in priority order are: 'title' (human-readable display name), 'description' (single-sentence summary), 'resource' (URI for the underlying asset), 'tags' (YAML list), and 'timestamp' (ISO 8601 datetime of last meaningful change). Producers MAY add any additional key-value pairs; consumers MUST preserve unknown keys and MUST NOT reject documents with unrecognized fields. The Knowledge Bundle is a self-contained hierarchical collection distributed as a git repo, tarball, or directory. Two reserved filenames serve structural purposes: 'index.md' (directory listing for progressive disclosure, no frontmatter) and 'log.md' (optional chronological update history, date-grouped). All other .md files are concept documents. Conformance requires only that every non-reserved .md file contains parseable YAML frontmatter with a non-empty 'type' field. All other constraints are soft guidance. OKF explicitly omits: fixed type taxonomies, formal ontologies, provenance tracking mechanisms, typed relationship definitions, storage/query infrastructure, and domain-specific schemas. This intentional minimalism makes OKF a portable interoperability surface rather than a content model — defining what producers and consumers agree on, not what knowledge means.",
   "created": "2026-06-28T00:00:00Z",
+  "modified": "2026-06-28T00:00:00Z",
+  "temporal": {
+    "@type": "TemporalMetadata",
+    "validFrom": "2026-06-28T00:00:00Z"
+  },
   "extensions": {
     "harness": {
       "dimension": "technical",

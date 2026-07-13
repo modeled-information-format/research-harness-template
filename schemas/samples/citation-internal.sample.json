@@ -6,6 +6,11 @@
   "title": "Internal corpus citation is traceable only when the feature flag opts in",
   "content": "A finding whose sole citation is an internal/document source carrying quoted evidence in note is traceable ONLY when features.internalCitations is enabled; under the strict default (flag absent/false) it must be rejected as untraceable.",
   "created": "2026-06-19T12:00:00Z",
+  "modified": "2026-06-19T12:00:00Z",
+  "temporal": {
+    "@type": "TemporalMetadata",
+    "validFrom": "2026-06-19T12:00:00Z"
+  },
   "citations": [
     {
       "@type": "Citation",

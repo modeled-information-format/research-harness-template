@@ -8,23 +8,69 @@
   "content": "An edge gateway consolidates local inference and preprocessing and manages the uplink, making it the architectural keystone that the latency and bandwidth benefits depend on.",
   "summary": "The edge gateway consolidates local compute and the uplink.",
   "created": "2025-11-04T11:00:00Z",
-  "tags": ["edge", "gateway", "architecture"],
+  "modified": "2025-11-04T11:00:00Z",
+  "temporal": {
+    "@type": "TemporalMetadata",
+    "validFrom": "2025-11-04T11:00:00Z"
+  },
+  "tags": [
+    "edge",
+    "gateway",
+    "architecture"
+  ],
   "entities": [
-    { "@type": "EntityReference", "entity": { "@id": "urn:mif:entity:technology:edge-gateway" }, "entityType": "Technology", "name": "edge gateway" },
-    { "@type": "EntityReference", "entity": { "@id": "urn:mif:entity:concept:edge-compute" }, "entityType": "Concept", "name": "edge compute" }
+    {
+      "@type": "EntityReference",
+      "entity": {
+        "@id": "urn:mif:entity:technology:edge-gateway"
+      },
+      "entityType": "Technology",
+      "name": "edge gateway"
+    },
+    {
+      "@type": "EntityReference",
+      "entity": {
+        "@id": "urn:mif:entity:concept:edge-compute"
+      },
+      "entityType": "Concept",
+      "name": "edge compute"
+    }
   ],
   "relationships": [
-    { "type": "derived-from", "target": "urn:mif:concept:sample:edge-compute-0001", "strength": 0.8 },
-    { "type": "derived-from", "target": "urn:mif:concept:sample:bandwidth-0002", "strength": 0.7 }
+    {
+      "type": "derived-from",
+      "target": "urn:mif:concept:sample:edge-compute-0001",
+      "strength": 0.8
+    },
+    {
+      "type": "derived-from",
+      "target": "urn:mif:concept:sample:bandwidth-0002",
+      "strength": 0.7
+    }
   ],
-  "provenance": { "@type": "Provenance", "sourceType": "external_import", "confidence": 0.9, "trustLevel": "high_confidence" },
+  "provenance": {
+    "@type": "Provenance",
+    "sourceType": "external_import",
+    "confidence": 0.9,
+    "trustLevel": "high_confidence"
+  },
   "citations": [
-    { "@type": "Citation", "citationType": "documentation", "citationRole": "supports", "title": "Edge gateway reference architecture", "url": "https://www.iiconsortium.org/", "accessed": "2025-11-04" }
+    {
+      "@type": "Citation",
+      "citationType": "documentation",
+      "citationRole": "supports",
+      "title": "Edge gateway reference architecture",
+      "url": "https://www.iiconsortium.org/",
+      "accessed": "2025-11-04"
+    }
   ],
   "extensions": {
     "harness": {
       "dimension": "technical",
-      "verification": { "verdict": "survived", "verdict_basis": "Synthesis of the latency and bandwidth findings; architecturally sound." }
+      "verification": {
+        "verdict": "survived",
+        "verdict_basis": "Synthesis of the latency and bandwidth findings; architecturally sound."
+      }
     }
   }
 }

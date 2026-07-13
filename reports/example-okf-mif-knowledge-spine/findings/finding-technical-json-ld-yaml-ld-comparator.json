@@ -31,6 +31,11 @@
   "conceptType": "semantic",
   "content": "JSON-LD (JSON for Linked Data, W3C Recommendation 1.1, 2020) and its YAML superset YAML-LD (W3C JSON-LD Community Group Final Report, December 2023) deliver the core of what the OKF+MIF stack provides, but at a different layer of the stack: JSON-LD enables any JSON document to carry globally-identified typed entities and relationships through three reserved keywords: '@context' (vocabulary mapping), '@id' (global URI), '@type' (class assignment). A JSON-LD document can be mechanically converted to RDF triples, enabling SPARQL queries and OWL reasoning. YAML-LD extends this to YAML, using use cases including 'static site front matter, API documentation formats, Verifiable Credentials, FAIR metadata publications, and nanopublications.' The technical gap relative to OKF+MIF is: (1) Human authoring: JSON-LD requires authors to manage '@context' URIs, global identifiers, and RDF-compatible field names. YAML-LD eases this but still requires Linked Data literacy. OKF's plain YAML frontmatter is authorable by any developer without semantic-web training. (2) Markdown body: JSON-LD/YAML-LD are purely data formats; they carry no concept for human-readable narrative alongside structured metadata. OKF's dual markdown+YAML structure is the key affordance that makes knowledge bundles both agent-consumable and human-readable. (3) Git-native distribution: JSON-LD files can live in git, but the OKF bundle (index.md, log.md, directory-organized concept files) is specifically designed for git workflows — pull requests, diffs, blame, and review are first-class. A JSON-LD graph lacks the progressive-disclosure and human-navigation affordances that OKF directories provide. The OKF+MIF stack can be understood as a pragmatic middle path: OKF provides JSON-LD's human/agent interoperability goal at markdown authoring cost, while MIF provides JSON-LD's semantic typing via its own context.jsonld — without requiring every author to understand RDF or write @context declarations.",
   "created": "2026-06-28T00:00:00Z",
+  "modified": "2026-06-28T00:00:00Z",
+  "temporal": {
+    "@type": "TemporalMetadata",
+    "validFrom": "2026-06-28T00:00:00Z"
+  },
   "extensions": {
     "harness": {
       "dimension": "technical",

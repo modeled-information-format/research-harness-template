@@ -6,6 +6,11 @@
   "title": "Claim with no live, well-formed citation",
   "content": "An assertion that lacks any traceable primary source and carries a citation with a malformed URL.",
   "created": "2026-06-19T12:00:00Z",
+  "modified": "2026-06-19T12:00:00Z",
+  "temporal": {
+    "@type": "TemporalMetadata",
+    "validFrom": "2026-06-19T12:00:00Z"
+  },
   "citations": [
     {
       "@type": "Citation",
@@ -22,7 +27,11 @@
         "verdict": "falsified",
         "verdict_basis": "Disconfirming search produced direct counterevidence."
       },
-      "citationStatus": { "deadUrls": ["not-a-real-url"] }
+      "citationStatus": {
+        "deadUrls": [
+          "not-a-real-url"
+        ]
+      }
     }
   }
 }

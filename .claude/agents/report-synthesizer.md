@@ -230,6 +230,27 @@ scripts/render-artifact.sh "$REPORTS_DIR/artifact.json" report \
   "$REPORTS_DIR/<slug>.md" "$REPORTS_DIR/report.verification.json"
 ```
 
+## Step 4b-bis — Gate against the canonical mif-spec.dev schema (mif-validate)
+
+`render-artifact.sh` already write-then-validates against this harness's OWN
+`schemas/findings.schema.json` via `scripts/mif-project.sh`. That is necessary
+but not sufficient: the harness's bespoke reading of "MIF Level 3" had silently
+drifted from the real, canonical schema at `mif-spec.dev` (a gap this Step
+exists to close — research-harness-template#480, following up on Story #408's
+original, never-fulfilled promise to wire this in). Run the SAME
+`mif-docs-plugin` skill Step 4d below uses for provenance, invoked the same
+way — via the `Skill` tool, namespaced `pack:skill`, never a raw shell command
+(the plugin's own scripts are not a public CLI contract):
+
+```text
+Skill(mif-docs:mif-validate) — "$REPORTS_DIR/<slug>.md --level 3"
+```
+
+This additionally proves the markdown<->JSON-LD round-trip is lossless, a
+check `mif-project.sh` does not perform. Fails closed: if this reports
+INVALID, the report is not done — fix the frontmatter and re-render before
+proceeding to Step 4c.
+
 Genres (exec-summary, academic, briefing, engineering, trend-analysis) are L3 by
 default — they shape the report's content but the report is still rendered through
 this channel and held to L3. Exemption is for orthogonal *formats*, never genres.

@@ -31,6 +31,11 @@
   "conceptType": "semantic",
   "content": "OKF v0.1's temporal model is a single optional frontmatter field: 'timestamp' (ISO 8601 datetime of last meaningful change). This is a point-in-time last-modified marker, not a temporal knowledge model. It cannot express: when the fact the concept describes became true (valid time), when the concept was recorded in the bundle (transaction time), or how confident the knowledge remains as time passes without reinforcement. MIF provides a 'temporal' block with three independent axes: (1) 'validFrom' / 'validUntil' — the real-world validity window for the claim (valid time). A regulatory fact may be valid from 2024-01-01 to 2025-12-31; OKF cannot express this interval. (2) 'recordedAt' — when the concept was captured in the knowledge store (transaction time). The combination enables bi-temporal queries: 'what did the agent believe at T?' vs. 'what was actually true at T?' — the core requirement for auditable knowledge systems. (3) Decay modeling: a 'ttl' field (ISO 8601 duration, e.g. 'P90D') and a 'decay' sub-object with 'model' (linear, exponential, or step), 'halfLife' (ISO 8601 duration), 'currentStrength' (0.0–1.0), and 'lastReinforced'. This Ebbinghaus-inspired decay model allows a knowledge-spine consumer to automatically demote or flag concepts whose temporal validity is weakening, without requiring a human to manually audit freshness. MIF also defines 'lastAccessed' and a 'reinforcementHistory[]' array to track how many times and when a concept has been confirmed or challenged. In an OKF+MIF layering, the temporal and decay fields would be encoded as extended frontmatter or companion JSON alongside OKF bundles, enabling the git-distributable OKF packaging layer to carry time-bounded, decay-aware knowledge — a capability no plain markdown format provides.",
   "created": "2026-06-28T00:00:00Z",
+  "modified": "2026-06-28T00:00:00Z",
+  "temporal": {
+    "@type": "TemporalMetadata",
+    "validFrom": "2026-06-28T00:00:00Z"
+  },
   "extensions": {
     "harness": {
       "dimension": "technical",

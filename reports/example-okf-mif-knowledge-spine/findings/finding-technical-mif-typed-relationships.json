@@ -31,6 +31,11 @@
   "conceptType": "semantic",
   "content": "MIF's typed relationship system is the central semantic layer that OKF's untyped markdown links lack. In MIF, every Concept object MAY carry a 'relationships[]' array where each entry is a typed directed edge to another concept identified by its 'urn:mif:concept:' URI. The MIF schema defines a 'type' pattern '^[a-z0-9][a-z0-9-]*(:[a-z0-9][a-z0-9-]*)?$' — allowing both simple kebab-case tokens (for the structural-core types) and namespaced tokens (for domain-specific extensions). The nine MIF-native structural-core relationship types, validated by the concordance gate, are: 'supports' (one finding confirms another), 'contradicts' (adversarial counter-evidence), 'derived-from' (synthesis from a source), 'relates-to' (associative, non-directional semantics), 'supersedes' (replaces an earlier version), 'refines' (narrows or clarifies), 'part-of' (containment or composition), 'depends-on' (dependency), 'updates' (temporal replacement). Each relationship entry also carries an optional 'strength' numeric score (0.0 to 1.0) indicating confidence or weight of the edge, and an optional 'metadata' extension object for context. This formal graph substrate enables: concordance validation across topics, knowledge-graph traversal for clustering and gap analysis, ontological spine construction, and machine-checkable assertions about relationships between findings. In an OKF+MIF layering, OKF bundles would contain the file-system packaging and human-readable prose while MIF's typed relationships would be encoded as extended frontmatter or companion JSON files — the semantic enrichment layer over OKF's minimalist structure. This means OKF provides the authoring and distribution surface (git-native, markdown-first) while MIF provides the queryable semantic graph that neither OKF nor any plain markdown tool can natively support.",
   "created": "2026-06-28T00:00:00Z",
+  "modified": "2026-06-28T00:00:00Z",
+  "temporal": {
+    "@type": "TemporalMetadata",
+    "validFrom": "2026-06-28T00:00:00Z"
+  },
   "entity": {
     "entity_type": "concept",
     "name": "MIF's typed relationship system"

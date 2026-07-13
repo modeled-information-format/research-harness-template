@@ -8,22 +8,63 @@
   "content": "Cookiecutter and bare GitHub template repos generate a project once; there is no supported mechanism to re-apply later template changes. This contrasts with update-propagating engines.",
   "summary": "Cookiecutter is snapshot-only; no update propagation.",
   "created": "2026-06-19T12:05:00Z",
-  "tags": ["distribution", "template-engine"],
+  "modified": "2026-06-19T12:05:00Z",
+  "temporal": {
+    "@type": "TemporalMetadata",
+    "validFrom": "2026-06-19T12:05:00Z"
+  },
+  "tags": [
+    "distribution",
+    "template-engine"
+  ],
   "entities": [
-    { "@type": "EntityReference", "entity": { "@id": "urn:mif:entity:technology:cookiecutter" }, "entityType": "Technology", "name": "Cookiecutter" },
-    { "@type": "EntityReference", "entity": { "@id": "urn:mif:entity:concept:update-propagation" }, "entityType": "Concept", "name": "update propagation" }
+    {
+      "@type": "EntityReference",
+      "entity": {
+        "@id": "urn:mif:entity:technology:cookiecutter"
+      },
+      "entityType": "Technology",
+      "name": "Cookiecutter"
+    },
+    {
+      "@type": "EntityReference",
+      "entity": {
+        "@id": "urn:mif:entity:concept:update-propagation"
+      },
+      "entityType": "Concept",
+      "name": "update propagation"
+    }
   ],
   "relationships": [
-    { "type": "contradicts", "target": "urn:mif:concept:harness:kg-copier-0001", "strength": 0.7 }
+    {
+      "type": "contradicts",
+      "target": "urn:mif:concept:harness:kg-copier-0001",
+      "strength": 0.7
+    }
   ],
-  "provenance": { "@type": "Provenance", "sourceType": "agent_inferred", "confidence": 0.85, "trustLevel": "high_confidence" },
+  "provenance": {
+    "@type": "Provenance",
+    "sourceType": "agent_inferred",
+    "confidence": 0.85,
+    "trustLevel": "high_confidence"
+  },
   "citations": [
-    { "@type": "Citation", "citationType": "documentation", "citationRole": "background", "title": "Cookiecutter documentation", "url": "https://cookiecutter.readthedocs.io/", "accessed": "2026-06-19" }
+    {
+      "@type": "Citation",
+      "citationType": "documentation",
+      "citationRole": "background",
+      "title": "Cookiecutter documentation",
+      "url": "https://cookiecutter.readthedocs.io/",
+      "accessed": "2026-06-19"
+    }
   ],
   "extensions": {
     "harness": {
       "dimension": "landscape",
-      "verification": { "verdict": "survived", "verdict_basis": "No disconfirming evidence that Cookiecutter supports update propagation." }
+      "verification": {
+        "verdict": "survived",
+        "verdict_basis": "No disconfirming evidence that Cookiecutter supports update propagation."
+      }
     }
   }
 }
