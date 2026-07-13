@@ -2,7 +2,7 @@
 id: reference-packs-and-plugins
 type: semantic
 created: '2026-06-23T09:41:01-04:00'
-modified: '2026-07-13T12:14:19.331Z'
+modified: '2026-07-13T12:30:03.129Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -231,13 +231,15 @@ before `harness.config.json` can reference it by name.
 
 ## Bundled inventory
 
-The harness bundles **34 pack plugins** across four families. Each family has a
-dedicated reference page documenting every component's purpose, constraints, and
-goals; for channels, market-research, and trend-modeling, the counts below
-match `ls packs/<family>/` exactly. Report genres are the exception: all 18
-are consumed externally from `mif-docs-plugin` (no `packs/reports/`
-directory exists to `ls`), so that count instead matches the family's
-reference page and `harness.config.json` `packs[]`.
+This inventory covers **39 pack plugins** across five families — matching
+`harness.config.json` `packs[]` exactly. Each family has a dedicated reference
+page documenting every component's purpose, constraints, and goals; for
+channels, market-research, and trend-modeling, the counts below also match
+`ls packs/<family>/` directly. Report genres and spec genres are the
+exception: all 18 report genres and all 5 spec genres are consumed externally
+from `mif-docs-plugin` (no `packs/reports/` or `packs/genres/` directory
+exists to `ls`), so those two counts instead match each family's reference
+page and `harness.config.json` `packs[]`.
 
 **Channels** — render adapters ([`packs/channels/`](packs/channels.md), 10 plugins):
 `ai-spec`, `book`, `diataxis`, `ectd`, `github-discuss`, `github-issues`, `jats`,
@@ -254,6 +256,13 @@ opt-in): `academic`, `briefing`, `clinical-submission`, `competitive-quadrant`,
 `nist-sp`, `regulatory-disclosure`, `security-pentest`, `sustainability-report`,
 `systematic-review`, `trend-analysis`.
 
+**Spec genres** — architecture/requirements deliverable templates
+([`packs/genres.md`](packs/genres.md), 5 plugins, all consumed externally from
+[`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)
+per ADR-0018 — no `packs/genres/` directory):
+`ai-architecture-doc`, `feature-spec`, `kiro-design`, `kiro-requirements`,
+`kiro-tasks`.
+
 **Market-research methodologies** — research dimensions
 ([`packs/market-research/`](packs/market-research.md), 5 plugins):
 `competitive-analysis`, `customer-research`, `financial-analysis`,
@@ -262,7 +271,7 @@ opt-in): `academic`, `briefing`, `clinical-submission`, `competitive-quadrant`,
 **Trend-modeling** — three-valued scenario methodology
 ([`packs/trend-modeling/`](packs/trend-modeling.md), 1 plugin): `trend-modeling`.
 
-Domain ontologies are not one of the four bundled families above — there is no
+Domain ontologies are not one of the five families above — there is no
 `packs/ontologies/` directory. They are vendored on demand from the canonical
 registry per ADR-0012 (23 currently enabled per `harness.config.json`
 `ontologies[]`); see [Ontology packs](packs/ontologies.md) and
