@@ -227,9 +227,12 @@ dropped to an invalid level.
 inherits `maxLength: 500` from the canonical MIF schema (`schemas/mif/mif.schema.json`)
 — that cap is a vendored MIF Level 3 constraint, not a harness-local choice, so
 it is never raised here; the appended text must fit under it instead. Never
-concatenate the qualifier onto `summary` unbounded. Build it to a fixed,
-capped template and truncate the *original* summary, not the qualifier, to
-make room — the qualifier is the new, higher-priority signal a reader needs:
+concatenate the qualifier onto `summary` unbounded. Two truncation stages,
+in order: first cap the qualifier itself at `QUALIFIER_CAP` (trimming the
+`verdict_basis` text it wraps, not the fixed template around it, if it runs
+long); then truncate the *original* summary to whatever budget remains under
+`MAX_SUMMARY_LEN`. The qualifier is the new, higher-priority signal a reader
+needs, so it is capped independently rather than sacrificed to make room:
 
 ```python
 MAX_SUMMARY_LEN = 500

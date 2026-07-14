@@ -17,10 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `summary` with no length bound, so a verbose qualifier could push the field
   over `maxLength` — observed up to 723 chars, 5 of 19 weakened findings in
   one gate run, discovered only after the fact by `reconcile-session.sh`
-  rather than at write time. Step 7 now specifies a fixed, capped qualifier
-  template and truncates the original summary (not the qualifier) to fit
-  under the cap, which is inherited from the vendored MIF schema and is never
-  raised here. Step 6's re-validation `ajv` command was also missing the
+  rather than at write time. Step 7 now truncates in two stages: the
+  qualifier itself is capped first (trimming the verdict-basis text it
+  wraps, not the fixed template around it), then the original summary is
+  truncated to whatever budget remains under the cap, which is inherited
+  from the vendored MIF schema and is never raised here. Step 6's
+  re-validation `ajv` command was also missing the
   `entity-reference.schema.json` ref that `write-finding.sh` and
   `dimension-analyst.md` both include, so some ref-dependent violations could
   slip past the analyst's own check.
