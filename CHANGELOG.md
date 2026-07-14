@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.1] - 2026-07-14
+
+### Fixed
+
+- **Guarded remaining unbound-variable-risk `"${arr[@]}"` expansions for bash
+  3.2** (research-harness-template#499): stock, unpatched macOS bash treats
+  `"${array[@]}"` on a zero-element array as unbound under `set -u`, even when
+  the array was declared with `array=()`. Applies the same
+  `"${arr[@]+"${arr[@]}"}"` guard used to fix #496 (PR #498) to every other
+  occurrence found by re-auditing the current tree: `scripts/resolve-ontology.sh`,
+  `scripts/wrap-source.sh`, `scripts/fetch-ontology.sh`,
+  `scripts/render-artifact.sh`, `scripts/backfill-report-slugs.sh`,
+  `scripts/codegen/gen-models.sh`, `scripts/verify.sh`,
+  `scripts/build-topic-readme.sh`,
+  `packs/monitoring/continuous-monitor/scripts/run-monitoring.sh`,
+  `packs/channels/diataxis/scripts/render-diataxis.sh`,
+  `evals/mif-container-nfr-verification.sh`, and
+  `.claude/skills/ontology-manager/scripts/scaffold_ontology.sh`.
+
 ### Changed
 
 - **Continuous monitoring repackaged as a pack** (`packs/monitoring/continuous-monitor`,

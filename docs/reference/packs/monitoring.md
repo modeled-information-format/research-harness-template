@@ -48,7 +48,7 @@ For control-plane mechanics see [Packs and Plugins](../packs-and-plugins.md).
 
 ## continuous-monitor
 
-**Version:** 0.1.0 | **Kind:** methodology
+**Version:** 0.14.1
 
 **Source:** [`packs/monitoring/continuous-monitor/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/monitoring/continuous-monitor)
 

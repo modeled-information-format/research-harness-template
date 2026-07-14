@@ -120,7 +120,7 @@ scripts/pack-toggle.sh book on
 
 ## diataxis
 
-**Version:** 0.4.2 | **Kind:** channel | **MIF level:** L1 only (output) | **Skill:** `diataxis:diataxis-docs`
+**Version:** 0.14.1
 
 **Source:** [`packs/channels/diataxis/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/channels/diataxis)
 

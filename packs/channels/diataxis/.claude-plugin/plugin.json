@@ -1,6 +1,6 @@
 {
   "name": "diataxis",
-  "version": "0.4.2",
+  "version": "0.14.1",
   "kind": "channel",
   "mif": {
     "exempt": true,
