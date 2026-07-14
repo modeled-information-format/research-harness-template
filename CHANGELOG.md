@@ -16,7 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   dramatically stale — `COMPLETION-CRITERIA.md`'s last documented milestone
   was 13 and `IMPLEMENTATION-PLAN.md`'s last phase was 8, while
   `scripts/verify.sh` had already grown through `gate_m32`. Reconstructed
-  Milestone/Phase 9 and 14 through 32 (MIF I/O conformance, session-recovery
+  Milestone 9 and Milestones 14 through 32 in `COMPLETION-CRITERIA.md`, and
+  Phases 9 through 32 in `IMPLEMENTATION-PLAN.md` (MIF I/O conformance, session-recovery
   durability, ontology conformance, the falsification phase-gate, goal
   evolution, the Diátaxis channel, README freshness, the ADR-0011 fail-closed
   ontology-completeness gate, the cross-topic corpus atlas, the full
