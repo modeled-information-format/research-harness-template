@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-07-14
+
+Release-pointer advance only (ADR-0010) — no new component changes of its
+own. Cuts a release bundling everything merged since `v0.13.0`, each already
+documented in its own dated section below (most recently the bash 3.2
+array-expansion fixes in #498/#500 and the milestone-docs backfill in #501).
+
 ## [0.14.1] - 2026-07-14
 
 ### Added
