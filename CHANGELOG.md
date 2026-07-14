@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.1] - 2026-07-14
+
+### Fixed
+
+- **`falsification-analyst`'s weakened-remediation could push a finding's
+  `summary` past the MIF schema's 500-char cap** (research-harness-template#503):
+  the agent's Step 7 remediation appended a "Falsification note" qualifier to
+  `summary` with no length bound, so a verbose qualifier could push the field
+  over `maxLength` — observed up to 723 chars, 5 of 19 weakened findings in
+  one gate run, discovered only after the fact by `reconcile-session.sh`
+  rather than at write time. Step 7 now specifies a fixed, capped qualifier
+  template and truncates the original summary (not the qualifier) to fit
+  under the cap, which is inherited from the vendored MIF schema and is never
+  raised here. Step 6's re-validation `ajv` command was also missing the
+  `entity-reference.schema.json` ref that `write-finding.sh` and
+  `dimension-analyst.md` both include, so some ref-dependent violations could
+  slip past the analyst's own check.
+
 ## [0.15.0] - 2026-07-14
 
 Release-pointer advance only (ADR-0010) — no new component changes of its
