@@ -2,7 +2,7 @@
 id: reference-packs-channels
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-12T17:14:05.036Z'
+modified: '2026-07-14T13:18:01.461Z'
 namespace: docs/reference/packs
 tags:
   - documentation
@@ -19,10 +19,10 @@ provenance:
   sourceType: agent_inferred
   agent: claude-code/claude-sonnet-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:ae91b6b6-8d5c-4bea-963d-9e4b7907cf09
+    '@id': urn:mif:activity:claude-code-session:0cbc1511-6559-422f-9909-b895e058b431
     '@type': prov:Activity
   trustLevel: user_stated
-  agentVersion: 2.1.207
+  agentVersion: 2.1.209
 ---
 
 # Channel packs
@@ -120,7 +120,7 @@ scripts/pack-toggle.sh book on
 
 ## diataxis
 
-**Version:** 0.4.2 | **Kind:** channel | **MIF level:** L1 only (output) | **Skill:** `diataxis:diataxis-docs`
+**Version:** 0.14.1 | **Kind:** channel | **MIF level:** L1 only (output) | **Skill:** `diataxis:diataxis-docs`
 
 **Source:** [`packs/channels/diataxis/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/channels/diataxis)
 

@@ -59,4 +59,4 @@ fi
   echo "fetch-ontology: usage: fetch-ontology.sh <id> [<id> ...] [--refresh] | --all-enabled [--refresh]" >&2
   exit 2
 }
-exec "$ENGINE" ontology fetch "${args[@]}" --root "$ROOT" ${refresh:+"$refresh"}
+exec "$ENGINE" ontology fetch "${args[@]+"${args[@]}"}" --root "$ROOT" ${refresh:+"$refresh"}

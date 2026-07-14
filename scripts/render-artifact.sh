@@ -113,7 +113,7 @@ RENDER_ARGS=(harness render-artifact "$ART" "$CHANNEL" --slug "$SLUG" --slugpath
 case "$CHANNEL" in
   report)
     RTMPD="$(mktemp -d)"; RTMP="$RTMPD/report.md"; trap 'rm -rf "$RTMPD"' EXIT
-    if ! "$ENGINE" "${RENDER_ARGS[@]}" "$RTMP" >/dev/null; then
+    if ! "$ENGINE" "${RENDER_ARGS[@]+"${RENDER_ARGS[@]}"}" "$RTMP" >/dev/null; then
       echo "render: composing the report failed" >&2
       exit 1
     fi
@@ -140,7 +140,7 @@ case "$CHANNEL" in
     ;;
   blog|book)
     mkdir -p "$(dirname "$OUT")"
-    "$ENGINE" "${RENDER_ARGS[@]}" "$OUT"
+    "$ENGINE" "${RENDER_ARGS[@]+"${RENDER_ARGS[@]}"}" "$OUT"
     ;;
   *)
     echo "render: channel must be report|blog|book (got '$CHANNEL')" >&2

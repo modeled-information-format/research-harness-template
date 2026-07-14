@@ -1679,7 +1679,7 @@ gate_m14() {
     'zsh scripts/falsify.sh reports/tA/findings/f.json fx'
   )
   local bypass_fail="" cmd_json d_bypass
-  for c in "${bypass_cmds[@]}"; do
+  for c in "${bypass_cmds[@]+"${bypass_cmds[@]}"}"; do
     cmd_json="$(jq -cn --arg c "$c" '{tool_input:{command:$c}}')"
     d_bypass="$(hd "$cmd_json")"
     [ "$d_bypass" = deny ] || bypass_fail="${bypass_fail}[$c -> $d_bypass] "
@@ -4375,7 +4375,7 @@ gate_changelog_links() {
 # ---------------------------------------------------------------------------
 GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18 gate_m19 gate_m20 gate_m21 gate_m22 gate_m23 gate_m24 gate_m25 gate_m26 gate_m27 gate_m28 gate_m29 gate_m30 gate_m31 gate_m32 gate_ontology_lock gate_versions gate_changelog_links)
 
-for g in "${GATES[@]}"; do "$g"; done
+for g in "${GATES[@]+"${GATES[@]}"}"; do "$g"; done
 
 echo
 if [ "$FAIL" -gt 0 ]; then
