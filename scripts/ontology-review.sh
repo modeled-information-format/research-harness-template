@@ -44,4 +44,4 @@ while [ $# -gt 0 ]; do
 done
 exec "$ENGINE" review --reports-dir "$RD" --config "$CONFIG" --catalog "$CATALOG" \
   --root "$ROOT" --relationship-script "$ROOT/scripts/check-relationship-targets.sh" \
-  "${args[@]}"
+  "${args[@]+"${args[@]}"}"
