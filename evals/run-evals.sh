@@ -377,6 +377,16 @@ else
   printf '  SKIP  progress-log-multisession-lint (markdownlint-cli2 not installed)\n'
 fi
 
+# 8. Anti-narration guard (issue #490): /start and /resume must instruct the
+#    assistant to output only a bare factual acknowledgment after backgrounding
+#    the orchestrator -- no speculative time estimates, no reassurance framing,
+#    no restating the obvious. A silent regression here (the instruction text
+#    quietly dropped in a future edit) can't be caught by markdownlint or any
+#    schema gate, since it's prose the assistant reads, not data it validates --
+#    this eval is the only thing that would catch it.
+run "anti-narration-guard-start"  bash -c 'grep -q "Issue #490" .claude/commands/start.md && grep -q "output ONLY a bare factual" .claude/commands/start.md'
+run "anti-narration-guard-resume" bash -c 'grep -q "Issue #490" .claude/commands/resume.md && grep -q "output ONLY a bare factual" .claude/commands/resume.md'
+
 echo
 if [ "$FAIL" -gt 0 ]; then
   printf '%srun-evals: %d passed, %d FAILED%s\n' "$RED" "$PASS" "$FAIL" "$RST"

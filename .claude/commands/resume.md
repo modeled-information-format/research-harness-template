@@ -137,6 +137,12 @@ Agent(
 Wait for completion (see **Monitoring a running session** below — a long, quiet
 Phase 1 is healthy, not stalled).
 
+**Issue #490: after the `Agent(...)` call returns, output ONLY a bare factual
+acknowledgment** — what was resumed (topic/mode) and that you'll report when it
+completes. No editorializing about expected duration, effort, or scope size, no
+reassurance framing, no restating that research takes time. One line, functional
+facts only.
+
 ## Monitoring a running session
 
 A resumed run re-enters the same phases, so the same caution applies as for
