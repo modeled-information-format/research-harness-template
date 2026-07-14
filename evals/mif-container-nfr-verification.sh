@@ -172,7 +172,7 @@ cleanup() {
   else
     rm -f reports/concordance-sameas-proposals.json
   fi
-  for t in "${ALL_SYNTHETIC_TOPICS[@]}"; do
+  for t in "${ALL_SYNTHETIC_TOPICS[@]+"${ALL_SYNTHETIC_TOPICS[@]}"}"; do
     rm -rf "reports/$t"
   done
   # On a restore failure, the backups under $T are exactly what an operator

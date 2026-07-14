@@ -57,4 +57,4 @@ elif [ -n "$CONTENT" ]; then
   ARGS+=(--content "$CONTENT")
 fi
 
-exec "$ENGINE" "${ARGS[@]}"
+exec "$ENGINE" "${ARGS[@]+"${ARGS[@]}"}"

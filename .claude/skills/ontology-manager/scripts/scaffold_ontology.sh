@@ -52,7 +52,7 @@ EXTENDS_BLOCK=""
 if [[ -n "$EXTENDS" ]]; then
 	EXTENDS_BLOCK=$'\n  extends:'
 	IFS=',' read -ra BASES <<<"$EXTENDS"
-	for base in "${BASES[@]}"; do
+	for base in "${BASES[@]+"${BASES[@]}"}"; do
 		EXTENDS_BLOCK+=$'\n'"    - $base"
 	done
 fi

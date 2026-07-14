@@ -46,4 +46,4 @@ done
 args=("$FINDING" --catalog "$CATALOG" --config "$CONFIG" --root "$ROOT")
 [ -n "$TOPIC" ] && args+=(--topic "$TOPIC")
 [ -n "$MAP" ] && args+=(--map "$MAP")
-exec "$ENGINE" resolve "${args[@]}"
+exec "$ENGINE" resolve "${args[@]+"${args[@]}"}"

@@ -68,7 +68,7 @@ QUERY_STRING="${QUERY_TERMS[*]}"
 echo "run-monitoring[$TOPIC/$RUN_ID]: sources=${SOURCES[*]} budget=${BUDGET}s query='$QUERY_STRING'" >&2
 
 CANDIDATE_FILES=()
-for source in "${SOURCES[@]}"; do
+for source in "${SOURCES[@]+"${SOURCES[@]}"}"; do
   OUT_FILE="$RUN_DIR/candidates-$source.json"
   # biorxiv.sh has a different signature (<days-back> [max_results] [server])
   # -- bioRxiv/medRxiv's API has no free-text search, only date-range
@@ -80,7 +80,7 @@ for source in "${SOURCES[@]}"; do
     CONNECTOR_ARGS=("$QUERY_STRING" "$MAX_RESULTS")
   fi
   if bash "$SCRIPT_DIR/run-with-budget.sh" "$TOPIC" "$source" "$BUDGET" "$RUN_ID" \
-      -- bash "$SCRIPT_DIR/connectors/$source.sh" "${CONNECTOR_ARGS[@]}" > "$OUT_FILE" 2>>"$RUN_DIR/run.log"; then
+      -- bash "$SCRIPT_DIR/connectors/$source.sh" "${CONNECTOR_ARGS[@]+"${CONNECTOR_ARGS[@]}"}" > "$OUT_FILE" 2>>"$RUN_DIR/run.log"; then
     CANDIDATE_FILES+=("$OUT_FILE")
     echo "run-monitoring[$TOPIC/$RUN_ID]: $source ok ($(jq 'length' "$OUT_FILE") candidates)" >&2
   else
@@ -96,7 +96,7 @@ if [ "${#CANDIDATE_FILES[@]}" -eq 0 ]; then
 fi
 
 ALL_CANDIDATES="$RUN_DIR/candidates-all.json"
-jq -s 'add' "${CANDIDATE_FILES[@]}" > "$ALL_CANDIDATES"
+jq -s 'add' "${CANDIDATE_FILES[@]+"${CANDIDATE_FILES[@]}"}" > "$ALL_CANDIDATES"
 echo "run-monitoring[$TOPIC/$RUN_ID]: $(jq 'length' "$ALL_CANDIDATES") total candidates across $(( ${#CANDIDATE_FILES[@]} )) source(s)" >&2
 
 # AD-2 ordering: rebuild the concordance before scoring against it.
@@ -106,7 +106,7 @@ if ! bash "$ROOT/scripts/build-concordance.sh" >>"$RUN_DIR/run.log" 2>&1; then
 fi
 
 SCORED="$RUN_DIR/candidates-scored.json"
-if ! bash "$SCRIPT_DIR/interest-inference.sh" "$ALL_CANDIDATES" "$ROOT/reports/concordance.json" -- "${QUERY_TERMS[@]}" > "$SCORED" 2>>"$RUN_DIR/run.log"; then
+if ! bash "$SCRIPT_DIR/interest-inference.sh" "$ALL_CANDIDATES" "$ROOT/reports/concordance.json" -- "${QUERY_TERMS[@]+"${QUERY_TERMS[@]}"}" > "$SCORED" 2>>"$RUN_DIR/run.log"; then
   echo "run-monitoring[$TOPIC/$RUN_ID]: interest-inference failed, see $RUN_DIR/run.log" >&2
   exit 5
 fi

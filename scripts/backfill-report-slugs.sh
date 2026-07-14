@@ -43,7 +43,7 @@ fi
 
 FIXED=0
 SKIPPED=0
-for t in "${TOPICS[@]}"; do
+for t in "${TOPICS[@]+"${TOPICS[@]}"}"; do
   dir="reports/$t"
   if [ ! -d "$dir" ]; then
     echo "backfill-report-slugs: no such topic dir: $dir" >&2

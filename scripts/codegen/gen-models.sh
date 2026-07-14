@@ -61,7 +61,7 @@ DEST="$OUT"
 if [ "${CHECK:-0}" = "1" ]; then CHECK_TMP="$(mktemp -d)"; DEST="$CHECK_TMP/harness_models"; fi
 mkdir -p "$DEST"
 
-for schema in "${SCHEMAS[@]}"; do
+for schema in "${SCHEMAS[@]+"${SCHEMAS[@]}"}"; do
   name="$(modname "$schema")"
   bundled="$STAGE/$name.bundled.json"
   python3 "$BUNDLE" "$schema" "$ROOT/schemas" "$bundled" >/dev/null
@@ -91,9 +91,9 @@ done
 EXCL=(--exclude='__init__.py' --exclude='emit.py' --exclude='__pycache__')
 
 if [ "${CHECK:-0}" = "1" ]; then
-  if ! diff -rq "${EXCL[@]}" "$OUT" "$DEST" >/dev/null; then
+  if ! diff -rq "${EXCL[@]+"${EXCL[@]}"}" "$OUT" "$DEST" >/dev/null; then
     echo "ERROR: generated models are stale — run scripts/codegen/gen-models.sh and commit." >&2
-    diff -rq "${EXCL[@]}" "$OUT" "$DEST" || true
+    diff -rq "${EXCL[@]+"${EXCL[@]}"}" "$OUT" "$DEST" || true
     exit 1
   fi
   echo "OK: committed models match a fresh regeneration."

@@ -512,7 +512,7 @@ run_check() {
     return 1
   fi
   local required=("## Purpose" "## Dimensions" "## Key Findings" "## Reports" "## Findings by Dimension" "## Tags")
-  for sec in "${required[@]}"; do
+  for sec in "${required[@]+"${required[@]}"}"; do
     grep -qF "$sec" "$OUT" || { echo "FAIL: missing section: $sec" >&2; errs=$((errs+1)); }
   done
 

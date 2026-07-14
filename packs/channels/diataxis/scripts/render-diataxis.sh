@@ -47,7 +47,7 @@ ALL="$(mktemp)"; MAN="$(mktemp)"; trap 'rm -f "$ALL" "$MAN"' EXIT
 # Fail loudly if any finding is malformed JSON (jq -s aborts) rather than emitting a
 # partial tree: this script does not use `set -e`, so the critical jq steps below
 # (slurp, manifest) are error-checked explicitly.
-if ! jq -s '[ .[] | select((.extensions.harness.verification.verdict // "") != "falsified") ]' "${FILES[@]}" > "$ALL"; then
+if ! jq -s '[ .[] | select((.extensions.harness.verification.verdict // "") != "falsified") ]' "${FILES[@]+"${FILES[@]}"}" > "$ALL"; then
   echo "render-diataxis: failed to read findings (malformed finding JSON in $FINDINGS?)" >&2; exit 2
 fi
 COUNT=$(jq 'length' "$ALL") || { echo "render-diataxis: failed to count findings" >&2; exit 2; }
@@ -246,7 +246,7 @@ while IFS=$'\t' read -r i dim slug; do
   [ -n "$slug" ] || continue
   emit "reference/$dim/$slug.md" semantic reference "$REF" --argjson i "$i" || rc=1
 done < <(jq -r '.[] | "\(.i)\t\(.dim)\t\(.slug)"' "$MAN")
-for dim in "${DIMS[@]}"; do
+for dim in "${DIMS[@]+"${DIMS[@]}"}"; do
   emit "explanation/$dim.md"  semantic   explanation "$EXP"    --arg dim "$dim" || rc=1
   emit "how-to/apply-$dim.md" procedural how-to      "$HOW"    --arg dim "$dim" || rc=1
   emit "tutorials/$dim.md"    procedural tutorial    "$TUTDIM" --arg dim "$dim" || rc=1
