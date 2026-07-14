@@ -12,7 +12,8 @@
 #   default query-terms: none (concordance scoring only; pass terms for the
 #     TF-IDF fallback to have something to score against)
 set -uo pipefail
-ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 
 CANDIDATES="${1:?usage: interest-inference.sh <candidates.json> [concordance.json] [-- <query-terms...>]}"
 shift
@@ -57,4 +58,4 @@ if command -v git >/dev/null 2>&1 && git -C "$ROOT" rev-parse --git-dir >/dev/nu
   fi
 fi
 
-python3 "$ROOT/scripts/monitoring/lib/interest_inference.py" "$CANDIDATES" "$CONCORDANCE" "${QUERY_TERMS[@]+"${QUERY_TERMS[@]}"}"
+python3 "$SCRIPT_DIR/lib/interest_inference.py" "$CANDIDATES" "$CONCORDANCE" "${QUERY_TERMS[@]+"${QUERY_TERMS[@]}"}"

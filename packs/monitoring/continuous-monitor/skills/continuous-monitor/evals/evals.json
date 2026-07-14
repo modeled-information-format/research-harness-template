@@ -1,0 +1,15 @@
+{
+  "skill_name": "continuous-monitor",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Run a manual continuous-monitoring pass for the topic 'example-okf-mif-knowledge-spine' and report whether it did any work.\n\nRun:\n\n  bash \"$CLAUDE_PROJECT_DIR/packs/monitoring/continuous-monitor/scripts/run-monitoring.sh\" example-okf-mif-knowledge-spine \"run-manual-eval-1\"\n\nThe script checks two independent gates before doing anything: harness.config.json packs[] must have a \"continuous-monitor\" entry with enabled:true, AND the topic's own continuousMonitoring.enabled must be true. In the bundled harness.config.json, the pack ships disabled by default, so this run should exit 0 having done nothing and print a message naming which gate is off.",
+      "expected_output": "The command exits 0 and prints a message stating the 'continuous-monitor' pack is not enabled in harness.config.json packs[] -- the bundled config ships the pack disabled by default, and the master pack gate is checked before the topic-level continuousMonitoring block, so nothing else runs.",
+      "files": [],
+      "deterministic_checks": [
+        { "type": "file_exists", "file": "packs/monitoring/continuous-monitor/scripts/run-monitoring.sh", "description": "The pipeline orchestrator ships at its new pack path" },
+        { "type": "file_exists", "file": "packs/monitoring/continuous-monitor/.claude-plugin/plugin.json", "description": "The pack manifest exists" }
+      ]
+    }
+  ]
+}

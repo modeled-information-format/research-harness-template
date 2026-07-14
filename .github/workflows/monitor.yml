@@ -25,7 +25,7 @@ on:
     # whose own continuousMonitoring.schedule wants a tighter cadence than
     # this (e.g. daily) will never fire more often than here, regardless of
     # its own configured cron. The "resolve topics" step below (via
-    # scripts/monitoring/lib/cron_match.py) filters OUT topics whose own
+    # packs/monitoring/continuous-monitor/scripts/lib/cron_match.py) filters OUT topics whose own
     # schedule doesn't match a given firing (e.g. a topic configured for
     # Wednesdays is skipped on this Monday-only trigger) -- it can only
     # narrow which topics run on a firing, never widen how often a firing
@@ -83,6 +83,26 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
         run: |
+          # Master gate (research-harness-template#483): continuous monitoring
+          # is a pack now, not a bespoke core capability -- packs[]
+          # "continuous-monitor" must be enabled before this workflow does
+          # ANYTHING, including a manual workflow_dispatch override. This
+          # mirrors run-monitoring.sh's own gate (belt-and-suspenders: even
+          # without this early check, run-monitoring.sh would no-op safely
+          # per topic, but checking it here avoids a wasted engine
+          # fetch/ontology vendor/checkout cycle when the pack is off).
+          PACK_ENABLED="$(jq -r '(.packs[] | select(.name == "continuous-monitor") | .enabled) // false' harness.config.json)"
+          if [ "$PACK_ENABLED" != "true" ]; then
+            echo "monitor.yml: the 'continuous-monitor' pack is not enabled in harness.config.json packs[] -- nothing to do" >&2
+            TOPICS=""
+            {
+              echo "topics<<MONITOR_EOF"
+              echo "$TOPICS"
+              echo "MONITOR_EOF"
+            } >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
           INPUT_TOPIC="${{ github.event.inputs.topic }}"
           if [ -n "$INPUT_TOPIC" ]; then
             # workflow_dispatch names one topic explicitly: always run it,
@@ -104,7 +124,7 @@ jobs:
               while IFS= read -r t; do
                 [ -n "$t" ] || continue
                 SCHEDULE="$(jq -r --arg t "$t" '.topics[] | select(.id == $t) | .continuousMonitoring.schedule // "0 6 * * 1"' harness.config.json)"
-                if python3 scripts/monitoring/lib/cron_match.py "$SCHEDULE"; then
+                if python3 packs/monitoring/continuous-monitor/scripts/lib/cron_match.py "$SCHEDULE"; then
                   TOPICS="$TOPICS$t"$'\n'
                 else
                   echo "monitor.yml: skipping $t this firing, schedule '$SCHEDULE' does not match now" >&2
@@ -149,7 +169,7 @@ jobs:
             git checkout main
             git reset --hard origin/main
             git clean -fd reports/
-            bash scripts/monitoring/run-monitoring.sh "$topic" "$RUN_ID" || {
+            bash packs/monitoring/continuous-monitor/scripts/run-monitoring.sh "$topic" "$RUN_ID" || {
               echo "monitor.yml: run-monitoring.sh failed for $topic, skipping PR" >&2
               echo "::endgroup::"
               continue

@@ -2,7 +2,7 @@
 id: reference-packs-and-plugins
 type: semantic
 created: '2026-06-23T09:41:01-04:00'
-modified: '2026-07-13T13:18:47.755Z'
+modified: '2026-07-14T02:29:28.000Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -78,11 +78,12 @@ per ADR-0018 and
 [research-harness-template#409](https://github.com/modeled-information-format/research-harness-template/issues/409)
 — see [Genre packs](packs/genres.md).
 
-The harness bundles **16 pack plugins** across three families: 10 channels,
-5 market-research methodologies, and 1 trend-modeling methodology. Report
-genres (18), spec genres (5), and domain ontologies (23) are all consumed
-externally or vendored on demand rather than bundled — see each family's
-own page for its full inventory. The [Packs reference](packs/index.md) and
+The harness bundles **17 pack plugins** across four families: 10 channels,
+5 market-research methodologies, 1 trend-modeling methodology, and 1
+monitoring methodology (`continuous-monitor`, research-harness-template#483).
+Report genres (18), spec genres (5), and domain ontologies (23) are all
+consumed externally or vendored on demand rather than bundled — see each
+family's own page for its full inventory. The [Packs reference](packs/index.md) and
 the per-family pages document every one — its use, constraints, and goals.
 
 Each `packs/<family>/<plugin>/` is self-contained: a `.claude-plugin/plugin.json`
@@ -125,7 +126,7 @@ in `schemas/pack.schema.json`.
 
 | `kind` | Family directory | Contributes |
 | --- | --- | --- |
-| `methodology` | `market-research/`, `trend-modeling/` | Research dimensions and analyst skills |
+| `methodology` | `market-research/`, `trend-modeling/`, `monitoring/` | Research dimensions and analyst skills |
 | `genre` | `reports/` | Deliverable templates for the report channel |
 | `channel` | `channels/` | Render adapters (blog, book, PDF, NotebookLM, GitHub) |
 | `ontology` | `ontologies/` | MIF entity, relationship, and trait extensions |
@@ -233,11 +234,11 @@ before `harness.config.json` can reference it by name.
 
 ## Bundled inventory
 
-This inventory covers **39 pack plugins** across five families — matching
+This inventory covers **40 pack plugins** across six families — matching
 `harness.config.json` `packs[]` exactly. Each family has a dedicated reference
 page documenting every component's purpose, constraints, and goals; for
-channels, market-research, and trend-modeling, the counts below also match
-`ls packs/<family>/` directly. Report genres and spec genres are the
+channels, market-research, trend-modeling, and monitoring, the counts below
+also match `ls packs/<family>/` directly. Report genres and spec genres are the
 exception: all 18 report genres and all 5 spec genres are consumed externally
 from `mif-docs-plugin` (no `packs/reports/` or `packs/genres/` directory
 exists to `ls`), so those two counts instead match each family's reference
@@ -272,6 +273,9 @@ per ADR-0018 — no `packs/genres/` directory):
 
 **Trend-modeling** — three-valued scenario methodology
 ([`packs/trend-modeling/`](packs/trend-modeling.md), 1 plugin): `trend-modeling`.
+
+**Monitoring** — unattended, scheduled external-source monitoring
+([`packs/monitoring/`](packs/monitoring.md), 1 plugin): `continuous-monitor`.
 
 Domain ontologies are not one of the five families above — `packs/ontologies/`
 isn't a bundled directory; it's populated on demand from the canonical

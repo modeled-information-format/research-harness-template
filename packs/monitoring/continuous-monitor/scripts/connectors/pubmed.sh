@@ -10,9 +10,10 @@
 #
 # Usage: pubmed.sh <query> [max_results]
 set -uo pipefail
-ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
-# shellcheck source=scripts/monitoring/lib/connector-common.sh
-. "$ROOT/scripts/monitoring/lib/connector-common.sh"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$SCRIPT_DIR/../../../../.." && pwd)"
+# shellcheck source=packs/monitoring/continuous-monitor/scripts/lib/connector-common.sh
+. "$SCRIPT_DIR/../lib/connector-common.sh"
 
 QUERY="${1:?usage: pubmed.sh <query> [max_results]}"
 MAX="${2:-20}"

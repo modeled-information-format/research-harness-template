@@ -92,18 +92,26 @@ connector_emit() {
   printf '%s\n' "$result"
 }
 
+# _connector_common_dir: this file's OWN directory, self-located via
+# BASH_SOURCE rather than inherited from a caller's $ROOT/$SCRIPT_DIR --
+# this file is sourced by both top-level pack scripts and connectors/*.sh
+# (different depths), so xml_to_json.py (its own sibling, always) must
+# resolve independently of whatever the caller happened to compute.
+_connector_common_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # connector_xml_to_json
 # Normalizes Atom/RSS XML (read from stdin) to JSON (printed to stdout) via
-# scripts/monitoring/lib/xml_to_json.py — kept in its own file rather than an
-# inline heredoc, since a heredoc would consume stdin as the script source
-# and leave nothing for the piped feed document.
+# this file's own sibling xml_to_json.py — kept in its own file rather than
+# an inline heredoc, since a heredoc would consume stdin as the script
+# source and leave nothing for the piped feed document.
 connector_xml_to_json() {
-  python3 "$ROOT/scripts/monitoring/lib/xml_to_json.py"
+  python3 "$_connector_common_dir/xml_to_json.py"
 }
 
 # connector_budget_check <deadline-epoch-seconds>
 # Returns non-zero (and prints a message) once the shared per-run budget
-# deadline (set by scripts/monitoring/lib/budget.sh) has passed. Connectors
+# deadline (set by run-with-budget.sh, this pack's per-connector timeout
+# wrapper) has passed. Connectors
 # that fetch in a loop (pagination) should check this between pages.
 connector_budget_check() {
   local deadline="$1"

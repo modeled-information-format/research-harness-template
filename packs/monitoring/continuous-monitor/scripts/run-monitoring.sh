@@ -12,12 +12,31 @@
 # Reads the topic's continuousMonitoring block from harness.config.json.
 # Writes reports/<topic>/monitoring/runs/<run-id>/recommendations.json.
 set -uo pipefail
-ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+# SCRIPT_DIR is this pack's own scripts/ dir (packs/monitoring/continuous-monitor/scripts) --
+# every sibling script/connector/lib reference below is resolved relative to
+# it, not a hardcoded depth, so this file doesn't need to know where the pack
+# happens to live in the repo tree. ROOT is the repo root
+# (research-harness-template#483: this pipeline moved from the core
+# scripts/monitoring/** tree to packs/monitoring/continuous-monitor/scripts/**).
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 
 TOPIC="${1:?usage: run-monitoring.sh <topic-id> <run-id>}"
 RUN_ID="${2:?missing run-id}"
 
+# Master gate (research-harness-template#483): continuous monitoring is now a
+# pack (packs/monitoring/continuous-monitor), not a bespoke core capability --
+# packs[] "continuous-monitor".enabled is the repo-wide switch that must be on
+# before any per-topic continuousMonitoring block is even consulted. This is
+# the fix for the exact architectural gap #483 flagged: a config flag that
+# didn't route through the packs[] control plane at all.
 CONFIG="${HARNESS_CONFIG:-$ROOT/harness.config.json}"
+PACK_ENABLED="$(jq -r '(.packs[] | select(.name == "continuous-monitor") | .enabled) // false' "$CONFIG")"
+if [ "$PACK_ENABLED" != "true" ]; then
+  echo "run-monitoring: the 'continuous-monitor' pack is not enabled in harness.config.json packs[] -- nothing to do" >&2
+  exit 0
+fi
+
 TOPIC_CFG="$(jq -c --arg t "$TOPIC" '.topics[] | select(.id == $t)' "$CONFIG")"
 [ -n "$TOPIC_CFG" ] || { echo "run-monitoring: topic '$TOPIC' not found in harness.config.json" >&2; exit 2; }
 
@@ -60,8 +79,8 @@ for source in "${SOURCES[@]}"; do
   else
     CONNECTOR_ARGS=("$QUERY_STRING" "$MAX_RESULTS")
   fi
-  if bash "$ROOT/scripts/monitoring/run-with-budget.sh" "$TOPIC" "$source" "$BUDGET" "$RUN_ID" \
-      -- bash "$ROOT/scripts/monitoring/connectors/$source.sh" "${CONNECTOR_ARGS[@]}" > "$OUT_FILE" 2>>"$RUN_DIR/run.log"; then
+  if bash "$SCRIPT_DIR/run-with-budget.sh" "$TOPIC" "$source" "$BUDGET" "$RUN_ID" \
+      -- bash "$SCRIPT_DIR/connectors/$source.sh" "${CONNECTOR_ARGS[@]}" > "$OUT_FILE" 2>>"$RUN_DIR/run.log"; then
     CANDIDATE_FILES+=("$OUT_FILE")
     echo "run-monitoring[$TOPIC/$RUN_ID]: $source ok ($(jq 'length' "$OUT_FILE") candidates)" >&2
   else
@@ -87,13 +106,13 @@ if ! bash "$ROOT/scripts/build-concordance.sh" >>"$RUN_DIR/run.log" 2>&1; then
 fi
 
 SCORED="$RUN_DIR/candidates-scored.json"
-if ! bash "$ROOT/scripts/monitoring/interest-inference.sh" "$ALL_CANDIDATES" "$ROOT/reports/concordance.json" -- "${QUERY_TERMS[@]}" > "$SCORED" 2>>"$RUN_DIR/run.log"; then
+if ! bash "$SCRIPT_DIR/interest-inference.sh" "$ALL_CANDIDATES" "$ROOT/reports/concordance.json" -- "${QUERY_TERMS[@]}" > "$SCORED" 2>>"$RUN_DIR/run.log"; then
   echo "run-monitoring[$TOPIC/$RUN_ID]: interest-inference failed, see $RUN_DIR/run.log" >&2
   exit 5
 fi
 
 INTEREST_RECS="$RUN_DIR/recommendations-interest.json"
-bash "$ROOT/scripts/monitoring/recommend.sh" interest-match "$SCORED" "$THRESHOLD" > "$INTEREST_RECS" 2>>"$RUN_DIR/run.log"
+bash "$SCRIPT_DIR/recommend.sh" interest-match "$SCORED" "$THRESHOLD" > "$INTEREST_RECS" 2>>"$RUN_DIR/run.log"
 
 # Freshen the topic's own research-index.json before gap-detect -- same
 # rebuild-before-scoring discipline as the concordance above.
@@ -103,7 +122,7 @@ if ! bash "$ROOT/scripts/build-index.sh" "$ROOT/reports/$TOPIC/findings" >>"$RUN
 fi
 
 GAP_RECS="$RUN_DIR/recommendations-gap.json"
-bash "$ROOT/scripts/monitoring/recommend.sh" gap-detect "$CONFIG" "$ROOT/reports/$TOPIC/research-index.json" > "$GAP_RECS" 2>>"$RUN_DIR/run.log"
+bash "$SCRIPT_DIR/recommend.sh" gap-detect "$CONFIG" "$ROOT/reports/$TOPIC/research-index.json" > "$GAP_RECS" 2>>"$RUN_DIR/run.log"
 
 jq -s 'add' "$INTEREST_RECS" "$GAP_RECS" > "$RUN_DIR/recommendations.json"
 COUNT="$(jq 'length' "$RUN_DIR/recommendations.json")"

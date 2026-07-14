@@ -10,11 +10,12 @@
 #     reimplementing knowledge-graph traversal.
 #
 # Every recommendation carries at least one MIF citation (NFR5) -- enforced
-# as a hard invariant in scripts/monitoring/lib/recommend.py, not a
+# as a hard invariant in the pack's lib/recommend.py, not a
 # convention: a citation-less recommendation raises rather than being
 # produced.
 set -uo pipefail
-ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 
 MODE="${1:?usage: recommend.sh interest-match <scored.json> [threshold] | recommend.sh gap-detect [config.json] [index.json]}"
 shift
@@ -23,12 +24,12 @@ case "$MODE" in
   interest-match)
     SCORED="${1:?usage: recommend.sh interest-match <scored-candidates.json> [threshold]}"
     THRESHOLD="${2:-0.02}"
-    python3 "$ROOT/scripts/monitoring/lib/recommend.py" interest-match "$SCORED" "$THRESHOLD"
+    python3 "$SCRIPT_DIR/lib/recommend.py" interest-match "$SCORED" "$THRESHOLD"
     ;;
   gap-detect)
     CONFIG="${1:-$ROOT/harness.config.json}"
     INDEX="${2:-$ROOT/reports/_meta/sample-session/research-index.json}"
-    python3 "$ROOT/scripts/monitoring/lib/recommend.py" gap-detect "$CONFIG" "$INDEX"
+    python3 "$SCRIPT_DIR/lib/recommend.py" gap-detect "$CONFIG" "$INDEX"
     ;;
   *)
     echo "recommend.sh: unknown mode '$MODE' (expected interest-match or gap-detect)" >&2

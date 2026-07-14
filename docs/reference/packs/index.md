@@ -2,7 +2,7 @@
 id: reference-packs-index
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-12T14:36:46.357Z'
+modified: '2026-07-14T02:29:28.000Z'
 namespace: docs/reference/packs
 tags:
   - documentation
@@ -77,6 +77,7 @@ For control-plane mechanics — enabling, disabling, and listing packs — see
 | kiro-tasks | genres | genre | Kiro implementation task list for a single feature | none |
 | feature-spec | genres | genre | GitHub Spec Kit single-capability feature spec for a coding agent | none |
 | trend-modeling | trend-modeling | methodology | Three-valued logic (INC/DEC/CONST) scenario modeling | @mermaid-js/mermaid-cli (optional) |
+| continuous-monitor | monitoring | methodology | Unattended, scheduled monitoring of external sources for a topic, gated through a mandatory human Editorial Gate | jq, python3, curl, timeout, ajv-cli, git |
 | biology-research-lab | ontologies | ontology | Full research lab lifecycle entity vocabulary | none |
 | cardiology | ontologies | ontology | Cardiovascular disease entity vocabulary (WHO ICD-11 circulatory-disease blocks, echocardiography/ECG studies, NYHA functional class); extends clinical-health-base | none |
 | clinical-health-base | ontologies | ontology | MIF-compliant intermediate layer shared by cardiology/health/fitness (FHIR Patient/Encounter/Observation, ICD-11 stem/extension-code shapes); extends research, never bound directly | none |
@@ -108,4 +109,5 @@ For control-plane mechanics — enabling, disabling, and listing packs — see
 - [Report packs](reports.md) — deliverable genre templates
 - [Genre packs](genres.md) — AI-ready, agent-executable specification templates
 - [Trend-modeling pack](trend-modeling.md) — three-valued logic scenario framework
+- [Monitoring pack](monitoring.md) — unattended, scheduled external-source monitoring
 - [Ontology packs](ontologies.md) — domain entity vocabularies

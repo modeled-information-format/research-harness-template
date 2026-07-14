@@ -242,6 +242,11 @@
       "source": "bundled"
     },
     {
+      "name": "continuous-monitor",
+      "enabled": false,
+      "source": "bundled"
+    },
+    {
       "name": "regulatory-disclosure",
       "enabled": false,
       "source": {

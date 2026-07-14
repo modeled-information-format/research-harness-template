@@ -24,9 +24,10 @@
 #
 # Usage: output-router.sh <topic> <run-id> <accepted.json>
 set -uo pipefail
-ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-# shellcheck source=scripts/monitoring/lib/continuity-log.sh
-. "$ROOT/scripts/monitoring/lib/continuity-log.sh"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
+# shellcheck source=packs/monitoring/continuous-monitor/scripts/lib/continuity-log.sh
+. "$SCRIPT_DIR/lib/continuity-log.sh"
 
 TOPIC="${1:?usage: output-router.sh <topic> <run-id> <accepted.json>}"
 RUN_ID="${2:?missing run-id}"
@@ -40,7 +41,7 @@ GAP_LOG="$ROOT/reports/$TOPIC/monitoring/recommended-research-areas.jsonl"
 
 # The one gate that matters: refuse to run at all if ANYTHING here lacks a
 # valid Editorial Gate stamp. This is the actual NFR6 enforcement point.
-python3 - "$ACCEPTED" "$ROOT/scripts/monitoring/lib" <<'PYEOF' || exit 5
+python3 - "$ACCEPTED" "$SCRIPT_DIR/lib" <<'PYEOF' || exit 5
 import json, sys
 sys.path.insert(0, sys.argv[2])
 from editorial_gate import assert_all_gated
@@ -54,7 +55,7 @@ jq -c '.[] | select(.mode == "interest-match")' "$ACCEPTED" | while IFS= read -r
   printf '%s' "$rec" > "$TMP_REC"
   TITLE="$(printf '%s' "$rec" | jq -r '.title')"
 
-  FINDING="$(python3 "$ROOT/scripts/monitoring/lib/recommendation_to_finding.py" "$TMP_REC" "$TOPIC" "$NAMESPACE" "$NOW")" || {
+  FINDING="$(python3 "$SCRIPT_DIR/lib/recommendation_to_finding.py" "$TMP_REC" "$TOPIC" "$NAMESPACE" "$NOW")" || {
     echo "output-router: failed to project recommendation to a finding: $TITLE" >&2
     rm -f "$TMP_REC"
     continue

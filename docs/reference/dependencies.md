@@ -2,7 +2,7 @@
 id: reference-dependencies
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-12T22:28:11.598Z'
+modified: '2026-07-14T02:29:28.000Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -180,13 +180,13 @@ Notes:
 
 ## Continuous monitoring source APIs (optional)
 
-Every connector (`scripts/monitoring/connectors/`) is keyless by design
+Every connector (`packs/monitoring/continuous-monitor/scripts/connectors/`) is keyless by design
 (NFR2/NFR3): each is a plain `curl` + `jq` client against a free REST/RSS
 API, no account or payment required for its default path. The pipeline
 around the connectors does add two hard runtime dependencies beyond the
-core toolchain: `timeout` (`scripts/monitoring/run-with-budget.sh`'s
+core toolchain: `timeout` (`packs/monitoring/continuous-monitor/scripts/run-with-budget.sh`'s
 per-connector budget enforcement) and `ajv`/`ajv-formats` (the Continuity
-Log's schema validation, `scripts/monitoring/lib/continuity-log.sh` —
+Log's schema validation, `packs/monitoring/continuous-monitor/scripts/lib/continuity-log.sh` —
 already a required part of this repo's toolchain per the table above, but
 called out here since a from-scratch environment running only the
 connectors in isolation would still need it).

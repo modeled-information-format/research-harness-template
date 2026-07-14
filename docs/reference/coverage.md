@@ -2,7 +2,7 @@
 id: reference-coverage
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-13T13:18:58.812Z'
+modified: '2026-07-14T02:29:28.000Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -35,22 +35,22 @@ the **discovered** set equals the **documented** set.
 
 | Category | Discovered | Documented | Source of truth |
 | --- | --- | --- | --- |
-| Packs | 62 | 62 | `harness.config.json` `packs[]` + `ontologies[]` |
+| Packs | 63 | 63 | `harness.config.json` `packs[]` + `ontologies[]` |
 | Core skills | 10 | 10 | `.claude/skills/*/SKILL.md` |
 | Commands | 11 | 11 | `.claude/commands/*.md` |
 | Agents | 7 | 7 | `.claude/agents/*.md` |
-| Scripts | 76 | 76 | `scripts/**` (excludes `__pycache__`); the 24 scripts Epic #416 added (`scripts/monitoring/**`) are fully itemized below |
-| **Total** | **166** | **166** | — |
+| Scripts | 52 | 52 | `scripts/**` (excludes `__pycache__`); the 24 scripts Epic #416 added moved to `packs/monitoring/continuous-monitor/scripts/**` (research-harness-template#483) and are documented in [packs/monitoring.md](packs/monitoring.md), not counted here |
+| **Total** | **143** | **143** | — |
 
 Reproduce the discovered counts:
 
 ```sh
-echo $(( $(jq '.packs | length' harness.config.json) + $(jq '.ontologies | length' harness.config.json) )) # 62 packs
+echo $(( $(jq '.packs | length' harness.config.json) + $(jq '.ontologies | length' harness.config.json) )) # 63 packs
 ls .claude/skills | wc -l        # 10 core skills
 ls .claude/commands/*.md | wc -l # 11 commands
 ls .claude/agents/*.md | wc -l   # 7 agents
 find scripts -type f \( -name '*.sh' -o -name '*.py' -o -name '*.jq' \) \
-  | grep -v __pycache__ | wc -l  # 76 scripts
+  | grep -v __pycache__ | wc -l  # 52 scripts
 ```
 
 Domain ontology packs are vendored on demand (ADR-0012) — `packs/ontologies/`
@@ -58,9 +58,9 @@ may be empty on a fresh clone until `scripts/fetch-ontology.sh --all-enabled`
 runs. `harness.config.json` `ontologies[]` is the enabled/declared set and the
 authoritative count either way.
 
-## Packs (62)
+## Packs (63)
 
-Plugin packs (39, registered in `harness.config.json` `packs[]`):
+Plugin packs (40, registered in `harness.config.json` `packs[]`):
 
 | Pack | Family | Documented in |
 | --- | --- | --- |
@@ -85,6 +85,7 @@ Plugin packs (39, registered in `harness.config.json` `packs[]`):
 | kiro-tasks | genres | [packs/genres.md](packs/genres.md#kiro-tasks) |
 | feature-spec | genres | [packs/genres.md](packs/genres.md#feature-spec) |
 | trend-modeling | trend-modeling | [packs/trend-modeling.md](packs/trend-modeling.md#trend-modeling) |
+| continuous-monitor | monitoring | [packs/monitoring.md](packs/monitoring.md#continuous-monitor) |
 | academic | reports | [packs/reports.md](packs/reports.md#academic) |
 | briefing | reports | [packs/reports.md](packs/reports.md#briefing) |
 | computing-paper | reports | [packs/reports.md](packs/reports.md#computing-paper) |
@@ -153,9 +154,9 @@ All documented in [agents.md](agents.md): `orchestrator`, `dimension-analyst`,
 `falsification-analyst`, `report-synthesizer`, `corpus-synthesizer`,
 `harness-configurator`, `source-chunker`.
 
-## Scripts (76)
+## Scripts (52)
 
-Pre-Epic-#416 baseline (52, all documented in [scripts.md](scripts.md)):
+All documented in [scripts.md](scripts.md):
 `assert-graph-mif`,
 `author-ontology`, `backfill-report-slugs`, `build-concordance`,
 `build-graph-viz`, `build-graph`, `build-index`, `build-topic-readme`,
@@ -173,17 +174,13 @@ Pre-Epic-#416 baseline (52, all documented in [scripts.md](scripts.md)):
 `synthesize-artifact`, `synthesize-corpus`, `update`, `validate-concordance`,
 `verify`, `wrap-source`, `write-finding`.
 
-Added by Epic #416 (continuous monitoring, 24, all documented in
-[scripts.md](scripts.md#continuous-monitoring-epic-416)):
-`monitoring/run-monitoring.sh`, `monitoring/run-with-budget.sh`,
-`monitoring/interest-inference.sh`, `monitoring/recommend.sh`,
-`monitoring/editorial-gate.sh`, `monitoring/output-router.sh`,
-`monitoring/run-gate-and-publish.sh`,
-`monitoring/connectors/{arxiv,openalex,crossref,semantic-scholar,pubmed,biorxiv,gdelt,hn}.sh`,
-`monitoring/lib/connector-common.sh`, `monitoring/lib/continuity-log.sh`,
-`monitoring/lib/{cron_match,editorial_gate,interest_inference,mif_tokenize,recommend,recommendation_to_finding,xml_to_json}.py`.
+The 24 scripts Epic #416 added for continuous monitoring moved to
+`packs/monitoring/continuous-monitor/scripts/**` (research-harness-template#483) —
+they are pack-owned now, documented in [packs/monitoring.md](packs/monitoring.md)
+rather than counted in this core-scripts inventory, the same way
+`packs/channels/diataxis/scripts/render-diataxis.sh` was never counted here.
 
 ## Assertion
 
-Discovered (166) equals documented (166) across all five categories. No pack,
+Discovered (143) equals documented (143) across all five categories. No pack,
 skill, command, agent, or script is omitted.

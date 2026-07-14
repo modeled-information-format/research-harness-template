@@ -87,6 +87,11 @@
       "name": "ai-spec",
       "source": "./packs/channels/ai-spec",
       "description": "[channels/channel] Render surviving findings into an AI-ready, agent-executable architecture spec (genre-shaping of the artifact -> markdown pipeline; finding_refs -> evidence, goal checks -> EARS, sections -> structure)"
+    },
+    {
+      "name": "continuous-monitor",
+      "source": "./packs/monitoring/continuous-monitor",
+      "description": "[monitoring/methodology] Unattended, scheduled monitoring of external sources (arXiv, OpenAlex, Crossref, Semantic Scholar, PubMed, bioRxiv/medRxiv, GDELT, Hacker News) for a topic, gated through a mandatory human Editorial Gate before anything publishes"
     }
   ]
 }

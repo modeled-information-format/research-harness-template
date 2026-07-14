@@ -80,7 +80,7 @@ jobs:
             exit 1
           fi
 
-          bash scripts/monitoring/run-gate-and-publish.sh "$TOPIC" "$RUN_ID" "$REC_FILE" "$PR_MERGED"
+          bash packs/monitoring/continuous-monitor/scripts/run-gate-and-publish.sh "$TOPIC" "$RUN_ID" "$REC_FILE" "$PR_MERGED"
 
           git config user.name "research-harness-template[bot]"
           git config user.email "research-harness-template[bot]@users.noreply.github.com"

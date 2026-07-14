@@ -2,7 +2,7 @@
 id: explanation-pack-structure
 type: semantic
 created: '2026-06-19T20:44:52-04:00'
-modified: '2026-07-01T07:01:43-04:00'
+modified: '2026-07-14T02:29:28.000Z'
 namespace: docs/explanation
 tags:
   - documentation
@@ -73,3 +73,20 @@ marketplace `source` path and materializes the set into Claude Code's native
 
 By default the five `reports` genres are enabled; every other plugin is
 disabled and opt-in.
+
+## A pack's caller doesn't have to be an interactive session
+
+Every pack in the table above is normally invoked by an agent reading its
+`SKILL.md` inside an interactive Claude Code session — but "an agent reads
+`SKILL.md`" describes the *documented, human-facing* entry point, not the only
+legitimate one. A pack's `scripts/` directory has always been directly
+callable by anything that can run `bash`, including unattended CI
+(`packs/channels/diataxis/scripts/render-diataxis.sh` is a standing example —
+its eval invokes it directly, no chat turn involved). `packs/monitoring/continuous-monitor`
+(research-harness-template#483) is the first pack whose *primary* caller is a
+scheduled GitHub Actions workflow rather than a human prompt: `monitor.yml` and
+`monitor-gate.yml` call its `scripts/` directly by path, and its `SKILL.md`
+documents the identical pipeline for interactive/manual use — inspecting a
+run, re-triggering it by hand, debugging a stuck topic. This is not a second
+implementation and not a new wiring convention: the same `packs/<family>/<skill>/scripts/`
+surface every pack already has, called by a different kind of caller.
