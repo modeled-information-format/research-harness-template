@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.14.1] - 2026-07-14
 
+### Added
+
+- **Backfilled `COMPLETION-CRITERIA.md` and `IMPLEMENTATION-PLAN.md` through
+  Milestone/Phase 32** (research-harness-template#443): both docs had been
+  dramatically stale — `COMPLETION-CRITERIA.md`'s last documented milestone
+  was 13 and `IMPLEMENTATION-PLAN.md`'s last phase was 8, while
+  `scripts/verify.sh` had already grown through `gate_m32`. Reconstructed
+  Milestone/Phase 9 and 14 through 32 (MIF I/O conformance, session-recovery
+  durability, ontology conformance, the falsification phase-gate, goal
+  evolution, the Diátaxis channel, README freshness, the ADR-0011 fail-closed
+  ontology-completeness gate, the cross-topic corpus atlas, the full
+  ADR-0017 MIF Container export/import format, and the ADR-0018 mif-docs
+  conformance floor) directly from each `gate_mN` function body and its
+  originating issue/PR references — a full historical backfill, not a
+  fresh-start convention, since the reconstruction data was traceable. Added
+  a new `gate_milestone_docs` drift-prevention gate to `scripts/verify.sh`
+  comparing the highest `gate_mN` in `GATES=(...)` against the highest
+  documented milestone/phase in both files, so this cannot silently drift
+  again.
+
 ### Fixed
 
 - **Guarded remaining unbound-variable-risk `"${arr[@]}"` expansions for bash
