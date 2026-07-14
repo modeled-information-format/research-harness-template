@@ -187,12 +187,17 @@ it yourself. (This is distinct from a finding with no fixture entry at all,
 which correctly omits `attempted_at` entirely so a later real gate run can
 still grade it — see the one-round rule above.)
 
-Then re-validate the finding against the schema:
+Then re-validate the finding against the schema, with the **full** MIF ref
+closure — the same three flags `scripts/write-finding.sh` and the
+dimension-analyst use. Omitting the `entity-reference.schema.json` ref lets
+some `$ref`-dependent violations pass locally that a full validation (e.g.
+`reconcile-session.sh`, a goal's `finding_valid` check) will still catch later:
 
 ```bash
 ajv validate --spec=draft2020 --strict=false -c ajv-formats \
   -s schemas/findings.schema.json \
   -r schemas/mif/mif.schema.json \
+  -r schemas/mif/definitions/entity-reference.schema.json \
   -d "$FINDING_FILE"
 ```
 
@@ -205,7 +210,7 @@ After verdicts are written, remediate each finding by its verdict:
 | Verdict | Remediation |
 | --- | --- |
 | `falsified` | **Quarantine** — move the finding file to `$REPORTS_DIR/quarantine/`. It is removed from the active set; downstream synthesis never sees it. |
-| `weakened` | **Downgrade one level** — step the finding one rung DOWN the real `provenance.trustLevel` ladder (`verified` → `high_confidence` → `moderate_confidence` → `low_confidence` → `uncertain`); a finding already at `uncertain` is quarantined instead. Lower `provenance.confidence` accordingly if present. Append the disconfirming sources to `citations[]` and a qualifier to `summary`. |
+| `weakened` | **Downgrade one level** — step the finding one rung DOWN the real `provenance.trustLevel` ladder (`verified` → `high_confidence` → `moderate_confidence` → `low_confidence` → `uncertain`); a finding already at `uncertain` is quarantined instead. Lower `provenance.confidence` accordingly if present. Append the disconfirming sources to `citations[]` and a **bounded** qualifier to `summary` (see below — the appended text must never push `summary` over the schema's 500-char cap). |
 | `survived` | **Unchanged** — annotation only (the verification block records the basis and query count). |
 | `inconclusive` | **Unchanged** — annotation only. |
 
@@ -217,6 +222,41 @@ then re-validate against `schemas/findings.schema.json`. Composing the appended
 `eval` wrapper on their quotes and parentheses — the same footgun the authoring
 agents avoid. A `low` finding that is weakened further is quarantined rather than
 dropped to an invalid level.
+
+**Bounded summary qualifier (research-harness-template#503).** `summary`
+inherits `maxLength: 500` from the canonical MIF schema (`schemas/mif/mif.schema.json`)
+— that cap is a vendored MIF Level 3 constraint, not a harness-local choice, so
+it is never raised here; the appended text must fit under it instead. Never
+concatenate the qualifier onto `summary` unbounded. Two truncation stages,
+in order: first cap the qualifier itself at `QUALIFIER_CAP` (trimming the
+`verdict_basis` text it wraps, not the fixed template around it, if it runs
+long); then truncate the *original* summary to whatever budget remains under
+`MAX_SUMMARY_LEN`. The qualifier is the new, higher-priority signal a reader
+needs, so it is capped independently rather than sacrificed to make room:
+
+```python
+MAX_SUMMARY_LEN = 500
+QUALIFIER_CAP = 160  # generous ceiling for the templated qualifier itself
+
+qualifier = f" [Falsification note: {verdict_basis}]"
+if len(qualifier) > QUALIFIER_CAP:
+    # Truncate the basis text, not the fixed template around it.
+    keep = QUALIFIER_CAP - len(" [Falsification note: …]")
+    qualifier = f" [Falsification note: {verdict_basis[:keep].rstrip()}…]"
+
+budget = MAX_SUMMARY_LEN - len(qualifier)
+summary = finding["summary"]
+if len(summary) > budget:
+    summary = summary[: budget - 1].rstrip() + "…"
+finding["summary"] = summary + qualifier
+
+assert len(finding["summary"]) <= MAX_SUMMARY_LEN
+```
+
+Then re-validate with the full ref closure from Step 6 before moving on to the
+next finding — do not defer discovery of a `maxLength` (or any other) schema
+violation to `reconcile-session.sh` or a goal's `finding_valid` check; self-correct
+it here, at write time.
 
 ---
 
