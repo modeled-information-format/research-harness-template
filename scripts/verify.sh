@@ -4370,10 +4370,37 @@ gate_changelog_links() {
   fi
 }
 
+gate_milestone_docs() {
+  info "Milestone docs stay in sync with verify.sh's own gate registry (drift-prevention, research-harness-template#443)"
+  # This repo's own CLAUDE.md (Docs section) names COMPLETION-CRITERIA.md and
+  # IMPLEMENTATION-PLAN.md as the definitional source the gate_mN gates map
+  # to — GATES=(...) below is the ground truth for how many milestone gates
+  # actually exist. Those two docs drifted ~20 milestones stale before this
+  # gate existed (research-harness-template#443: COMPLETION-CRITERIA.md's
+  # last documented milestone was 13 and IMPLEMENTATION-PLAN.md's last phase
+  # was 8, while verify.sh had already grown through gate_m32). This compares
+  # the highest gate_mN in the registry against the highest milestone/phase
+  # documented in each file, so a future gate_mN added without a matching
+  # doc entry fails loudly instead of drifting silently again.
+  local highest_gate highest_cc highest_ip
+  highest_gate="$(printf '%s\n' "${GATES[@]+"${GATES[@]}"}" | grep -oE '^gate_m[0-9]+$' | grep -oE '[0-9]+$' | sort -n | tail -1)"
+  highest_cc="$(grep -oE '^### Milestone [0-9]+' COMPLETION-CRITERIA.md 2>/dev/null | grep -oE '[0-9]+$' | sort -n | tail -1)"
+  highest_ip="$(grep -oE '^## Phase [0-9]+' IMPLEMENTATION-PLAN.md 2>/dev/null | grep -oE '[0-9]+$' | sort -n | tail -1)"
+  if [ -z "$highest_gate" ]; then
+    bad "could not find any gate_mN entry in GATES=(...) — the extraction pattern itself may be broken"
+    return
+  fi
+  if [ "$highest_gate" = "${highest_cc:-}" ] && [ "$highest_gate" = "${highest_ip:-}" ]; then
+    ok "verify.sh's highest milestone gate (gate_m$highest_gate) matches the highest documented milestone in COMPLETION-CRITERIA.md and the highest phase in IMPLEMENTATION-PLAN.md"
+  else
+    bad "milestone docs drifted from verify.sh: highest gate_mN=$highest_gate, highest COMPLETION-CRITERIA.md '### Milestone N'=${highest_cc:-NONE}, highest IMPLEMENTATION-PLAN.md '## Phase N'=${highest_ip:-NONE} — document the new milestone(s)/phase(s) in both files"
+  fi
+}
+
 # ---------------------------------------------------------------------------
 # Gate registry — each milestone appends its function name here.
 # ---------------------------------------------------------------------------
-GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18 gate_m19 gate_m20 gate_m21 gate_m22 gate_m23 gate_m24 gate_m25 gate_m26 gate_m27 gate_m28 gate_m29 gate_m30 gate_m31 gate_m32 gate_ontology_lock gate_versions gate_changelog_links)
+GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18 gate_m19 gate_m20 gate_m21 gate_m22 gate_m23 gate_m24 gate_m25 gate_m26 gate_m27 gate_m28 gate_m29 gate_m30 gate_m31 gate_m32 gate_ontology_lock gate_versions gate_changelog_links gate_milestone_docs)
 
 for g in "${GATES[@]+"${GATES[@]}"}"; do "$g"; done
 
