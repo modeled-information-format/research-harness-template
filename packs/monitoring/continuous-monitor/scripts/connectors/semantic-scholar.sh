@@ -11,9 +11,10 @@
 #
 # Usage: semantic-scholar.sh <query> [max_results]
 set -uo pipefail
-ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
-# shellcheck source=scripts/monitoring/lib/connector-common.sh
-. "$ROOT/scripts/monitoring/lib/connector-common.sh"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$SCRIPT_DIR/../../../../.." && pwd)"
+# shellcheck source=packs/monitoring/continuous-monitor/scripts/lib/connector-common.sh
+. "$SCRIPT_DIR/../lib/connector-common.sh"
 
 QUERY="${1:?usage: semantic-scholar.sh <query> [max_results]}"
 MAX="${2:-20}"
@@ -35,10 +36,10 @@ connector_emit "semantic-scholar" '
         id: (.externalIds.DOI // .paperId // ""),
         title: (.title // ""),
         summary: (.abstract // ""),
-        # The API doesn't always populate .url; fall back to a DOI-derived
+        # The API does not always populate .url; fall back to a DOI-derived
         # url rather than emitting an empty one -- a candidate with no
         # primary-source URL and no concordance match fails
-        # recommend.py's citation requirement downstream.
+        # recommend.py citation requirement downstream.
         url: (.url // (if .externalIds.DOI != null then "https://doi.org/" + .externalIds.DOI else "" end)),
         published: (.publicationDate // ""),
         authors: [ (.authors // [])[]?.name ],

@@ -24,8 +24,9 @@ cd "$ROOT" || exit 2
 
 TMP="$(mktemp -d)"
 TOPIC="eval-monitoring-topic"
-# run-with-budget.sh, editorial-gate.sh, and output-router.sh all resolve
-# their own paths from the repo root, not a tmpdir, so every case below
+# run-with-budget.sh, editorial-gate.sh, and output-router.sh (now under
+# packs/monitoring/continuous-monitor/scripts/, research-harness-template#483)
+# all resolve their own paths from the repo root, not a tmpdir, so every case below
 # runs against a throwaway topic under the REAL reports/ tree. Cleaned up
 # by the same EXIT trap as $TMP, not a trailing rm -rf -- a CI cancellation
 # or timeout partway through must not leave residue in the tracked tree
@@ -57,7 +58,7 @@ EOF
 # --- Case 1: fail-closed on timeout ---------------------------------------
 mkdir -p "$REAL_TOPIC_DIR/monitoring"
 rm -f "$REAL_TOPIC_DIR/monitoring/continuity-log.jsonl"
-bash "$ROOT/scripts/monitoring/run-with-budget.sh" "$TOPIC" "eval-slow-source" 1 "eval-run-1" \
+bash "$ROOT/packs/monitoring/continuous-monitor/scripts/run-with-budget.sh" "$TOPIC" "eval-slow-source" 1 "eval-run-1" \
   -- sleep 5 >/dev/null 2>&1
 if [ -f "$REAL_TOPIC_DIR/monitoring/continuity-log.jsonl" ] \
    && jq -e '.event_type == "budget_exceeded"' "$REAL_TOPIC_DIR/monitoring/continuity-log.jsonl" >/dev/null 2>&1; then
@@ -69,7 +70,7 @@ fi
 # --- Case 2: Editorial Gate no-bypass + fail-safe default -----------------
 BYPASS_CHECK="$(python3 -c "
 import sys
-sys.path.insert(0, '$ROOT/scripts/monitoring/lib')
+sys.path.insert(0, '$ROOT/packs/monitoring/continuous-monitor/scripts/lib')
 from editorial_gate import assert_all_gated
 try:
     assert_all_gated([{'mode': 'interest-match', 'title': 'x'}])
@@ -89,7 +90,7 @@ cat > "$TMP/rec-no-decision.json" <<EOF
 EOF
 echo '{}' > "$TMP/empty-decisions.json"
 rm -f "$REAL_TOPIC_DIR/monitoring/continuity-log.jsonl"
-bash "$ROOT/scripts/monitoring/editorial-gate.sh" "$TOPIC" "eval-run-2" \
+bash "$ROOT/packs/monitoring/continuous-monitor/scripts/editorial-gate.sh" "$TOPIC" "eval-run-2" \
   "$TMP/rec-no-decision.json" "$TMP/empty-decisions.json" "$TMP/accepted-none.json" >/dev/null 2>&1
 if [ "$(jq 'length' "$TMP/accepted-none.json")" = "0" ] \
    && jq -e '.event_type == "gate_rejected"' "$REAL_TOPIC_DIR/monitoring/continuity-log.jsonl" >/dev/null 2>&1; then
@@ -105,11 +106,11 @@ cat > "$TMP/candidates.json" <<'EOF'
   "summary":"A study of provenance tracking approaches for knowledge graph systems.",
   "url":"https://example.org/eval-candidate-2","published":"2026-01-01","authors":[],"raw":{}}]
 EOF
-if ! bash "$ROOT/scripts/monitoring/interest-inference.sh" "$TMP/candidates.json" "$TMP/concordance.json" \
+if ! bash "$ROOT/packs/monitoring/continuous-monitor/scripts/interest-inference.sh" "$TMP/candidates.json" "$TMP/concordance.json" \
      -- knowledge graph provenance > "$TMP/scored.json" 2>"$TMP/scored.err"; then
   note "FAIL: interest-inference.sh failed: $(cat "$TMP/scored.err")"; fail=1
 fi
-bash "$ROOT/scripts/monitoring/recommend.sh" interest-match "$TMP/scored.json" 0.0 > "$TMP/recs.json" 2>/dev/null
+bash "$ROOT/packs/monitoring/continuous-monitor/scripts/recommend.sh" interest-match "$TMP/scored.json" 0.0 > "$TMP/recs.json" 2>/dev/null
 if [ "$(jq 'length' "$TMP/recs.json" 2>/dev/null)" != "1" ]; then
   note "FAIL: expected 1 recommendation, got: $(cat "$TMP/recs.json")"; fail=1
 fi
@@ -117,12 +118,12 @@ fi
 DECISION_KEY="$(jq -r '.[0] | (.id // ("gap:" + .dimension))' "$TMP/recs.json")"
 jq -n --arg k "$DECISION_KEY" '{($k): "accept"}' > "$TMP/decisions-accept.json"
 rm -f "$REAL_TOPIC_DIR/monitoring/continuity-log.jsonl"
-bash "$ROOT/scripts/monitoring/editorial-gate.sh" "$TOPIC" "eval-run-3" \
+bash "$ROOT/packs/monitoring/continuous-monitor/scripts/editorial-gate.sh" "$TOPIC" "eval-run-3" \
   "$TMP/recs.json" "$TMP/decisions-accept.json" "$TMP/accepted.json" >/dev/null 2>&1
 if [ "$(jq 'length' "$TMP/accepted.json" 2>/dev/null)" != "1" ]; then
   note "FAIL: expected 1 accepted recommendation, got: $(cat "$TMP/accepted.json" 2>/dev/null)"; fail=1
 else
-  if bash "$ROOT/scripts/monitoring/output-router.sh" "$TOPIC" "eval-run-3" "$TMP/accepted.json" >/dev/null 2>&1; then
+  if bash "$ROOT/packs/monitoring/continuous-monitor/scripts/output-router.sh" "$TOPIC" "eval-run-3" "$TMP/accepted.json" >/dev/null 2>&1; then
     PUBLISHED="$(find "$REAL_TOPIC_DIR/findings" -name '*.json' 2>/dev/null | head -1)"
     if [ -n "$PUBLISHED" ] && bash "$ROOT/scripts/check-citation-integrity.sh" "$PUBLISHED" >/dev/null 2>&1; then
       note "accept-to-publish: a real MIF finding was written and passes citation-integrity"

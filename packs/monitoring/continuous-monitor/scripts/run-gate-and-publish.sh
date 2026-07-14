@@ -8,7 +8,8 @@
 #
 # Usage: run-gate-and-publish.sh <topic-id> <run-id> <recommendations.json> <merged: true|false>
 set -uo pipefail
-ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 
 TOPIC="${1:?usage: run-gate-and-publish.sh <topic-id> <run-id> <recommendations.json> <merged: true|false>}"
 RUN_ID="${2:?missing run-id}"
@@ -43,11 +44,11 @@ DECISIONS_FILE="$(mktemp).json"
 printf '%s' "$DECISIONS" > "$DECISIONS_FILE"
 
 ACCEPTED_FILE="$ROOT/reports/$TOPIC/monitoring/runs/$RUN_ID/accepted.json"
-bash "$ROOT/scripts/monitoring/editorial-gate.sh" "$TOPIC" "$RUN_ID" "$RECOMMENDATIONS" "$DECISIONS_FILE" "$ACCEPTED_FILE"
+bash "$SCRIPT_DIR/editorial-gate.sh" "$TOPIC" "$RUN_ID" "$RECOMMENDATIONS" "$DECISIONS_FILE" "$ACCEPTED_FILE"
 
 ACCEPTED_COUNT="$(jq 'length' "$ACCEPTED_FILE")"
 if [ "$ACCEPTED_COUNT" -gt 0 ]; then
-  bash "$ROOT/scripts/monitoring/output-router.sh" "$TOPIC" "$RUN_ID" "$ACCEPTED_FILE"
+  bash "$SCRIPT_DIR/output-router.sh" "$TOPIC" "$RUN_ID" "$ACCEPTED_FILE"
 else
   echo "run-gate-and-publish[$TOPIC/$RUN_ID]: nothing accepted, Output Router skipped" >&2
 fi

@@ -13,9 +13,10 @@
 #
 # Usage: run-with-budget.sh <topic> <source-name> <budget-seconds> <run-id> -- <command...>
 set -uo pipefail
-ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-# shellcheck source=scripts/monitoring/lib/continuity-log.sh
-. "$ROOT/scripts/monitoring/lib/continuity-log.sh"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
+# shellcheck source=packs/monitoring/continuous-monitor/scripts/lib/continuity-log.sh
+. "$SCRIPT_DIR/lib/continuity-log.sh"
 
 TOPIC="${1:?usage: run-with-budget.sh <topic> <source-name> <budget-seconds> <run-id> -- <command...>}"
 SOURCE_NAME="${2:?missing source-name}"

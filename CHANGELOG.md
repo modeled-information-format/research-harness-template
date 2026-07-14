@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Continuous monitoring repackaged as a pack** (`packs/monitoring/continuous-monitor`,
+  research-harness-template#483): Epic #416's `scripts/monitoring/**` moved to
+  `packs/monitoring/continuous-monitor/scripts/**` with its own `plugin.json`
+  and `SKILL.md`, wired through `harness.config.json` `packs[]` like every
+  other pack. `harness.config.json` `packs[]` now needs
+  `{"name": "continuous-monitor", "enabled": true}` in addition to a topic's
+  own `continuousMonitoring.enabled: true` — both gates are required, checked
+  by `run-monitoring.sh` and `monitor.yml` before anything runs. `monitor.yml`
+  and `monitor-gate.yml` are updated to call the new script paths; docs
+  (`pack-structure.md`, `packs-and-plugins.md`, `packs/monitoring.md`,
+  `coverage.md`, `dependencies.md`, `scripts.md`,
+  `enable-continuous-monitoring.md`) are reconciled to match. Fixed a
+  pre-existing latent bug found during the move: an apostrophe inside a
+  bash single-quoted jq filter in `semantic-scholar.sh`'s connector broke
+  the script's own syntax.
+
 ## [0.14.0] - 2026-07-12
 
 Epic #416: Continuous Research-Monitoring Capability. A periodically-triggered

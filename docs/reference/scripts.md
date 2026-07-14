@@ -2,7 +2,7 @@
 id: reference-scripts
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-13T17:26:54.309Z'
+modified: '2026-07-14T02:29:28.000Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -167,25 +167,6 @@ These are dev/build-time only; generated files are committed.
 | `scripts/mif-container-migration-eval-bench.sh` | Story #334 (Epic #275, AD-7): a one-time (or run-on-demand) benchmark, not wired into `verify.sh`/`run-evals.sh`. Builds a synthetic topic of N schema-valid findings (default 4300, matching ADR-0014's own reference bottleneck scale) and times full export, import into a fresh topic, and re-import into the same topic — the numbers a human reads to judge whether AD-7's migration trigger (a real perf bottleneck at that scale) has been hit. | `jq`, `ajv` |
 
 ---
-
-## Continuous monitoring (Epic #416)
-
-Pipeline scripts behind `.github/workflows/monitor.yml`/`monitor-gate.yml` (ADR-0019); see
-[enable-continuous-monitoring.md](../how-to/enable-continuous-monitoring.md) for the
-operator-facing how-to. Source Connectors: `scripts/monitoring/connectors/{arxiv,openalex,crossref,semantic-scholar,pubmed,biorxiv,gdelt,hn}.sh` (documented per-source in [dependencies.md](dependencies.md#continuous-monitoring-source-apis-optional)).
-
-| Script | What it does | Key dependency |
-| --- | --- | --- |
-| `scripts/monitoring/run-monitoring.sh` | Phase 1 orchestrator: runs enabled Source Connectors under a budget, rebuilds the concordance/index (AD-2 ordering), scores via Interest-Inference, and writes `reports/<topic>/monitoring/runs/<run-id>/recommendations.json`. Stops before the Editorial Gate. | `jq`, `python3` |
-| `scripts/monitoring/run-with-budget.sh` | Wraps one connector in a hard wall-clock `timeout` (NFR1); on timeout or failure, records the specific reason in the Continuity Log and fails closed rather than partial-succeeding. | `timeout` |
-| `scripts/monitoring/interest-inference.sh` | Scores candidates against `reports/concordance.json` (AD-2), with a dependency-light TF-IDF fallback for uncovered topics (NFR4). Refuses to run against a concordance that predates the latest committed finding (git-log-based, not mtime-based). | `python3`, `git` |
-| `scripts/monitoring/recommend.sh` | Two modes: `interest-match` ranks Interest-Inference-scored candidates; `gap-detect` reuses `.claude/skills/discover`'s own coverage-gap heuristic. Every recommendation carries at least one MIF citation (NFR5), enforced in code. | `python3` |
-| `scripts/monitoring/editorial-gate.sh` | The mandatory human-review checkpoint (AD-4/NFR6): splits recommendations into accepted/rejected per an explicit decisions map (in production, derived from the review PR's merge/close state), fail-safe default (no decision = rejected), rejections logged to the Continuity Log. | `jq`, `python3` |
-| `scripts/monitoring/output-router.sh` | Hands Editorial-Gate-accepted recommendations to `scripts/write-finding.sh`/`scripts/check-citation-integrity.sh` unmodified (no bespoke publish path); gap-detect suggestions are surfaced separately in `reports/<topic>/monitoring/recommended-research-areas.jsonl`, never forced into the finding shape. | `jq`, `python3` |
-| `scripts/monitoring/run-gate-and-publish.sh` | Phase 2 orchestrator (the PR-close-triggered half): builds a whole-batch accept/reject decision from a PR's merged state, runs `editorial-gate.sh` then `output-router.sh`. | `jq` |
-| `scripts/monitoring/lib/connector-common.sh` | Shared connector helpers: fail-closed `curl` fetch with timeout/retry, Atom/RSS→JSON normalization (`lib/xml_to_json.py`), and `connector_emit`'s `jq`-based array-shape validation every connector pipes its output through. | `curl`, `python3`, `jq` |
-| `scripts/monitoring/lib/continuity-log.sh` | Appends one schema-validated JSON line per event to `reports/<topic>/monitoring/continuity-log.jsonl` (`schemas/monitoring-continuity-log-entry.schema.json`) — an explicitly scoped extension, not a MIF finding. | `jq`, `ajv` |
-| `scripts/monitoring/lib/cron_match.py` | Minimal stdlib-only 5-field cron matcher (research-harness-template#424): since `monitor.yml`'s own GitHub Actions schedule trigger fires more often than any single topic's configured cron, each topic independently checks via this script whether the current firing is actually its turn. Exit 0 = matches, 1 = skip. | Python stdlib only |
 
 ## Release and verification
 

@@ -2,7 +2,7 @@
 id: how-to-enable-continuous-monitoring
 type: procedural
 created: '2026-07-12T21:00:00Z'
-modified: '2026-07-12T23:36:50.806Z'
+modified: '2026-07-14T02:29:28.000Z'
 namespace: how-to/monitoring
 title: How to Enable Continuous Research Monitoring for a Topic
 tags:
@@ -47,6 +47,21 @@ step before anything publishes.
 - Write access to open and merge/close pull requests on this repository.
 - If you want either optional rate-limit enhancement, a Semantic Scholar
   or NCBI API key (neither is required for the default path).
+
+Continuous monitoring is a **pack** (`packs/monitoring/continuous-monitor`,
+research-harness-template#483) with two independent enablement gates — both
+are required, neither alone does anything:
+
+## Step 0 — Enable the `continuous-monitor` pack
+
+```bash
+scripts/pack-toggle.sh continuous-monitor on
+```
+
+This is the repo-wide master switch (`harness.config.json` `packs[]`). Step 1
+below is the *per-topic* opt-in on top of it — a topic can set
+`continuousMonitoring.enabled: true` and still have nothing run if this pack
+itself is off, and vice versa.
 
 ## Step 1 — Add a `continuousMonitoring` block to your topic
 

@@ -11,9 +11,10 @@
 #
 # Usage: biorxiv.sh <days-back> [max_results] [server: biorxiv|medrxiv]
 set -uo pipefail
-ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
-# shellcheck source=scripts/monitoring/lib/connector-common.sh
-. "$ROOT/scripts/monitoring/lib/connector-common.sh"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$SCRIPT_DIR/../../../../.." && pwd)"
+# shellcheck source=packs/monitoring/continuous-monitor/scripts/lib/connector-common.sh
+. "$SCRIPT_DIR/../lib/connector-common.sh"
 
 DAYS_BACK="${1:?usage: biorxiv.sh <days-back> [max_results] [server]}"
 MAX="${2:-20}"

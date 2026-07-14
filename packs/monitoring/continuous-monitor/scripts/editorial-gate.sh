@@ -12,9 +12,10 @@
 #
 # Usage: editorial-gate.sh <topic> <run-id> <recommendations.json> <decisions.json> <accepted-out.json>
 set -uo pipefail
-ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-# shellcheck source=scripts/monitoring/lib/continuity-log.sh
-. "$ROOT/scripts/monitoring/lib/continuity-log.sh"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
+# shellcheck source=packs/monitoring/continuous-monitor/scripts/lib/continuity-log.sh
+. "$SCRIPT_DIR/lib/continuity-log.sh"
 
 TOPIC="${1:?usage: editorial-gate.sh <topic> <run-id> <recommendations.json> <decisions.json> <accepted-out.json>}"
 RUN_ID="${2:?missing run-id}"
@@ -46,7 +47,7 @@ if command -v ajv >/dev/null 2>&1 && [ -f "$RECOMMENDATION_SCHEMA" ]; then
 fi
 
 DECIDED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-RESULT="$(python3 "$ROOT/scripts/monitoring/lib/editorial_gate.py" "$RECOMMENDATIONS" "$DECISIONS" "editorial-gate" "$DECIDED_AT")" || {
+RESULT="$(python3 "$SCRIPT_DIR/lib/editorial_gate.py" "$RECOMMENDATIONS" "$DECISIONS" "editorial-gate" "$DECIDED_AT")" || {
   echo "editorial-gate: gate evaluation failed" >&2
   exit 1
 }
