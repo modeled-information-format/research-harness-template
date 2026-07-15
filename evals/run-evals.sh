@@ -54,6 +54,12 @@ run "update-provenance-gate" bash evals/update-provenance.sh
 #     a shell-assignment prefix on the same line (issue #356).
 run "guard-falsify-gate" bash evals/guard-falsify-gate.sh
 
+# 1e. falsification-analyst.md's documented bounded-summary-qualifier algorithm
+#     (#503/#504) must actually hold the 500-char schemas/mif/mif.schema.json
+#     summary cap across a range of summary/verdict_basis lengths, and never
+#     silently drop the qualifier to make room.
+run "bounded-summary-qualifier" bash evals/bounded-summary-qualifier.sh
+
 # 2. Citation-integrity: a clean finding passes; a bad one is flagged.
 run     "citation-integrity-good" scripts/check-citation-integrity.sh schemas/samples/citation-good.sample.json
 run_neg "citation-integrity-bad"  scripts/check-citation-integrity.sh schemas/samples/citation-bad.sample.json
