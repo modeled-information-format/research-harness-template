@@ -4371,6 +4371,10 @@ gate_changelog_links() {
 }
 
 gate_milestone_docs() {
+  if [ "$IS_TEMPLATE" != 1 ]; then
+    info "Milestone docs drift check (template-only; skipped in instance, #505)"
+    return
+  fi
   info "Milestone docs stay in sync with verify.sh's own gate registry (drift-prevention, research-harness-template#443)"
   # This repo's own CLAUDE.md (Docs section) names COMPLETION-CRITERIA.md and
   # IMPLEMENTATION-PLAN.md as the definitional source the gate_mN gates map
