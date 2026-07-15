@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.2] - 2026-07-15
+
+### Added
+
+- **`verify.sh` structurally checks that every `gate_*` function reading a
+  copier-excluded doc file carries an `IS_TEMPLATE` guard** (#507): two
+  separate gates (`gate_changelog_links` #401, `gate_milestone_docs` #505)
+  each unconditionally failed in every instantiated clone because they read
+  a file `copier.yml`'s `_exclude` list deliberately keeps out of instances,
+  with no guard — caught only by a human/agent noticing after the fact, both
+  times. The new `gate_is_template_guard_hygiene` extracts the literal doc
+  filenames from `copier.yml`'s `_exclude` list and flags any `gate_*`
+  function referencing one with no `IS_TEMPLATE` guard anywhere in its body,
+  so a third gate can't reintroduce the same defect silently.
+
 ## [0.15.1] - 2026-07-14
 
 ### Fixed
