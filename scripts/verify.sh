@@ -4401,10 +4401,65 @@ gate_milestone_docs() {
   fi
 }
 
+gate_is_template_guard_hygiene() {
+  if [ "$IS_TEMPLATE" != 1 ]; then
+    info "IS_TEMPLATE guard hygiene check (template-only; verify.sh's own authoring concern, not instance content, #507)"
+    return
+  fi
+  info "gate_* functions referencing a copier-excluded doc file carry an IS_TEMPLATE guard (#507)"
+
+  # copier.yml's own _exclude list is the ground truth for which files vanish
+  # in every instantiated clone. copier.yml itself is deliberately excluded
+  # from this scan: checking for ITS presence is how IS_TEMPLATE (line ~36)
+  # gets computed in the first place, not an instance of the bug class this
+  # gate looks for. #401 (gate_changelog_links) and #505 (gate_milestone_docs)
+  # both unconditionally failed in every instance because they read a
+  # copier-excluded doc file with no IS_TEMPLATE guard anywhere in the
+  # function body — this re-checks that structurally so a third gate can't
+  # reintroduce the same defect silently.
+  local excluded_files
+  excluded_files="$(awk '
+    /^_exclude:/ { in_block = 1; next }
+    in_block && /^[^ ]/ { in_block = 0 }
+    in_block { print }
+  ' copier.yml | grep -oE '"[^"*]+\.[A-Za-z0-9]+"' | tr -d '"' | grep -vxF 'copier.yml')"
+
+  if [ -z "$excluded_files" ]; then
+    bad "could not extract any literal excluded doc filename from copier.yml's _exclude list — the extraction pattern itself may be broken"
+    return
+  fi
+
+  local g body filtered f violations=""
+  for g in "${GATES[@]+"${GATES[@]}"}"; do
+    [ "$g" = "gate_is_template_guard_hygiene" ] && continue
+    body="$(declare -f "$g" 2>/dev/null)" || continue
+    # Strip negated pathspec tokens (":!file", e.g. gate_m1's contamination
+    # scrub) before scanning — a gate that deliberately EXCLUDES one of these
+    # files from a git-grep/diff is the opposite of referencing it as a
+    # source and must not be flagged.
+    filtered="$(printf '%s' "$body" | sed -E 's/:![A-Za-z0-9_.-]+//g')"
+    while IFS= read -r f; do
+      [ -n "$f" ] || continue
+      # Require an actual $IS_TEMPLATE/${IS_TEMPLATE} variable reference, not
+      # just the bare word — a comment or log string that merely mentions
+      # "IS_TEMPLATE" without gating anything must not count as a guard.
+      if grep -qF "$f" <<<"$filtered" && ! grep -qE '\$\{?IS_TEMPLATE\}?' <<<"$body"; then
+        violations="${violations}${g} references '$f' with no IS_TEMPLATE guard; "
+      fi
+    done <<<"$excluded_files"
+  done
+
+  if [ -z "$violations" ]; then
+    ok "every gate_* function referencing a copier-excluded doc file (${excluded_files//$'\n'/, }) carries an IS_TEMPLATE guard"
+  else
+    bad "gate(s) reference a copier-excluded doc file with no IS_TEMPLATE guard (same defect class as #401/#505): $violations"
+  fi
+}
+
 # ---------------------------------------------------------------------------
 # Gate registry — each milestone appends its function name here.
 # ---------------------------------------------------------------------------
-GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18 gate_m19 gate_m20 gate_m21 gate_m22 gate_m23 gate_m24 gate_m25 gate_m26 gate_m27 gate_m28 gate_m29 gate_m30 gate_m31 gate_m32 gate_ontology_lock gate_versions gate_changelog_links gate_milestone_docs)
+GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18 gate_m19 gate_m20 gate_m21 gate_m22 gate_m23 gate_m24 gate_m25 gate_m26 gate_m27 gate_m28 gate_m29 gate_m30 gate_m31 gate_m32 gate_ontology_lock gate_versions gate_changelog_links gate_milestone_docs gate_is_template_guard_hygiene)
 
 for g in "${GATES[@]+"${GATES[@]}"}"; do "$g"; done
 
