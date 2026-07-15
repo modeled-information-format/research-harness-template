@@ -4406,7 +4406,7 @@ gate_is_template_guard_hygiene() {
     info "IS_TEMPLATE guard hygiene check (template-only; verify.sh's own authoring concern, not instance content, #507)"
     return
   fi
-  info "gate_* functions reading a copier-excluded doc file carry an IS_TEMPLATE guard (#507)"
+  info "gate_* functions referencing a copier-excluded doc file carry an IS_TEMPLATE guard (#507)"
 
   # copier.yml's own _exclude list is the ground truth for which files vanish
   # in every instantiated clone. copier.yml itself is deliberately excluded
@@ -4435,13 +4435,16 @@ gate_is_template_guard_hygiene() {
     body="$(declare -f "$g" 2>/dev/null)" || continue
     # Strip negated pathspec tokens (":!file", e.g. gate_m1's contamination
     # scrub) before scanning — a gate that deliberately EXCLUDES one of these
-    # files from a git-grep/diff is the opposite of reading it and must not
-    # be flagged.
+    # files from a git-grep/diff is the opposite of referencing it as a
+    # source and must not be flagged.
     filtered="$(printf '%s' "$body" | sed -E 's/:![A-Za-z0-9_.-]+//g')"
     while IFS= read -r f; do
       [ -n "$f" ] || continue
-      if grep -qF "$f" <<<"$filtered" && ! grep -q 'IS_TEMPLATE' <<<"$body"; then
-        violations="${violations}${g} reads '$f' with no IS_TEMPLATE guard; "
+      # Require an actual $IS_TEMPLATE/${IS_TEMPLATE} variable reference, not
+      # just the bare word — a comment or log string that merely mentions
+      # "IS_TEMPLATE" without gating anything must not count as a guard.
+      if grep -qF "$f" <<<"$filtered" && ! grep -qE '\$\{?IS_TEMPLATE\}?' <<<"$body"; then
+        violations="${violations}${g} references '$f' with no IS_TEMPLATE guard; "
       fi
     done <<<"$excluded_files"
   done
@@ -4449,7 +4452,7 @@ gate_is_template_guard_hygiene() {
   if [ -z "$violations" ]; then
     ok "every gate_* function referencing a copier-excluded doc file (${excluded_files//$'\n'/, }) carries an IS_TEMPLATE guard"
   else
-    bad "gate(s) read a copier-excluded doc file with no IS_TEMPLATE guard (same defect class as #401/#505): $violations"
+    bad "gate(s) reference a copier-excluded doc file with no IS_TEMPLATE guard (same defect class as #401/#505): $violations"
   fi
 }
 
