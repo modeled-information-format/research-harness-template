@@ -41,18 +41,28 @@ if [ -z "$SNIPPET" ]; then
   exit 1
 fi
 
+# Write the extracted snippet to disk and have Python read it back at run time,
+# rather than interpolating $SNIPPET into an unquoted here-doc -- an unquoted
+# here-doc lets Bash expand any `$`, backticks, or other shell metacharacters
+# in the doc's own prose/code before Python ever sees it, which would silently
+# corrupt the "exact snippet" this eval exists to test verbatim.
+SNIPPET_FILE="$(mktemp)"
+trap 'rm -f "$SNIPPET_FILE"' EXIT
+printf '%s\n' "$SNIPPET" > "$SNIPPET_FILE"
+
 # check <case-name> <summary-len> <verdict-basis-len>
 # Builds a synthetic finding + verdict_basis of the given lengths, execs the
 # EXTRACTED snippet against them, and asserts the invariant + qualifier presence.
 check() {
   local case_name="$1" summary_len="$2" basis_len="$3"
-  python3 - "$summary_len" "$basis_len" <<PYEOF
+  python3 - "$summary_len" "$basis_len" "$SNIPPET_FILE" <<'PYEOF'
 import sys
-summary_len, basis_len = int(sys.argv[1]), int(sys.argv[2])
+summary_len, basis_len, snippet_file = int(sys.argv[1]), int(sys.argv[2]), sys.argv[3]
 finding = {"summary": "s" * summary_len}
 verdict_basis = "b" * basis_len
 
-$SNIPPET
+with open(snippet_file) as f:
+    exec(compile(f.read(), snippet_file, "exec"))
 
 assert len(finding["summary"]) <= 500, f"summary exceeded 500 chars: {len(finding['summary'])}"
 assert "[Falsification note:" in finding["summary"], "qualifier was dropped, not just truncated"
