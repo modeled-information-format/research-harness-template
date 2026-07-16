@@ -48,6 +48,10 @@ run "engine-smoke" bash evals/smoke-test.sh
 # stdin outright.
 run "stdin-detach" bash evals/stdin-detach.sh
 
+# verify.sh gate selector + profiling (#531): scoped runs are loudly
+# marked, per-gate timings are built in, unmatched patterns fail fast.
+run "verify-selector" bash evals/verify-selector.sh
+
 # 1b. Topic run lock: two concurrent runs on one topic are mutually exclusive
 #     (prevents the shared-findings/ corruption vector).
 run "run-lock-mutual-exclusion" bash evals/run-lock-test.sh

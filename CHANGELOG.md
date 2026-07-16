@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.3] - 2026-07-16
+
+### Added
+
+- **verify.sh gate selector and built-in profiling** (#531): `--gates <ERE>`
+  runs only gate functions whose name matches the pattern, with the summary
+  line loudly marked `[SCOPED RUN: ... matched N/M gates]` so a scoped run
+  can never masquerade as the full suite; `VERIFY_PROFILE=1` prints
+  per-gate wall seconds as gates finish plus the slowest five at the end.
+  Regression eval `evals/verify-selector.sh` covers the scoped-and-loud
+  contract, the profiling output, and the fail-fast unmatched pattern.
+  Together with 0.16.2's stdin-hang and eval-dedup fixes this closes #531
+  (full suite 5m53s -> ~1m25s; scoped iteration is seconds).
+
 ## [0.16.2] - 2026-07-16
 
 ### Fixed
