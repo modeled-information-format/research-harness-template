@@ -2,7 +2,7 @@
 id: reference-packs-monitoring
 type: semantic
 created: '2026-07-14T02:24:39.962Z'
-modified: '2026-07-16T17:19:31.490Z'
+modified: '2026-07-16T18:25:30.099Z'
 namespace: docs/reference/packs
 tags:
   - documentation
@@ -64,20 +64,27 @@ For control-plane mechanics see [Packs and Plugins](../packs-and-plugins.md).
 
 ## continuous-monitor
 
-**Version:** 0.15.4 | **Kind:** methodology
+**Version:** 0.16.0 | **Kind:** methodology
 
 **Source:** [`packs/monitoring/continuous-monitor/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/monitoring/continuous-monitor)
 
 ### Purpose
 
-Runs eight keyless Source Connectors (arXiv, OpenAlex, Crossref, Semantic Scholar,
+Monitors current events across **operator-selected domains**
+(`monitoringDomains[]`, research-harness-template#521: weighted attention,
+curated per-domain sources, momentum ranking, prior-coverage dedup, digest
+output — modeled on the gh-aw weekly-research reference) and/or a **research
+topic** (the topic-bound `continuousMonitoring` special case). Runs eight
+keyless Source Connectors (arXiv, OpenAlex, Crossref, Semantic Scholar,
 PubMed, bioRxiv/medRxiv, GDELT, Hacker News) under a per-connector wall-clock budget,
-rebuilds the concordance/index (AD-2 ordering), scores candidates via Interest-Inference
-(with a TF-IDF fallback for uncovered topics), and ranks them through the Recommendation
-Engine (`interest-match` and `gap-detect` modes). The review pull request the scheduled
+scores candidates via Interest-Inference (topic-scoped concordance + queryTerms),
+momentum-ranks them through the Recommendation Engine (cross-source merge; independent
+source count, engagement, relevance, recency; prior-coverage suppression), and renders a
+versioned per-run digest. The review pull request the scheduled
 workflow opens from that output **is** the Editorial Gate (ADR-0019): merging it accepts
-every recommendation in it into `reports/<topic>/findings/`; closing it without merging
-rejects the whole batch to the Continuity Log.
+every recommendation (publishing findings for topic-bound subjects and
+`projectToTopic` domains; recording the digest for standalone domains); closing it
+without merging rejects the whole batch to the Continuity Log.
 
 ### When to use
 
@@ -94,7 +101,8 @@ before it becomes a real finding.
 | Budget enforcement | `scripts/run-with-budget.sh` | Wraps one connector in a hard `timeout`; fails closed, logs to the Continuity Log. |
 | Source Connectors | `scripts/connectors/{arxiv,openalex,crossref,semantic-scholar,pubmed,biorxiv,gdelt,hn}.sh` | Eight keyless clients (documented per-source in [dependencies.md](../dependencies.md#continuous-monitoring-source-apis-optional)). |
 | Scoring | `scripts/interest-inference.sh` | Scores candidates against the monitored topic's own concordance nodes (`--topic`, #514) plus the topic's queryTerms as a first-class signal; TF-IDF fallback for uncovered topics. |
-| Ranking | `scripts/recommend.sh` | `interest-match` and `gap-detect` modes; every recommendation carries at least one MIF citation (NFR5), enforced in code. |
+| Ranking | `scripts/recommend.sh` | `interest-match` (cross-source merge, momentum ranking with recorded factors, prior-coverage suppression, #523) and `gap-detect` modes; every recommendation carries at least one MIF citation (NFR5), enforced in code. |
+| Digest | `scripts/render-digest.sh` | Renders the versioned per-run digest (`Digest format: v1`, #524) the Editorial Gate reviews: headline, domain/weight, momentum evidence, prior-coverage status, source URLs. |
 | Editorial Gate | `scripts/editorial-gate.sh` | Splits recommendations into accepted/rejected per an explicit decisions map; fail-safe default (no decision = rejected). |
 | Publish | `scripts/output-router.sh` | Hands accepted recommendations to `scripts/write-finding.sh`/`scripts/check-citation-integrity.sh` unmodified; `gap-detect` suggestions go to `reports/<topic>/monitoring/recommended-research-areas.jsonl` instead. |
 | Orchestration (Phase 2) | `scripts/run-gate-and-publish.sh` | Builds a whole-batch accept/reject decision from a PR's merged state, runs `editorial-gate.sh` then `output-router.sh`. |

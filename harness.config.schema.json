@@ -336,6 +336,81 @@
         }
       }
     },
+    "monitoringDomains": {
+      "type": "array",
+      "description": "First-class monitoring domains for the continuous-monitor pack (research-harness-template#521): current-events domains of interest at the operator's discretion (e.g. AI Research, Agriculture, SDLC, Security), decoupled from topics[]. A domain is a monitoring subject in its own right -- scripts/run-monitoring.sh resolves its subject argument against these ids FIRST, falling back to a topic's continuousMonitoring block (the topic-bound special case, which remains fully supported). The same repo-wide packs[] \"continuous-monitor\" gate applies before any domain runs. Modeled on the gh-aw weekly-research reference: weighted attention, curated per-domain sources, momentum-ranked candidates, digest output for the human Editorial Gate.",
+      "items": {
+        "type": "object",
+        "required": ["id", "queryTerms"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Domain identifier (run-monitoring.sh's subject argument; also its output directory under reports/_monitoring/<id>/). Must not collide with a topic id -- topic resolution is the fallback path.",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable domain name for digests (e.g. \"AI Research\"). Defaults to the id."
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Per-domain switch (default true). The repo-wide packs[] gate must also be on.",
+            "default": true
+          },
+          "weight": {
+            "type": "number",
+            "description": "Relative attention weight across domains (a probability weight, not a hard quota): recorded on every recommendation, used as the final ranking tie-break, and ordering domains in multi-domain digests. Defaults to 1.",
+            "exclusiveMinimum": 0,
+            "default": 1
+          },
+          "queryTerms": {
+            "type": "array",
+            "description": "Atomic terms/phrases the Source Connectors search for -- same per-API dispatch semantics as a topic's continuousMonitoring.queryTerms (#513), and the primary Interest-Inference relevance signal for a domain.",
+            "items": { "type": "string" },
+            "minItems": 1
+          },
+          "sources": {
+            "type": "array",
+            "description": "Which Source Connectors to run for this domain. Omit for all eight.",
+            "items": {
+              "type": "string",
+              "enum": ["arxiv", "openalex", "crossref", "semantic-scholar", "pubmed", "biorxiv", "gdelt", "hn"]
+            }
+          },
+          "schedule": {
+            "type": "string",
+            "description": "5-field cron expression for the GitHub Actions schedule trigger, same narrowing-only semantics as a topic's continuousMonitoring.schedule. Defaults to weekly (Monday 06:00 UTC) if omitted.",
+            "pattern": "^\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+$"
+          },
+          "budgetSeconds": {
+            "type": "integer",
+            "description": "Per-connector wall-clock budget, as for topics.",
+            "minimum": 1,
+            "default": 30
+          },
+          "maxResultsPerSource": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 20
+          },
+          "biorxivDaysBack": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 7
+          },
+          "recommendationThreshold": {
+            "type": "number",
+            "minimum": 0,
+            "default": 0.02
+          },
+          "projectToTopic": {
+            "type": "string",
+            "description": "Optional topic id binding: gate-accepted candidates for this domain publish as findings under that topic (and Interest-Inference additionally scores against that topic's concordance nodes). Omitted means the domain is standalone -- its digest is the deliverable and accepted items publish nowhere until an operator acts on them."
+          }
+        }
+      }
+    },
     "packs": {
       "type": "array",
       "description": "The pack control plane (SPEC \u00a77b): each entry enables/disables a pack and declares its source. Materialized into Claude Code's enabledPlugins at instantiation.",

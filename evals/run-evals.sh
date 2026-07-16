@@ -334,6 +334,13 @@ run "monitoring-query-construction" bash evals/monitoring-query-construction.sh
 # (--check fails on a changed source), loud when the pack is disabled.
 run "monitoring-workflow-install" bash evals/monitoring-workflow-install.sh
 
+# Domain-based monitoring model (Story #521): monitoringDomains[] schema +
+# domain-first subject resolution (#522), cross-source momentum ranking and
+# the accept-only prior-coverage memory (#523), the versioned digest and a
+# standalone domain's gate round-trip (#524), and byte-identical
+# recommendations across runs from identical fixture inputs (#525).
+run "monitoring-domains" bash evals/monitoring-domains.sh
+
 # 7. Progress-log markdownlint conformance (issue #85 Defect 2): a multi-session
 #    research-progress.md built per orchestrator.md's template — one H1 (file
 #    creation only) + date-qualified per-session H2s — lints clean, while each old

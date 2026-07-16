@@ -66,10 +66,18 @@ jobs:
           PR_MERGED: ${{ github.event.pull_request.merged }}
         run: |
           set -euo pipefail
-          # monitor/<topic>/<run-id>
+          # monitor/<subject>/<run-id> -- <subject> is a monitoringDomains[]
+          # id or a topic id (#521); the run-dir mapping mirrors
+          # run-monitoring.sh's.
           TOPIC="$(printf '%s' "$PR_HEAD_REF" | cut -d/ -f2)"
           RUN_ID="$(printf '%s' "$PR_HEAD_REF" | cut -d/ -f3-)"
-          REC_PATH="reports/$TOPIC/monitoring/runs/$RUN_ID/recommendations.json"
+          if jq -e --arg d "$TOPIC" '(.monitoringDomains // [])[] | select(.id == $d)' harness.config.json >/dev/null 2>&1; then
+            SUBJECT_DIR="reports/_monitoring/$TOPIC"
+            REC_PATH="reports/_monitoring/$TOPIC/runs/$RUN_ID/recommendations.json"
+          else
+            SUBJECT_DIR="reports/$TOPIC"
+            REC_PATH="reports/$TOPIC/monitoring/runs/$RUN_ID/recommendations.json"
+          fi
 
           # recommendations.json only ever exists on the PR's own head
           # commit -- it reaches the base branch ONLY once the PR is
@@ -92,7 +100,14 @@ jobs:
           # credential instead of the minted app token in GH_TOKEN -- see
           # the identical note in monitor.yml.
           gh auth setup-git
-          git add "reports/$TOPIC"
+          # The gate can touch the subject's own dir, a bound topic's dir
+          # (a domain's projectToTopic publish), and the shared
+          # prior-coverage memory (#523) -- stage exactly those, each only
+          # if present.
+          PUBLISH_TOPIC="$(jq -r --arg d "$TOPIC" 'first(((.monitoringDomains // [])[] | select(.id == $d) | .projectToTopic // empty), $d)' harness.config.json)"
+          for p in "$SUBJECT_DIR" "reports/$PUBLISH_TOPIC" reports/_monitoring/prior-coverage.jsonl; do
+            [ -e "$p" ] && git add "$p"
+          done
           if ! git diff --cached --quiet; then
             git commit -m "monitor($TOPIC): gate decision for $RUN_ID (merged=$PR_MERGED)"
             git push origin "$PR_BASE_REF"

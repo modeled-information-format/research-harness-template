@@ -2,7 +2,7 @@
 id: how-to-enable-continuous-monitoring
 type: procedural
 created: '2026-07-12T21:00:00Z'
-modified: '2026-07-16T17:48:09.494Z'
+modified: '2026-07-16T18:24:23.866Z'
 namespace: how-to/monitoring
 title: How to Enable Continuous Research Monitoring for a Topic
 tags:
@@ -48,6 +48,16 @@ step before anything publishes.
 - If you want either optional rate-limit enhancement, a Semantic Scholar
   or NCBI API key (neither is required for the default path).
 
+Continuous monitoring watches subjects of two kinds (#521):
+
+- **Monitoring domains** (`monitoringDomains[]`, the primary model):
+  current-events domains of interest at your discretion (e.g. AI Research,
+  Agriculture, SDLC, Security), decoupled from any research topic — weighted
+  attention, curated sources, momentum-ranked candidates, digest output.
+- **Topic-bound monitoring** (`topics[].continuousMonitoring`, the special
+  case): the same pipeline anchored to one research topic's query terms and
+  concordance, documented in Step 1 below.
+
 Continuous monitoring is a **pack** (`packs/monitoring/continuous-monitor`,
 research-harness-template#483) with two independent enablement gates — both
 are required, neither alone does anything:
@@ -91,6 +101,39 @@ a shared blob with the other terms. The same terms are a first-class relevance
 signal in Interest-Inference scoring, alongside the topic's own concordance
 nodes: there a term counts as matched when all of its meaningful tokens appear
 in a candidate, so word-order and punctuation variants still match.
+
+### Or: configure a monitoring domain instead
+
+For current-events monitoring decoupled from any topic, add a top-level
+`monitoringDomains[]` entry instead (a topic's `continuousMonitoring` block
+remains fully supported — it is the topic-bound special case):
+
+```json
+"monitoringDomains": [
+  {
+    "id": "ai-research",
+    "name": "AI Research",
+    "weight": 0.7,
+    "queryTerms": ["AI provenance", "model attestation"],
+    "sources": ["arxiv", "hn", "openalex"],
+    "schedule": "0 6 * * 1",
+    "projectToTopic": "my-existing-topic"
+  }
+]
+```
+
+`weight` is the domain's relative attention weight (recorded on every
+recommendation, the cross-domain ranking tie-break, and digest ordering).
+Omit `projectToTopic` for a standalone domain: its per-run **digest** is the
+deliverable, and gate-accepted items are recorded in the prior-coverage
+memory without publishing findings anywhere. With `projectToTopic`,
+gate-accepted candidates publish as findings under that topic, and
+Interest-Inference additionally scores against that topic's concordance
+nodes. A domain's runs live under `reports/_monitoring/<id>/runs/`;
+candidates are momentum-ranked (independent source count, engagement,
+relevance, recency) and items accepted in earlier runs are suppressed via
+`reports/_monitoring/prior-coverage.jsonl` (written only by the gate-accept
+path).
 
 ## Step 2 — Validate the config
 
@@ -179,7 +222,27 @@ jq -c 'select(.event_type != "gate_rejected")' \
 Each line names the source, the reason, and (for a budget breach) the
 configured `budgetSeconds`.
 
-Continuous monitoring is now enabled for the topic, running on the
+## Dual-runtime parity: the same pipeline, two entry points
+
+Both invocation paths call the **same scripts with the same semantics** and
+produce the same artifacts (`recommendations.json`, `digest.md`); they
+differ only in how the Editorial Gate is presented (#525). One command per
+path, for the same configured subject (a `monitoringDomains[]` id or a
+topic id):
+
+| | Unattended (GitHub Actions) | Manual (in-session) |
+| --- | --- | --- |
+| Run | `gh workflow run continuous-monitoring --field topic=<subject>` | `bash packs/monitoring/continuous-monitor/scripts/run-monitoring.sh <subject> run-$(date -u +%Y%m%dT%H%M%SZ)-manual` |
+| Review surface | the review PR's body (the digest) | read `<run-dir>/digest.md` |
+| Gate accept | merge the review PR | `bash packs/monitoring/continuous-monitor/scripts/run-gate-and-publish.sh <subject> <run-id> <run-dir>/recommendations.json true` |
+| Gate reject | close the PR without merging | same command with `false` |
+
+`<run-dir>` is `reports/_monitoring/<subject>/runs/<run-id>` for a domain,
+`reports/<subject>/monitoring/runs/<run-id>` for a topic. The Actions path
+requires the workflows installed (Step 3) and the authentication
+prerequisite above; the in-session path needs neither.
+
+Continuous monitoring is now enabled for the subject, running on the
 configured schedule with every recommendation gated through PR review.
 
 <!--

@@ -35,7 +35,7 @@ on:
   workflow_dispatch:
     inputs:
       topic:
-        description: 'Topic id to run (omit for all enabled topics)'
+        description: 'Monitoring subject to run: a monitoringDomains[] id or a topic id (omit for all enabled subjects)'
         required: false
 
 permissions:
@@ -109,25 +109,38 @@ jobs:
 
           INPUT_TOPIC="${{ github.event.inputs.topic }}"
           if [ -n "$INPUT_TOPIC" ]; then
-            # workflow_dispatch names one topic explicitly: always run it,
-            # bypassing the schedule check below (a manual trigger IS the
-            # override).
+            # workflow_dispatch names one subject (a monitoringDomains[] id
+            # or a topic id) explicitly: always run it, bypassing the
+            # schedule check below (a manual trigger IS the override).
             TOPICS="$INPUT_TOPIC"
           else
-            ENABLED_TOPICS="$(jq -r '.topics[] | select(.continuousMonitoring.enabled == true) | .id' harness.config.json)"
+            # Monitoring subjects are first-class monitoringDomains[]
+            # entries (#521; enabled defaults true) PLUS topics that opt in
+            # via continuousMonitoring.enabled (the topic-bound special
+            # case). Domains are listed first: they are the primary model.
+            ENABLED_TOPICS="$(jq -r '
+              ((.monitoringDomains // [])[] | select(if has("enabled") then .enabled else true end) | .id),
+              (.topics[] | select(.continuousMonitoring.enabled == true) | .id)
+            ' harness.config.json)"
             if [ "$EVENT_NAME" = "schedule" ]; then
               # This workflow has exactly one schedule: trigger (GitHub
               # Actions supports only one cadence per workflow), so it fires
-              # at a fixed cadence independent of any topic's own
-              # continuousMonitoring.schedule. Filter down to topics whose
-              # OWN cron actually matches the current firing, rather than
-              # running every enabled topic on every firing regardless of
-              # its configured cadence (that field was otherwise decorative
-              # -- never read anywhere in the pipeline).
+              # at a fixed cadence independent of any subject's own
+              # schedule. Filter down to subjects whose OWN cron actually
+              # matches the current firing, rather than running every
+              # enabled subject on every firing regardless of its configured
+              # cadence (that field was otherwise decorative -- never read
+              # anywhere in the pipeline).
               TOPICS=""
               while IFS= read -r t; do
                 [ -n "$t" ] || continue
-                SCHEDULE="$(jq -r --arg t "$t" '.topics[] | select(.id == $t) | .continuousMonitoring.schedule // "0 6 * * 1"' harness.config.json)"
+                SCHEDULE="$(jq -r --arg t "$t" '
+                  first(
+                    ((.monitoringDomains // [])[] | select(.id == $t) | .schedule),
+                    (.topics[] | select(.id == $t) | .continuousMonitoring.schedule),
+                    "0 6 * * 1"
+                  ) // "0 6 * * 1"
+                ' harness.config.json)"
                 if python3 packs/monitoring/continuous-monitor/scripts/lib/cron_match.py "$SCHEDULE"; then
                   TOPICS="$TOPICS$t"$'\n'
                 else
@@ -179,7 +192,16 @@ jobs:
               continue
             }
 
-            REC_FILE="reports/$topic/monitoring/runs/$RUN_ID/recommendations.json"
+            # A domain's run dir lives under reports/_monitoring/<domain>/
+            # (a domain is not a topic and must not fabricate a topic
+            # directory); a topic-bound run keeps its per-topic location --
+            # the same mapping run-monitoring.sh applies (#521).
+            if jq -e --arg d "$topic" '(.monitoringDomains // [])[] | select(.id == $d)' harness.config.json >/dev/null 2>&1; then
+              RUN_BASE="reports/_monitoring/$topic/runs/$RUN_ID"
+            else
+              RUN_BASE="reports/$topic/monitoring/runs/$RUN_ID"
+            fi
+            REC_FILE="$RUN_BASE/recommendations.json"
             [ -f "$REC_FILE" ] || { echo "::endgroup::"; continue; }
             COUNT="$(jq 'length' "$REC_FILE")"
             if [ "$COUNT" -eq 0 ]; then
@@ -190,16 +212,21 @@ jobs:
 
             BRANCH="monitor/$topic/$RUN_ID"
             git checkout -b "$BRANCH"
-            git add "reports/$topic/monitoring/runs/$RUN_ID" reports/concordance.json "reports/$topic/research-index.json"
+            # concordance.json / research-index.json are only touched by
+            # topic-bound runs (a standalone domain skips both rebuilds) --
+            # add them only when the run actually modified them.
+            git add "$RUN_BASE"
+            for f in reports/concordance.json "reports/$topic/research-index.json"; do
+              [ -f "$f" ] && ! git diff --quiet -- "$f" 2>/dev/null && git add "$f"
+            done
             git commit -m "monitor($topic): $COUNT candidate recommendation(s), $RUN_ID"
             git push origin "$BRANCH"
 
+            # The per-run digest (#524) IS the review PR's body: the
+            # Editorial Gate's human review surface, versioned via its
+            # format marker line.
             PR_BODY_FILE="$(mktemp)"
-            jq -r '.[] | "- **" + (.title // ("gap: " + .dimension)) + "** (" + .mode + ", score " + ((.score // .finding_count // 0) | tostring) + ")"' "$REC_FILE" > "$PR_BODY_FILE"
-            {
-              echo ""
-              echo "Merging this PR accepts every recommendation above (Editorial Gate accept path). Closing it without merging rejects all of them (logged to the Continuity Log)."
-            } >> "$PR_BODY_FILE"
+            cp "$RUN_BASE/digest.md" "$PR_BODY_FILE"
 
             # The label may not exist in a copier instance (label-sync.yml
             # is copier-excluded); best-effort ensure it, and if labeling is

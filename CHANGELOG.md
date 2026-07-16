@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-07-16
+
+### Added
+
+- **First-class monitoring domains** (#521, #522): a top-level
+  `monitoringDomains[]` block in harness.config.json -- current-events
+  domains of interest at the operator's discretion (name, weight,
+  queryTerms, curated sources, schedule, optional `projectToTopic`
+  binding), decoupled from topics[]. `run-monitoring.sh` and the gate
+  resolve their subject argument domain-first with the topic-bound
+  `continuousMonitoring` block as the fully supported special case; a
+  domain's runs live under `reports/_monitoring/<id>/`.
+- **Momentum ranking with a prior-coverage memory** (#523):
+  `interest-match` merges candidates surfacing the same item across
+  sources and ranks by independent source count, engagement evidence (HN
+  points+comments), relevance, then recency -- every factor recorded on
+  the recommendation (`momentum`, `domain`, `weight`). Items accepted by
+  the Editorial Gate in earlier runs are suppressed via
+  `reports/_monitoring/prior-coverage.jsonl`, written ONLY by the
+  gate-accept path (`recommend.py coverage-append`, single-writer
+  discipline).
+- **Versioned per-run digest** (#524): `render-digest.sh` emits the
+  Editorial Gate's human review surface (`Digest format: v1` marker;
+  per candidate a headline, domain/weight, momentum evidence, relevance,
+  prior-coverage status, and source URLs). `monitor.yml` uses it as the
+  review PR's body; the SKILL.md documents the identical in-session
+  review.
+- **Dual-runtime parity documented and evaled** (#525): one command per
+  path (Actions `workflow_dispatch` vs in-session script invocation) side
+  by side in the how-to, both calling the same scripts; the
+  `monitoring-domains` eval asserts identical fixture inputs produce
+  byte-identical recommendations across runs, plus schema/resolution,
+  momentum/memory, digest, and gate round-trip coverage.
+
 ## [0.15.4] - 2026-07-16
 
 ### Fixed
