@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.1] - 2026-07-16
+
+### Fixed
+
+- **TF-IDF fallback noise floor** (Epic #518 live-acceptance finding): a
+  candidate sharing exactly one common token with the query terms (e.g.
+  "notes" in a release-notes tool against a git-notes domain) could clear
+  the default recommendation threshold through the tfidf-fallback path.
+  The fallback now requires at least two distinct query tokens in the
+  candidate (the same rationale as the concordance MIN_LABEL_OVERLAP rule)
+  -- a candidate that fully matches any term or concordance node never
+  reaches the fallback, so no genuinely matching candidate is demoted. A
+  single-token sentinel fixture (I6-fieldnotes) joins the golden-set
+  relevance eval, verified to fail without the fix.
+
 ## [0.16.0] - 2026-07-16
 
 ### Added
