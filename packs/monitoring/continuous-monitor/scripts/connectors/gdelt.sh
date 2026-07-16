@@ -6,6 +6,16 @@
 # block (GDELT DOC 2.0/GKG). No API key, no SDK — a single JSON GET.
 #
 # Usage: gdelt.sh <query> [max_results]
+#   <query> is a JSON array of atomic terms/phrases or a plain string treated
+#   as one term. GDELT's query grammar supports quoted phrases and OR inside
+#   parentheses, so terms dispatch as `("term1" OR "term2")` in one request
+#   (#513).
+#
+# Rate limiting (#515): GDELT enforces its one-request-per-5-seconds limit by
+# returning HTTP 200 with a PLAINTEXT notice. connector_guard_json detects
+# that (instead of letting jq fail with a misleading parse error), and this
+# connector retries once after GDELT_RETRY_DELAY_SECONDS (default 6) before
+# failing closed with the true cause in the Continuity Log.
 set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/../../../../.." && pwd)"
@@ -15,10 +25,35 @@ ROOT="$(cd "$SCRIPT_DIR/../../../../.." && pwd)"
 QUERY="${1:?usage: gdelt.sh <query> [max_results]}"
 MAX="${2:-20}"
 
-ENC_QUERY="$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1]))' "$QUERY")"
+TERMS=()
+while IFS= read -r _t; do TERMS+=("$_t"); done < <(connector_parse_terms "$QUERY")
+[ "${#TERMS[@]}" -gt 0 ] || { echo "gdelt: no usable query terms" >&2; exit 2; }
+
+GDELT_QUERY="$(connector_query_quoted_or '' "${TERMS[@]+"${TERMS[@]}"}")"
+if [ "${#TERMS[@]}" -gt 1 ]; then
+  GDELT_QUERY="(${GDELT_QUERY})"
+fi
+
+ENC_QUERY="$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1]))' "$GDELT_QUERY")"
 URL="https://api.gdeltproject.org/api/v2/doc/doc?query=${ENC_QUERY}&mode=artlist&maxrecords=${MAX}&sort=datedesc&format=json"
 
 JSON="$(connector_fetch "$URL")" || exit 1
+GUARD_RC=0
+connector_guard_json "gdelt" "$JSON" || GUARD_RC=$?
+if [ "$GUARD_RC" -ne 0 ]; then
+  [ "$GUARD_RC" -eq 75 ] || exit 1
+  sleep "${GDELT_RETRY_DELAY_SECONDS:-6}"
+  JSON="$(connector_fetch "$URL")" || exit 1
+  RETRY_RC=0
+  connector_guard_json "gdelt" "$JSON" || RETRY_RC=$?
+  if [ "$RETRY_RC" -ne 0 ]; then
+    # The guard already printed the true cause; only add the retry context
+    # when it really was rate limiting again (75), not some other non-JSON
+    # body it classified differently.
+    [ "$RETRY_RC" -eq 75 ] && echo "gdelt: still rate limited after one spaced retry -- failing closed" >&2
+    exit 1
+  fi
+fi
 
 connector_emit "gdelt" '
   [ (.articles // [])[]?

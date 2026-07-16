@@ -1,0 +1,102 @@
+[
+  {
+    "source": "arxiv",
+    "id": "R1-aibom",
+    "title": "Operationalising AI Bills of Materials for Verifiable Provenance in Model Supply Chains",
+    "summary": "AIBOMs anchor provenance records for models and datasets across the supply chain.",
+    "url": "https://example.org/abs/R1",
+    "published": "2026-07-10T00:00:00Z",
+    "authors": ["A. Author"],
+    "raw": {}
+  },
+  {
+    "source": "hn",
+    "id": "R2-gitnotes",
+    "title": "Git Notes as a Substrate for Code Review Metadata",
+    "summary": "Using git notes to carry review metadata alongside history.",
+    "url": "https://example.org/hn/R2",
+    "published": "2026-07-11T00:00:00Z",
+    "authors": ["user2"],
+    "raw": {}
+  },
+  {
+    "source": "crossref",
+    "id": "R3-attestation",
+    "title": "Cryptographic Commit Attestation for Software Supply Chains",
+    "summary": "A scheme for commit attestation with verifiable signatures.",
+    "url": "https://example.org/doi/R3",
+    "published": "2026-07-09T00:00:00Z",
+    "authors": ["B. Writer"],
+    "raw": {}
+  },
+  {
+    "source": "arxiv",
+    "id": "R4-tracking",
+    "title": "Provenance Tracking for AI Commits with Git Notes",
+    "summary": "Records provenance of generated changes in git notes.",
+    "url": "https://example.org/abs/R4",
+    "published": "2026-07-08T00:00:00Z",
+    "authors": ["C. Scholar"],
+    "raw": {}
+  },
+  {
+    "source": "hn",
+    "id": "R5-signing",
+    "title": "Commit Attestation and Signing Workflow in CI",
+    "summary": "Wiring commit attestation signing into pipelines.",
+    "url": "https://example.org/hn/R5",
+    "published": "2026-07-12T00:00:00Z",
+    "authors": ["user5"],
+    "raw": {}
+  },
+  {
+    "source": "arxiv",
+    "id": "I1-hopf",
+    "title": "L1 Integrability of L2 Harmonic Forms and the Hopf Conjecture",
+    "summary": "We study integrability of harmonic forms on complete manifolds.",
+    "url": "https://example.org/abs/I1",
+    "published": "2026-07-13T00:00:00Z",
+    "authors": ["D. Mathematician"],
+    "raw": {}
+  },
+  {
+    "source": "arxiv",
+    "id": "I2-neutron",
+    "title": "NNStar: An End-to-End Agent for Nuclear Matter and Neutron Star Physics",
+    "summary": "An autonomous agent computing equations of state for dense matter.",
+    "url": "https://example.org/abs/I2",
+    "published": "2026-07-13T00:00:00Z",
+    "authors": ["E. Physicist"],
+    "raw": {}
+  },
+  {
+    "source": "arxiv",
+    "id": "I3-earthquake",
+    "title": "Earthquaker: Retrieval-Augmented Tutoring for Primary School Earthquake Education",
+    "summary": "Classroom tutoring tools for earthquake preparedness lessons.",
+    "url": "https://example.org/abs/I3",
+    "published": "2026-07-12T00:00:00Z",
+    "authors": ["F. Educator"],
+    "raw": {}
+  },
+  {
+    "source": "crossref",
+    "id": "I4-farm",
+    "title": "Drone-Based Crop Yield Estimation for Small Diversified Farms",
+    "summary": "Technology adoption patterns for yield estimation on diversified farms.",
+    "url": "https://example.org/doi/I4",
+    "published": "2026-07-11T00:00:00Z",
+    "authors": ["G. Agronomist"],
+    "raw": {}
+  },
+  {
+    "source": "crossref",
+    "id": "I5-poetry",
+    "title": "Sentiment Dynamics in Nineteenth Century Poetry Corpora",
+    "summary": "Longitudinal sentiment analysis over digitized poetry collections.",
+    "url": "https://example.org/doi/I5",
+    "published": "2026-07-10T00:00:00Z",
+    "authors": ["H. Humanist"],
+    "raw": {}
+  }
+]

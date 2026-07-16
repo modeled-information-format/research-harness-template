@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.3] - 2026-07-16
+
+### Fixed
+
+- **continuous-monitor connectors dispatch `queryTerms[]` as atomic
+  terms/phrases per each API's own query grammar** (#513): `run-monitoring.sh`
+  previously space-joined every term into one blob that arXiv exploded into
+  OR-of-single-words (151,074 results in the live comparison — the newest N
+  arbitrary papers on the archive) and HN Algolia treated as AND-of-all-words
+  (0 results). Connectors now take a JSON array of terms and build
+  phrase-quoted boolean OR in one request (arXiv, PubMed, GDELT) or dispatch
+  one request per term with merge/dedup by id (HN, OpenAlex, Crossref,
+  Semantic Scholar).
+- **Interest-Inference scores against the monitored topic, not the whole
+  corpus** (#514): concordance matching is scoped to nodes tagged with the
+  run's topic (`--topic`), and the topic's `queryTerms` are a first-class
+  scoring signal (`inference_method: "query-terms"`) instead of a fallback
+  that corpus-scale matching never allowed to fire. Previously any candidate
+  sharing two tokens with any label anywhere in a 55-topic corpus cleared the
+  recommendation threshold — a pure-mathematics paper "matched" a git-notes
+  topic via an agriculture-technology node.
+- **GDELT connector reports rate limiting as rate limiting** (#515): GDELT
+  enforces its request spacing by returning HTTP 200 with a plaintext notice,
+  which previously surfaced as a misleading `jq parse error`. The connector
+  now detects the notice (`connector_guard_json`), retries once after
+  `GDELT_RETRY_DELAY_SECONDS` (default 6), and fails closed with the true
+  cause in the Continuity Log.
+
+### Added
+
+- **Relevance eval for continuous monitoring** (#516): a golden-query-set
+  eval (`evals/monitoring-relevance.sh`) over recorded fixtures asserts, at
+  the production default threshold, that zero known-irrelevant candidates and
+  at least 80% of known-relevant candidates are recommended — the guardrail
+  whose absence let #513/#514 ship green — plus a topic-scoping regression
+  sentinel that corpus-global scoring would recommend.
+- **Connector query-construction eval** (`evals/monitoring-query-construction.sh`):
+  offline regression coverage for per-API query dispatch (#513) and the GDELT
+  HTTP-200 rate-limit notice handling (#515), via a recorded-fixture
+  `connector_fetch` override seam in `connector-common.sh`.
+
 ## [0.15.2] - 2026-07-15
 
 ### Added

@@ -7,6 +7,11 @@
 # User-Agent plus this param satisfy that without any auth.
 #
 # Usage: openalex.sh <query> [max_results]
+#   <query> is a JSON array of atomic terms/phrases or a plain string treated
+#   as one term. OpenAlex's `search` parameter has no documented boolean OR
+#   for mixed phrase/word term lists, so this connector dispatches one
+#   request per atomic term and merges the results, deduplicated by work id,
+#   newest first, capped at max_results (#513).
 set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/../../../../.." && pwd)"
@@ -16,22 +21,35 @@ ROOT="$(cd "$SCRIPT_DIR/../../../../.." && pwd)"
 QUERY="${1:?usage: openalex.sh <query> [max_results]}"
 MAX="${2:-20}"
 
-ENC_QUERY="$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1]))' "$QUERY")"
-URL="https://api.openalex.org/works?search=${ENC_QUERY}&per-page=${MAX}&sort=publication_date:desc&mailto=research-harness-template@modeled-information-format.dev"
+TERMS=()
+while IFS= read -r _t; do TERMS+=("$_t"); done < <(connector_parse_terms "$QUERY")
+[ "${#TERMS[@]}" -gt 0 ] || { echo "openalex: no usable query terms" >&2; exit 2; }
 
-JSON="$(connector_fetch "$URL")" || exit 1
+PART_FILES=()
+trap 'rm -f "${PART_FILES[@]+"${PART_FILES[@]}"}"' EXIT
 
-connector_emit "openalex" '
-  [ .results[]?
-    | {
-        source: "openalex",
-        id: (.id // ""),
-        title: (.title // .display_name // ""),
-        summary: (.abstract_inverted_index // {} | keys | join(" ")),
-        url: (.primary_location.landing_page_url // .id // ""),
-        published: (.publication_date // (.publication_year | tostring) // ""),
-        authors: [ (.authorships // [])[]?.author.display_name ],
-        raw: .
-      }
-    | select(.id != "" and .title != "") ]
-' - <<<"$JSON"
+for term in "${TERMS[@]+"${TERMS[@]}"}"; do
+  ENC_QUERY="$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1]))' "$term")"
+  URL="https://api.openalex.org/works?search=${ENC_QUERY}&per-page=${MAX}&sort=publication_date:desc&mailto=research-harness-template@modeled-information-format.dev"
+
+  JSON="$(connector_fetch "$URL")" || exit 1
+
+  PART="$(mktemp)"
+  PART_FILES+=("$PART")
+  connector_emit "openalex" '
+    [ .results[]?
+      | {
+          source: "openalex",
+          id: (.id // ""),
+          title: (.title // .display_name // ""),
+          summary: (.abstract_inverted_index // {} | keys | join(" ")),
+          url: (.primary_location.landing_page_url // .id // ""),
+          published: (.publication_date // (.publication_year | tostring) // ""),
+          authors: [ (.authorships // [])[]?.author.display_name ],
+          raw: .
+        }
+      | select(.id != "" and .title != "") ]
+  ' - <<<"$JSON" > "$PART" || exit 1
+done
+
+connector_merge_candidates "$MAX" "${PART_FILES[@]+"${PART_FILES[@]}"}"

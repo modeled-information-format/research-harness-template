@@ -2,7 +2,7 @@
 id: how-to-enable-continuous-monitoring
 type: procedural
 created: '2026-07-12T21:00:00Z'
-modified: '2026-07-14T02:29:28.000Z'
+modified: '2026-07-16T16:11:38.874Z'
 namespace: how-to/monitoring
 title: How to Enable Continuous Research Monitoring for a Topic
 tags:
@@ -27,12 +27,12 @@ entity:
   entity_type: how-to-guide
 provenance:
   '@type': Provenance
-  agent: claude-code/claude-sonnet-5
+  agent: claude-code/claude-fable-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:581ee0b6-ce7b-4099-a6dd-2fbb44ce2e1c
+    '@id': urn:mif:activity:claude-code-session:ea77f44f-898f-452b-97c5-a752ed5af5a0
     '@type': prov:Activity
   trustLevel: user_stated
-  agentVersion: 2.1.207
+  agentVersion: 2.1.211
 ---
 
 # How to Enable Continuous Research Monitoring for a Topic
@@ -82,6 +82,15 @@ topic's entry in `topics[]`:
 
 Omit `sources` to run all eight connectors. `schedule` is a standard 5-field
 cron expression.
+
+Each `queryTerms[]` entry is an **atomic term or phrase**: connectors dispatch
+every entry per their own API's query grammar (phrase-quoted boolean OR in one
+request for arXiv/PubMed/GDELT; one request per term, merged and deduplicated,
+for HN/OpenAlex/Crossref/Semantic Scholar) — an entry is never flattened into
+a shared blob with the other terms. The same terms are a first-class relevance
+signal in Interest-Inference scoring, alongside the topic's own concordance
+nodes: there a term counts as matched when all of its meaningful tokens appear
+in a candidate, so word-order and punctuation variants still match.
 
 ## Step 2 — Validate the config
 

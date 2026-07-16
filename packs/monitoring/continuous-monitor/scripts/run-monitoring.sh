@@ -63,9 +63,13 @@ while IFS= read -r _line; do SOURCES+=("$_line"); done < <(printf '%s' "$MONITOR
 
 RUN_DIR="$ROOT/reports/$TOPIC/monitoring/runs/$RUN_ID"
 mkdir -p "$RUN_DIR"
-QUERY_STRING="${QUERY_TERMS[*]}"
+# Connectors receive queryTerms as a JSON array, NOT a space-joined blob:
+# each term is an atomic phrase the connector dispatches per its own API's
+# query grammar (#513 -- the flattened blob was parsed as OR-of-single-words
+# by arXiv and AND-of-all-words by Algolia, destroying relevance both ways).
+QUERY_JSON="$(printf '%s' "$MONITORING_CFG" | jq -c '.queryTerms')"
 
-echo "run-monitoring[$TOPIC/$RUN_ID]: sources=${SOURCES[*]} budget=${BUDGET}s query='$QUERY_STRING'" >&2
+echo "run-monitoring[$TOPIC/$RUN_ID]: sources=${SOURCES[*]} budget=${BUDGET}s queryTerms=${QUERY_JSON}" >&2
 
 CANDIDATE_FILES=()
 for source in "${SOURCES[@]+"${SOURCES[@]}"}"; do
@@ -77,7 +81,7 @@ for source in "${SOURCES[@]+"${SOURCES[@]}"}"; do
   if [ "$source" = "biorxiv" ]; then
     CONNECTOR_ARGS=("$BIORXIV_DAYS_BACK" "$MAX_RESULTS")
   else
-    CONNECTOR_ARGS=("$QUERY_STRING" "$MAX_RESULTS")
+    CONNECTOR_ARGS=("$QUERY_JSON" "$MAX_RESULTS")
   fi
   if bash "$SCRIPT_DIR/run-with-budget.sh" "$TOPIC" "$source" "$BUDGET" "$RUN_ID" \
       -- bash "$SCRIPT_DIR/connectors/$source.sh" "${CONNECTOR_ARGS[@]+"${CONNECTOR_ARGS[@]}"}" > "$OUT_FILE" 2>>"$RUN_DIR/run.log"; then
@@ -106,7 +110,10 @@ if ! bash "$ROOT/scripts/build-concordance.sh" >>"$RUN_DIR/run.log" 2>&1; then
 fi
 
 SCORED="$RUN_DIR/candidates-scored.json"
-if ! bash "$SCRIPT_DIR/interest-inference.sh" "$ALL_CANDIDATES" "$ROOT/reports/concordance.json" -- "${QUERY_TERMS[@]+"${QUERY_TERMS[@]}"}" > "$SCORED" 2>>"$RUN_DIR/run.log"; then
+# --topic scopes concordance scoring to THIS topic's own nodes (#514): the
+# corpus-global concordance made any candidate sharing two tokens with any
+# label anywhere in a 55-topic corpus score as an "interest match".
+if ! bash "$SCRIPT_DIR/interest-inference.sh" "$ALL_CANDIDATES" "$ROOT/reports/concordance.json" --topic "$TOPIC" -- "${QUERY_TERMS[@]+"${QUERY_TERMS[@]}"}" > "$SCORED" 2>>"$RUN_DIR/run.log"; then
   echo "run-monitoring[$TOPIC/$RUN_ID]: interest-inference failed, see $RUN_DIR/run.log" >&2
   exit 5
 fi

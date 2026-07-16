@@ -128,7 +128,7 @@
               },
               "queryTerms": {
                 "type": "array",
-                "description": "Terms the Source Connectors search for and the Interest-Inference TF-IDF fallback scores against. Typically the topic's title/keywords.",
+                "description": "Atomic terms/phrases the Source Connectors search for -- each entry is dispatched per the target API's own query grammar (phrase-quoted OR, or one request per term), never flattened into one string (#513) -- and a first-class Interest-Inference relevance signal alongside the topic's own concordance nodes (#514). Typically the topic's title/keywords.",
                 "items": { "type": "string" },
                 "minItems": 1
               },

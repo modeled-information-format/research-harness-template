@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <entry>
+    <id>http://arxiv.org/abs/2607.00001v1</id>
+    <title>AI Bills of Materials for Verifiable Provenance</title>
+    <summary>Provenance records for model supply chains anchored in git notes.</summary>
+    <published>2026-07-10T00:00:00Z</published>
+    <author><name>A. Author</name></author>
+  </entry>
+</feed>

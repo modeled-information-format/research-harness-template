@@ -7,20 +7,30 @@
 # concordance before scoring against it — this script refuses to run
 # against a stale one rather than silently scoring against outdated data.
 #
-# Usage: interest-inference.sh <candidates.json> [concordance.json] [-- <query-terms...>]
+# Usage: interest-inference.sh <candidates.json> [concordance.json] [--topic <id>] [-- <query-terms...>]
 #   default concordance.json: reports/concordance.json
-#   default query-terms: none (concordance scoring only; pass terms for the
-#     TF-IDF fallback to have something to score against)
+#   --topic scopes concordance scoring to nodes tagged with that topic
+#     (#514) -- omit it only for a concordance already scoped to one topic
+#     (e.g. an eval fixture).
+#   default query-terms: none (concordance scoring only; pass the topic's
+#     queryTerms for the first-class query-term signal and TF-IDF fallback
+#     to have something to score against)
 set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 
-CANDIDATES="${1:?usage: interest-inference.sh <candidates.json> [concordance.json] [-- <query-terms...>]}"
+CANDIDATES="${1:?usage: interest-inference.sh <candidates.json> [concordance.json] [--topic <id>] [-- <query-terms...>]}"
 shift
 CONCORDANCE="$ROOT/reports/concordance.json"
-if [ $# -gt 0 ] && [ "$1" != "--" ]; then
+if [ $# -gt 0 ] && [ "$1" != "--" ] && [ "$1" != "--topic" ]; then
   CONCORDANCE="$1"
   shift
+fi
+TOPIC_ARGS=()
+if [ "${1:-}" = "--topic" ]; then
+  [ -n "${2:-}" ] || { echo "interest-inference: --topic requires a topic id" >&2; exit 2; }
+  TOPIC_ARGS=(--topic "$2")
+  shift 2
 fi
 [ "${1:-}" = "--" ] && shift
 QUERY_TERMS=("$@")
@@ -58,4 +68,4 @@ if command -v git >/dev/null 2>&1 && git -C "$ROOT" rev-parse --git-dir >/dev/nu
   fi
 fi
 
-python3 "$SCRIPT_DIR/lib/interest_inference.py" "$CANDIDATES" "$CONCORDANCE" "${QUERY_TERMS[@]+"${QUERY_TERMS[@]}"}"
+python3 "$SCRIPT_DIR/lib/interest_inference.py" "$CANDIDATES" "$CONCORDANCE" "${TOPIC_ARGS[@]+"${TOPIC_ARGS[@]}"}" -- "${QUERY_TERMS[@]+"${QUERY_TERMS[@]}"}"
