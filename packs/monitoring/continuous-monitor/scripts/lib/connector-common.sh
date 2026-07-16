@@ -197,8 +197,12 @@ connector_budget_check() {
 # it AFTER the definitions above so a fixture-driven eval can replace
 # connector_fetch with a recorded-response stub (evals must stay
 # deterministic and offline -- see evals/monitoring-query-construction.sh).
-# Never set on a production path.
+# Never set on a production path. The stderr notice below is the signal for
+# the leftover-env failure mode: an operator who exported the override for a
+# local eval and then ran a real monitoring pass in the same shell would
+# otherwise silently ingest fixture data.
 if [ -n "${CONNECTOR_FETCH_OVERRIDE:-}" ] && [ -r "${CONNECTOR_FETCH_OVERRIDE}" ]; then
+  echo "connector-common: connector_fetch OVERRIDDEN by ${CONNECTOR_FETCH_OVERRIDE} (eval seam) -- no live requests will be made" >&2
   # shellcheck disable=SC1090
   . "${CONNECTOR_FETCH_OVERRIDE}"
 fi

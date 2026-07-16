@@ -2,7 +2,7 @@
 id: how-to-enable-continuous-monitoring
 type: procedural
 created: '2026-07-12T21:00:00Z'
-modified: '2026-07-16T15:32:35.366Z'
+modified: '2026-07-16T16:11:38.874Z'
 namespace: how-to/monitoring
 title: How to Enable Continuous Research Monitoring for a Topic
 tags:
@@ -86,10 +86,11 @@ cron expression.
 Each `queryTerms[]` entry is an **atomic term or phrase**: connectors dispatch
 every entry per their own API's query grammar (phrase-quoted boolean OR in one
 request for arXiv/PubMed/GDELT; one request per term, merged and deduplicated,
-for HN/OpenAlex/Crossref/Semantic Scholar) — a multi-word entry is searched as
-a phrase, never split into independent words. The same terms are a first-class
-relevance signal in Interest-Inference scoring, alongside the topic's own
-concordance nodes.
+for HN/OpenAlex/Crossref/Semantic Scholar) — an entry is never flattened into
+a shared blob with the other terms. The same terms are a first-class relevance
+signal in Interest-Inference scoring, alongside the topic's own concordance
+nodes: there a term counts as matched when all of its meaningful tokens appear
+in a candidate, so word-order and punctuation variants still match.
 
 ## Step 2 — Validate the config
 
