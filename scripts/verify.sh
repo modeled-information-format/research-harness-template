@@ -4481,8 +4481,22 @@ gate_monitoring_workflow_sync() {
     name="$(basename "$src")"
     dest=".github/workflows/$name"
     if [ -f "$dest" ]; then
+      # Escape hatch for a deliberately customized instance copy (e.g. a
+      # different cron cadence): the marker takes the file out of the
+      # byte-identity contract — the owner keeps their fork current by hand
+      # from then on. Never valid in the template itself, whose live copies
+      # ARE the pack sources' proof of freshness.
+      if grep -q 'harness-workflow: unmanaged' "$dest" 2>/dev/null; then
+        if [ "${IS_TEMPLATE:-0}" = 1 ]; then
+          bad "$dest carries the 'harness-workflow: unmanaged' marker inside the template — only an instance may unmanage a copy"
+          drift=1
+        else
+          ok "$dest is explicitly unmanaged (customized copy, byte-identity waived)"
+        fi
+        continue
+      fi
       if ! cmp -s "$src" "$dest"; then
-        bad "$dest differs from its pack source $src — run scripts/install-monitoring-workflows.sh (or fix the pack source, never the copy)"
+        bad "$dest differs from its pack source $src — run scripts/install-monitoring-workflows.sh (or fix the pack source, never the copy; a deliberate instance customization can opt out with a 'harness-workflow: unmanaged' comment)"
         drift=1
       fi
     elif [ "${IS_TEMPLATE:-0}" = 1 ]; then

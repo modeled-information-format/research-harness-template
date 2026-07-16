@@ -2,7 +2,7 @@
 id: how-to-enable-continuous-monitoring
 type: procedural
 created: '2026-07-12T21:00:00Z'
-modified: '2026-07-16T17:17:26.383Z'
+modified: '2026-07-16T17:32:37.781Z'
 namespace: how-to/monitoring
 title: How to Enable Continuous Research Monitoring for a Topic
 tags:
@@ -116,6 +116,11 @@ Re-run it after any `copier update` (it is idempotent; `--check` reports
 drift without writing — `verify.sh`'s `gate_monitoring_workflow_sync` fails
 if an installed copy drifts from its pack source). The template repo itself
 already carries live copies; this step is a no-op there.
+
+To deliberately customize an installed copy (e.g. a different cron cadence),
+add a `# harness-workflow: unmanaged` comment to it: the installer then
+leaves that file alone and the sync gate waives byte-identity for it — you
+own keeping the fork current from then on.
 
 ## Step 4 — Commit and push
 

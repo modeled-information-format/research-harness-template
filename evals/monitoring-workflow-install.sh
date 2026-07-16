@@ -58,6 +58,14 @@ bash "$FAKE/scripts/install-monitoring-workflows.sh" > "$TMP/run2.out" 2>/dev/nu
 grep -q "up to date" "$TMP/run2.out" || { note "second run did not report up to date"; fail=1; }
 grep -q "installed" "$TMP/run2.out" && { note "second run reinstalled unchanged files"; fail=1; }
 
+# Case 6 (ordered here so case 4's drift below still ends converged): an
+# explicitly unmanaged copy is never overwritten (deliberate instance
+# customization, e.g. a different cron cadence).
+printf '\n# harness-workflow: unmanaged\n# custom cadence\n' >> "$FAKE/.github/workflows/monitor-gate.yml"
+bash "$FAKE/scripts/install-monitoring-workflows.sh" > "$TMP/run-unmanaged.out" 2>/dev/null || { note "install failed with an unmanaged copy present"; fail=1; }
+grep -q "unmanaged" "$TMP/run-unmanaged.out" || { note "installer did not report the unmanaged copy"; fail=1; }
+grep -q "harness-workflow: unmanaged" "$FAKE/.github/workflows/monitor-gate.yml" || { note "installer overwrote an unmanaged copy"; fail=1; }
+
 # Case 4: drift after a pack-source change (the copier-update scenario).
 printf '\n# drifted\n' >> "$FAKE/$SRC_DIR/monitor.yml"
 if bash "$FAKE/scripts/install-monitoring-workflows.sh" --check > "$TMP/run3.out" 2>/dev/null; then

@@ -43,8 +43,13 @@ fi
 
 CHANGED=0
 for src in "$SRC_DIR"/*.yml; do
+  [ -e "$src" ] || continue
   name="$(basename "$src")"
   dest="$DEST_DIR/$name"
+  if [ -f "$dest" ] && grep -q 'harness-workflow: unmanaged' "$dest" 2>/dev/null; then
+    echo "install-monitoring-workflows: $name is explicitly unmanaged (customized copy) -- leaving it alone"
+    continue
+  fi
   if [ -f "$dest" ] && cmp -s "$src" "$dest"; then
     echo "install-monitoring-workflows: $name up to date"
     continue
