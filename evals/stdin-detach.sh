@@ -23,6 +23,14 @@ trap 'rm -rf "$TMP"' EXIT
 fail=0
 note() { printf '  stdin-detach: %s\n' "$1"; }
 
+# Both cases depend on `timeout` to bound a would-be hang; without it a
+# regression would block this eval itself (and RC=127 would read as a
+# confusing pass/fail mix). Same hard requirement as run-with-budget.sh.
+if ! command -v timeout >/dev/null 2>&1; then
+  note "'timeout' is required on PATH and was not found"
+  exit 1
+fi
+
 # Case 1: explicit empty content is forwarded and refused, never a stdin read.
 timeout 15 bash scripts/wrap-source.sh --url "https://example.com/doc" \
   --content-type "text/html" --namespace "harness/eval" --slug "empty" \

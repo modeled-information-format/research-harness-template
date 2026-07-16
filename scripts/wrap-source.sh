@@ -60,7 +60,10 @@ elif [ -n "${CONTENT_SET:-}" ]; then
   # which blocks forever on a read() whenever stdin is an open pipe that
   # never EOFs (any backgrounded invocation of verify.sh/run-evals.sh,
   # whose smoke test exercises exactly this empty-content refusal case).
-  # The engine sees the empty content and refuses it immediately instead.
+  # NOTE the engine ALSO treats an empty --content as absent and falls back
+  # to stdin (mif-rs#105) -- the real mitigation is the stdin detach at the
+  # exec below, which turns that fallback into an instant EOF and the
+  # engine's normal empty-content refusal.
   ARGS+=(--content "$CONTENT")
 fi
 
