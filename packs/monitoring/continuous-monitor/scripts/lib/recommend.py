@@ -220,15 +220,19 @@ def interest_match(scored_candidates, threshold=0.02, memory=None,
         )
 
     # 3. Momentum ranking (#523): independent source count, engagement,
-    #    relevance score, then recency; the recorded weight is the
-    #    cross-domain tie-break when digests merge domains.
+    #    relevance score, domain weight (the cross-domain tie-break when
+    #    digests merge domains), then recency (newest first). Two stable
+    #    sorts because recency is a string field that must order DESCENDING
+    #    alongside numeric keys: the first pass fixes newest-first (id as
+    #    the final determinism anchor), the stable second pass applies the
+    #    primary factors without disturbing recency order within ties.
+    recs.sort(key=lambda r: (r.get("published") or "", r.get("id") or ""), reverse=True)
     recs.sort(
         key=lambda r: (
             -r["momentum"]["source_count"],
             -r["momentum"]["engagement"],
             -r["score"],
-            r.get("published") or "",
-            r.get("id") or "",
+            -(r.get("weight") if isinstance(r.get("weight"), (int, float)) else 1.0),
         )
     )
     return recs

@@ -128,6 +128,24 @@ if ! jq -e '.[0].momentum.source_count == 2 and .[0].momentum.engagement == 7 an
   fail=1
 fi
 
+# Recency tie-break (Copilot finding on PR #529): equal source count,
+# engagement, score, and weight must order NEWEST first, not oldest.
+cat > "$TMP/scored-ties.json" <<'EOF'
+[
+  {"source": "arxiv", "id": "older", "title": "Older Provenance Ledger Design",
+   "url": "https://example.org/abs/older", "published": "2026-07-01T00:00:00Z", "authors": [], "raw": {},
+   "inference": {"method": "query-terms", "score": 0.5, "matched_nodes": [], "matched_terms": ["AI provenance"]}},
+  {"source": "arxiv", "id": "newer", "title": "Newer Provenance Ledger Design",
+   "url": "https://example.org/abs/newer", "published": "2026-07-14T00:00:00Z", "authors": [], "raw": {},
+   "inference": {"method": "query-terms", "score": 0.5, "matched_nodes": [], "matched_terms": ["AI provenance"]}}
+]
+EOF
+bash "$PACK/scripts/recommend.sh" interest-match "$TMP/scored-ties.json" 0.02 > "$TMP/recs-ties.json" 2>/dev/null || { note "tie-break run failed"; fail=1; }
+if ! jq -e '[.[].id] == ["newer", "older"]' "$TMP/recs-ties.json" >/dev/null; then
+  note "recency tie-break wrong: $(jq -c '[.[].id]' "$TMP/recs-ties.json") (expected newest first)"
+  fail=1
+fi
+
 # --- Case 4: prior-coverage append is idempotent and suppresses -------------
 jq '[.[0]]' "$TMP/recs.json" > "$TMP/accepted.json"
 python3 "$PACK/scripts/lib/recommend.py" coverage-append "$TMP/accepted.json" "$TMP/mem2.jsonl" run-A 2>/dev/null

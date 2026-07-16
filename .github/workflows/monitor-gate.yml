@@ -71,6 +71,12 @@ jobs:
           # run-monitoring.sh's.
           TOPIC="$(printf '%s' "$PR_HEAD_REF" | cut -d/ -f2)"
           RUN_ID="$(printf '%s' "$PR_HEAD_REF" | cut -d/ -f3-)"
+          # Validate BOTH branch-derived segments before they touch any
+          # path (git show's REC_PATH below) -- run-gate-and-publish.sh
+          # re-checks, but that runs after this script has already
+          # interpolated them.
+          case "$TOPIC" in ""|*/*|*..*) echo "monitor-gate.yml: invalid subject id from head ref: $TOPIC" >&2; exit 1 ;; esac
+          case "$RUN_ID" in ""|*/*|*..*) echo "monitor-gate.yml: invalid run id from head ref: $RUN_ID" >&2; exit 1 ;; esac
           if jq -e --arg d "$TOPIC" '(.monitoringDomains // [])[] | select(.id == $d)' harness.config.json >/dev/null 2>&1; then
             SUBJECT_DIR="reports/_monitoring/$TOPIC"
             REC_PATH="reports/_monitoring/$TOPIC/runs/$RUN_ID/recommendations.json"
