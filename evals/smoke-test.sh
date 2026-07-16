@@ -12,6 +12,11 @@
 
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 2
+# Gate scripts never read stdin; detach it (research-harness-template#531)
+# so no child can block on an inherited never-EOF pipe (backgrounded
+# invocations hand exactly that to every descendant).
+exec </dev/null
+
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 

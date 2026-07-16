@@ -17,6 +17,11 @@
 # the findings/knowledge-graph schema substrate (ADR-0002); they are unchanged.
 
 set -uo pipefail
+# Gate scripts never read stdin; detach it (research-harness-template#531)
+# so no child can block on an inherited never-EOF pipe (backgrounded
+# invocations hand exactly that to every descendant).
+exec </dev/null
+
 cd "$(dirname "$0")/.." || exit 2
 
 # gate_m20/gate_m22's whole-registry ontology-integrity scans delegate to the
@@ -687,25 +692,35 @@ gate_m7() {
     bad "Copier template incomplete"
   fi
 
-  # 7b. The eval suite passes (shipped + run here and in CI).
-  if bash evals/run-evals.sh >/dev/null 2>&1; then
-    ok "eval suite passes (evals/run-evals.sh)"
-  else
-    bad "eval suite failed"
-    bash evals/run-evals.sh 2>&1 | sed 's/^/      /' >&2
-  fi
-
-  # 7c. copier update re-applies a template change to an instantiated harness.
-  #     Requires copier; the milestone genuinely depends on it.
-  if command -v copier >/dev/null 2>&1; then
-    if bash evals/copier-update.sh >/dev/null 2>&1; then
-      ok "copier update re-applies a template change to an instantiated harness"
+  # 7b/7c. The eval suite and the copier-update propagation eval are part of
+  # Milestone 7's acceptance, but they are ALSO the documented gate chain's
+  # own separate steps (CLAUDE.md) and CI's own separate steps in the same
+  # required job (ci.yml runs verify.sh, then run-evals.sh, then
+  # copier-update.sh) -- re-running them inside verify.sh executed every
+  # eval twice and was 76% of the suite's wall time (269s of 353s, profiled
+  # for #531). Default: defer to the separate steps with a loud pointer;
+  # VERIFY_INCLUDE_EVALS=1 opts back into the all-in-one behavior for
+  # anyone who wants a single self-contained command.
+  if [ "${VERIFY_INCLUDE_EVALS:-0}" = "1" ]; then
+    if bash evals/run-evals.sh >/dev/null 2>&1; then
+      ok "eval suite passes (evals/run-evals.sh)"
     else
-      bad "copier-update eval failed"
-      bash evals/copier-update.sh 2>&1 | sed 's/^/      /' >&2
+      bad "eval suite failed"
+      bash evals/run-evals.sh 2>&1 | sed 's/^/      /' >&2
+    fi
+
+    if command -v copier >/dev/null 2>&1; then
+      if bash evals/copier-update.sh >/dev/null 2>&1; then
+        ok "copier update re-applies a template change to an instantiated harness"
+      else
+        bad "copier-update eval failed"
+        bash evals/copier-update.sh 2>&1 | sed 's/^/      /' >&2
+      fi
+    else
+      bad "copier not installed — cannot demonstrate update propagation (pipx install copier)"
     fi
   else
-    bad "copier not installed — cannot demonstrate update propagation (pipx install copier)"
+    ok "eval suite + copier-update run as their own gate-chain steps (bash evals/run-evals.sh; bash evals/copier-update.sh) — set VERIFY_INCLUDE_EVALS=1 to run them inside verify.sh (#531)"
   fi
 }
 

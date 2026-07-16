@@ -10,6 +10,11 @@
 
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 2
+# Gate scripts never read stdin; detach it (research-harness-template#531)
+# so no child can block on an inherited never-EOF pipe (backgrounded
+# invocations hand exactly that to every descendant).
+exec </dev/null
+
 
 PASS=0; FAIL=0
 GREEN=$'\033[32m'; RED=$'\033[31m'; RST=$'\033[0m'
@@ -36,6 +41,12 @@ TMP=$(mktemp -d); trap 'rm -rf "$TMP"' EXIT
 
 # 1. Engine pipeline smoke test (orchestrator → one falsification gate → MIF finding).
 run "engine-smoke" bash evals/smoke-test.sh
+
+# Gate scripts must never block on an inherited never-EOF stdin (#531):
+# wrap-source forwards an explicit empty --content instead of falling
+# through to the engine's stdin path, and the gate entrypoints detach
+# stdin outright.
+run "stdin-detach" bash evals/stdin-detach.sh
 
 # 1b. Topic run lock: two concurrent runs on one topic are mutually exclusive
 #     (prevents the shared-findings/ corruption vector).

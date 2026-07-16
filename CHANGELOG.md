@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.2] - 2026-07-16
+
+### Fixed
+
+- **Gate suite no longer hangs on inherited stdin** (#531): an explicit
+  `--content ""` to `wrap-source.sh` was treated as "content not provided"
+  (both by the wrapper's `[ -n ]` test and by the engine's own
+  empty-means-absent fallback), silently switching to the engine's stdin
+  path — which blocks forever in `read()` whenever stdin is an open,
+  never-EOF pipe, exactly what backgrounded invocations of
+  `verify.sh`/`run-evals.sh` hand every descendant via the smoke test's
+  empty-content refusal case. The wrapper now forwards an explicit
+  `--content` (even empty) and detaches the engine's stdin on every
+  explicit-content path; `verify.sh`, `run-evals.sh`, and `smoke-test.sh`
+  detach stdin outright (no gate path reads it); a regression eval
+  (`evals/stdin-detach.sh`) runs both paths under a deliberately
+  never-EOF stdin.
+
 ## [0.16.1] - 2026-07-16
 
 ### Fixed
