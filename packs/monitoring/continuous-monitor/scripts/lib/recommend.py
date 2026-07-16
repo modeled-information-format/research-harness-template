@@ -144,6 +144,16 @@ def interest_match(scored_candidates, threshold=0.02, memory=None,
             key=lambda m: (_engagement(m), m.get("inference", {}).get("score", 0.0)),
         )
         prior = memory.get(key)
+        if prior is not None and domain and prior.get("domain") and prior["domain"] != domain:
+            # Accepted under a DIFFERENT domain: the item may be newly
+            # relevant here, so it stays recommendable -- cross-domain
+            # suppression would hide it from this domain's digest forever.
+            print(
+                "recommend[interest-match]: keeping candidate previously accepted "
+                f"under domain '{prior['domain']}' (now surfacing for '{domain}')",
+                file=sys.stderr,
+            )
+            prior = None
         if prior is not None:
             # Already accepted by the Editorial Gate in an earlier run:
             # re-recommending it cold is pure noise. Suppressed loudly, not

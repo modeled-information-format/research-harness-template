@@ -52,8 +52,19 @@ DECISION="reject"
 # the same accept/reject outcome. editorial-gate.sh's decisions map
 # supports per-item decisions too (a future finer-grained review, e.g. one
 # decision per PR comment, could populate this differently), but the
-# current review granularity is the whole PR.
-DECISIONS="$(jq --arg d "$DECISION" 'reduce .[] as $r ({}; .[($r.id // ("gap:" + $r.dimension))] = $d)' "$RECOMMENDATIONS")"
+# current review granularity is the whole PR. The key expression MUST stay
+# in lockstep with editorial_gate.py's gate_key(): an id every connector
+# defaulted to "" is NOT a usable key (jq's // would happily key it as "",
+# which gate_key treats as absent -- the item would silently fall to the
+# fail-safe reject on an ACCEPTED batch), so empty ids fall back to url,
+# then title, exactly as gate_key does.
+DECISIONS="$(jq --arg d "$DECISION" 'reduce .[] as $r ({}; .[(
+  if ($r.id // "") != "" then $r.id
+  elif $r.mode == "gap-detect" then ("gap:" + ($r.dimension // ""))
+  elif ($r.url // "") != "" then ("url:" + $r.url)
+  elif ($r.title // "") != "" then ("title:" + $r.title)
+  else "unkeyable" end
+)] = $d)' "$RECOMMENDATIONS")"
 DECISIONS_FILE="$(mktemp).json"
 printf '%s' "$DECISIONS" > "$DECISIONS_FILE"
 

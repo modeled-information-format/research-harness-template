@@ -173,6 +173,28 @@ bash "$PACK/scripts/run-gate-and-publish.sh" "$DOMAIN" "$RUN1" "$RUN_DIR/recomme
 [ -s "$TMP/memory.jsonl" ] || { note "accept path did not write prior-coverage memory"; fail=1; }
 grep -q "standalone domain" "$TMP/gate.err" || { note "standalone domain did not skip the Output Router by design"; fail=1; }
 
+# Empty-id gate keying (Opus review finding on PR #529): a candidate whose
+# connector defaulted its id to "" must still match the whole-batch accept
+# decision (via the url/title key fallback) instead of silently falling to
+# the fail-safe reject.
+cat > "$TMP/recs-emptyid.json" <<'EOF'
+[
+  {"mode": "interest-match", "source": "semantic-scholar", "id": "",
+   "title": "Attested Provenance Records for Model Releases",
+   "url": "https://example.org/paper/emptyid", "published": "2026-07-10",
+   "score": 0.5, "inference_method": "query-terms",
+   "momentum": {"source_count": 1, "sources": ["semantic-scholar"], "engagement": 0, "group_size": 1},
+   "domain": "eval-domain-monitoring", "weight": 0.7,
+   "citations": [{"type": "primary-source", "url": "https://example.org/paper/emptyid"}]}
+]
+EOF
+MONITOR_PRIOR_COVERAGE="$TMP/memory-emptyid.jsonl" \
+  bash "$PACK/scripts/run-gate-and-publish.sh" "$DOMAIN" "run-eval-emptyid" "$TMP/recs-emptyid.json" true >/dev/null 2>&1 || { note "empty-id gate run failed"; fail=1; }
+if ! jq -e 'length == 1 and .[0].gate.passed == true' "$DOMAIN_DIR/runs/run-eval-emptyid/accepted.json" >/dev/null 2>&1; then
+  note "empty-id candidate fell to fail-safe reject on an ACCEPTED batch (gate-key mismatch)"
+  fail=1
+fi
+
 # --- Case 6: determinism / parity (#525) ------------------------------------
 # Case 5's gate-accept legitimately wrote the memory; parity must compare
 # runs under identical inputs, so give this run a fresh (empty) memory.
