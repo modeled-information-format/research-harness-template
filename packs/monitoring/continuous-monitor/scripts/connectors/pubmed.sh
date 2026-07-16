@@ -18,7 +18,15 @@ ROOT="$(cd "$SCRIPT_DIR/../../../../.." && pwd)"
 QUERY="${1:?usage: pubmed.sh <query> [max_results]}"
 MAX="${2:-20}"
 
-ENC_QUERY="$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1]))' "$QUERY")"
+# <query> is a JSON array of atomic terms/phrases or a plain string treated
+# as one term. E-utilities' term grammar supports quoted phrases and boolean
+# OR, so terms dispatch as `"term1" OR "term2" ...` in one request (#513).
+TERMS=()
+while IFS= read -r _t; do TERMS+=("$_t"); done < <(connector_parse_terms "$QUERY")
+[ "${#TERMS[@]}" -gt 0 ] || { echo "pubmed: no usable query terms" >&2; exit 2; }
+
+SEARCH_EXPR="$(connector_query_quoted_or '' "${TERMS[@]+"${TERMS[@]}"}")"
+ENC_QUERY="$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1]))' "$SEARCH_EXPR")"
 API_KEY_PARAM=""
 [ -n "${NCBI_API_KEY:-}" ] && API_KEY_PARAM="&api_key=${NCBI_API_KEY}"
 

@@ -1,0 +1,56 @@
+{
+  "@type": "Concordance",
+  "nodes": [
+    {
+      "id": "urn:mif:concept:eval-golden-topic:git-notes-provenance-metadata",
+      "kind": "concept",
+      "label": "Git Notes Provenance Metadata",
+      "topics": ["eval-golden-topic"],
+      "entityType": "concept",
+      "ontology": "mif-generic@1.0.0",
+      "verdict": "survived",
+      "flagged": false
+    },
+    {
+      "id": "urn:mif:concept:eval-golden-topic:commit-attestation-signing-workflow",
+      "kind": "concept",
+      "label": "Commit Attestation Signing Workflow",
+      "topics": ["eval-golden-topic"],
+      "entityType": "concept",
+      "ontology": "mif-generic@1.0.0",
+      "verdict": "survived",
+      "flagged": false
+    },
+    {
+      "id": "urn:mif:concept:ag-tech-small-diversified-farm:technology-adoption",
+      "kind": "concept",
+      "label": "Small Diversified Farm Technology Adoption",
+      "topics": ["ag-tech-small-diversified-farm"],
+      "entityType": "concept",
+      "ontology": "mif-generic@1.0.0",
+      "verdict": "survived",
+      "flagged": false
+    },
+    {
+      "id": "urn:mif:concept:ai-code-error-compounding:service-dependencies",
+      "kind": "concept",
+      "label": "Error Compounding in Service Dependencies",
+      "topics": ["ai-code-error-compounding"],
+      "entityType": "concept",
+      "ontology": "mif-generic@1.0.0",
+      "verdict": "survived",
+      "flagged": false
+    },
+    {
+      "id": "urn:mif:concept:pure-mathematics:harmonic-forms-hopf-conjecture",
+      "kind": "concept",
+      "label": "Harmonic Forms and the Hopf Conjecture",
+      "topics": ["pure-mathematics"],
+      "entityType": "concept",
+      "ontology": "mif-generic@1.0.0",
+      "verdict": "survived",
+      "flagged": false
+    }
+  ],
+  "edges": []
+}

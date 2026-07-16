@@ -1,0 +1,18 @@
+{
+  "hits": [
+    {
+      "objectID": "hn-2",
+      "title": "Provenance for Generated Commits",
+      "url": "https://example.org/hn/2",
+      "created_at": "2026-07-13T00:00:00Z",
+      "author": "user2"
+    },
+    {
+      "objectID": "hn-3",
+      "title": "Attestation Pipelines for Model Releases",
+      "url": "https://example.org/hn/3",
+      "created_at": "2026-07-12T00:00:00Z",
+      "author": "user3"
+    }
+  ]
+}

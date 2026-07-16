@@ -1,7 +1,7 @@
 ---
 name: continuous-monitor
 description: "Unattended, scheduled monitoring of external research sources (arXiv, OpenAlex, Crossref, Semantic Scholar, PubMed, bioRxiv/medRxiv, GDELT, Hacker News) for a topic, gated end to end through a mandatory human Editorial Gate before anything publishes. An OPTIONAL methodology pack (enable the `continuous-monitor` pack AND set `continuousMonitoring.enabled: true` on the topic). Use this skill when the user wants to enable, inspect, or manually run continuous research monitoring for a topic, review a monitoring run's candidate recommendations, or check the Continuity Log for a skipped/failed source. Triggers on 'continuous monitoring', 'monitor this topic', 'schedule research monitoring', 'check for new sources', 'run the monitoring pipeline', 'review monitoring recommendations'."
-version: 0.14.1
+version: 0.15.3
 argument-hint: "<topic-id> [<run-id>]"
 allowed-tools: Read, Bash, Glob, Grep
 ---
@@ -45,8 +45,8 @@ Source Connectors -> Interest-Inference -> Recommendation Engine
 | --- | --- |
 | `scripts/run-monitoring.sh <topic> <run-id>` | Phase 1 orchestrator: checks the `continuous-monitor` pack is enabled AND the topic's own `continuousMonitoring.enabled`, runs enabled Source Connectors under a budget, rebuilds the concordance/index, scores via Interest-Inference, writes `reports/<topic>/monitoring/runs/<run-id>/recommendations.json`. Stops before the Editorial Gate. |
 | `scripts/run-with-budget.sh` | Wraps one connector in a hard wall-clock `timeout`; fails closed and logs to the Continuity Log rather than partial-succeeding. |
-| `scripts/connectors/{arxiv,openalex,crossref,semantic-scholar,pubmed,biorxiv,gdelt,hn}.sh` | The eight keyless Source Connectors. |
-| `scripts/interest-inference.sh` | Scores candidates against `reports/concordance.json`, with a TF-IDF fallback. |
+| `scripts/connectors/{arxiv,openalex,crossref,semantic-scholar,pubmed,biorxiv,gdelt,hn}.sh` | The eight keyless Source Connectors. Query-taking connectors accept `<query>` as a JSON array of atomic terms/phrases (what `run-monitoring.sh` passes from `queryTerms[]`) or a plain string treated as one term, and dispatch per the target API's own query grammar (#513): phrase-quoted boolean OR in one request (arXiv, PubMed, GDELT) or one request per term with merge/dedup (HN, OpenAlex, Crossref, Semantic Scholar). GDELT detects its HTTP-200 plaintext rate-limit notice and retries once after `GDELT_RETRY_DELAY_SECONDS` (default 6) before failing closed with the true cause (#515). |
+| `scripts/interest-inference.sh` | Scores candidates against the monitored topic's own concordance nodes (`--topic`, #514) plus the topic's queryTerms as a first-class signal, with a TF-IDF fallback when neither matches. |
 | `scripts/recommend.sh` | `interest-match` (rank scored candidates) and `gap-detect` (coverage-gap suggestions) modes. |
 | `scripts/editorial-gate.sh` | The mandatory human-review checkpoint: splits recommendations into accepted/rejected per a decisions map, fail-safe default (no decision = rejected). |
 | `scripts/output-router.sh` | Hands Editorial-Gate-accepted recommendations to the harness's existing `scripts/write-finding.sh`/`scripts/check-citation-integrity.sh` — no bespoke publish path. |

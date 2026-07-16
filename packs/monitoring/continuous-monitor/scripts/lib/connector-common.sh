@@ -92,6 +92,75 @@ connector_emit() {
   printf '%s\n' "$result"
 }
 
+# connector_parse_terms <query-arg>
+# The <query> argument a query-taking connector receives is either a JSON
+# array of atomic terms/phrases (what run-monitoring.sh passes straight from
+# the topic's continuousMonitoring.queryTerms[]) or a plain string (manual
+# invocation) treated as ONE atomic term. Emits one term per line, empty
+# terms dropped. Terms must never be flattened into a single blob: upstream
+# APIs parse an unquoted multi-word blob with mutually incompatible
+# semantics (arXiv OR-of-words, Algolia AND-of-words), destroying relevance
+# in both directions (#513).
+connector_parse_terms() {
+  local arg="$1"
+  if printf '%s' "$arg" | jq -e 'type == "array" and all(.[]; type == "string")' >/dev/null 2>&1; then
+    printf '%s' "$arg" | jq -r '.[] | select(length > 0)'
+  else
+    [ -n "$arg" ] && printf '%s\n' "$arg"
+  fi
+}
+
+# connector_query_quoted_or <field-prefix> <term>...
+# Builds the `<prefix>"term1" OR <prefix>"term2" ...` boolean expression for
+# APIs whose query grammar supports quoted phrases and OR (#513): arXiv
+# (prefix `all:`), PubMed E-utilities and GDELT DOC 2.0 (empty prefix).
+# Embedded double quotes are stripped from terms -- they would unbalance the
+# phrase quoting.
+connector_query_quoted_or() {
+  local prefix="$1"; shift
+  local expr="" t
+  for t in "$@"; do
+    t="${t//\"/}"
+    [ -n "$t" ] || continue
+    [ -n "$expr" ] && expr+=" OR "
+    expr+="${prefix}\"${t}\""
+  done
+  printf '%s' "$expr"
+}
+
+# connector_merge_candidates <max> <candidate-array-file>...
+# Merges per-term candidate arrays for APIs whose query grammar has no OR
+# operator (one request per term, #513): dedup by id, newest published
+# first, capped at <max>.
+connector_merge_candidates() {
+  local max="$1"; shift
+  jq -s --argjson max "$max" \
+    'add // [] | unique_by(.id) | sort_by(.published) | reverse | .[0:$max]' "$@"
+}
+
+# connector_guard_json <source> <body>
+# Some APIs (GDELT DOC 2.0, #515) enforce rate limits by returning HTTP 200
+# with a PLAINTEXT notice; piping that into a jq transform fails with a
+# misleading "jq parse error" that reads as a schema change. Returns 0 when
+# the body is JSON; prints the true cause and returns 75 (EX_TEMPFAIL) on a
+# recognizable rate-limit notice, 65 (EX_DATAERR) on any other non-JSON body.
+connector_guard_json() {
+  local source="$1" body="$2"
+  if printf '%s' "$body" | jq -e . >/dev/null 2>&1; then
+    return 0
+  fi
+  case "$body" in
+    *"limit requests"*|*"rate limit"*|*"Rate limit"*|*"Too many requests"*)
+      echo "connector[$source]: rate limited by upstream (HTTP 200 plaintext notice): $(printf '%s' "$body" | head -c 120)" >&2
+      return 75
+      ;;
+    *)
+      echo "connector[$source]: upstream returned a non-JSON response body: $(printf '%s' "$body" | head -c 120)" >&2
+      return 65
+      ;;
+  esac
+}
+
 # _connector_common_dir: this file's OWN directory, self-located via
 # BASH_SOURCE rather than inherited from a caller's $ROOT/$SCRIPT_DIR --
 # this file is sourced by both top-level pack scripts and connectors/*.sh
@@ -123,3 +192,13 @@ connector_budget_check() {
   fi
   return 0
 }
+
+# Eval seam: when CONNECTOR_FETCH_OVERRIDE names a readable bash file, source
+# it AFTER the definitions above so a fixture-driven eval can replace
+# connector_fetch with a recorded-response stub (evals must stay
+# deterministic and offline -- see evals/monitoring-query-construction.sh).
+# Never set on a production path.
+if [ -n "${CONNECTOR_FETCH_OVERRIDE:-}" ] && [ -r "${CONNECTOR_FETCH_OVERRIDE}" ]; then
+  # shellcheck disable=SC1090
+  . "${CONNECTOR_FETCH_OVERRIDE}"
+fi

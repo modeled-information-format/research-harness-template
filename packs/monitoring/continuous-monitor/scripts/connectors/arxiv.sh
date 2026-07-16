@@ -8,6 +8,12 @@
 # SDK.
 #
 # Usage: arxiv.sh <query> [max_results]
+#   <query> is a JSON array of atomic terms/phrases (what run-monitoring.sh
+#   passes from continuousMonitoring.queryTerms[]) or a plain string treated
+#   as one term. Terms are dispatched per arXiv's own query grammar as
+#   `all:"term1" OR all:"term2" ...` -- an unquoted multi-word blob would be
+#   exploded by arXiv into OR-of-single-words, matching essentially the
+#   whole archive (#513).
 set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/../../../../.." && pwd)"
@@ -17,8 +23,13 @@ ROOT="$(cd "$SCRIPT_DIR/../../../../.." && pwd)"
 QUERY="${1:?usage: arxiv.sh <query> [max_results]}"
 MAX="${2:-20}"
 
-ENC_QUERY="$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1]))' "$QUERY")"
-URL="http://export.arxiv.org/api/query?search_query=all:${ENC_QUERY}&start=0&max_results=${MAX}&sortBy=submittedDate&sortOrder=descending"
+TERMS=()
+while IFS= read -r _t; do TERMS+=("$_t"); done < <(connector_parse_terms "$QUERY")
+[ "${#TERMS[@]}" -gt 0 ] || { echo "arxiv: no usable query terms" >&2; exit 2; }
+
+SEARCH_EXPR="$(connector_query_quoted_or 'all:' "${TERMS[@]+"${TERMS[@]}"}")"
+ENC_QUERY="$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1]))' "$SEARCH_EXPR")"
+URL="http://export.arxiv.org/api/query?search_query=${ENC_QUERY}&start=0&max_results=${MAX}&sortBy=submittedDate&sortOrder=descending"
 
 XML="$(connector_fetch "$URL")" || exit 1
 JSON="$(printf '%s' "$XML" | connector_xml_to_json)" || {

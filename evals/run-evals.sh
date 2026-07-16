@@ -315,6 +315,19 @@ run "mif-container-nfr-verification" bash evals/mif-container-nfr-verification.s
 # real schema+citation-integrity-valid MIF finding.
 run "monitoring-pipeline" bash evals/monitoring-pipeline.sh
 
+# Continuous monitoring relevance (Story #519): the golden-query-set eval
+# #516 called for -- fixture candidates with known-relevant/known-irrelevant
+# labels scored at the production default threshold; zero irrelevant and
+# >= 80% relevant must be recommended, with #514's topic scoping proven by
+# a sentinel that cross-topic corpus-global scoring would have matched.
+run "monitoring-relevance" bash evals/monitoring-relevance.sh
+
+# Connector query semantics (#513) + GDELT rate-limit handling (#515):
+# recorded-fixture regression evals over the per-API query construction
+# (phrase-quoted OR vs one-request-per-term) and the HTTP-200 plaintext
+# rate-limit notice detection.
+run "monitoring-query-construction" bash evals/monitoring-query-construction.sh
+
 # 7. Progress-log markdownlint conformance (issue #85 Defect 2): a multi-session
 #    research-progress.md built per orchestrator.md's template — one H1 (file
 #    creation only) + date-qualified per-session H2s — lints clean, while each old

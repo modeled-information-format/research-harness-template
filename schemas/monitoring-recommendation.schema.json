@@ -13,7 +13,7 @@
     "url": { "type": "string" },
     "published": { "type": "string" },
     "score": { "type": "number" },
-    "inference_method": { "type": "string", "enum": ["concordance", "tfidf-fallback"] },
+    "inference_method": { "type": "string", "enum": ["concordance", "query-terms", "tfidf-fallback"] },
     "dimension": { "type": "string" },
     "description": { "type": "string" },
     "finding_count": { "type": "integer" },
