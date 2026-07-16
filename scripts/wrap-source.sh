@@ -33,7 +33,7 @@ while [ $# -gt 0 ]; do
     --out) OUT="$2"; shift 2;;
     --title) TITLE="$2"; shift 2;;
     --content-file) CFILE="$2"; shift 2;;
-    --content) CONTENT="$2"; shift 2;;
+    --content) CONTENT="$2"; CONTENT_SET=1; shift 2;;
     --source-type) STYPE="$2"; shift 2;;
     *) echo "wrap-source: unknown arg: $1" >&2; exit 2;;
   esac
@@ -53,8 +53,23 @@ ARGS=(harness wrap-source --url "$URL" --content-type "$CT" --namespace "$NS" --
 [ -n "$STYPE" ] && ARGS+=(--source-type "$STYPE")
 if [ -n "$CFILE" ]; then
   ARGS+=(--content-file "$CFILE")
-elif [ -n "$CONTENT" ]; then
+elif [ -n "${CONTENT_SET:-}" ]; then
+  # An EXPLICIT --content is always forwarded, even when its value is empty
+  # (research-harness-template#531): [ -n "$CONTENT" ] treated --content ""
+  # as "not provided" and silently fell through to the engine's stdin path,
+  # which blocks forever on a read() whenever stdin is an open pipe that
+  # never EOFs (any backgrounded invocation of verify.sh/run-evals.sh,
+  # whose smoke test exercises exactly this empty-content refusal case).
+  # The engine sees the empty content and refuses it immediately instead.
   ARGS+=(--content "$CONTENT")
 fi
 
+# When content came from a flag/file, the engine must NOT touch stdin: it
+# treats an empty --content as "not provided" and falls back to reading
+# stdin (mif-rh harness_wrap), which blocks forever on a never-EOF pipe
+# (#531). Detach stdin on every explicit-content path; only the documented
+# stdin path (no --content-file, no --content) keeps it attached.
+if [ -n "$CFILE" ] || [ -n "${CONTENT_SET:-}" ]; then
+  exec "$ENGINE" "${ARGS[@]+"${ARGS[@]}"}" </dev/null
+fi
 exec "$ENGINE" "${ARGS[@]+"${ARGS[@]}"}"

@@ -17,6 +17,11 @@
 # the findings/knowledge-graph schema substrate (ADR-0002); they are unchanged.
 
 set -uo pipefail
+# Gate scripts never read stdin; detach it (research-harness-template#531)
+# so no child can block on an inherited never-EOF pipe (backgrounded
+# invocations hand exactly that to every descendant).
+exec </dev/null
+
 cd "$(dirname "$0")/.." || exit 2
 
 # gate_m20/gate_m22's whole-registry ontology-integrity scans delegate to the
