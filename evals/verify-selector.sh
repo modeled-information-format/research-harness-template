@@ -43,5 +43,17 @@ RC=$?
 [ "$RC" -eq 2 ] || { note "unmatched pattern should exit 2 (got $RC)"; fail=1; }
 grep -q "matches no gate" "$TMP/none.out" || { note "unmatched-pattern error lacks the explanation"; fail=1; }
 
+# Case 4: --gates with no argument fails with exit 2 and a usage message.
+bash scripts/verify.sh --gates > "$TMP/noarg.out" 2>&1
+RC=$?
+[ "$RC" -eq 2 ] || { note "--gates with no argument should exit 2 (got $RC)"; fail=1; }
+grep -q "requires a pattern argument" "$TMP/noarg.out" || { note "missing-argument error lacks the usage message"; fail=1; }
+
+# Case 5: an invalid ERE gets its own message, not "matches no gate".
+bash scripts/verify.sh --gates '(' > "$TMP/badere.out" 2>&1
+RC=$?
+[ "$RC" -eq 2 ] || { note "invalid ERE should exit 2 (got $RC)"; fail=1; }
+grep -q "not a valid extended regular expression" "$TMP/badere.out" || { note "invalid-ERE error lacks its dedicated message"; fail=1; }
+
 [ "$fail" -eq 0 ] && note "gate selector is scoped-and-loud; profiling emits per-gate and slowest-gate timings"
 exit "$fail"

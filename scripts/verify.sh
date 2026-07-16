@@ -4551,7 +4551,19 @@ GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 g
 #                     "verify is slow" report should start from.
 GATE_PATTERN=""
 if [ "${1:-}" = "--gates" ]; then
-  GATE_PATTERN="${2:?usage: verify.sh [--gates <pattern>]}"
+  if [ -z "${2:-}" ]; then
+    echo "verify.sh: --gates requires a pattern argument (an ERE matched against gate names — see GATES=(...))" >&2
+    exit 2
+  fi
+  GATE_PATTERN="$2"
+  # Pre-validate the ERE once so a syntax error gets its own message
+  # instead of reading as "matches no gate" (grep exits >=2 on a bad
+  # pattern, 0/1 on match/no-match).
+  printf '' | grep -qE -- "$GATE_PATTERN" 2>/dev/null
+  if [ $? -ge 2 ]; then
+    echo "verify.sh: --gates pattern is not a valid extended regular expression: $GATE_PATTERN" >&2
+    exit 2
+  fi
 fi
 
 SELECTED=()
