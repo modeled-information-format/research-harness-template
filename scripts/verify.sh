@@ -4475,9 +4475,10 @@ gate_monitoring_workflow_sync() {
     fi
     return
   fi
-  local src name dest drift=0 missing_in_template=0
+  local src name dest drift=0 missing_in_template=0 found=0
   for src in "$src_dir"/*.yml; do
     [ -e "$src" ] || continue
+    found=$((found + 1))
     name="$(basename "$src")"
     dest=".github/workflows/$name"
     if [ -f "$dest" ]; then
@@ -4506,6 +4507,13 @@ gate_monitoring_workflow_sync() {
       missing_in_template=1
     fi
   done
+  # A source dir that exists but ships no workflows is a broken pack
+  # layout everywhere -- a silent OK here would report "in sync" while
+  # there is nothing to be in sync with.
+  if [ "$found" -eq 0 ]; then
+    bad "$src_dir exists but contains no *.yml workflow sources — broken pack layout"
+    return
+  fi
   if [ "$drift" -eq 0 ] && [ "$missing_in_template" -eq 0 ]; then
     ok "every installed monitoring workflow is byte-identical to its pack source"
   fi

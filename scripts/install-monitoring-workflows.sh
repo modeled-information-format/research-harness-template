@@ -36,14 +36,16 @@ CHECK=0
 # Enablement is advisory here, not blocking: the workflows themselves gate
 # on the packs[] control plane at runtime (run-monitoring.sh exits 0 when
 # the pack is disabled), so installing them early is harmless — but say so.
-PACK_ENABLED="$(jq -r '(.packs[]? | select(.name == "continuous-monitor") | .enabled) // false' "$ROOT/harness.config.json" 2>/dev/null || echo false)"
+PACK_ENABLED="$(jq -r 'any(.packs[]?; .name == "continuous-monitor" and .enabled == true)' "$ROOT/harness.config.json" 2>/dev/null || echo false)"
 if [ "$PACK_ENABLED" != "true" ]; then
   echo "install-monitoring-workflows: note: the 'continuous-monitor' pack is not enabled in harness.config.json packs[] -- the workflows will install but no-op until it is" >&2
 fi
 
 CHANGED=0
+FOUND=0
 for src in "$SRC_DIR"/*.yml; do
   [ -e "$src" ] || continue
+  FOUND=$((FOUND + 1))
   name="$(basename "$src")"
   dest="$DEST_DIR/$name"
   if [ -f "$dest" ] && grep -q 'harness-workflow: unmanaged' "$dest" 2>/dev/null; then
@@ -63,10 +65,18 @@ for src in "$SRC_DIR"/*.yml; do
     fi
     continue
   fi
-  mkdir -p "$DEST_DIR"
-  cp "$src" "$dest"
+  mkdir -p "$DEST_DIR" || { echo "install-monitoring-workflows: mkdir failed for $DEST_DIR" >&2; exit 1; }
+  cp "$src" "$dest" || { echo "install-monitoring-workflows: copy failed: $src -> $dest" >&2; exit 1; }
   echo "install-monitoring-workflows: installed $dest"
 done
+
+# An existing-but-empty source dir is a broken pack layout, not a valid
+# "nothing to do" -- exiting 0 here would read as success while installing
+# nothing.
+if [ "$FOUND" -eq 0 ]; then
+  echo "install-monitoring-workflows: no *.yml workflow sources found in $SRC_DIR -- pack layout is broken" >&2
+  exit 2
+fi
 
 if [ "$CHECK" -eq 1 ] && [ "$CHANGED" -eq 1 ]; then
   exit 1

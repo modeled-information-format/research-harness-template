@@ -65,8 +65,12 @@ jobs:
         with:
           client-id: ${{ vars.AUTOMERGE_CLIENT_APP_ID }}
           private-key: ${{ secrets.AUTOMERGE_CLIENT_APP_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: research-harness-template
+          # owner/repositories deliberately omitted: the action then
+          # scopes the token to exactly the current repository, whatever
+          # its name -- these workflows are installed into copier
+          # instances whose repo name differs (#517), and a hard-coded
+          # name would mint for the wrong repo (schedule events also
+          # carry no reliable event.repository payload).
           permission-contents: write
           permission-pull-requests: write
 
@@ -91,7 +95,7 @@ jobs:
           # without this early check, run-monitoring.sh would no-op safely
           # per topic, but checking it here avoids a wasted engine
           # fetch/ontology vendor/checkout cycle when the pack is off).
-          PACK_ENABLED="$(jq -r '(.packs[] | select(.name == "continuous-monitor") | .enabled) // false' harness.config.json)"
+          PACK_ENABLED="$(jq -r 'any(.packs[]?; .name == "continuous-monitor" and .enabled == true)' harness.config.json)"
           if [ "$PACK_ENABLED" != "true" ]; then
             echo "monitor.yml: the 'continuous-monitor' pack is not enabled in harness.config.json packs[] -- nothing to do" >&2
             TOPICS=""
@@ -197,10 +201,22 @@ jobs:
               echo "Merging this PR accepts every recommendation above (Editorial Gate accept path). Closing it without merging rejects all of them (logged to the Continuity Log)."
             } >> "$PR_BODY_FILE"
 
-            gh pr create \
+            # The label may not exist in a copier instance (label-sync.yml
+            # is copier-excluded); best-effort ensure it, and if labeling is
+            # still impossible (e.g. token scopes), open the PR unlabeled
+            # rather than failing after all the pipeline work succeeded.
+            gh label create "continuous-monitoring" --force \
+              --description "Continuous-monitoring Editorial Gate review PRs" \
+              --color 1D76DB >/dev/null 2>&1 || true
+            if ! gh pr create \
               --title "monitor($topic): $COUNT candidate recommendation(s) for review" \
               --body-file "$PR_BODY_FILE" \
-              --base main --head "$BRANCH" --label "continuous-monitoring"
+              --base main --head "$BRANCH" --label "continuous-monitoring"; then
+              gh pr create \
+                --title "monitor($topic): $COUNT candidate recommendation(s) for review" \
+                --body-file "$PR_BODY_FILE" \
+                --base main --head "$BRANCH"
+            fi
             rm -f "$PR_BODY_FILE"
             echo "::endgroup::"
           done <<< "${{ steps.resolve.outputs.topics }}"

@@ -40,8 +40,12 @@ jobs:
         with:
           client-id: ${{ vars.AUTOMERGE_CLIENT_APP_ID }}
           private-key: ${{ secrets.AUTOMERGE_CLIENT_APP_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: research-harness-template
+          # owner/repositories deliberately omitted: the action then
+          # scopes the token to exactly the current repository, whatever
+          # its name -- these workflows are installed into copier
+          # instances whose repo name differs (#517), and a hard-coded
+          # name would mint for the wrong repo (schedule events also
+          # carry no reliable event.repository payload).
           permission-contents: write
 
       - name: fetch the mif-rh engine (ADR-0016)

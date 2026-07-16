@@ -2,7 +2,7 @@
 id: how-to-enable-continuous-monitoring
 type: procedural
 created: '2026-07-12T21:00:00Z'
-modified: '2026-07-16T17:32:37.781Z'
+modified: '2026-07-16T17:48:09.494Z'
 namespace: how-to/monitoring
 title: How to Enable Continuous Research Monitoring for a Topic
 tags:
@@ -121,6 +121,17 @@ To deliberately customize an installed copy (e.g. a different cron cadence),
 add a `# harness-workflow: unmanaged` comment to it: the installer then
 leaves that file alone and the sync gate waives byte-identity for it — you
 own keeping the fork current from then on.
+
+**Authentication prerequisite.** Both workflows mint a short-lived GitHub
+App installation token from the Actions variable `AUTOMERGE_CLIENT_APP_ID`
+and secret `AUTOMERGE_CLIENT_APP_PRIVATE_KEY`, scoped to the current
+repository with `contents: write` (+ `pull-requests: write` in Phase 1).
+Repositories inside the `modeled-information-format` org inherit both from
+the org level already. An instance **outside** the org must provide its own:
+create a GitHub App with those two repository permissions, install it on the
+instance repo, and set the variable/secret (repo or org level) to your app's
+client id and private key — or adapt the two `Mint an app token` steps to
+your own token source before relying on the unattended path.
 
 ## Step 4 — Commit and push
 
