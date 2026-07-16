@@ -49,9 +49,11 @@ markdownlint-cli2 --config .markdownlint-cli2.jsonc "**/*.md"   # must be 0 erro
   function per milestone plus `gate_ontology_lock`/`gate_versions` — grep
   `^gate_m[0-9]*() {` in `verify.sh` or read the `GATES=(...)` line directly
   for the current count/names; don't hardcode a number here, it grows with
-  every milestone); there
-  is **no single-gate CLI selector** — to iterate on one gate, run the whole script
-  (fast) or `source` it and call the `gate_mN` function directly. It prints
+  every milestone); to iterate on
+  specific gates run `bash scripts/verify.sh --gates <ERE>` (matches gate
+  NAMES, e.g. `--gates 'gate_m3$'` or `--gates monitoring` — the summary
+  line flags a scoped run so it can't masquerade as the full suite, #531),
+  and `VERIFY_PROFILE=1` prints per-gate wall time plus the slowest five. It prints
   `verify.sh: N passed, 0 failed` on success and is the authoritative gate.
 - A single eval: `python3 evals/test_models.py`, `bash evals/smoke-test.sh`, etc.
   (see the `run "<name>" <cmd>` lines in `evals/run-evals.sh`).

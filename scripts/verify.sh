@@ -4539,12 +4539,73 @@ gate_monitoring_workflow_sync() {
 # ---------------------------------------------------------------------------
 GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18 gate_m19 gate_m20 gate_m21 gate_m22 gate_m23 gate_m24 gate_m25 gate_m26 gate_m27 gate_m28 gate_m29 gate_m30 gate_m31 gate_m32 gate_ontology_lock gate_versions gate_changelog_links gate_milestone_docs gate_is_template_guard_hygiene gate_monitoring_workflow_sync)
 
-for g in "${GATES[@]+"${GATES[@]}"}"; do "$g"; done
+# Gate selection + profiling (#531) -- the pre-push gate is only as valuable
+# as it is runnable, so local iteration gets a scoped fast path and the
+# runtime stays measurable instead of anecdotal:
+#   --gates <ERE>     run only gate functions whose NAME matches the pattern
+#                     (e.g. --gates 'gate_m3$' or --gates 'monitoring');
+#                     the summary line notes the narrowed scope, so a scoped
+#                     run can never masquerade as the full suite.
+#   VERIFY_PROFILE=1  print per-gate wall seconds as each gate finishes and
+#                     the slowest five at the end -- the evidence a future
+#                     "verify is slow" report should start from.
+GATE_PATTERN=""
+if [ "${1:-}" = "--gates" ]; then
+  if [ -z "${2:-}" ]; then
+    echo "verify.sh: --gates requires a pattern argument (an ERE matched against gate names — see GATES=(...))" >&2
+    exit 2
+  fi
+  GATE_PATTERN="$2"
+  # Pre-validate the ERE once so a syntax error gets its own message
+  # instead of reading as "matches no gate" (grep exits >=2 on a bad
+  # pattern, 0/1 on match/no-match).
+  printf '' | grep -qE -- "$GATE_PATTERN" 2>/dev/null
+  if [ $? -ge 2 ]; then
+    echo "verify.sh: --gates pattern is not a valid extended regular expression: $GATE_PATTERN" >&2
+    exit 2
+  fi
+fi
+
+SELECTED=()
+for g in "${GATES[@]+"${GATES[@]}"}"; do
+  if [ -z "$GATE_PATTERN" ] || printf '%s' "$g" | grep -qE -- "$GATE_PATTERN"; then
+    SELECTED+=("$g")
+  fi
+done
+if [ "${#SELECTED[@]}" -eq 0 ]; then
+  echo "verify.sh: --gates '$GATE_PATTERN' matches no gate (see GATES=(...) for names)" >&2
+  exit 2
+fi
+
+PROFILE_LINES=""
+for g in "${SELECTED[@]+"${SELECTED[@]}"}"; do
+  if [ "${VERIFY_PROFILE:-0}" = "1" ]; then
+    _gate_start="$(date +%s)"
+    "$g"
+    _gate_secs="$(( $(date +%s) - _gate_start ))"
+    printf '  time  %3ss %s\n' "$_gate_secs" "$g"
+    PROFILE_LINES="${PROFILE_LINES}${_gate_secs} ${g}"$'\n'
+  else
+    "$g"
+  fi
+done
+
+if [ "${VERIFY_PROFILE:-0}" = "1" ]; then
+  echo
+  echo "--- slowest gates ---"
+  printf '%s' "$PROFILE_LINES" | sort -rn | head -5 | while IFS= read -r line; do
+    printf '  %ss  %s\n' "${line%% *}" "${line#* }"
+  done
+fi
 
 echo
+SCOPE_NOTE=""
+if [ -n "$GATE_PATTERN" ]; then
+  SCOPE_NOTE=" [SCOPED RUN: --gates '$GATE_PATTERN' matched ${#SELECTED[@]}/${#GATES[@]} gates — not the full suite]"
+fi
 if [ "$FAIL" -gt 0 ]; then
-  printf '%sverify.sh: %d passed, %d FAILED%s\n' "$RED" "$PASS" "$FAIL" "$RST"
+  printf '%sverify.sh: %d passed, %d FAILED%s%s\n' "$RED" "$PASS" "$FAIL" "$RST" "$SCOPE_NOTE"
   exit 1
 fi
-printf '%sverify.sh: %d passed, 0 failed%s\n' "$GREEN" "$PASS" "$RST"
+printf '%sverify.sh: %d passed, 0 failed%s%s\n' "$GREEN" "$PASS" "$RST" "$SCOPE_NOTE"
 exit 0
