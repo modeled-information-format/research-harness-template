@@ -2,7 +2,7 @@
 id: reference-scripts
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-14T02:29:28.000Z'
+modified: '2026-07-16T17:30:04.440Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -17,12 +17,12 @@ temporal:
 provenance:
   '@type': Provenance
   sourceType: agent_inferred
-  agent: claude-code/claude-sonnet-5
+  agent: claude-code/claude-fable-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:878c53f7-09b4-4f64-bb13-e210d7c2f073
+    '@id': urn:mif:activity:claude-code-session:ea77f44f-898f-452b-97c5-a752ed5af5a0
     '@type': prov:Activity
   trustLevel: user_stated
-  agentVersion: 2.1.207
+  agentVersion: 2.1.211
 ---
 
 # Reference: scripts
@@ -180,3 +180,4 @@ Scripts that verify harness integrity and attestation.
 | `scripts/check-mermaid.py` | Structural validator for Mermaid diagrams in Markdown: flags empty blocks, unknown diagram types, markdown-escape corruption (a `\*`/`\_` leaked into a fence), and unbalanced brackets. Used by the `mermaid-render` eval; full grammar validation is left to `mmdc` (intentionally not a runtime dependency). | Python stdlib only |
 | `scripts/update.sh` | The only supported way a clone updates from the template: a fail-closed provenance gate in front of `copier update` that pins the update to a verified release commit and reproduces the release artifact before applying. | `git`, `gh`, `copier` |
 | `scripts/install-hooks.sh` | Called from `package.json`'s `postinstall`. Wires `core.hooksPath` to `.githooks/` unless a contributor already configured a different `hooksPath` on purpose (leaves it alone, warns on stderr). Always exits 0 — best-effort, never fails the install. | `git` |
+| `scripts/install-monitoring-workflows.sh` | Materializes the continuous-monitor pack's GitHub Actions workflows (`packs/monitoring/continuous-monitor/workflows/*.yml`, the canonical sources copier ships) into `.github/workflows/` — the documented opt-in for instantiated clones, which never receive workflow files from copier (#517). Idempotent; `--check` reports drift without writing (non-zero exit when a copy differs); notes loudly when the pack is disabled. `verify.sh`'s `gate_monitoring_workflow_sync` holds installed copies byte-identical to their pack sources. | `jq` |
