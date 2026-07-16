@@ -131,11 +131,17 @@ connector_query_quoted_or() {
 # connector_merge_candidates <max> <candidate-array-file>...
 # Merges per-term candidate arrays for APIs whose query grammar has no OR
 # operator (one request per term, #513): dedup by id, newest published
-# first, capped at <max>.
+# first, capped at <max>. Sorts by the numeric date components of
+# .published, not the raw string -- at least one upstream (Crossref joins
+# date-parts with "-") emits non-zero-padded dates like "2026-7-1", which
+# lexicographic ordering would rank after "2026-12-1" and wrongly drop at
+# the cap. A missing/empty published sorts oldest.
 connector_merge_candidates() {
   local max="$1"; shift
   jq -s --argjson max "$max" \
-    'add // [] | unique_by(.id) | sort_by(.published) | reverse | .[0:$max]' "$@"
+    'add // [] | unique_by(.id)
+     | sort_by(.published // "" | [scan("[0-9]+") | tonumber])
+     | reverse | .[0:$max]' "$@"
 }
 
 # connector_guard_json <source> <body>

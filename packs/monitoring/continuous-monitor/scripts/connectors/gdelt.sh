@@ -44,10 +44,15 @@ if [ "$GUARD_RC" -ne 0 ]; then
   [ "$GUARD_RC" -eq 75 ] || exit 1
   sleep "${GDELT_RETRY_DELAY_SECONDS:-6}"
   JSON="$(connector_fetch "$URL")" || exit 1
-  connector_guard_json "gdelt" "$JSON" || {
-    echo "gdelt: still rate limited after one spaced retry -- failing closed" >&2
+  RETRY_RC=0
+  connector_guard_json "gdelt" "$JSON" || RETRY_RC=$?
+  if [ "$RETRY_RC" -ne 0 ]; then
+    # The guard already printed the true cause; only add the retry context
+    # when it really was rate limiting again (75), not some other non-JSON
+    # body it classified differently.
+    [ "$RETRY_RC" -eq 75 ] && echo "gdelt: still rate limited after one spaced retry -- failing closed" >&2
     exit 1
-  }
+  fi
 fi
 
 connector_emit "gdelt" '

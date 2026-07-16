@@ -61,6 +61,18 @@ connector_guard_json eval "$(cat "$FX/gdelt-rate-limit-notice.txt")" 2>/dev/null
 connector_guard_json eval '<html>maintenance page</html>' 2>/dev/null
 [ $? -eq 65 ] || { note "guard_json did not classify non-JSON junk as a data error (65)"; fail=1; }
 
+# merge orders by NUMERIC date components, not the raw string (Copilot
+# finding on PR #526): Crossref emits non-zero-padded dates, and
+# lexicographically "2026-7-1" > "2026-12-1", which would keep the older
+# item and drop the newer one at the cap.
+printf '[{"id":"a","published":"2026-7-1"},{"id":"b","published":"2026-12-1"}]' > "$TMP/merge-1.json"
+printf '[{"id":"c","published":"2026-11-30"}]' > "$TMP/merge-2.json"
+GOT_ORDER="$(connector_merge_candidates 2 "$TMP/merge-1.json" "$TMP/merge-2.json" | jq -r '[.[].id] | join(",")')"
+if [ "$GOT_ORDER" != "b,c" ]; then
+  note "merge date ordering wrong: expected b,c got $GOT_ORDER"
+  fail=1
+fi
+
 # --- Cases 4-6: connectors against recorded fixtures -----------------------
 export CONNECTOR_FETCH_OVERRIDE="$FX/fetch-stub.sh"
 export EVAL_FIXTURE_DIR="$FX"
