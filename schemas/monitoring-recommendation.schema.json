@@ -14,6 +14,26 @@
     "published": { "type": "string" },
     "score": { "type": "number" },
     "inference_method": { "type": "string", "enum": ["concordance", "query-terms", "tfidf-fallback"] },
+    "domain": {
+      "type": "string",
+      "description": "The monitoring subject (a monitoringDomains[] id, or the topic id for a topic-bound run) this recommendation was produced for (research-harness-template#521)."
+    },
+    "weight": {
+      "type": "number",
+      "description": "The domain's configured attention weight at ranking time (#521): the recorded cross-domain tie-break for digests that merge domains."
+    },
+    "momentum": {
+      "type": "object",
+      "description": "Momentum ranking factors (research-harness-template#523, recorded for auditability): how many independent sources surfaced this item, which ones, and the engagement evidence backing its rank.",
+      "required": ["source_count", "sources", "engagement", "group_size"],
+      "additionalProperties": false,
+      "properties": {
+        "source_count": { "type": "integer", "minimum": 1 },
+        "sources": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "engagement": { "type": "integer", "minimum": 0 },
+        "group_size": { "type": "integer", "minimum": 1 }
+      }
+    },
     "dimension": { "type": "string" },
     "description": { "type": "string" },
     "finding_count": { "type": "integer" },

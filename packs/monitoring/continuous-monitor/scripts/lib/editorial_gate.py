@@ -17,11 +17,21 @@ import sys
 def gate_key(rec):
     """Stable key a decisions map is keyed by: a candidate's own id for
     interest-match recommendations, or a dimension-scoped key for
-    gap-detect recommendations (which have no candidate id)."""
+    gap-detect recommendations (which have no candidate id). A candidate
+    whose connector defaulted its id to "" (every connector does on a
+    missing upstream id) falls back to its url, then title -- WITHOUT this,
+    an empty-id item could never match any decision and would silently fall
+    to the fail-safe reject even on an accepted batch. MUST stay in
+    lockstep with the jq decisions-map builder in run-gate-and-publish.sh,
+    which produces exactly these keys."""
     if rec.get("id"):
         return rec["id"]
     if rec.get("mode") == "gap-detect":
         return f"gap:{rec.get('dimension', '')}"
+    if rec.get("url"):
+        return f"url:{rec['url']}"
+    if rec.get("title"):
+        return f"title:{rec['title']}"
     return None
 
 

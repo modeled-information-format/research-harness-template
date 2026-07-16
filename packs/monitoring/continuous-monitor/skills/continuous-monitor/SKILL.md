@@ -1,8 +1,8 @@
 ---
 name: continuous-monitor
-description: "Unattended, scheduled monitoring of external research sources (arXiv, OpenAlex, Crossref, Semantic Scholar, PubMed, bioRxiv/medRxiv, GDELT, Hacker News) for a topic, gated end to end through a mandatory human Editorial Gate before anything publishes. An OPTIONAL methodology pack (enable the `continuous-monitor` pack AND set `continuousMonitoring.enabled: true` on the topic). Use this skill when the user wants to enable, inspect, or manually run continuous research monitoring for a topic, review a monitoring run's candidate recommendations, or check the Continuity Log for a skipped/failed source. Triggers on 'continuous monitoring', 'monitor this topic', 'schedule research monitoring', 'check for new sources', 'run the monitoring pipeline', 'review monitoring recommendations'."
-version: 0.15.4
-argument-hint: "<topic-id> [<run-id>]"
+description: "Unattended, scheduled monitoring of external sources (arXiv, OpenAlex, Crossref, Semantic Scholar, PubMed, bioRxiv/medRxiv, GDELT, Hacker News) for operator-selected current-events DOMAINS (monitoringDomains[], weighted, momentum-ranked, digest output) or for a research topic (the topic-bound special case), gated end to end through a mandatory human Editorial Gate before anything publishes. An OPTIONAL methodology pack (enable the `continuous-monitor` pack AND configure a domain or a topic's continuousMonitoring block). Use this skill when the user wants to enable, inspect, or manually run continuous monitoring for a domain or topic, review a run's digest or candidate recommendations, or check the Continuity Log for a skipped/failed source. Triggers on 'continuous monitoring', 'monitor this domain', 'monitor this topic', 'monitoring digest', 'schedule research monitoring', 'check for new sources', 'run the monitoring pipeline', 'review monitoring recommendations'."
+version: 0.16.0
+argument-hint: "<domain-or-topic-id> [<run-id>]"
 allowed-tools: Read, Bash, Glob, Grep
 ---
 
@@ -48,27 +48,42 @@ Source Connectors -> Interest-Inference -> Recommendation Engine
 
 | Script | What it does |
 | --- | --- |
-| `scripts/run-monitoring.sh <topic> <run-id>` | Phase 1 orchestrator: checks the `continuous-monitor` pack is enabled AND the topic's own `continuousMonitoring.enabled`, runs enabled Source Connectors under a budget, rebuilds the concordance/index, scores via Interest-Inference, writes `reports/<topic>/monitoring/runs/<run-id>/recommendations.json`. Stops before the Editorial Gate. |
+| `scripts/run-monitoring.sh <subject> <run-id>` | Phase 1 orchestrator. `<subject>` resolves against `monitoringDomains[]` first (#521 -- first-class current-events domains, runs under `reports/_monitoring/<id>/runs/`), then a topic's `continuousMonitoring` block (topic-bound runs under `reports/<topic>/monitoring/runs/`). Checks the pack gate, runs enabled Source Connectors under a budget, scores via Interest-Inference, momentum-ranks with prior-coverage suppression (#523), writes `recommendations.json` and the versioned `digest.md` (#524). Stops before the Editorial Gate. |
+| `scripts/render-digest.sh <recommendations.json> <subject> <run-id>` | Renders the per-run digest (format marker `Digest format: v1`): per candidate a headline, domain/weight, momentum evidence, relevance, prior-coverage status, and source URLs. The review PR's body in Actions; the operator's in-session review surface. |
 | `scripts/run-with-budget.sh` | Wraps one connector in a hard wall-clock `timeout`; fails closed and logs to the Continuity Log rather than partial-succeeding. |
 | `scripts/connectors/{arxiv,openalex,crossref,semantic-scholar,pubmed,biorxiv,gdelt,hn}.sh` | The eight keyless Source Connectors. Query-taking connectors accept `<query>` as a JSON array of atomic terms/phrases (what `run-monitoring.sh` passes from `queryTerms[]`) or a plain string treated as one term, and dispatch per the target API's own query grammar (#513): phrase-quoted boolean OR in one request (arXiv, PubMed, GDELT) or one request per term with merge/dedup (HN, OpenAlex, Crossref, Semantic Scholar). GDELT detects its HTTP-200 plaintext rate-limit notice and retries once after `GDELT_RETRY_DELAY_SECONDS` (default 6) before failing closed with the true cause (#515). |
 | `scripts/interest-inference.sh` | Scores candidates against the monitored topic's own concordance nodes (`--topic`, #514) plus the topic's queryTerms as a first-class signal, with a TF-IDF fallback when neither matches. |
-| `scripts/recommend.sh` | `interest-match` (rank scored candidates) and `gap-detect` (coverage-gap suggestions) modes. |
+| `scripts/recommend.sh` | `interest-match` (cross-source merge + momentum ranking with recorded factors, prior-coverage suppression via `--memory`, #523) and `gap-detect` (coverage-gap suggestions) modes. |
 | `scripts/editorial-gate.sh` | The mandatory human-review checkpoint: splits recommendations into accepted/rejected per a decisions map, fail-safe default (no decision = rejected). |
 | `scripts/output-router.sh` | Hands Editorial-Gate-accepted recommendations to the harness's existing `scripts/write-finding.sh`/`scripts/check-citation-integrity.sh` — no bespoke publish path. |
-| `scripts/run-gate-and-publish.sh <topic> <run-id> <recommendations.json> <merged>` | Phase 2 orchestrator: builds a whole-batch accept/reject decision from a PR's merged state, runs `editorial-gate.sh` then `output-router.sh`. |
+| `scripts/run-gate-and-publish.sh <subject> <run-id> <recommendations.json> <merged>` | Phase 2 orchestrator: builds a whole-batch accept/reject decision from a PR's merged state, runs `editorial-gate.sh`, appends accepted items to the prior-coverage memory (its ONLY writer, #523), then `output-router.sh` (skipped by design for a standalone domain -- the digest is its deliverable). |
 
 ## Manual invocation
 
-Run a monitoring pass for one topic by hand (the same call `monitor.yml` makes):
+Run a monitoring pass for one subject by hand (the same call `monitor.yml`
+makes) -- `<subject>` is a `monitoringDomains[]` id or a topic id:
 
 ```bash
-bash "$CLAUDE_PROJECT_DIR/packs/monitoring/continuous-monitor/scripts/run-monitoring.sh" <topic-id> "run-$(date -u +%Y%m%dT%H%M%SZ)-manual"
+bash "$CLAUDE_PROJECT_DIR/packs/monitoring/continuous-monitor/scripts/run-monitoring.sh" <subject> "run-$(date -u +%Y%m%dT%H%M%SZ)-manual"
 ```
 
-Inspect the result:
+Review the digest (the in-session equivalent of the review PR's body, #525)
+and inspect the raw result -- `<run-dir>` is
+`reports/_monitoring/<subject>/runs/<run-id>` for a domain,
+`reports/<subject>/monitoring/runs/<run-id>` for a topic:
 
 ```bash
-jq . "reports/<topic-id>/monitoring/runs/<run-id>/recommendations.json"
+cat "<run-dir>/digest.md"
+jq . "<run-dir>/recommendations.json"
+```
+
+Gate the batch in-session (merge/close of the review PR is the Actions
+equivalent): accept with `true`, reject with `false` -- accept appends the
+batch to the prior-coverage memory and, for a topic-bound subject, publishes
+findings via the Output Router:
+
+```bash
+bash "$CLAUDE_PROJECT_DIR/packs/monitoring/continuous-monitor/scripts/run-gate-and-publish.sh" <subject> <run-id> "<run-dir>/recommendations.json" true
 ```
 
 Every recommendation reaching this file has already passed schema validation

@@ -22,9 +22,16 @@ shift
 
 case "$MODE" in
   interest-match)
-    SCORED="${1:?usage: recommend.sh interest-match <scored-candidates.json> [threshold]}"
-    THRESHOLD="${2:-0.02}"
-    python3 "$SCRIPT_DIR/lib/recommend.py" interest-match "$SCORED" "$THRESHOLD"
+    SCORED="${1:?usage: recommend.sh interest-match <scored-candidates.json> [threshold] [--memory <jsonl>] [--domain <id>] [--weight <n>]}"
+    shift
+    THRESHOLD="0.02"
+    if [ $# -gt 0 ] && [ "${1#--}" = "$1" ]; then
+      THRESHOLD="$1"
+      shift
+    fi
+    # Remaining flags (--memory/--domain/--weight, #523) pass through to
+    # recommend.py verbatim.
+    python3 "$SCRIPT_DIR/lib/recommend.py" interest-match "$SCORED" "$THRESHOLD" "$@"
     ;;
   gap-detect)
     CONFIG="${1:-$ROOT/harness.config.json}"

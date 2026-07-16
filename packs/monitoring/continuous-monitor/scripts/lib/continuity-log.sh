@@ -12,7 +12,23 @@
 # Sourced, not executed: `. "$(dirname "$0")/lib/continuity-log.sh"`.
 set -uo pipefail
 
-# continuity_log_append <root> <topic> <run_id> <event_type> <source> <reason> [details-json]
+# monitoring_base_dir <root> <subject>
+# A topic's monitoring artifacts live under reports/<topic>/monitoring/; a
+# first-class monitoring domain's (#521 -- an id in monitoringDomains[],
+# decoupled from topics[]) under reports/_monitoring/<domain>/. The
+# distinction is config-driven, so every path-deriving caller (run dirs,
+# this log, the gate) agrees on one mapping.
+monitoring_base_dir() {
+  local root="$1" subject="$2"
+  local cfg="${HARNESS_CONFIG:-$root/harness.config.json}"
+  if jq -e --arg d "$subject" '(.monitoringDomains // [])[] | select(.id == $d)' "$cfg" >/dev/null 2>&1; then
+    printf '%s' "$root/reports/_monitoring/$subject"
+  else
+    printf '%s' "$root/reports/$subject/monitoring"
+  fi
+}
+
+# continuity_log_append <root> <subject> <run_id> <event_type> <source> <reason> [details-json]
 continuity_log_append() {
   local root="$1" topic="$2" run_id="$3" event_type="$4" src="$5" reason="$6"
   # NOT "${7:-{}}" -- nested braces in a parameter-expansion default value
@@ -20,7 +36,8 @@ continuity_log_append() {
   # instead of treating "{}" as the whole default), verified empirically.
   local details="${7:-}"
   [ -z "$details" ] && details="{}"
-  local log_dir="$root/reports/$topic/monitoring"
+  local log_dir
+  log_dir="$(monitoring_base_dir "$root" "$topic")"
   local log_file="$log_dir/continuity-log.jsonl"
   mkdir -p "$log_dir"
 
