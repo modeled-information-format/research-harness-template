@@ -16,7 +16,12 @@ _subdirectory: "."
 _exclude:
   - "copier.yml"
   - ".git"
-  - ".github/workflows/*"  # the template's own CI; instances opt in separately
+  - ".github/workflows/*"  # the template's own CI; instances opt in separately.
+                           # The continuous-monitor pack's workflows are NOT
+                           # lost to this exclude: their canonical sources ship
+                           # inside the pack (packs/monitoring/continuous-monitor/
+                           # workflows/) and `scripts/install-monitoring-workflows.sh`
+                           # materializes them into an instance (#517).
   - "node_modules"
   - "**/__pycache__"
   - "*.pyc"

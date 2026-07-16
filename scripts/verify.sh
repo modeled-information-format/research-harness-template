@@ -4456,10 +4456,51 @@ gate_is_template_guard_hygiene() {
   fi
 }
 
+gate_monitoring_workflow_sync() {
+  info "Monitoring workflows stay in sync with their pack sources (#517)"
+  # The continuous-monitor pack's GitHub Actions workflows ship as pack
+  # sources (packs/monitoring/continuous-monitor/workflows/, delivered by
+  # copier) and are materialized into .github/workflows/ by
+  # scripts/install-monitoring-workflows.sh — the template repo keeps live
+  # copies, an instance opts in. Wherever a live copy exists it must be
+  # byte-identical to its pack source: a drifted copy means a copier update
+  # changed the pack source and the install script wasn't re-run (or a live
+  # copy was hand-edited instead of fixing the pack source).
+  local src_dir="packs/monitoring/continuous-monitor/workflows"
+  if [ ! -d "$src_dir" ]; then
+    if [ "${IS_TEMPLATE:-0}" = 1 ]; then
+      bad "pack workflow sources missing at $src_dir"
+    else
+      ok "pack predates shipped workflow sources — nothing to verify"
+    fi
+    return
+  fi
+  local src name dest drift=0 missing_in_template=0
+  for src in "$src_dir"/*.yml; do
+    [ -e "$src" ] || continue
+    name="$(basename "$src")"
+    dest=".github/workflows/$name"
+    if [ -f "$dest" ]; then
+      if ! cmp -s "$src" "$dest"; then
+        bad "$dest differs from its pack source $src — run scripts/install-monitoring-workflows.sh (or fix the pack source, never the copy)"
+        drift=1
+      fi
+    elif [ "${IS_TEMPLATE:-0}" = 1 ]; then
+      # The template's own scheduled monitoring must stay live; an instance
+      # with no copy simply hasn't opted in, which is a valid state.
+      bad "template is missing live copy $dest of pack source $src"
+      missing_in_template=1
+    fi
+  done
+  if [ "$drift" -eq 0 ] && [ "$missing_in_template" -eq 0 ]; then
+    ok "every installed monitoring workflow is byte-identical to its pack source"
+  fi
+}
+
 # ---------------------------------------------------------------------------
 # Gate registry — each milestone appends its function name here.
 # ---------------------------------------------------------------------------
-GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18 gate_m19 gate_m20 gate_m21 gate_m22 gate_m23 gate_m24 gate_m25 gate_m26 gate_m27 gate_m28 gate_m29 gate_m30 gate_m31 gate_m32 gate_ontology_lock gate_versions gate_changelog_links gate_milestone_docs gate_is_template_guard_hygiene)
+GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18 gate_m19 gate_m20 gate_m21 gate_m22 gate_m23 gate_m24 gate_m25 gate_m26 gate_m27 gate_m28 gate_m29 gate_m30 gate_m31 gate_m32 gate_ontology_lock gate_versions gate_changelog_links gate_milestone_docs gate_is_template_guard_hygiene gate_monitoring_workflow_sync)
 
 for g in "${GATES[@]+"${GATES[@]}"}"; do "$g"; done
 

@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.4] - 2026-07-16
+
+### Fixed
+
+- **continuous-monitor's workflows are deliverable to copier instances**
+  (#517): `copier.yml` excludes `.github/workflows/*` wholesale, so no
+  instantiated clone could ever receive `monitor.yml`/`monitor-gate.yml` —
+  the pack's documented unattended production callers — and the how-to
+  documented commands that cannot work in an instance. The canonical
+  workflow sources now ship inside the pack
+  (`packs/monitoring/continuous-monitor/workflows/`, which copier delivers),
+  and the new `scripts/install-monitoring-workflows.sh` materializes them
+  into a clone's `.github/workflows/` as a documented, idempotent,
+  drift-aware opt-in (`--check` reports without writing; a disabled pack is
+  noted loudly, not silently). The how-to now walks instance owners through
+  the install step instead of asserting the workflows are already there.
+
+### Added
+
+- **`gate_monitoring_workflow_sync` in `verify.sh`**: every installed
+  monitoring workflow must be byte-identical to its pack source (the
+  template must always carry live copies; an instance without them simply
+  hasn't opted in), so a `copier update` that changes a pack workflow source
+  can't leave a stale installed copy behind silently.
+- **Workflow-install eval** (`evals/monitoring-workflow-install.sh`):
+  regression coverage for #517 against a throwaway fake-instance tree —
+  pack ships both sources; install is byte-identical, idempotent, and
+  drift-aware; the disabled-pack advisory is emitted.
+
 ## [0.15.3] - 2026-07-16
 
 ### Fixed

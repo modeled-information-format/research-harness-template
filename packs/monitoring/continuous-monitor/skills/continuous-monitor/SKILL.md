@@ -1,7 +1,7 @@
 ---
 name: continuous-monitor
 description: "Unattended, scheduled monitoring of external research sources (arXiv, OpenAlex, Crossref, Semantic Scholar, PubMed, bioRxiv/medRxiv, GDELT, Hacker News) for a topic, gated end to end through a mandatory human Editorial Gate before anything publishes. An OPTIONAL methodology pack (enable the `continuous-monitor` pack AND set `continuousMonitoring.enabled: true` on the topic). Use this skill when the user wants to enable, inspect, or manually run continuous research monitoring for a topic, review a monitoring run's candidate recommendations, or check the Continuity Log for a skipped/failed source. Triggers on 'continuous monitoring', 'monitor this topic', 'schedule research monitoring', 'check for new sources', 'run the monitoring pipeline', 'review monitoring recommendations'."
-version: 0.15.3
+version: 0.15.4
 argument-hint: "<topic-id> [<run-id>]"
 allowed-tools: Read, Bash, Glob, Grep
 ---
@@ -26,7 +26,12 @@ callers are `.github/workflows/monitor.yml` (Phase 1: run the pipeline, open a
 review PR) and `.github/workflows/monitor-gate.yml` (Phase 2: react to that PR
 closing, publish or reject) — both invoke this pack's `scripts/` directly by
 path, exactly the way `packs/channels/diataxis`'s `scripts/render-diataxis.sh`
-is invoked directly rather than through a chat turn. A pack's `scripts/`
+is invoked directly rather than through a chat turn. The canonical sources of
+those two workflows ship inside this pack (`workflows/`, delivered by copier —
+`.github/workflows/*` itself is copier-excluded, #517); an instantiated clone
+materializes them with `bash scripts/install-monitoring-workflows.sh`, and
+`verify.sh`'s `gate_monitoring_workflow_sync` keeps every installed copy
+byte-identical to its pack source. A pack's `scripts/`
 directory has always been callable this way; continuous monitoring is simply
 the first pack whose primary caller is unattended CI rather than a human
 prompt. This `SKILL.md` documents the same pipeline for interactive/manual use
