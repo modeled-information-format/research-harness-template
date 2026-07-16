@@ -31,7 +31,7 @@ RUN_ID="${2:?missing run-id}"
 # the fix for the exact architectural gap #483 flagged: a config flag that
 # didn't route through the packs[] control plane at all.
 CONFIG="${HARNESS_CONFIG:-$ROOT/harness.config.json}"
-PACK_ENABLED="$(jq -r '(.packs[] | select(.name == "continuous-monitor") | .enabled) // false' "$CONFIG")"
+PACK_ENABLED="$(jq -r 'any(.packs[]?; .name == "continuous-monitor" and .enabled == true)' "$CONFIG")"
 if [ "$PACK_ENABLED" != "true" ]; then
   echo "run-monitoring: the 'continuous-monitor' pack is not enabled in harness.config.json packs[] -- nothing to do" >&2
   exit 0

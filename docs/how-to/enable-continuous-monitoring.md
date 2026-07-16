@@ -2,7 +2,7 @@
 id: how-to-enable-continuous-monitoring
 type: procedural
 created: '2026-07-12T21:00:00Z'
-modified: '2026-07-16T16:11:38.874Z'
+modified: '2026-07-16T17:48:09.494Z'
 namespace: how-to/monitoring
 title: How to Enable Continuous Research Monitoring for a Topic
 tags:
@@ -101,10 +101,42 @@ ajv validate --spec=draft2020 --strict=false -c ajv-formats \
 
 Confirm it prints `harness.config.json valid`.
 
-## Step 3 — Commit and push
+## Step 3 — Install the monitoring workflows (instantiated clones)
+
+`copier.yml` excludes `.github/workflows/*` from instantiation, so an
+instantiated clone does **not** receive `monitor.yml`/`monitor-gate.yml`
+automatically (#517). The canonical workflow sources ship with the pack;
+materialize them into your clone's `.github/workflows/`:
 
 ```bash
-git add harness.config.json
+bash scripts/install-monitoring-workflows.sh
+```
+
+Re-run it after any `copier update` (it is idempotent; `--check` reports
+drift without writing — `verify.sh`'s `gate_monitoring_workflow_sync` fails
+if an installed copy drifts from its pack source). The template repo itself
+already carries live copies; this step is a no-op there.
+
+To deliberately customize an installed copy (e.g. a different cron cadence),
+add a `# harness-workflow: unmanaged` comment to it: the installer then
+leaves that file alone and the sync gate waives byte-identity for it — you
+own keeping the fork current from then on.
+
+**Authentication prerequisite.** Both workflows mint a short-lived GitHub
+App installation token from the Actions variable `AUTOMERGE_CLIENT_APP_ID`
+and secret `AUTOMERGE_CLIENT_APP_PRIVATE_KEY`, scoped to the current
+repository with `contents: write` (+ `pull-requests: write` in Phase 1).
+Repositories inside the `modeled-information-format` org inherit both from
+the org level already. An instance **outside** the org must provide its own:
+create a GitHub App with those two repository permissions, install it on the
+instance repo, and set the variable/secret (repo or org level) to your app's
+client id and private key — or adapt the two `Mint an app token` steps to
+your own token source before relying on the unattended path.
+
+## Step 4 — Commit and push
+
+```bash
+git add harness.config.json .github/workflows/monitor.yml .github/workflows/monitor-gate.yml
 git commit -m "feat: enable continuous monitoring for <your-topic-id>"
 git push
 ```
@@ -116,14 +148,14 @@ topic on its next scheduled run, or trigger it immediately:
 gh workflow run continuous-monitoring --field topic=<your-topic-id>
 ```
 
-## Step 4 — Review the pull request it opens
+## Step 5 — Review the pull request it opens
 
 Each run that produces at least one candidate opens one pull request
 titled `monitor(<topic>): N candidate recommendation(s) for review`,
 listing every candidate with its mode (`interest-match` or `gap-detect`)
 and score. Read the list.
 
-## Step 5 — Accept or reject the batch
+## Step 6 — Accept or reject the batch
 
 - **Merge the pull request** to accept every recommendation in it.
   `interest-match` recommendations publish as real findings under
@@ -137,7 +169,7 @@ and score. Read the list.
   Every recommendation is recorded in
   `reports/<topic>/monitoring/continuity-log.jsonl`.
 
-## Step 6 — Check the Continuity Log for a skipped or failed source
+## Step 7 — Check the Continuity Log for a skipped or failed source
 
 ```bash
 jq -c 'select(.event_type != "gate_rejected")' \

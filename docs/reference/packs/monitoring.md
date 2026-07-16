@@ -2,7 +2,7 @@
 id: reference-packs-monitoring
 type: semantic
 created: '2026-07-14T02:24:39.962Z'
-modified: '2026-07-16T16:11:22.008Z'
+modified: '2026-07-16T17:19:31.490Z'
 namespace: docs/reference/packs
 tags:
   - documentation
@@ -50,13 +50,21 @@ pack's `SKILL.md` documents the identical pipeline for interactive/manual invoca
 inspecting a run, re-triggering it by hand, debugging a stuck topic — it is not a second
 implementation.
 
+**Workflow delivery to instances (research-harness-template#517).** `copier.yml`
+excludes `.github/workflows/*`, so an instantiated clone does not receive the two
+workflows automatically. Their canonical sources ship inside the pack
+(`packs/monitoring/continuous-monitor/workflows/`);
+`bash scripts/install-monitoring-workflows.sh` materializes them into a clone's
+`.github/workflows/`, and `verify.sh`'s `gate_monitoring_workflow_sync` holds every
+installed copy byte-identical to its pack source.
+
 For control-plane mechanics see [Packs and Plugins](../packs-and-plugins.md).
 
 ---
 
 ## continuous-monitor
 
-**Version:** 0.15.3 | **Kind:** methodology
+**Version:** 0.15.4 | **Kind:** methodology
 
 **Source:** [`packs/monitoring/continuous-monitor/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/monitoring/continuous-monitor)
 
@@ -85,7 +93,7 @@ before it becomes a real finding.
 | Orchestration (Phase 1) | `scripts/run-monitoring.sh` | Checks both enablement gates (below), runs Source Connectors under budget, rebuilds concordance/index, scores, writes `recommendations.json`. |
 | Budget enforcement | `scripts/run-with-budget.sh` | Wraps one connector in a hard `timeout`; fails closed, logs to the Continuity Log. |
 | Source Connectors | `scripts/connectors/{arxiv,openalex,crossref,semantic-scholar,pubmed,biorxiv,gdelt,hn}.sh` | Eight keyless clients (documented per-source in [dependencies.md](../dependencies.md#continuous-monitoring-source-apis-optional)). |
-| Scoring | `scripts/interest-inference.sh` | Scores candidates against `reports/concordance.json`, TF-IDF fallback for uncovered topics. |
+| Scoring | `scripts/interest-inference.sh` | Scores candidates against the monitored topic's own concordance nodes (`--topic`, #514) plus the topic's queryTerms as a first-class signal; TF-IDF fallback for uncovered topics. |
 | Ranking | `scripts/recommend.sh` | `interest-match` and `gap-detect` modes; every recommendation carries at least one MIF citation (NFR5), enforced in code. |
 | Editorial Gate | `scripts/editorial-gate.sh` | Splits recommendations into accepted/rejected per an explicit decisions map; fail-safe default (no decision = rejected). |
 | Publish | `scripts/output-router.sh` | Hands accepted recommendations to `scripts/write-finding.sh`/`scripts/check-citation-integrity.sh` unmodified; `gap-detect` suggestions go to `reports/<topic>/monitoring/recommended-research-areas.jsonl` instead. |

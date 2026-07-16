@@ -328,6 +328,12 @@ run "monitoring-relevance" bash evals/monitoring-relevance.sh
 # rate-limit notice detection.
 run "monitoring-query-construction" bash evals/monitoring-query-construction.sh
 
+# Monitoring workflow delivery (#517): the pack ships monitor.yml/
+# monitor-gate.yml as pack sources and install-monitoring-workflows.sh
+# materializes them into .github/workflows/ — idempotent, drift-aware
+# (--check fails on a changed source), loud when the pack is disabled.
+run "monitoring-workflow-install" bash evals/monitoring-workflow-install.sh
+
 # 7. Progress-log markdownlint conformance (issue #85 Defect 2): a multi-session
 #    research-progress.md built per orchestrator.md's template — one H1 (file
 #    creation only) + date-qualified per-session H2s — lints clean, while each old

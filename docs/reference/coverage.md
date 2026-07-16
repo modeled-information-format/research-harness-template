@@ -2,7 +2,7 @@
 id: reference-coverage
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-14T02:29:28.000Z'
+modified: '2026-07-16T17:30:16.018Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -16,12 +16,12 @@ temporal:
   recordedAt: '2026-06-24T10:25:46-04:00'
 provenance:
   '@type': Provenance
-  agent: claude-code/claude-sonnet-5
+  agent: claude-code/claude-fable-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:878c53f7-09b4-4f64-bb13-e210d7c2f073
+    '@id': urn:mif:activity:claude-code-session:ea77f44f-898f-452b-97c5-a752ed5af5a0
     '@type': prov:Activity
   trustLevel: user_stated
-  agentVersion: 2.1.207
+  agentVersion: 2.1.211
 ---
 
 # Reference: documentation coverage
@@ -39,8 +39,8 @@ the **discovered** set equals the **documented** set.
 | Core skills | 10 | 10 | `.claude/skills/*/SKILL.md` |
 | Commands | 11 | 11 | `.claude/commands/*.md` |
 | Agents | 7 | 7 | `.claude/agents/*.md` |
-| Scripts | 52 | 52 | `scripts/**` (excludes `__pycache__`); the 24 scripts Epic #416 added moved to `packs/monitoring/continuous-monitor/scripts/**` (research-harness-template#483) and are documented in [packs/monitoring.md](packs/monitoring.md), not counted here |
-| **Total** | **143** | **143** | — |
+| Scripts | 53 | 53 | `scripts/**` (excludes `__pycache__`); the 24 scripts Epic #416 added moved to `packs/monitoring/continuous-monitor/scripts/**` (research-harness-template#483) and are documented in [packs/monitoring.md](packs/monitoring.md), not counted here |
+| **Total** | **144** | **144** | — |
 
 Reproduce the discovered counts:
 
@@ -154,7 +154,7 @@ All documented in [agents.md](agents.md): `orchestrator`, `dimension-analyst`,
 `falsification-analyst`, `report-synthesizer`, `corpus-synthesizer`,
 `harness-configurator`, `source-chunker`.
 
-## Scripts (52)
+## Scripts (53)
 
 All documented in [scripts.md](scripts.md):
 `assert-graph-mif`,
@@ -165,6 +165,7 @@ All documented in [scripts.md](scripts.md):
 `check-shippable-typing`, `check-version-bump`, `codegen/bundle_schema.py`,
 `codegen/gen-models`, `falsify`, `fetch-engine`, `fetch-mif-docs-plugin`,
 `fetch-ontology`, `goal-version`, `import-corpus`, `install-hooks`,
+`install-monitoring-workflows`,
 `lib/container-lock`, `lib/engine`, `mif-container-detect-sameas`,
 `mif-container-digest`, `mif-container-export`, `mif-container-import`,
 `mif-container-migration-eval-bench`, `mif-container-resolve-scope`,
@@ -182,5 +183,5 @@ rather than counted in this core-scripts inventory, the same way
 
 ## Assertion
 
-Discovered (143) equals documented (143) across all five categories. No pack,
+Discovered (144) equals documented (144) across all five categories. No pack,
 skill, command, agent, or script is omitted.
