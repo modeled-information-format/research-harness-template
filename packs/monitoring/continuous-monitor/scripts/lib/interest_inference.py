@@ -209,6 +209,18 @@ def main():
                 "matched_terms": matched_terms,
             }
         else:
+            # Fallback noise floor (#518 live-acceptance finding): the same
+            # rationale as MIN_LABEL_OVERLAP above -- a single shared common
+            # token (e.g. "notes" in a release-notes tool matching a
+            # "git notes" domain) is noise, not a relevance signal, yet its
+            # TF-IDF alone can clear the default recommendation threshold.
+            # A candidate that fully matched any term/node never reaches
+            # this branch, so requiring at least two distinct query tokens
+            # here cannot demote a genuinely matching candidate.
+            query_tokens = {tok for term in query_terms for tok in tokenize(term)}
+            distinct_hits = len(query_tokens & set(tokens))
+            if distinct_hits < MIN_LABEL_OVERLAP:
+                tfidf_score = 0.0
             inference = {
                 "method": "tfidf-fallback",
                 "score": round(tfidf_score, 4),

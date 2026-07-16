@@ -51,7 +51,10 @@ bash "$PACK/scripts/recommend.sh" interest-match "$TMP/scored.json" 0.02 \
 REC_IDS="$(jq -r '[.[].id] | sort | join(",")' "$TMP/recs.json")"
 
 # 1. Zero known-irrelevant recommended.
-for bad in I1-hopf I2-neutron I3-earthquake I4-farm I5-poetry; do
+# I6-fieldnotes shares exactly ONE query token ("notes") -- the
+# tfidf-fallback noise floor (live-acceptance finding on Epic #518) must
+# keep it below the default threshold.
+for bad in I1-hopf I2-neutron I3-earthquake I4-farm I5-poetry I6-fieldnotes; do
   if jq -e --arg id "$bad" 'any(.[]; .id == $id)' "$TMP/recs.json" >/dev/null; then
     note "known-irrelevant candidate '$bad' was recommended (recommended: $REC_IDS)"
     fail=1
