@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.4] - 2026-07-17
+
+### Fixed
+
+- **`release.yml` no longer uploads to a release after it is published**
+  (#537): the workflow now triggers on the `vX.Y.Z` tag push itself, builds
+  and attests the tarball, fail-closed re-verifies the attestation, and
+  creates the GitHub Release with the attested tarball attached in the same
+  `gh release create` call — never a separate post-publish upload, which
+  GitHub immutable releases reject outright (HTTP 422) and which previously
+  burned a release tag (v0.8.0 → v0.8.1). Added
+  `evals/release-workflow-immutable-safe.sh` as a permanent regression test.
+
 ## [0.16.3] - 2026-07-16
 
 ### Added
