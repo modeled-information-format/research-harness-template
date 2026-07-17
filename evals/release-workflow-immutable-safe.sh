@@ -28,9 +28,32 @@ if [ ! -f "$WF" ]; then
   exit 1
 fi
 
-# 1. Tag-push trigger present (a `tags:` key under the `on:` block).
-if ! grep -qE '^\s*tags:' "$WF"; then
-  echo "FAIL: ${WF} has no 'tags:' trigger — the release must fire on the tag push itself, not on 'release: published'"
+# 1. Tag-push trigger present: a `tags:` key nested under `on: push:`
+#    specifically — not just any `tags:` line anywhere in the file (e.g. an
+#    unrelated job-level key or a future comment), which would let this
+#    check pass even if the workflow stopped triggering on tag pushes.
+#    Plain-POSIX awk only (no \s, no gensub — this must run under macOS's
+#    BSD awk as well as gawk).
+on_block=$(awk '
+  /^on:/ { capture=1; next }
+  capture && /^[A-Za-z_-]+:/ { exit }
+  capture { print }
+' "$WF")
+
+if ! printf '%s\n' "$on_block" | awk '
+  function indent(line,    i) {
+    i = 0
+    while (i < length(line) && substr(line, i + 1, 1) == " ") i++
+    return i
+  }
+  {
+    if (!in_push && match($0, /^ *push:/)) { in_push = 1; push_indent = indent($0); next }
+    if (in_push && $0 !~ /^[ ]*$/ && indent($0) <= push_indent) { in_push = 0 }
+    if (in_push && match($0, /^ *tags:/)) { found = 1 }
+  }
+  END { exit !found }
+'; then
+  echo "FAIL: ${WF} has no 'tags:' key nested under 'on: push:' — the release must fire on the tag push itself, not on 'release: published'"
   fail=1
 fi
 
