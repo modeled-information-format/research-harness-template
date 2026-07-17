@@ -230,8 +230,12 @@ def acquire_fix_lock(abspath):
             return None
         try:
             age = time.time() - os.stat(lock).st_mtime
+        except FileNotFoundError:
+            # Holder released the lock between our mkdir attempt and this stat;
+            # retry immediately (skip the poll sleep) -- the next mkdir likely wins.
+            continue
         except OSError:
-            age = 0  # holder released between mkdir and stat; retry immediately
+            age = 0  # unexpected stat error; fall through to the bounded wait
         if age > LOCK_STALE_SEC:
             # Stale marker from a crashed holder -- remove it and re-acquire
             # through the SAME atomic mkdir, so two stealers cannot both win.
