@@ -217,10 +217,16 @@ must merge cleanly.
   because a bumped-but-not-yet-tagged section has no link yet (CHANGELOG.md's
   normal resting state between releases) — so it can run as a required check
   without going red on `main` after every ordinary version bump.
-- **Releases are GitHub-Release-driven, not bare-tag.** `release.yml` triggers on
-  `release: published` (+ `workflow_dispatch`), so a published Release named
-  `vX.Y.Z` is what fires SLSA attestation — `git push --tags` alone does not.
-  Land the bump on `main` first, then publish the `vX.Y.Z` Release at that commit.
+- **Releases are TAG-driven, not GitHub-Release-driven** (#537). `release.yml`
+  triggers on a `vX.Y.Z` tag push (+ `workflow_dispatch` for a dry run): it
+  builds and attests the tarball, fail-closed re-verifies the attestation, and
+  only then creates the GitHub Release with the attested tarball attached in
+  the same `gh release create` call — never a separate post-publish upload,
+  which GitHub immutable releases reject outright (this was the pre-#537
+  failure mode: `gh release upload` after the release already existed 422'd,
+  and deleting the immutable release to retry burned the tag). Land the bump on
+  `main` first, then push the tag (`git tag vX.Y.Z && git push origin vX.Y.Z`)
+  — the workflow creates the Release itself, do not create it by hand first.
 - **Ephemeral artifacts go to `mktemp` outside the tree**, never into `reports/`.
   Only tracked data artifacts (findings, `knowledge-graph.json`,
   `concordance.json`, maps) belong in `reports/`. Writing derived output in-repo
