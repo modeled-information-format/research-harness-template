@@ -40,14 +40,37 @@ STAGE_DIR="$(mktemp -d "$FDIR/.wf-staging-XXXXXX")" || {
 }
 STAGE="$STAGE_DIR/$NAME"
 cp "$SRC" "$STAGE"
-if ! ajv validate --spec=draft2020 --strict=false -c ajv-formats \
-      -s "$ROOT/schemas/findings.schema.json" \
-      -r "$ROOT/schemas/mif/mif.schema.json" \
-      -r "$ROOT/schemas/mif/definitions/entity-reference.schema.json" \
-      -d "$STAGE" >/dev/null 2>&1; then
+
+# The -s/-r set below is the COMPLETE recursive $ref closure — audited in
+# issue #511: findings.schema.json -> https://mif-spec.dev/schema/mif.schema.json ->
+# ./definitions/entity-reference.schema.json -> (no refs); every other $ref is
+# internal (#/$defs/...). With all three registered ajv never attempts network
+# resolution — an unresolved $ref would otherwise send it to the network, which
+# hangs forever in a no-egress sandbox. If a $ref is ever added to any of these
+# schemas, extend this list AND dimension-analyst.md's Step 5 invocation — the
+# two must stay in agreement. The per-call timeout is the belt-and-braces hang
+# guard on top: `timeout` is GNU coreutils (Linux/CI); stock macOS lacks it but
+# Homebrew coreutils ships it as `gtimeout`; with neither on PATH, run
+# unwrapped but warn — degraded, not silent.
+TMO=""
+if command -v timeout >/dev/null 2>&1; then TMO="timeout 30"
+elif command -v gtimeout >/dev/null 2>&1; then TMO="gtimeout 30"
+else echo "write-finding: WARN: no timeout/gtimeout on PATH -- ajv validation runs unbounded" >&2
+fi
+$TMO ajv validate --spec=draft2020 --strict=false -c ajv-formats \
+  -s "$ROOT/schemas/findings.schema.json" \
+  -r "$ROOT/schemas/mif/mif.schema.json" \
+  -r "$ROOT/schemas/mif/definitions/entity-reference.schema.json" \
+  -d "$STAGE" >/dev/null 2>&1
+AJV_RC=$?
+if [ "$AJV_RC" -ne 0 ]; then
   rm -f "$STAGE"
   rmdir "$STAGE_DIR" 2>/dev/null
-  echo "write-finding: $NAME does NOT validate — refused; nothing written to $FDIR" >&2
+  if [ "$AJV_RC" -eq 124 ]; then
+    echo "write-finding: validating $NAME TIMED OUT after 30s (hang guard, issue #511) — refused; nothing written to $FDIR" >&2
+  else
+    echo "write-finding: $NAME does NOT validate — refused; nothing written to $FDIR" >&2
+  fi
   exit 1
 fi
 
