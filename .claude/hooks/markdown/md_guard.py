@@ -2,9 +2,11 @@
 """Markdown lint anti-evasion hook for the research harness.
 
 Invoked by Claude Code hooks as:  md_guard.py {pre|post|stop}
-Reads the hook event JSON on stdin, emits hook JSON on stdout, always exits 0
+Reads the hook event JSON on stdin, emits hook JSON on stdout, and exits 0
 (deny is expressed via JSON, not exit code, so the workflow is never broken by
-an internal error).
+an internal error) -- with ONE deliberate exception: if a `--fix` pass corrupts
+a file's YAML frontmatter (issue #510), `post` restores the pre-fix content and
+exits 2 so the corruption is loud, never a silent success.
 
 Behavior:
   pre   Hard-deny (PreToolUse permissionDecision=deny) the cheap suppression
@@ -26,10 +28,13 @@ it) plus emitting conformant Markdown at the source (orchestrator.md progress-lo
 template). This hook is intentionally not re-architected to sweep Bash-written files.
 """
 
+import hashlib
 import json
 import os
 import re
+import shutil
 import sys
+import time
 
 from md_lint_core import (
     MD_CONFIG_RE,
@@ -41,7 +46,9 @@ from md_lint_core import (
 )
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-STATE_DIR = os.path.join(SCRIPT_DIR, "state")
+# Overridable so the eval suite (evals/md-guard-fix-lock.sh) can isolate its
+# lock/state writes from a real session's state directory.
+STATE_DIR = os.environ.get("MD_GUARD_STATE_DIR") or os.path.join(SCRIPT_DIR, "state")
 
 # A markdownlint/prettier suppression directive inside a LIVE HTML comment:
 # markdownlint-disable / -disable-line / -disable-next-line / -disable-file /
@@ -161,6 +168,165 @@ def record_touched(session_id, abspath):
 
 
 # --------------------------------------------------------------------------- #
+# Serialized, corruption-guarded `--fix` (issue #510)
+#
+# Parallel Edit batches fire concurrent PostToolUse hook chains against the SAME
+# file; `markdownlint-cli2 --fix` is a read-modify-write, so two unserialized
+# passes race and can corrupt the file (observed: YAML frontmatter wrapped in an
+# HTML comment) while every hook reports success. Mirror of scripts/run-lock.sh:
+# the lock is a DIRECTORY (mkdir is an atomic test-and-set across processes;
+# touch is not), keyed on the sha256 of the absolute path; freshness is the
+# directory's mtime; an `owner` file records a human-readable label; a stale
+# lock (crashed holder) is stolen through the same atomic mkdir so two stealers
+# cannot both win. The wait is BOUNDED: a holder runs `--fix` for at most
+# run_lint's 30s subprocess timeout, and this hook's own PostToolUse timeout is
+# 45s, so on timeout the fix is SKIPPED (never raced) -- the concurrent holder
+# is fixing the very same file, and the Stop sweep re-fixes it anyway.
+# --------------------------------------------------------------------------- #
+def _lock_seconds(env_var, default):
+    """Sanitize an env-tunable seconds value (run-lock.sh sanitize_minutes)."""
+    raw = os.environ.get(env_var, "")
+    try:
+        val = float(raw)
+    except (TypeError, ValueError):
+        return default
+    return val if val > 0 else default
+
+
+LOCK_WAIT_SEC = _lock_seconds("MD_GUARD_LOCK_WAIT_SEC", 10)
+LOCK_STALE_SEC = _lock_seconds("MD_GUARD_LOCK_STALE_SEC", 120)
+LOCK_POLL_SEC = 0.1
+
+
+def fix_lock_dir(abspath):
+    digest = hashlib.sha256(abspath.encode("utf-8")).hexdigest()[:16]
+    return os.path.join(STATE_DIR, "fix-lock-" + digest)
+
+
+def acquire_fix_lock(abspath):
+    """Acquire the per-file fix lock. Returns the lock path, or None on timeout.
+
+    Fail SAFE like run-lock.sh: on an unexpected OS error, return None (the
+    caller skips the fix) rather than proceed unlocked and risk racing.
+    """
+    lock = fix_lock_dir(abspath)
+    try:
+        os.makedirs(STATE_DIR, exist_ok=True)
+    except OSError:
+        return None
+    deadline = time.monotonic() + LOCK_WAIT_SEC
+    while True:
+        try:
+            os.mkdir(lock)  # atomic: succeeds only if no holder existed
+            try:
+                with open(os.path.join(lock, "owner"), "w", encoding="utf-8") as fh:
+                    fh.write("md_guard pid %d\n" % os.getpid())
+            except OSError:
+                pass
+            return lock
+        except FileExistsError:
+            pass
+        except OSError:
+            return None
+        try:
+            age = time.time() - os.stat(lock).st_mtime
+        except FileNotFoundError:
+            # Holder released the lock between our mkdir attempt and this stat;
+            # retry immediately (skip the poll sleep) -- the next mkdir likely wins.
+            continue
+        except OSError:
+            age = 0  # unexpected stat error; fall through to the bounded wait
+        if age > LOCK_STALE_SEC:
+            # Stale marker from a crashed holder -- remove it and re-acquire
+            # through the SAME atomic mkdir, so two stealers cannot both win.
+            shutil.rmtree(lock, ignore_errors=True)
+            continue
+        if time.monotonic() >= deadline:
+            return None
+        time.sleep(LOCK_POLL_SEC)
+
+
+def release_fix_lock(lock):
+    shutil.rmtree(lock, ignore_errors=True)
+
+
+def run_fix_serialized(abspath):
+    """Run `markdownlint-cli2 --fix` on one file, serialized and sanity-checked.
+
+    Returns (rc, diag, err) where err is None on the normal path, or a dict
+    {"kind": "lock"|"corrupt", "msg": ...}:
+      lock     the per-file lock could not be acquired within the bounded wait;
+               the fix was SKIPPED (never run concurrently).
+      corrupt  the file started with "---" (YAML frontmatter) before the fix
+               and no longer did after it; the pre-fix content was RESTORED and
+               the corrupted output kept aside under state/ for forensics.
+    """
+    lock = acquire_fix_lock(abspath)
+    if lock is None:
+        return None, "", {
+            "kind": "lock",
+            "msg": "md_guard: skipped `markdownlint-cli2 --fix` on "
+            + os.path.basename(abspath)
+            + " -- another hook holds its fix lock (concurrent edit batch) and "
+            "it stayed held past the bounded wait. Not raced; the holder is "
+            "fixing this same file, and the session-end sweep re-fixes it.",
+        }
+    try:
+        try:
+            with open(abspath, "rb") as fh:
+                before = fh.read()
+        except OSError:
+            before = None
+        rc, diag = run_lint(abspath, fix=True)
+        if before is not None and before.startswith(b"---"):
+            try:
+                with open(abspath, "rb") as fh:
+                    after = fh.read()
+            except OSError:
+                after = None
+            if after is None or not after.startswith(b"---"):
+                kept = os.path.join(
+                    STATE_DIR,
+                    "corrupt-%s-%d.md"
+                    % (
+                        hashlib.sha256(abspath.encode("utf-8")).hexdigest()[:16],
+                        int(time.time()),
+                    ),
+                )
+                try:
+                    with open(kept, "wb") as fh:
+                        fh.write(after or b"")
+                except OSError:
+                    kept = "(could not be saved)"
+                restored = True
+                try:
+                    with open(abspath, "wb") as fh:
+                        fh.write(before)
+                except OSError:
+                    restored = False
+                return rc, diag, {
+                    "kind": "corrupt",
+                    "msg": "md_guard: `markdownlint-cli2 --fix` CORRUPTED "
+                    + abspath
+                    + " -- the file started with YAML frontmatter (\"---\") "
+                    "before the fix and no longer did after it (issue #510). "
+                    + (
+                        "The pre-fix content has been RESTORED."
+                        if restored
+                        else "RESTORING the pre-fix content FAILED -- the file "
+                        "on disk is the corrupted output; recover it by hand."
+                    )
+                    + " Corrupted output kept at: "
+                    + kept
+                    + ". Do NOT treat this edit as successfully linted -- "
+                    "inspect the file before continuing.",
+                }
+        return rc, diag, None
+    finally:
+        release_fix_lock(lock)
+
+
+# --------------------------------------------------------------------------- #
 # Events
 # --------------------------------------------------------------------------- #
 def do_pre(path, tool_input):
@@ -225,8 +391,17 @@ def do_post(path, tool_input, session_id):
 
     # One pass: `--fix` auto-corrects fixable issues AND reports the residual
     # (un-fixable) violations it leaves behind, so a second lint is redundant.
-    rc, diag = run_lint(abspath, fix=True)
+    # Serialized per file + frontmatter-corruption guard (issue #510).
+    rc, diag, err = run_fix_serialized(abspath)
     record_touched(session_id, abspath)
+    if err is not None and err["kind"] == "corrupt":
+        # Loud, blocking failure: exit 2 feeds stderr back to the agent. The
+        # hook must never silently succeed on a file it may have corrupted.
+        sys.stderr.write(err["msg"] + "\n")
+        return 2
+    if err is not None:  # lock timeout: fix skipped, warn non-blocking
+        context("PostToolUse", err["msg"])
+        return 0
     if rc not in (0, None) and diag.strip():
         context(
             "PostToolUse",
@@ -235,6 +410,7 @@ def do_post(path, tool_input, session_id):
             + ". These issues remain and must be CORRECTED, not suppressed:\n"
             + trim_diag(diag),
         )
+    return 0
 
 
 def do_stop(session_id):
@@ -257,8 +433,13 @@ def do_stop(session_id):
         if not os.path.exists(f):
             continue
         # One pass: `--fix` corrects and reports the residual (see do_post).
-        rc, diag = run_lint(f, fix=True)
-        if rc not in (0, None) and diag.strip():
+        # Same per-file lock + corruption guard as do_post (issue #510); the
+        # stop sweep stays warn-only, so a guard trip is reported via the
+        # systemMessage below rather than a non-zero exit.
+        rc, diag, err = run_fix_serialized(f)
+        if err is not None:
+            residuals.append((f, err["msg"]))
+        elif rc not in (0, None) and diag.strip():
             residuals.append((f, trim_diag(diag)))
 
     if residuals:
@@ -303,11 +484,13 @@ def do_bash(command):
 
 # --------------------------------------------------------------------------- #
 def main():
+    """Dispatch the event. Returns the process exit code (0 unless `post`
+    detected --fix corruption, the one loud non-zero path -- see module doc)."""
     event = sys.argv[1] if len(sys.argv) > 1 else ""
     try:
         data = json.load(sys.stdin)
     except (json.JSONDecodeError, ValueError):
-        return
+        return 0
     tool_input = data.get("tool_input") or {}
     path = file_path_of(tool_input)
     session_id = data.get("session_id") or "session"
@@ -315,16 +498,19 @@ def main():
     if event == "pre":
         do_pre(path, tool_input)
     elif event == "post":
-        do_post(path, tool_input, session_id)
+        return do_post(path, tool_input, session_id) or 0
     elif event == "stop":
         do_stop(session_id)
     elif event == "bash":
         do_bash(tool_input.get("command", ""))
+    return 0
 
 
 if __name__ == "__main__":
+    rc = 0
     try:
-        main()
-    except Exception as exc:  # never break the workflow
+        rc = main() or 0
+    except Exception as exc:  # internal errors never break the workflow
         sys.stderr.write("md_guard: internal error: %r\n" % (exc,))
-    sys.exit(0)
+        rc = 0
+    sys.exit(rc)

@@ -69,7 +69,12 @@ run "update-provenance-gate" bash evals/update-provenance.sh
 #     a shell-assignment prefix on the same line (issue #356).
 run "guard-falsify-gate" bash evals/guard-falsify-gate.sh
 
-# 1e. falsification-analyst.md's documented bounded-summary-qualifier algorithm
+# 1e. md_guard.py's PostToolUse `--fix` must be serialized per file (mkdir
+#     lock, bounded wait, stale-steal) and must restore + exit non-zero when a
+#     fix pass destroys a file's YAML frontmatter (issue #510).
+run "md-guard-fix-lock" bash evals/md-guard-fix-lock.sh
+
+# 1f. falsification-analyst.md's documented bounded-summary-qualifier algorithm
 #     (#503/#504) must actually hold the 500-char schemas/mif/mif.schema.json
 #     summary cap across a range of summary/verdict_basis lengths, and never
 #     silently drop the qualifier to make room.
