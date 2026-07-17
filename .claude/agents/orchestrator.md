@@ -552,7 +552,7 @@ jq -s --arg d "$d" '
   [ .[] | select(.extensions.harness.dimension==$d) ] as $fs
   | [ range(0; $fs|length) as $i | range($i+1; $fs|length) as $j
       | {a: $fs[$i]["@id"], b: $fs[$j]["@id"],
-         shared_tags:  ([$fs[$i].tags[]]           - ([$fs[$i].tags[]]           - [$fs[$j].tags[]])),
+         shared_tags:  ([$fs[$i].tags[]?]          - ([$fs[$i].tags[]?]          - [$fs[$j].tags[]?])),
          shared_cites: ([$fs[$i].citations[].url] - ([$fs[$i].citations[].url] - [$fs[$j].citations[].url]))}
       | select((.shared_tags|length) >= 2 or (.shared_cites|length) >= 1) ]
 ' "$REPORTS_DIR"/findings/*.json
