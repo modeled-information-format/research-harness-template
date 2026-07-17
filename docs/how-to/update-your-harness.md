@@ -32,7 +32,7 @@ source.
 - A **clean work tree** — commit or stash local changes first (`copier update`
   re-applies a diff and needs a clean tree).
 - The upstream publishes an attested release (the template's `release.yml` does
-  this automatically on every published release).
+  this automatically on every version-tag push).
 
 ## Update
 
