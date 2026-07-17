@@ -41,8 +41,8 @@ STAGE_DIR="$(mktemp -d "$FDIR/.wf-staging-XXXXXX")" || {
 STAGE="$STAGE_DIR/$NAME"
 cp "$SRC" "$STAGE"
 
-# The -s/-r set below is the COMPLETE recursive $ref closure — audited (issue
-# #511): findings.schema.json -> https://mif-spec.dev/schema/mif.schema.json ->
+# The -s/-r set below is the COMPLETE recursive $ref closure — audited in
+# issue #511: findings.schema.json -> https://mif-spec.dev/schema/mif.schema.json ->
 # ./definitions/entity-reference.schema.json -> (no refs); every other $ref is
 # internal (#/$defs/...). With all three registered ajv never attempts network
 # resolution — an unresolved $ref would otherwise send it to the network, which

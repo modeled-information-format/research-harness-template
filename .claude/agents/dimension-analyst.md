@@ -304,8 +304,12 @@ the network, and in a no-egress sandbox that fetch hangs forever instead of
 failing fast (issue #511: a staged-findings validation loop validated 1 of 17
 files and then sat silent past the tool-call timeout, burning the whole
 dimension pass). Never improvise a different `-s`/`-r` combination than the one
-below — validating with `-s schemas/mif/mif.schema.json` while omitting it from
-`-r` (the #511 loop's shape) leaves `$ref`s resolvable only over the network:
+below — the hazard is any `$ref` whose target schema is not registered locally:
+`findings.schema.json` references the remote `$id`
+`https://mif-spec.dev/schema/mif.schema.json`, so an invocation that does not
+also register the local `schemas/mif/mif.schema.json` copy (which carries that
+`$id`) via `-r` leaves the `$ref` resolvable only over the network — the #511
+loop hung on exactly this incomplete-closure shape:
 
 ```bash
 # The -s/-r set below is the COMPLETE recursive $ref closure — audited:
