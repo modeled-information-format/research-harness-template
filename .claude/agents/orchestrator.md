@@ -20,6 +20,7 @@ tools:
   - TaskCreate
   - TaskGet
   - TaskList
+  - TaskStop
   - TaskUpdate
   - Write
 ---
@@ -310,6 +311,12 @@ dimension when none is named), running at most `MAX_CONCURRENCY` at a time:
    )
    ```
 
+   **Capture the background task id each backgrounded `Agent` call returns.**
+   It is the handle `TaskStop` needs if this analyst later stalls and must be
+   cancelled before a retry (see the reap step below) — without it there is no
+   way to kill a presumed-dead analyst, and it can resurrect as a second live
+   writer for its dimension.
+
    **Heartbeat — append a coarse Phase 1 marker to `research-progress.md`
    immediately after spawning the first batch** (before waiting on returns), so a
    supervising session has a progress signal between `Session Initialized` and
@@ -389,8 +396,31 @@ for d in $WORK_DIMS; do
 done
 ```
 
+- **Cancel before you retry — at most ONE live writer per dimension.** A stalled
+  analyst is *presumed* dead, not proven dead: the no-growth poll above cannot
+  distinguish a crashed sub-agent from one that is merely wedged and may resume.
+  If the platform exposes a cancel/kill for background subagent tasks
+  (`TaskStop` in this harness), the retry path MUST attempt it on the stalled
+  analyst's background task id (captured at spawn, step 2) before re-spawning.
+  A failed or unavailable cancel does not block the retry — but the original
+  must then be treated as possibly still alive, which is exactly what the
+  Phase 2 reconciliation below exists for.
 - **Retry** each failed dimension by re-spawning its analyst (a fresh sub-agent clears a
-  transient or per-sub-agent rate-limit), up to **2** retries per dimension.
+  transient or per-sub-agent rate-limit), up to **2** retries per dimension. Track every
+  dimension retried for a stall — `RETRIED_DIMS="$RETRIED_DIMS $d"` — along with the retry
+  analyst's reported `finding_count` and whether the cancel succeeded, and record them in
+  `research-progress.md`; the Phase 2 zombie re-check reads this set.
+- **Zombie resurrection (issue #512) — why the cancel is mandatory.** In a real
+  run, a dimension-analyst went silent for 20+ minutes mid-validation and was
+  retried per this protocol; the retry completed cleanly with 13 findings.
+  15–20 minutes later the ORIGINAL, presumed-dead analyst resumed and published
+  all 17 of its own staged findings into the same `findings/` dir. Every slug
+  differed, so the analyst's same-dimension slug-collision handling (its Step 5)
+  never fired, and the corpus silently absorbed ~30 "independent" findings that
+  were really 13–17 redundant pairs — doubling the gate's claim load and
+  presenting near-identical restatements to the reader as corroboration. A late
+  second batch never announces itself: the cancel above and the Phase 2
+  reconciliation below are the only defenses.
 - If a dimension STILL produces zero after retries, the account is hard rate-limited
   (`resets <time>`): **stop fanning out, record those dimensions as `rate_limited` /
   incomplete in `research-progress.md` and `state.json`, and report plainly** — e.g.
@@ -493,6 +523,50 @@ This is the **only** verification gate (SPEC §4 / §6b — the four codex revie
 gates are explicitly cut). Spawn ONE `falsification-analyst` as a **nameless
 subagent** over the full set of new findings.
 
+**Reconcile retried dimensions FIRST (issue #512).** Before anything else in
+this phase, re-check every dimension in `RETRIED_DIMS` (Phase 1's reap step)
+for a late duplicate publish from its original, presumed-dead analyst — a
+zombie can resurface and write its whole batch long after the retry completed,
+and nothing else flags it (the slugs differ, so no collision handling fires;
+the count only grows, so no SHORTFALL fires either):
+
+```bash
+for d in $RETRIED_DIMS; do
+  n=$(for f in "$REPORTS_DIR"/findings/*.json; do [ -e "$f" ] || continue
+        jq -e --arg d "$d" '.extensions.harness.dimension==$d' "$f" >/dev/null 2>&1 && echo x; done | wc -l)
+  # Substitute the RETRY analyst's reported finding_count for "$d" here:
+  if [ "$n" -gt "<retry_finding_count_for_$d>" ]; then
+    echo "OVER-COVERAGE: dimension '$d' has $n findings on disk but its retry reported <retry_finding_count_for_$d> -- the original attempt likely published a late duplicate batch"
+  fi
+done
+```
+
+Two batches for one dimension are **over-coverage of one dimension, not 2N
+independent findings** — never silently accept them as such. For each flagged
+dimension, run a lightweight near-duplicate pass: same
+`extensions.harness.dimension` plus overlapping `tags[]` and/or
+`citations[].url` values across two findings marks a duplicate-suspect pair:
+
+```bash
+jq -s --arg d "$d" '
+  [ .[] | select(.extensions.harness.dimension==$d) ] as $fs
+  | [ range(0; $fs|length) as $i | range($i+1; $fs|length) as $j
+      | {a: $fs[$i]["@id"], b: $fs[$j]["@id"],
+         shared_tags:  ([$fs[$i].tags[]]           - ([$fs[$i].tags[]]           - [$fs[$j].tags[]])),
+         shared_cites: ([$fs[$i].citations[].url] - ([$fs[$i].citations[].url] - [$fs[$j].citations[].url]))}
+      | select((.shared_tags|length) >= 2 or (.shared_cites|length) >= 1) ]
+' "$REPORTS_DIR"/findings/*.json
+```
+
+Record every suspect pair in `research-progress.md` (dimension, the two `@id`s,
+what overlapped), then hand the pair list to the steps that can actually
+consolidate: include it in each falsification-analyst slice prompt (a flagged
+pair tells the gate the two claims are restatements, not independent
+corroboration) and in the Phase 4 report-synthesizer prompt (so the deliverable
+merges each pair into one insight rather than presenting redundant restatements
+as corroborating findings). Do NOT delete either finding here — consolidation
+is the gate's and synthesis's judgment, not the orchestrator's.
+
 **Update mode also re-verifies the stale carried findings (SPEC §11).** In `update`
 mode, add the `STALE_IDS` from Phase 0 step 1b (in-scope findings whose
 verification decayed under source-type freshness) to this gate's input set. The
@@ -580,6 +654,7 @@ Append to the progress file:
 - Verdicts: falsified={N}, weakened={N}, survived={N}, inconclusive={N}
 - Quarantined (falsified): {N}
 - Downgraded (weakened): {N}
+- Over-coverage pairs flagged (zombie reconciliation): {N or "none"}
 - Epistemic caveat: survived = no disconfirmation within the query budget; not proof.
 ```
 
