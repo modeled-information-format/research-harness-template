@@ -298,15 +298,47 @@ python3 "$A" "$S"; rm -f "$A"
 scripts/check-citation-integrity.sh "$S"
 ```
 
-Then validate against the MIF-backed schema closure:
+Then validate against the MIF-backed schema closure — **fully offline, one file
+per invocation, with a per-call timeout**. An unresolved `$ref` can send ajv to
+the network, and in a no-egress sandbox that fetch hangs forever instead of
+failing fast (issue #511: a staged-findings validation loop validated 1 of 17
+files and then sat silent past the tool-call timeout, burning the whole
+dimension pass). Never improvise a different `-s`/`-r` combination than the one
+below — validating with `-s schemas/mif/mif.schema.json` while omitting it from
+`-r` (the #511 loop's shape) leaves `$ref`s resolvable only over the network:
 
 ```bash
-ajv validate --spec=draft2020 --strict=false -c ajv-formats \
+# The -s/-r set below is the COMPLETE recursive $ref closure — audited:
+#   findings.schema.json         -> https://mif-spec.dev/schema/mif.schema.json
+#   mif.schema.json              -> ./definitions/entity-reference.schema.json
+#   entity-reference.schema.json -> (no refs)
+# Every other $ref in these three files is internal (#/$defs/...). With all
+# three registered, ajv never attempts network resolution. If a $ref is ever
+# added to any of them, extend this list AND scripts/write-finding.sh — the
+# two must stay in agreement.
+#
+# Per-call hang guard: `timeout` is GNU coreutils (Linux/CI); stock macOS
+# lacks it, but Homebrew coreutils ships it as `gtimeout`. If neither is on
+# PATH, run unwrapped but say so — degraded, not silent.
+if command -v timeout >/dev/null 2>&1; then TMO="timeout 30"
+elif command -v gtimeout >/dev/null 2>&1; then TMO="gtimeout 30"
+else TMO=""; echo "WARN: no timeout/gtimeout on PATH -- ajv validation runs unbounded (issue #511)" >&2
+fi
+
+$TMO ajv validate --spec=draft2020 --strict=false -c ajv-formats \
   -s schemas/findings.schema.json \
   -r schemas/mif/mif.schema.json \
   -r schemas/mif/definitions/entity-reference.schema.json \
   -d "$S"
+# rc 124 = the hang guard tripped (timeout) — treat exactly like a validation
+# failure of THIS file: diagnose/correct/retry it, don't stall the batch.
 ```
+
+Keep validation **per file**: one ajv invocation per staged finding, checked
+individually inside this step's per-finding flow. A bad or hanging file then
+fails loud with its own exit status (124 on timeout) while every other finding
+still validates and publishes — never batch all staged files behind one
+unbounded call with no forward-progress signal.
 
 The schema requires `extensions.harness.verification`, which **you do not write** —
 so full-schema validation passes only *after* the falsification gate has stamped
