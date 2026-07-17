@@ -52,6 +52,11 @@ run "stdin-detach" bash evals/stdin-detach.sh
 # marked, per-gate timings are built in, unmatched patterns fail fast.
 run "verify-selector" bash evals/verify-selector.sh
 
+# release.yml never uploads to an already-published (immutable) release
+# (#537): tag-push trigger, no post-publish `gh release upload`, artifact
+# attached in the same `gh release create` call.
+run "release-workflow-immutable-safe" bash evals/release-workflow-immutable-safe.sh
+
 # 1b. Topic run lock: two concurrent runs on one topic are mutually exclusive
 #     (prevents the shared-findings/ corruption vector).
 run "run-lock-mutual-exclusion" bash evals/run-lock-test.sh

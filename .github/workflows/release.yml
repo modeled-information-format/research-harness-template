@@ -12,25 +12,37 @@ name: release
 #     --repo <owner>/<repo> \
 #     --signer-workflow <owner>/<repo>/.github/workflows/release.yml
 #
-# `workflow_dispatch` exercises build -> attest as a dry-run without cutting a
-# version; the upload-to-release step runs ONLY on a published release. The
-# workflow never creates or publishes a release itself.
+# Trigger is the TAG PUSH itself, not `release: published`. GitHub immutable
+# releases reject any post-publish asset upload (`gh release upload` after the
+# release already exists returns HTTP 422 "Cannot upload assets to an immutable
+# release"), and deleting an immutable release to retry permanently burns its
+# tag — this already happened once here (v0.8.0's tag was burned and had to be
+# re-cut as v0.8.1). So build -> attest -> fail-closed verify all run BEFORE any
+# release object exists, and the release is created with the attested tarball
+# attached in the SAME `gh release create` call — never a post-publish upload
+# (#537, mirroring `ontologies`' already-fixed release.yml and
+# modeled-information-format/.github#74's restructuring).
+#
+# `workflow_dispatch` exercises build -> attest -> verify as a dry-run without
+# cutting a real release; the release-creation step is tag-gated and skipped on
+# a dispatch run.
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - "v*.*.*"
   workflow_dispatch: {}
 
 permissions:
   contents: read
 
 jobs:
-  # Fail-closed: a published release must carry a non-empty CHANGELOG entry for
-  # its version. Skips cleanly on a workflow_dispatch dry-run (no release tag).
+  # Fail-closed: a tag release must carry a non-empty CHANGELOG entry for its
+  # version. Skips cleanly on a workflow_dispatch dry-run (no tag).
   changelog-check:
     uses: modeled-information-format/.github/.github/workflows/reusable-changelog-check.yml@824b7ba80c0f798bf1be1d4b776e3688b89152fc
     with:
-      version: ${{ github.event.release.tag_name }}
+      version: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
 
   attest-release:
     needs: changelog-check
@@ -38,7 +50,7 @@ jobs:
     permissions:
       id-token: write       # OIDC token for keyless signing
       attestations: write   # write the provenance attestation
-      contents: read        # checkout + verify; the release upload now uses the release App token
+      contents: read        # checkout + verify; release creation uses the release App token
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
@@ -47,7 +59,7 @@ jobs:
         run: |
           set -euo pipefail
           NAME="${GITHUB_REPOSITORY##*/}"
-          if [ "${GITHUB_EVENT_NAME}" = "release" ]; then
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
             VERSION="${GITHUB_REF_NAME}"
           else
             VERSION="dryrun-${GITHUB_SHA::7}"
@@ -77,31 +89,35 @@ jobs:
           # repository; --signer-workflow additionally pins it to THIS release
           # workflow (the certificate identity), so an attestation from any other
           # workflow in the repo would not pass. A failure here fails the job, so
-          # the publish step below never runs unverified.
+          # the release-creation step below never runs unverified.
           gh attestation verify "${{ steps.build.outputs.artifact }}" \
             --repo "${GITHUB_REPOSITORY}" \
             --signer-workflow "${GITHUB_REPOSITORY}/.github/workflows/release.yml"
 
       - name: Mint release app token (publish identity)
         id: release_token
-        if: github.event_name == 'release'
+        if: github.ref_type == 'tag'
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
           client-id: ${{ vars.RELEASE_CLIENT_APP_ID }}
           private-key: ${{ secrets.RELEASE_CLIENT_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
           repositories: ${{ github.event.repository.name }}
-          # Down-scope the minted token: the release upload only needs contents:write.
+          # Down-scope the minted token: release creation only needs contents:write.
           permission-contents: write
 
-      - name: Upload attested artifact to the release
-        if: github.event_name == 'release'
+      - name: Create release with the attested tarball attached
+        if: github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ steps.release_token.outputs.token }}
         run: |
           set -euo pipefail
-          gh release upload "${GITHUB_REF_NAME}" \
-            "${{ steps.build.outputs.artifact }}" --clobber
+          # The attested asset is attached in the SAME call that creates the
+          # release — never a separate post-publish upload, which immutable
+          # releases reject outright (HTTP 422, #537).
+          gh release create "${GITHUB_REF_NAME}" "${{ steps.build.outputs.artifact }}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --generate-notes
 
   # #397: surfaces CHANGELOG heading-bracket/footer-link drift for the
   # version just released, without gating any other PR (this job doesn't
@@ -114,7 +130,7 @@ jobs:
   # Only the final reconcile-check step is soft (see its own comment for why
   # it can't distinguish "drift found" from "the engine hit a real error").
   changelog-links-check:
-    if: github.event_name == 'release'
+    if: github.ref_type == 'tag'
     runs-on: ubuntu-latest
     permissions:
       contents: read
