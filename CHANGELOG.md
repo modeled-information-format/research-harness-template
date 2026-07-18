@@ -44,9 +44,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   routing signal, not a directly-forwardable arg, in the Prioritize prompt
   and next to `BACKLOG_SCHEMA` for the not-yet-vendored orchestrator (#550).
   `scripts/verify.sh`'s `gate_workflows` gains an eleventh hand-added
-  per-file existence assert. Version bumped via `scripts/bump-version.sh`
-  patch (0.16.16 -> 0.16.17, ADR-0010). Docs (#596) and the deterministic
-  eval (#597) are separate Tasks, out of scope here.
+  per-file existence assert. Docs (`## research-coverage-audit` in
+  `docs/reference/engine-workflows.md`, with a per-auditor `discover`-skill
+  cross-reference rather than one blanket subsumption claim, #596) and a
+  deterministic eval (`evals/coverage-audit-check.sh`, #597) ship in this
+  same release. Version bumped via `scripts/bump-version.sh` patch
+  (0.16.16 -> 0.16.17, ADR-0010).
 
 ## [0.16.16] - 2026-07-18
 

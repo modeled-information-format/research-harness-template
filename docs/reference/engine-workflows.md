@@ -2,7 +2,7 @@
 id: reference-engine-workflows
 type: semantic
 created: '2026-07-17T20:25:00-04:00'
-modified: '2026-07-18T20:41:34.357Z'
+modified: '2026-07-18T21:23:05.836Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -1292,7 +1292,7 @@ not five agents converging on the same signal.
 
 The epic's own framing — that this module "subsumes much of the `discover`
 skill's audit role" — is accurate for only part of the panel, not the
-whole thing. `discover` ([`.claude/skills/discover/SKILL.md`](#governing-architecture))
+whole thing. `discover` ([`.claude/skills/discover/SKILL.md`](../../.claude/skills/discover/SKILL.md))
 only ever **reports**; it never routes a finding to the workflow that fixes
 it. Stated per auditor rather than as one blanket claim:
 
