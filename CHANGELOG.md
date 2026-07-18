@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.12] - 2026-07-18
+
+### Added
+
+- **Vendored research-augment workflow** (#578, Epic #545):
+  `.claude/workflows/research-augment.js` — atomic action A (augment), a
+  pure DECIDE workflow: a haiku Assess phase computes the per-dimension
+  coverage/verdict/staleness matrix and a sonnet Decide phase judges which
+  dimensions to deepen with stated reasoning, rejected alternatives, and
+  named target checks (or an explicit, valid "nothing warrants deepening").
+  Fixes the same class of delegate-vs-reimplement gap #543/#544 already
+  named: the reference implementation's Assess phase re-derives per-dimension
+  finding/verdict counts via a free-form haiku prompt over raw finding
+  files; here it instead composes the two jq idioms the `discover` skill
+  (`.claude/skills/discover/SKILL.md`) already documents — grouping by
+  dimension (its coverage-gaps pipeline) and filtering by verdict (its
+  stale-findings pipeline) — into one deterministic pipeline over the same
+  `research-index.json`. Only `oldestFindingDate` (the index carries no
+  timestamp, same gap discover's own README notes for its age-based
+  staleness signal) is genuinely incremental logic layered on top, read
+  from the raw finding files. `harnessDir` defaults to `.`, matching the
+  research-goal.js/research-fanout.js/research-falsify.js/
+  research-synthesis.js/research-projection.js/research-deliverables.js
+  precedent; the module runs standalone with no live-orchestrator-context
+  dependency (the orchestrator, #550, is not yet vendored). Decide-phase
+  priority is unmet-check-impact > attrition > thinness > staleness, with
+  attrition treated as a distinct sourcing-strategy signal rather than
+  folded into thinness. `scripts/verify.sh`'s `gate_workflows` gains a
+  seventh hand-added per-file existence assert for the new module.
+
 ## [0.16.11] - 2026-07-18
 
 ### Added
