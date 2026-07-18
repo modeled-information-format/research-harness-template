@@ -2,7 +2,7 @@
 id: reference-engine-workflows
 type: semantic
 created: '2026-07-17T20:25:00-04:00'
-modified: '2026-07-18T01:18:27.503Z'
+modified: '2026-07-18T02:32:27.394Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -16,7 +16,7 @@ temporal:
   recordedAt: '2026-07-17T20:25:00-04:00'
 provenance:
   '@type': Provenance
-  agent: claude-code/claude-fable-5
+  agent: claude-code/claude-sonnet-5
   wasGeneratedBy:
     '@id': urn:mif:activity:claude-code-session:7b4efc9f-b778-4d49-b1e4-c009adbd178a
     '@type': prov:Activity
@@ -192,3 +192,144 @@ A typed result:
 carries each lane's `{ dimension, written, valid, searches, saturation }`
 accounting, `crossDimensionLeads` the `{ from, lead }` pairs above, and
 `related` the relation-pass annotation count (0 when the pass was skipped).
+
+## research-falsify
+
+Atomic step 3 (falsification): the single adversarial gate, decomposed —
+haiku claim decomposition, 2–4 perspective-diverse sonnet skeptic lenses
+(counter-evidence, source-integrity, temporal-validity, and at 4 lenses
+scope-integrity; web-only), deterministic verdict-merge arithmetic in code,
+opus adjudication only on contested minority-`falsified` patterns, verdict
+write through the `falsify.sh` substrate via a code-materialized evidence
+fixture, and remediation (quarantine / downgrade / annotate) applied by this
+module. Source: `.claude/workflows/research-falsify.js`.
+
+### Args
+
+| Arg | Required | Default | Description |
+| --- | --- | --- | --- |
+| `topic` | yes | — | Topic whose `reports/<topic>/findings/` drives the run. A missing `topic` throws before any phase runs. |
+| `harnessDir` | no | `.` | Path to the harness instance (the #552/#556 precedent). |
+| `scope` | no | `'all'` | `'all'`, `'dimension:<d>'`, or `{ paths?: string[], ids?: string[] }` for an explicit finding set — the `regate` entry point. |
+| `claimBudget` | no | `50` | Findings gated per run. Findings past the budget are **deferred**, never dropped — see Returns. |
+| `queryBudget` | no | `6` | Disconfirming queries per claim, per lens. |
+| `lenses` | no | `3` | Skeptic lens count, clamped to `2..4`. |
+| `regate` | no | `false` | Re-open verification for findings a goal-version pivot/update classified stale. Valid **only** with an explicit `scope.paths`/`scope.ids` — see [Regate](#regate-a-client-side-verification-block-reset) below. |
+
+### Phases
+
+| Phase | Model | What it does |
+| --- | --- | --- |
+| Enumerate | haiku (low effort) | Resolves the working set from `scope`. One-round rule enforced structurally: any finding already carrying `extensions.harness.verification.attempted_at` is excluded before any model call, counted in `skippedAlreadyVerified` — except in `regate` mode, which includes them. A working set past `claimBudget` is sliced; the remainder returns as `deferredIds`, logged, never silently dropped. |
+| Gate | mixed, per finding | Decompose (haiku) → parallel skeptic lenses (sonnet, web-only) → `mergeVotes()` (deterministic code) → adjudicate (opus) only if contested → [regate reset](#regate-a-client-side-verification-block-reset) if applicable → materialize an evidence fixture in code → write via `falsify.sh <finding> <fixture>` → apply [remediation](#remediation-is-implemented-in-this-module-not-by-falsifysh) ported from `falsification-analyst.md`. |
+| Rollup | — | Tallies verdicts and contested-adjudication counts, logs one summary line. |
+
+### Skeptic lenses and deterministic verdict-merge arithmetic
+
+The four lenses are deliberately **diverse in attack angle**, not redundant
+copies of the same prompt: `counter-evidence` (independent disconfirming
+search), `source-integrity` (do the finding's own citations exist and say
+what it claims?), `temporal-validity` (has a newer primary source superseded
+the claim?), `scope-integrity` (does the evidence support the claim's stated
+*generality*, not just its narrow core?). `lenses` selects the first *N* of
+this fixed list, never a random subset.
+
+Verdict merging is `mergeVotes()` — plain code, not a model call: unanimous
+or majority `falsified`/`weakened`/`survived` resolve deterministically; any
+minority `falsified` vote is `contested` and escalates to the opus
+adjudicator (weighing evidence quality over vote count, never a re-vote); a
+non-falsified mixed result with no majority takes the most severe vote on the
+`falsified > weakened > inconclusive > survived` ordinal without spending an
+adjudication call. This is the same "arithmetic lives in code" rule
+`crossDimensionLeads` slicing and the claim-budget deferral above already
+follow.
+
+### The fixture-write bridge: `falsify.sh` takes a finding + fixture, never bare verdict args
+
+This is a substrate fact, not a design choice this module made: `falsify.sh`'s
+real signature is `falsify.sh <finding.json> [<evidence-fixture.json>]`, where
+the fixture is a JSON object keyed by the finding's `@id`
+(`{ "<id>": { verdict, basis, disconfirming: [url, ...] } }`) — there is no
+form that takes `verdict`/`basis` as bare CLI arguments. The module's Gate
+phase therefore **materializes that fixture in code**
+(`buildFixtureEntry()`), from the already-computed `mergeVotes()`/adjudication
+result and the lenses' own retrieved URLs, then hands the write agent the
+exact JSON text to `mktemp` **outside the repo tree** and pass as
+`falsify.sh <finding> <fixture>`'s second argument. The write agent's job is
+purely mechanical (write this exact content, invoke the script, clean up
+the ephemeral fixture) — it never composes or re-derives the verdict itself.
+`falsify.sh` (delegating to `mif-rh-cli`'s `HarnessCommand::Falsify`) remains
+the one and only verdict writer either way.
+
+### Remediation is implemented in this module, not by `falsify.sh`
+
+Neither `falsify.sh` nor the `mif-rh-cli` engine implements remediation —
+confirmed by inspection of `crates/mif-rh/src/harness_falsify.rs` and
+`crates/mif-rh-cli/src/main.rs` in `mif-rs`: zero `"quarantine"` hits in
+either file. The engine implements only the one-round-guarded verdict write
+described above; everything past that write was, before this module,
+executed by hand from prose in `.claude/agents/falsification-analyst.md`
+Step 7. `research-falsify.js` ports that logic verbatim
+(`REMEDIATION_CONTRACT`) and applies it itself, keyed on the verdict
+`falsify.sh` just wrote: `falsified` → quarantine (move the finding file out
+of the active `findings/` set); `weakened` → downgrade one rung down the
+real `provenance.trustLevel` ladder plus a bounded summary qualifier (capped
+under the schema's `maxLength: 500`, never raised); `survived`/`inconclusive`
+→ annotate only, no file mutation beyond the verification block `falsify.sh`
+already wrote. This is a substrate gap this module closes, not a
+restatement of what the engine already does.
+
+### Regate: a client-side verification-block reset
+
+The one-round rule has **no engine override**: `already_graded()` in
+`harness_falsify.rs` unconditionally short-circuits any finding already
+carrying `attempted_at`, and the `mif-rh-cli` `Falsify` command takes exactly
+`finding`/`fixture` with no re-verify flag anywhere in the stack — confirmed
+by inspection, not assumed from the reference design. When `regate: true` is
+passed (only together with an explicit `scope.paths`/`scope.ids`), the Gate
+phase clears the stale finding's `extensions.harness.verification` block
+itself — via `jq 'del(.extensions.harness.verification)'`, write-then-`mv`,
+never edit-in-place — **before** re-invoking `falsify.sh`, so the one-round
+check sees a finding with no `attempted_at` and performs a genuine write.
+The verdict write itself still routes exclusively through `falsify.sh`;
+only the pre-condition it checks is reset outside the engine. A follow-up to
+close this gap properly — an explicit `--regate` override in `mif-rh-cli`
+itself, so a caller no longer has to pre-mutate the finding file
+out-of-band — is filed and tracked as
+[`mif-rs#119`](https://github.com/modeled-information-format/mif-rs/issues/119).
+
+### Supersession: mechanism decomposed, epistemics and substrate unchanged
+
+For engine-composed falsification, this module's decomposition — haiku
+decomposition, diverse-lens voting, code-arithmetic merge, escalation-only
+opus adjudication — **supersedes** the monolithic single-opus-agent
+`falsification-analyst` gate in *mechanism only*. Decision D-3 of the
+workspace research-pipeline architecture document (the source this module
+was vendored from) states the rationale for that decomposition — why diverse
+lenses beat redundant copies, why the merge is deterministic code, and why
+opus is escalation-only — and is cited here rather than restated; see that
+document's "Atomic action 3 — falsification" section. `falsify.sh` remaining
+the sole verdict writer (D-3's own closing invariant) is unchanged by any of
+this.
+
+What is *not* unchanged is the substrate this vendored module actually runs
+against, in exactly the three ways documented above: the architecture
+document's own description assumes a bare-CLI-arg verdict write (no fixture
+bridge), assumes `falsify.sh` owns remediation (it owns only the write), and
+is silent on regate having no engine path at all (it has none). Those three
+gaps were verified against `scripts/falsify.sh`, `harness_falsify.rs`, and
+`mif-rh-cli` before this module was written, not carried forward from the
+source document's assumptions. This section — not the architecture
+document — is the authoritative as-built account of what is actually
+implementable against today's `mif-rh-cli`; the architecture document
+remains the record of the intended design and the decomposition rationale
+(D-3), not of this substrate's present limits.
+
+### Returns
+
+A typed result: `{ gated, rollup, verdicts, deferredIds, alreadyVerified }`
+— `gated` the count of findings this run actually resolved a verdict for,
+`rollup` a `{ verdict: count }` tally, `verdicts` the per-finding
+`{ id, dimension, verdict, contested, remediation }` list, `deferredIds` any
+`@id`s pushed past `claimBudget` (re-run to continue; nothing silently
+dropped), and `alreadyVerified` the one-round-rule skip count from Enumerate.

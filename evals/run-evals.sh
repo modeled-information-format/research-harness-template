@@ -81,6 +81,20 @@ run "goal-lint-repair" bash evals/goal-lint-repair.sh
 # repair/relate constraints.
 run "fanout-lane-contract" bash evals/fanout-lane-contract.sh
 
+# The research-falsify verdict-merge table has deterministic teeth (#562):
+# mergeVotes()'s arithmetic (unanimous, majority-falsified, minority-
+# falsified-contested-escalates, mixed-non-falsified-takes-worst) and the
+# over-budget claimBudget slicing (exact deferredIds remainder, nothing
+# silently dropped) are extracted verbatim from research-falsify.js and run
+# against the real functions; a seeded-false-finding fixture is graded
+# through the real vendored engine and quarantined via the ported
+# remediation logic end to end; the one-round rule (a normal re-run on an
+# already-graded finding is excluded; a regate-scoped client-side reset
+# genuinely re-processes it) is proven against that same real engine; and
+# the module's fixture-write bridge / ported remediation contract are
+# checked structurally.
+run "falsify-verdict-merge" bash evals/falsify-verdict-merge.sh
+
 # release.yml never uploads to an already-published (immutable) release
 # (#537): tag-push trigger, no post-publish `gh release upload`, artifact
 # attached in the same `gh release create` call.

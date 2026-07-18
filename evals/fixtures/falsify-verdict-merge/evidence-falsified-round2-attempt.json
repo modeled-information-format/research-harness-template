@@ -1,0 +1,8 @@
+{
+  "urn:mif:concept:falsify-eval:one-round-0001": {
+    "verdict": "falsified",
+    "basis": "Eval-fixture round 2 attempt (research-harness-template#562): a NORMAL (non-regate) re-run must be excluded by the one-round rule — this verdict must never actually be written.",
+    "attempted_at": "2026-01-05T00:00:00Z",
+    "disconfirming": ["https://example.com/falsify-eval/round2-must-be-ignored"]
+  }
+}

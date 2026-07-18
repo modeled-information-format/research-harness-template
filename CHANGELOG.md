@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.8] - 2026-07-18
+
+### Added
+
+- **Vendored research-falsify workflow** (#560, Epic #541):
+  `.claude/workflows/research-falsify.js` — atomic step 3 (falsification), the
+  single adversarial gate decomposed into haiku claim decomposition,
+  perspective-diverse sonnet skeptic voting (counter-evidence, source-integrity,
+  temporal-validity, scope-integrity — web-only), deterministic verdict-merge
+  arithmetic in code (`mergeVotes()`), and opus adjudication only on contested
+  minority-`falsified` patterns. Adapted from the workspace reference against
+  the CURRENT substrate rather than carried forward as-is: (1) a fixture-write
+  bridge — `scripts/falsify.sh`'s real signature takes no bare verdict/basis
+  CLI args, so the module materializes a small `{verdict, basis, disconfirming}`
+  evidence fixture in code (`buildFixtureEntry()`) from its own verdict
+  arithmetic and mktemps it outside the repo tree before invoking
+  `falsify.sh <finding> <fixture>`; (2) `regate` is a client-side reset —
+  `falsify.sh`'s one-round check has no engine override, so the module clears
+  a stale finding's `extensions.harness.verification` block itself before
+  re-invoking `falsify.sh`, keeping the write itself exclusively routed
+  through the substrate; (3) remediation (falsified → quarantine, weakened →
+  downgrade one `provenance.trustLevel` rung with a bounded summary qualifier,
+  survived/inconclusive → annotate only) is ported directly into the module
+  from `.claude/agents/falsification-analyst.md` Step 7, since neither
+  `falsify.sh` nor `mif-rh-cli` implement it. `verify.sh` `gate_workflows`
+  gains the third per-file existence assert; the `check-workflow-syntax.sh`
+  glob parse-check covers it automatically.
+
 ## [0.16.7] - 2026-07-18
 
 ### Added
