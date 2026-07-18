@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.17] - 2026-07-18
+
+### Added
+
+- **Vendor the research-coverage-audit workflow (atomic action Z — corpus
+  audit)** (#595, Epic #549): `.claude/workflows/research-coverage-audit.js`,
+  the fifth and last of the steering-action modules. Six blind auditors each
+  probe the corpus a different way — `thin-dimensions` (haiku),
+  `staleness` (haiku), `quarantine-review` (haiku), `graph-orphans` (haiku),
+  `check-traceability` (sonnet), `homeless-leads` (sonnet); a sonnet
+  completeness critic asks what no auditor covered and spot-checks its own
+  top suspicions against the real corpus; a sonnet prioritizer emits a
+  routed backlog (`augment | add-dimensions | falsify | import | projection
+  | manual`), ranked by unmet-check impact, then severity, then cheapness.
+  `harnessDir` defaults to `.`, matching every prior vendored module.
+- **Confirmed delegation gap, fixed here** (same class as #543-#548): the
+  reference implementation's `thin-dimensions` and `staleness` auditor
+  briefs re-derived their signal freehand instead of invoking the
+  deterministic jq pipelines the harness's own `discover` skill already
+  ships for exactly these two probes. Both briefs now delegate to
+  `discover`'s `--gaps`/`--stale` pipelines verbatim (adapted to this
+  module's topic scope: goal.json's `dimensions[]`, not
+  `harness.config.json`'s corpus-wide taxonomy — the same adaptation
+  `research-augment.js`'s Assess phase already established, #578/#580).
+  The other four auditors have no `discover` equivalent and are correctly
+  left as novel probes.
+- **Module-reference correction, documented in code**: the routed
+  backlog's `target` field does NOT map uniformly to all five downstream
+  modules' args with no adapter, verified against the real vendored source
+  on `main` — `research-add-dimensions.js`'s `hints` is an array (needs
+  wrapping), `research-falsify.js`'s `scope` is a tagged union (needs
+  construction), `research-import.js`'s `containerDir` and
+  `research-projection.js`'s `synthesisPath` are both required values an
+  audit's corpus scan cannot itself produce. `target` is documented as a
+  routing signal, not a directly-forwardable arg, in the Prioritize prompt
+  and next to `BACKLOG_SCHEMA` for the not-yet-vendored orchestrator (#550).
+  `scripts/verify.sh`'s `gate_workflows` gains an eleventh hand-added
+  per-file existence assert. Version bumped via `scripts/bump-version.sh`
+  patch (0.16.16 -> 0.16.17, ADR-0010). Docs (#596) and the deterministic
+  eval (#597) are separate Tasks, out of scope here.
+
 ## [0.16.16] - 2026-07-18
 
 ### Added
