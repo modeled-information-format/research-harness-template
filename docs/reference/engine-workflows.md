@@ -2,7 +2,7 @@
 id: reference-engine-workflows
 type: semantic
 created: '2026-07-17T20:25:00-04:00'
-modified: '2026-07-18T16:10:21.452Z'
+modified: '2026-07-18T16:51:33.485Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -30,14 +30,15 @@ provenance:
 engine-path counterparts to the interactive slash commands in
 [commands](commands.md). A workflow module is composed programmatically (by a
 research pipeline or an orchestrating session) and returns a typed result; it
-never converses with the user. Seven modules ship today: `research-goal`
+never converses with the user. Eight modules ship today: `research-goal`
 (atomic step 1 of the research pipeline, vendored under Epic #539),
 `research-fanout` (atomic step 2, vendored under Epic #540), `research-falsify`
 (atomic step 3, vendored under Epic #541), `research-synthesis` (atomic
 step 4, vendored under Epic #542), `research-projection` (atomic step 5,
 vendored under Epic #543), `research-deliverables` (atomic step 6,
-vendored under Epic #544), and `research-augment` (atomic action A —
-deepening decision, vendored under Epic #545).
+vendored under Epic #544), `research-augment` (atomic action A —
+deepening decision, vendored under Epic #545), and `research-add-dimensions`
+(atomic action B — widen the dimension set, vendored under Epic #546).
 
 ## Module shape and parse-check
 
@@ -182,12 +183,15 @@ Every analyst also returns `crossDimensionLeads`: germane evidence it
 encountered that belongs to a *different* dimension (or to none). The
 analyst records the lead instead of writing a finding outside its pin, and
 the module surfaces the collected leads in its return payload as
-`{from, lead}` pairs. This is a **forward-looking routing surface**: its
-consumers are the coverage-audit workflow (atomic action Z, #549) and the
-add-dimensions workflow (atomic action B, #546), neither of which is
-vendored yet — the payload documents where homeless evidence goes, not a
-live integration. The old engine simply dropped this evidence; the module
-guarantees it survives the round for those consumers to pick up.
+`{from, lead}` pairs. This is a **routing surface** with two named
+consumers: the coverage-audit workflow (atomic action Z, #549, not yet
+vendored) and the add-dimensions workflow
+([atomic action B, `research-add-dimensions`](#research-add-dimensions),
+vendored under Epic #546). The latter's `leads` arg consumes this payload
+directly — no longer forward-looking, a live integration — while the
+former still only has a documented destination, not a consumer. The old
+engine simply dropped this evidence; the module guarantees it survives the
+round for both consumers to pick up.
 
 ### Returns
 
@@ -790,3 +794,131 @@ accepted `{ dimension, depth, rationale, targetChecks }` entries (at most 3),
 `rejected[]` the `{ dimension, why }` pairs Decide declined, `reasoning` its
 overall explanation (populated even when `deepen[]` is empty), and `matrix`
 the per-dimension coverage data Assess computed.
+
+## research-add-dimensions
+
+Atomic action B (add dimensions): widen the dimension set. Generator-critic
+prompt chaining ending in a lineage event — sonnet Propose derives candidate
+new dimensions from the goal, corpus leads, and user hints; sonnet Prune
+attacks each candidate on overlap/scope/decision-relevance; Amend wires the
+survivors into `harness.config.json` `dimensions[]` and mints a new goal
+version. Source: `.claude/workflows/research-add-dimensions.js`.
+
+### Args
+
+| Arg | Required | Default | Description |
+| --- | --- | --- | --- |
+| `topic` | yes | — | Topic whose `reports/<topic>/goal.json` and `harness.config.json` `dimensions[]` the run reads and amends. A missing `topic` throws before any phase runs. |
+| `harnessDir` | no | `.` | Path to the harness instance. The in-repo default is the instance root (the #552/#556/#560/#564/#569/#573/#578 precedent), so a pipeline running inside a clone passes nothing. |
+| `hints` | no | — | User-suggested dimensions or themes. Propose evaluates them against the goal and the existing dimension set rather than rubber-stamping them. |
+| `leads` | no | — | `{from, lead}` pairs — `research-fanout`'s [`crossDimensionLeads`](#crossdimensionleads-routing) output: evidence a prior fan-out round could not house under any declared dimension. This is the strongest signal a dimension is missing; Propose treats it as first-class input alongside `hints`. |
+
+### Phases
+
+| Phase | Model | What it does |
+| --- | --- | --- |
+| Propose | sonnet | Reads `reports/<topic>/goal.json` and `harness.config.json` `dimensions[]`, then derives at most 4 candidate dimensions — each a schema-legal id, a one-sentence description matching the config's dimension style, the evidence that no existing dimension can house it, and a methodology note. Zero candidates is a valid, non-error return. |
+| Prune | sonnet | Skeptic pass over every candidate: overlap (is it really a subset/restatement of an existing dimension?), scope (does the goal's `out_of_scope`/`non_goals` exclude it?), decision-relevance (would findings on this axis change the goal's decision, or merely be interesting?). Rejects on any hit, with the specific reason; approves only what survives all three. |
+| Amend | sonnet | Two ordered steps: (1) patches `harness.config.json` `dimensions[]` with each approved candidate's `{id, description}` (no `methodologyNote` field — that is goal-authoring context only) and validates against `harness.config.schema.json` with `ajv`; (2) mints the new goal version — see [Goal-version delegation](#goal-version-delegation-scriptsgoal-versionsh-not-a-freehand-hash) below. |
+
+### Zero-candidate and all-rejected outcomes are valid, not errors
+
+Propose returning no candidates, or Prune rejecting every candidate it was
+given, are both normal, non-error short-circuits —
+`{ added: [], rejected: [...or []], goalVersion: null }` — never a failure
+the caller must handle specially. The current dimension set already holding
+the evidence is an expected, even common, outcome of running this workflow;
+the module returns early rather than forcing an Amend pass with nothing
+approved. This is the same "an empty/no-op plan is a legitimate answer, never
+surfaced as a failure" shape `research-augment`'s
+[empty-plan outcome](#the-empty-plan-outcome-is-valid-not-an-error) already
+established for its own Decide phase.
+
+### Goal-version delegation: `scripts/goal-version.sh`, not a freehand hash
+
+This is the as-built account of a confirmed gap, not a restatement of the
+reference design: `research-add-dimensions.js`'s own vendoring header
+records that the reference implementation's Amend phase instructs its agent
+to compute the `gv-` content hash **freehand** — a prose description of the
+algorithm (sha256 first-12-hex over the goal with `version`/`supersedes`/
+`revision` stripped, keys sorted) for the agent to re-derive itself, rather
+than invoking the script this repo already ships for exactly that purpose.
+This is the same class of "delegate to a real, existing mechanism instead of
+reimplementing it via a free-form prompt" gap Epics #543/#544/#545
+(`research-projection`/`research-deliverables`/`research-augment`) found and
+fixed for their own script- and skill-delegated phases — cited here rather
+than restated.
+
+The fix wires Amend to the same snapshot-then-mint idiom already established
+for goal evolution (`.claude/commands/goal-writer.md`'s update flow;
+`research-goal.js`'s own re-authoring branch): snapshot the live goal to
+`reports/<topic>/goals/goal-<OLD>.json` **before** editing, apply the
+dimension-widening delta, then mint `OLD`/`NEW` by actually running
+`bash scripts/goal-version.sh reports/<topic>/goal.json` — once before the
+edit, once after — and stamp `.version`/`.supersedes`/`.revision` with `jq`.
+The agent returns the version it read back from the amended `goal.json`
+after minting, never a value it would have computed itself. This is a
+deliberate deviation from the reference implementation's own Amend-phase
+text, not carried forward as-is.
+
+### Goal lineage: ADR-0006 (`proposed`, not yet `accepted`)
+
+The immutability rule Amend's goal-minting step enforces — a goal is fixed
+per version, and widening the dimension set is an append to that version's
+lineage, never an in-place edit of the live `goal.json` — is
+[ADR-0006: Content-hashed, append-only goal versioning](../adr/0006-content-hashed-append-only-goal-versioning.md).
+Cited here rather than restated; see that record for the content-hash
+scheme, the `supersedes`/`revision` fields, and the findings-reuse
+rationale. ADR-0006's own status is **`proposed`**, not `accepted` — it
+records a design this module (and `research-goal`'s re-authoring branch)
+already implements against, but the record itself has not been promoted to
+accepted, and nothing in this Epic changes that status. `supersedes` points
+at the prior version's real id, never `null`, unless the prior goal
+genuinely had no explicit `.version` yet (the implicit unversioned baseline,
+`schemas/goal.schema.json`'s own documented case).
+
+### Propose's homeless-evidence inputs and Prune's attack surface are carried from the reference unchanged
+
+Unlike the Amend-phase goal-version delegation above, the Propose phase's
+`hints`/`leads` inputs and the Prune phase's three-attack skeptic pass
+(overlap/scope/decision-relevance) are carried forward from the reference
+design largely as specified — a candidate surviving Prune must be justified
+as something existing dimensions genuinely cannot house, never merely
+"related but distinct."
+
+### Supersession: widening becomes a standalone typed workflow, not folded into `/goal-writer --reshape`
+
+For engine-composed dimension-widening, `research-add-dimensions`
+**supersedes** `/goal-writer --reshape`'s role for the widen-only case —
+Decision D-7 of the workspace research-pipeline architecture document (the
+source this module was vendored from) states the rationale: before this
+module, widening the dimension set had command support only
+(`/goal-writer --reshape`, a conversational path) with no engine
+integration, and the `crossDimensionLeads` homeless-evidence payload
+(`research-fanout`, #540) had no consumption path at all. Cited here rather
+than restated; see that document's "D-7 — Steering decisions are first-class
+atomic workflows" section and its "Atomic action B — add dimensions" section
+for the fuller generator-critic rationale and flowchart.
+
+What is *not* superseded: `/goal-writer --reshape` remains the interactive
+path for an actual goal *reshape* (a changed question — atomic action C,
+`research-pivot`, not yet vendored) and for any conversational dimension
+change a user drives directly; this module is the engine-composed
+widen-only path, invoked with an explicit `hints`/`leads` payload rather
+than a dialogue turn. Its `fanoutPlan` output hands the newly-added
+dimensions to `research-fanout` for the very next round — the same "typed
+hand-off, no filesystem coordination" contract every other module on this
+page already follows.
+
+### Returns
+
+A typed result: `{ added, rejected, goalVersion, supersedes, fanoutPlan }` —
+plus the early-return shape `{ added: [], rejected: [], goalVersion: null }`
+from either short-circuit above — `added` the approved dimension ids
+actually wired into `harness.config.json` and the new goal version,
+`rejected` the Prune phase's `{ id, why }` pairs, `goalVersion` the `gv-` id
+`scripts/goal-version.sh` computed over the new goal content, `supersedes`
+what it supersedes (the prior version's real id, or `null` only for the
+implicit unversioned baseline), and `fanoutPlan` a
+`{ dimensions, depth: 'standard' }` hint for the orchestrator to fan out
+only the newly-added dimensions next round.
