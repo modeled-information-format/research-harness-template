@@ -28,21 +28,27 @@
 #      exist on disk (a renamed/moved script would go stale here, not just
 #      in prose).
 #
-#   B. DryRun-reject: a REAL fixture container (subset-exported from the
-#      bundled sample topic, mif-generic-only — no vendored domain-pack
-#      dependency) with one resource's bytes corrupted after its digest was
-#      declared (same technique as mif-container-nfr-verification.sh's
-#      NFR-2, applied here specifically through the --dry-run code path,
-#      which that eval does not cover). research-import.js's DryRun-phase
-#      agent() call is stubbed to invoke the REAL
-#      scripts/mif-container-import.sh --dry-run and report its real exit
-#      status/output. Asserts: the module short-circuits with
-#      {ok:false, stage:'dry-run'}; Review/Apply are NEVER called (asserted
-#      from the driver's own call log, stubbed to throw if invoked); and
-#      NOTHING lands under the destination topic's findings/ — a real, empty
-#      directory, since step 2's digest check runs and fails BEFORE the
-#      --dry-run/apply branch is even reached, so this holds independent of
-#      the flag.
+#   B. DryRun-reject: a REAL fixture container — built by fully exporting a
+#      FRESH, synthetic, from-scratch source topic this eval registers and
+#      populates itself (never the org's real bundled sample topic: that
+#      topic's own export unconditionally drags in its ~11 rendered
+#      deliverable-genre reports regardless of subset scope — confirmed
+#      empirically while writing this eval, see the note below Part D —
+#      which then fail mif-project.sh's gate against an unrelated fresh
+#      destination topic; a synthetic from-scratch source topic has no
+#      deliverables at all, so this class of failure cannot occur) — with
+#      one resource's bytes corrupted after its digest was declared (same
+#      technique as mif-container-nfr-verification.sh's own NFR-2, applied
+#      here specifically through the --dry-run code path, which that eval
+#      does not cover). research-import.js's DryRun-phase agent() call is
+#      stubbed to invoke the REAL scripts/mif-container-import.sh --dry-run
+#      and report its real exit status/output. Asserts: the module
+#      short-circuits with {ok:false, stage:'dry-run'}; Review/Apply are
+#      NEVER called (asserted from the driver's own call log, stubbed to
+#      throw if invoked); and NOTHING lands under the destination topic's
+#      findings/ — a real, empty directory, since step 2's digest check runs
+#      and fails BEFORE the --dry-run/apply branch is even reached, so this
+#      holds independent of the flag.
 #
 #   C. Review NO-GO: the SAME real DryRun invocation, this time against an
 #      uncorrupted, valid container (passes for real) — but the Review
@@ -53,24 +59,28 @@
 #      --dry-run never writes regardless of outcome, the destination topic's
 #      findings/ is asserted empty here too.
 #
-#   D. Apply-success + needsGating partition for BOTH trust settings: a REAL
-#      fixture container — 2 real corpus findings that already carry a
-#      foreign verification block with attempted_at set (genuinely
-#      previously falsification-gated by the bundled sample topic's own real
-#      history), plus 1 hand-authored synthetic finding carrying the
-#      dimension-analyst.md-documented pre-falsification placeholder
-#      (verdict: inconclusive, verdict_basis set, NO attempted_at — i.e.
-#      genuinely unverified, and still schema-valid: findings.schema.json
-#      requires verdict+verdict_basis unconditionally, attempted_at is what
-#      distinguishes "never gated" from "gated"). The Apply-phase agent()
-#      call is stubbed to invoke the REAL scripts/mif-container-import.sh (no
-#      --dry-run) and then enumerate the REAL on-disk written finding files
-#      for real extensions.harness.verification.attempted_at presence/
-#      absence — never a fabricated applied/unverified/withForeignVerdicts
-#      list. Driven TWICE against the SAME real container/topic (the second
-#      real invocation of the script is a genuine, real, idempotent no-op
-#      upsert — SKIPPED, not a duplicate write, per the script's own upsert-
-#      by-digest logic) — once per trustImportedVerdicts setting — asserting
+#   D. Apply-success + needsGating partition for BOTH trust settings: the
+#      SAME synthetic source topic carries exactly 2 hand-authored findings
+#      — one with a REAL foreign verification block (verdict: survived,
+#      verdict_basis, attempted_at all set, as a finding gated by another
+#      harness instance would carry) and one with scripts/falsify.sh's OWN
+#      documented not-yet-tested placeholder (verdict: inconclusive,
+#      verdict_basis set, deliberately NO attempted_at — falsify.sh's own
+#      header: "A finding with no fixture entry is recorded as a PLACEHOLDER
+#      `inconclusive` ... WITHOUT `attempted_at`" — this is the real,
+#      documented, schema-valid shape of "genuinely unverified" this system
+#      actually uses; findings.schema.json requires verdict+verdict_basis
+#      unconditionally, attempted_at is what distinguishes "never gated"
+#      from "gated", exactly what research-falsify.js's own Enumerate phase
+#      already keys on). The Apply-phase agent() call is stubbed to invoke
+#      the REAL scripts/mif-container-import.sh (no --dry-run) and then
+#      enumerate the REAL on-disk written finding files for real
+#      extensions.harness.verification.attempted_at presence/absence — never
+#      a fabricated applied/unverified/withForeignVerdicts list. Driven
+#      TWICE against the SAME real container/topic (the second real
+#      invocation of the script is a genuine, real, idempotent no-op upsert
+#      — SKIPPED, not a duplicate write, per the script's own upsert-by-
+#      digest logic) — once per trustImportedVerdicts setting — asserting
 #      the needsGating/trustedForeignVerdicts partition is correct for both.
 #
 #   E. Falsify regate hookup: a structural cross-check (research-import.js's
@@ -121,7 +131,6 @@ FALSIFY_WF=".claude/workflows/research-falsify.js"
 IMPORT_SCRIPT="scripts/mif-container-import.sh"
 EXPORT_SCRIPT="scripts/mif-container-export.sh"
 DIGEST_SCRIPT="scripts/mif-container-digest.sh"
-SAMPLE_TOPIC="example-okf-mif-knowledge-spine"
 
 fail=0
 note() { printf '  import-check: %s\n' "$1"; }
@@ -133,9 +142,8 @@ command -v ajv >/dev/null 2>&1 || { note "ajv is required but not on PATH"; exit
 [ -f "$WF" ] || { note "$WF not found — the vendored research-import workflow must ship (Epic #548, Task #590)"; exit 2; }
 [ -f "$FALSIFY_WF" ] || { note "$FALSIFY_WF not found — the vendored research-falsify workflow must ship (Epic #541, Task #560)"; exit 2; }
 [ -f "$IMPORT_SCRIPT" ] || { note "$IMPORT_SCRIPT not found — the fail-closed import gate this module delegates to must exist (ADR-0017)"; exit 2; }
-[ -f "$EXPORT_SCRIPT" ] || { note "$EXPORT_SCRIPT not found — needed to build a REAL fixture container from the bundled sample topic"; exit 2; }
-[ -f "$DIGEST_SCRIPT" ] || { note "$DIGEST_SCRIPT not found — needed to compute a real resource digest for the synthetic fixture finding"; exit 2; }
-[ -f "reports/$SAMPLE_TOPIC/ontology-map.json" ] || { note "reports/$SAMPLE_TOPIC/ontology-map.json not found — the bundled sample topic this eval builds fixtures from must exist"; exit 2; }
+[ -f "$EXPORT_SCRIPT" ] || { note "$EXPORT_SCRIPT not found — needed to build a REAL fixture container from a synthetic source topic"; exit 2; }
+[ -f "$DIGEST_SCRIPT" ] || { note "$DIGEST_SCRIPT not found — needed to compute a real resource digest for the digest-rejection fixture"; exit 2; }
 
 TMP="$(mktemp -d)" || { note "could not create scratch dir"; exit 1; }
 
@@ -178,10 +186,11 @@ had_sameas=0
     || { note "could not back up concordance-sameas-proposals.json"; exit 1; }
 }
 
+SRC_TOPIC="import-check-src"
 DRYRUN_TOPIC="import-check-dryrun-reject"
 REVIEW_TOPIC="import-check-review-nogo"
 APPLY_TOPIC="import-check-apply-success"
-ALL_SYNTHETIC_TOPICS=("$DRYRUN_TOPIC" "$REVIEW_TOPIC" "$APPLY_TOPIC")
+ALL_SYNTHETIC_TOPICS=("$SRC_TOPIC" "$DRYRUN_TOPIC" "$REVIEW_TOPIC" "$APPLY_TOPIC")
 
 cleanup() {
   local restore_failed=0
@@ -216,33 +225,123 @@ register_topic() {
     || { note "could not register synthetic topic $id in harness.config.json"; exit 1; }
   mkdir -p "reports/$id/findings"
 }
+register_topic "$SRC_TOPIC"
 register_topic "$DRYRUN_TOPIC"
 register_topic "$REVIEW_TOPIC"
 register_topic "$APPLY_TOPIC"
 
 # ============================================================================
-# Build a REAL base container: subset-exported from the bundled sample
-# topic's own real corpus, restricted to findings resolving to the always-on
-# mif-generic core (no vendored domain-pack dependency). Picked dynamically
-# from the real ontology-map.json, never hardcoded ids, so a future edit to
-# the sample corpus can't silently go stale here.
+# Build a REAL base container: FULLY exported (never a subset — there is
+# nothing to subset) from a FRESH, synthetic, from-scratch source topic this
+# eval registers and populates itself, carrying exactly 2 hand-authored
+# findings and nothing else (no deliverables of any kind — no report/goal/
+# README/artifact files — so mif-container-export.sh's own step 2b, which
+# unconditionally packages a topic's deliverables regardless of subset
+# scope, has nothing to sweep in). This deliberately avoids reusing the
+# org's real bundled sample topic (example-okf-mif-knowledge-spine): an
+# earlier version of this eval subset-exported 2 findings from THAT topic
+# and hit a REAL failure — its ~11 rendered deliverable-genre report files
+# (report-academic.md, report-engineering.md, ...) got pulled into the
+# export regardless of the --subset scope, and then failed
+# mif-project.sh's schema/citation-integrity gate once imported into an
+# unrelated, empty destination topic (those reports were rendered against
+# THAT topic's own goal/citation context, which doesn't exist at the fresh
+# destination). A synthetic source topic sidesteps the whole failure class.
+#
+#   FOREIGN_ID: verdict: survived, verdict_basis + attempted_at all set —
+#     a real foreign verification block, as a finding gated by ANOTHER
+#     harness instance would carry.
+#   UNVERIFIED_ID: verdict: inconclusive, verdict_basis set, NO
+#     attempted_at — scripts/falsify.sh's OWN documented not-yet-tested
+#     placeholder ("A finding with no fixture entry is recorded as a
+#     PLACEHOLDER `inconclusive` ... WITHOUT `attempted_at`"), the real,
+#     schema-valid shape of "genuinely unverified" this system actually
+#     uses (findings.schema.json requires verdict+verdict_basis
+#     unconditionally; attempted_at is what distinguishes never-gated from
+#     gated, exactly what research-falsify.js's own Enumerate phase keys
+#     on).
 # ============================================================================
-python3 - "reports/$SAMPLE_TOPIC/ontology-map.json" "$TMP/subset-ids.json" <<'PY'
+FOREIGN_ID="urn:mif:concept:harness/$SRC_TOPIC:foreign-0001"
+UNVERIFIED_ID="urn:mif:concept:harness/$SRC_TOPIC:unverified-0001"
+python3 - "$ROOT/reports/$SRC_TOPIC/findings/foreign.json" "$FOREIGN_ID" "$SRC_TOPIC" <<'PY'
 import json, sys
-d = json.load(open(sys.argv[1], encoding='utf-8'))
-ids = [x['finding_id'] for x in d if x.get('resolved_ontology', '').startswith('mif-generic')][:2]
-if len(ids) < 2:
-    print('not enough mif-generic-resolved findings in the sample topic to build this fixture', file=sys.stderr)
-    sys.exit(1)
-json.dump(ids, open(sys.argv[2], 'w', encoding='utf-8'))
+out_path, fid, topic = sys.argv[1], sys.argv[2], sys.argv[3]
+finding = {
+    "@context": "https://mif-spec.dev/schema/context.jsonld",
+    "@type": "Concept",
+    "@id": fid,
+    "conceptType": "semantic",
+    "namespace": f"harness/{topic}",
+    "title": "import-check eval fixture: a finding with a real foreign verification block",
+    "content": "Fixture content standing in for a finding gated by another harness instance's own adversarial gate, exported and re-imported here (research-harness-template#592).",
+    "summary": "Fixture finding carrying a foreign verification block for the import-check eval.",
+    "created": "2026-06-01T00:00:00Z",
+    "modified": "2026-06-01T00:00:00Z",
+    "temporal": {"@type": "TemporalMetadata", "validFrom": "2026-06-01T00:00:00Z"},
+    "tags": ["import-check-eval"],
+    "provenance": {"@type": "Provenance", "sourceType": "agent_inferred", "confidence": 0.8, "trustLevel": "high_confidence"},
+    "citations": [{
+        "@type": "Citation", "citationType": "documentation", "citationRole": "supports",
+        "title": "import-check eval fixture citation", "url": "https://example.com/import-check-eval-foreign",
+        "accessed": "2026-06-01",
+    }],
+    "extensions": {"harness": {
+        "dimension": "technical",
+        "verification": {
+            "verdict": "survived",
+            "verdict_basis": "Foreign instance's own adversarial gate found no credible disconfirming evidence.",
+            "attempted_at": "2026-06-01T00:30:00Z",
+        },
+    }},
+}
+json.dump(finding, open(out_path, "w"), indent=2)
 PY
-if [ $? -ne 0 ]; then
-  note "could not select 2 mif-generic-resolved finding ids from the sample topic's ontology-map.json"
-  exit 1
-fi
+python3 - "$ROOT/reports/$SRC_TOPIC/findings/unverified.json" "$UNVERIFIED_ID" "$SRC_TOPIC" <<'PY'
+import json, sys
+out_path, fid, topic = sys.argv[1], sys.argv[2], sys.argv[3]
+finding = {
+    "@context": "https://mif-spec.dev/schema/context.jsonld",
+    "@type": "Concept",
+    "@id": fid,
+    "conceptType": "semantic",
+    "namespace": f"harness/{topic}",
+    "title": "import-check eval fixture: a genuinely unverified finding (falsify.sh's own not-yet-tested placeholder)",
+    "content": "Fixture content standing in for a finding never yet run through any harness instance's falsification gate — scripts/falsify.sh's own documented placeholder shape (verdict: inconclusive, no attempted_at) for research-harness-template#592.",
+    "summary": "Fixture finding carrying no attempted_at for the import-check eval.",
+    "created": "2026-06-01T00:00:00Z",
+    "modified": "2026-06-01T00:00:00Z",
+    "temporal": {"@type": "TemporalMetadata", "validFrom": "2026-06-01T00:00:00Z"},
+    "tags": ["import-check-eval"],
+    "provenance": {"@type": "Provenance", "sourceType": "agent_inferred", "confidence": 0.8, "trustLevel": "high_confidence"},
+    "citations": [{
+        "@type": "Citation", "citationType": "documentation", "citationRole": "supports",
+        "title": "import-check eval fixture citation", "url": "https://example.com/import-check-eval-unverified",
+        "accessed": "2026-06-01",
+    }],
+    "extensions": {"harness": {
+        "dimension": "technical",
+        "verification": {
+            "verdict": "inconclusive",
+            "verdict_basis": "not adversarially tested (scripts/falsify.sh's own documented placeholder shape)",
+        },
+    }},
+}
+json.dump(finding, open(out_path, "w"), indent=2)
+PY
+jq -n --arg fid1 "$FOREIGN_ID" --arg fid2 "$UNVERIFIED_ID" \
+  '[{finding_id: $fid1, entity_type: "technology", resolved_ontology: "mif-generic@1.0.0", basis: "declared", valid: true},
+    {finding_id: $fid2, entity_type: "technology", resolved_ontology: "mif-generic@1.0.0", basis: "declared", valid: true}]' \
+  > "reports/$SRC_TOPIC/ontology-map.json"
+
+for f in "reports/$SRC_TOPIC/findings/foreign.json" "reports/$SRC_TOPIC/findings/unverified.json"; do
+  ajv validate --spec=draft2020 --strict=false -c ajv-formats \
+    -s schemas/findings.schema.json -r schemas/mif/mif.schema.json -r schemas/mif/definitions/entity-reference.schema.json \
+    -d "$f" > "$TMP/src-finding-ajv.log" 2>&1 \
+    || { note "the synthetic source finding $f is not schema-valid: $(cat "$TMP/src-finding-ajv.log")"; fail=1; }
+done
 
 rm -rf "$TMP/base-container"
-"$EXPORT_SCRIPT" "$SAMPLE_TOPIC" "$TMP/base-container" --subset "$TMP/subset-ids.json" --source-instance "import-check-eval-source" \
+"$EXPORT_SCRIPT" "$SRC_TOPIC" "$TMP/base-container" --source-instance "import-check-eval-source" \
   > "$TMP/base-export.log" 2>&1
 if [ ! -f "$TMP/base-container/mif-package.json" ]; then
   note "building the REAL base fixture container failed: $(cat "$TMP/base-export.log")"
@@ -462,44 +561,16 @@ fi
 
 # ============================================================================
 # D. Apply-success + needsGating partition for BOTH trust settings. The
-#    fixture container = the real base container (2 real, already-gated
-#    findings, both carrying a real foreign verification block with
-#    attempted_at) PLUS one hand-authored synthetic finding carrying the
-#    dimension-analyst.md pre-falsification placeholder (verdict:
-#    inconclusive, verdict_basis set, NO attempted_at — genuinely
-#    unverified, still schema-valid).
+#    fixture container is the same real base container built above — it
+#    already carries exactly FOREIGN_ID (a real foreign verification block,
+#    attempted_at set) and UNVERIFIED_ID (falsify.sh's own documented
+#    not-yet-tested placeholder, no attempted_at) from a real, from-scratch
+#    synthetic source topic — no cloning/patching/re-digesting needed here.
 # ============================================================================
 rm -rf "$TMP/apply-container"
 cp -r "$TMP/base-container" "$TMP/apply-container"
 
-first_finding="$(find "$TMP/apply-container/findings" -maxdepth 1 -name '*.json' | LC_ALL=C sort | head -1)"
-if [ -z "$first_finding" ]; then
-  note "D: the base container has no finding files to clone a synthetic fixture from"
-  fail=1
-else
-  jq '.extensions.harness.verification = {"verdict":"inconclusive","verdict_basis":"pending pre-import verification (import-check eval fixture placeholder — dimension-analyst.md convention, no attempted_at)"} | .["@id"]="urn:mif:concept:harness/'"$APPLY_TOPIC"':synthetic-unverified" | .title="Synthetic Unverified Finding (import-check eval fixture)"' \
-    "$first_finding" > "$TMP/apply-container/findings/synthetic-unverified-finding.json"
-
-  ajv validate --spec=draft2020 --strict=false -c ajv-formats \
-    -s schemas/findings.schema.json -r schemas/mif/mif.schema.json -r schemas/mif/definitions/entity-reference.schema.json \
-    -d "$TMP/apply-container/findings/synthetic-unverified-finding.json" > "$TMP/synthetic-finding-ajv.log" 2>&1 \
-    || { note "D: the hand-authored synthetic unverified finding is not schema-valid: $(cat "$TMP/synthetic-finding-ajv.log")"; fail=1; }
-
-  synth_digest="$("$DIGEST_SCRIPT" resource "$TMP/apply-container/findings/synthetic-unverified-finding.json")"
-  synth_ontology_type="$(jq -r --arg p "findings/$(basename "$first_finding")" '.resources[] | select(.path == $p) | .ontologyType' "$TMP/apply-container/mif-package.json")"
-  jq --arg d "$synth_digest" --arg ot "$synth_ontology_type" \
-    '.resources += [{"mifType":"finding","path":"findings/synthetic-unverified-finding.json","ontologyType":$ot,"digest":$d}]' \
-    "$TMP/apply-container/mif-package.json" > "$TMP/apply-container/mif-package.json.next" \
-    && mv "$TMP/apply-container/mif-package.json.next" "$TMP/apply-container/mif-package.json"
-  new_manifest_digest="$(jq -r '.resources[].digest' "$TMP/apply-container/mif-package.json" | "$DIGEST_SCRIPT" manifest)"
-  jq --arg m "$new_manifest_digest" '.manifestDigest = $m' "$TMP/apply-container/mif-package.json" > "$TMP/apply-container/mif-package.json.next" \
-    && mv "$TMP/apply-container/mif-package.json.next" "$TMP/apply-container/mif-package.json"
-
-  ajv validate --spec=draft2020 --strict=false -c ajv-formats \
-    -s schemas/mif-container.schema.json -d "$TMP/apply-container/mif-package.json" > "$TMP/apply-manifest-ajv.log" 2>&1 \
-    || { note "D: the patched fixture manifest is not schema-valid: $(cat "$TMP/apply-manifest-ajv.log")"; fail=1; }
-
-  cat > "$TMP/stubs-apply-success.cjs" <<NODE
+cat > "$TMP/stubs-apply-success.cjs" <<NODE
 'use strict';
 const { execFileSync } = require('child_process');
 const fs = require('fs');
@@ -511,7 +582,7 @@ const FINDINGS_DIR = path.join(ROOT, 'reports', TOPIC, 'findings');
 module.exports = {
   'import:dry-run': async () => {
     const out = execFileSync('bash', [ROOT + '/$IMPORT_SCRIPT', CONTAINER, TOPIC, '--dry-run'], { stdio: 'pipe' }).toString();
-    return { passed: true, manifestValid: true, digestsValid: true, ontologyBindingsCompatible: true, resourceCount: 3, output: out.slice(0, 2000) };
+    return { passed: true, manifestValid: true, digestsValid: true, ontologyBindingsCompatible: true, resourceCount: $BASE_RESOURCE_COUNT, output: out.slice(0, 2000) };
   },
   'import:review': async () => ({ proceed: true, reasons: [], collisions: [] }),
   'import:apply': async () => {
@@ -532,21 +603,22 @@ module.exports = {
 };
 NODE
 
-  # Run TWICE against the SAME real container/topic (a real, idempotent
-  # second script invocation — SKIPPED not duplicated) — once per
-  # trustImportedVerdicts setting, since the setting is read from args
-  # BEFORE Apply runs and only affects the module's OWN post-processing of
-  # the real applied.* lists, not what the script itself does.
-  printf '{"harnessDir":".","topic":"%s","containerDir":"%s","trustImportedVerdicts":false}' "$APPLY_TOPIC" "$TMP/apply-container" > "$TMP/args-apply-false.json"
-  run_import apply-false "$TMP/args-apply-false.json" "$TMP/stubs-apply-success.cjs" "$TMP/out-apply-false.json"
-  printf '{"harnessDir":".","topic":"%s","containerDir":"%s","trustImportedVerdicts":true}' "$APPLY_TOPIC" "$TMP/apply-container" > "$TMP/args-apply-true.json"
-  run_import apply-true "$TMP/args-apply-true.json" "$TMP/stubs-apply-success.cjs" "$TMP/out-apply-true.json"
+# Run TWICE against the SAME real container/topic (a real, idempotent
+# second script invocation — SKIPPED not duplicated) — once per
+# trustImportedVerdicts setting, since the setting is read from args BEFORE
+# Apply runs and only affects the module's OWN post-processing of the real
+# applied.* lists, not what the script itself does.
+printf '{"harnessDir":".","topic":"%s","containerDir":"%s","trustImportedVerdicts":false}' "$APPLY_TOPIC" "$TMP/apply-container" > "$TMP/args-apply-false.json"
+run_import apply-false "$TMP/args-apply-false.json" "$TMP/stubs-apply-success.cjs" "$TMP/out-apply-false.json"
+printf '{"harnessDir":".","topic":"%s","containerDir":"%s","trustImportedVerdicts":true}' "$APPLY_TOPIC" "$TMP/apply-container" > "$TMP/args-apply-true.json"
+run_import apply-true "$TMP/args-apply-true.json" "$TMP/stubs-apply-success.cjs" "$TMP/out-apply-true.json"
 
-  if [ -f "$TMP/out-apply-false.json" ] && [ -f "$TMP/out-apply-true.json" ]; then
-    python3 - "$TMP/out-apply-false.json" "$TMP/out-apply-true.json" "$TMP/needs-gating-false.json" <<'PY'
+if [ -f "$TMP/out-apply-false.json" ] && [ -f "$TMP/out-apply-true.json" ]; then
+  python3 - "$TMP/out-apply-false.json" "$TMP/out-apply-true.json" "$TMP/needs-gating-false.json" "$FOREIGN_ID" "$UNVERIFIED_ID" <<'PY'
 import json, sys
 d_false = json.load(open(sys.argv[1], encoding='utf-8'))
 d_true = json.load(open(sys.argv[2], encoding='utf-8'))
+foreign_id, unverified_id = sys.argv[4], sys.argv[5]
 ok = True
 def check(name, cond, detail=''):
     global ok
@@ -564,25 +636,21 @@ check('D: both runs report ok:true', r_false.get('ok') is True and r_true.get('o
 
 imported_false = set(r_false.get('imported') or [])
 imported_true = set(r_true.get('imported') or [])
-check('D: both runs imported exactly 3 real findings (2 foreign-verdict + 1 synthetic unverified)', len(imported_false) == 3 and imported_false == imported_true, json.dumps([sorted(imported_false), sorted(imported_true)]))
-synthetic_ids = {i for i in imported_false if i.endswith(':synthetic-unverified')}
-check('D: the synthetic unverified finding genuinely imported', len(synthetic_ids) == 1, json.dumps(sorted(imported_false)))
-foreign_ids = imported_false - synthetic_ids
-check('D: exactly 2 real corpus findings carry the foreign verdict (real attempted_at)', len(foreign_ids) == 2, json.dumps(sorted(foreign_ids)))
+check('D: both runs imported exactly the 2 real findings (foreign + unverified)', imported_false == {foreign_id, unverified_id} and imported_true == imported_false, json.dumps([sorted(imported_false), sorted(imported_true)]))
 
 needs_gating_false = set(r_false.get('needsGating') or [])
 needs_gating_true = set(r_true.get('needsGating') or [])
 trusted_false = set(r_false.get('trustedForeignVerdicts') or [])
 trusted_true = set(r_true.get('trustedForeignVerdicts') or [])
 
-check('D: trustImportedVerdicts:false — needsGating == unverified + withForeignVerdicts (ALL 3, imported evidence never exempt by default)',
+check('D: trustImportedVerdicts:false — needsGating == unverified + withForeignVerdicts (BOTH ids, imported evidence never exempt by default)',
       needs_gating_false == imported_false, f'needsGating={sorted(needs_gating_false)} imported={sorted(imported_false)}')
 check('D: trustImportedVerdicts:false — trustedForeignVerdicts is empty (nothing trusted by default)',
       trusted_false == set(), json.dumps(sorted(trusted_false)))
-check('D: trustImportedVerdicts:true — needsGating == ONLY the unverified synthetic finding',
-      needs_gating_true == synthetic_ids, f'needsGating={sorted(needs_gating_true)} expected={sorted(synthetic_ids)}')
-check('D: trustImportedVerdicts:true — trustedForeignVerdicts == the 2 real foreign-verdict findings',
-      trusted_true == foreign_ids, f'trusted={sorted(trusted_true)} expected={sorted(foreign_ids)}')
+check('D: trustImportedVerdicts:true — needsGating == ONLY the unverified finding',
+      needs_gating_true == {unverified_id}, f'needsGating={sorted(needs_gating_true)} expected=[{unverified_id!r}]')
+check('D: trustImportedVerdicts:true — trustedForeignVerdicts == the foreign-verdict finding',
+      trusted_true == {foreign_id}, f'trusted={sorted(trusted_true)} expected=[{foreign_id!r}]')
 
 labels_false = [c['label'] for c in d_false['calls']]
 labels_true = [c['label'] for c in d_true['calls']]
@@ -594,9 +662,8 @@ check('D: both runs called dry-run, review, apply in that order', labels_false =
 json.dump(sorted(needs_gating_false), open(sys.argv[3], 'w', encoding='utf-8'))
 sys.exit(0 if ok else 1)
 PY
-    rc=$?
-    [ "$rc" -eq 0 ] || fail=1
-  fi
+  rc=$?
+  [ "$rc" -eq 0 ] || fail=1
 fi
 
 # ============================================================================
@@ -683,7 +750,7 @@ check('E: research-falsify.js completed with no throw at all, given the REAL imp
 r = d.get('result') or {}
 check('E: an empty working set (no findings on disk in this hermetic slice) short-circuits to gated:0 with no Gate-phase call needed',
       r.get('gated') == 0, json.dumps(r))
-check(f'E: the fed scope.ids is exactly the REAL needsGating produced by D ({needs_gating!r}), not a placeholder', len(needs_gating) == 3)
+check(f'E: the fed scope.ids is exactly the REAL needsGating produced by D ({needs_gating!r}), not a placeholder', len(needs_gating) == 2)
 sys.exit(0 if ok else 1)
 PY
     rc=$?
@@ -695,7 +762,7 @@ else
 fi
 
 if [ "$fail" -eq 0 ]; then
-  note "the DryRun and Apply phases are structurally proven to invoke the REAL scripts/mif-container-import.sh, with and without --dry-run; a REAL corrupted-digest container is rejected at dry-run through the real gate with Review/Apply never called and nothing written; a REAL valid container hits a Review NO-GO (a live sonnet scope-fit judgment this eval cannot reproduce deterministically, stated plainly) with Apply never called and nothing written; a REAL container (2 real foreign-verdict findings + 1 hand-authored genuinely-unverified synthetic finding, both schema-valid) imports for real through the non-dry-run gate and the needsGating/trustedForeignVerdicts partition is correct for BOTH trustImportedVerdicts settings, verified against the real on-disk written files, not a fabricated list; and research-falsify.js accepts the REAL needsGating output as scope:{ids:[...]},regate:true without tripping its guard error, proving the two independently-vendored modules' interface actually lines up end to end — mirroring #588's pivot->falsify interface fixture for this Epic's own action D -> falsify boundary."
+  note "the DryRun and Apply phases are structurally proven to invoke the REAL scripts/mif-container-import.sh, with and without --dry-run; a REAL corrupted-digest container (built from a fresh synthetic source topic, no deliverable-report contamination) is rejected at dry-run through the real gate with Review/Apply never called and nothing written; a REAL valid container hits a Review NO-GO (a live sonnet scope-fit judgment this eval cannot reproduce deterministically, stated plainly) with Apply never called and nothing written; the same real container (one real foreign-verdict finding, one carrying falsify.sh's own documented not-yet-tested placeholder) imports for real through the non-dry-run gate and the needsGating/trustedForeignVerdicts partition is correct for BOTH trustImportedVerdicts settings, verified against the real on-disk written files, not a fabricated list; and research-falsify.js accepts the REAL needsGating output as scope:{ids:[...]},regate:true without tripping its guard error, proving the two independently-vendored modules' interface actually lines up end to end — mirroring #588's pivot->falsify interface fixture for this Epic's own action D -> falsify boundary."
 else
   echo "import-check: FAILED (see notes above)"
 fi
