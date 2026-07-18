@@ -168,6 +168,26 @@ run "deliverables-route-check" bash evals/deliverables-route-check.sh
 # cross-check instruction, verified structurally.
 run "deliverables-genre-channel-route" bash evals/deliverables-genre-channel-route.sh
 
+# The research-augment module's Decide phase has deterministic teeth where its
+# own logic can express it (#580, Epic #545, following #578's vendoring and
+# #579's discover-delegation fix): the Assess phase's discover-skill
+# delegation is proven to be the REAL, on-disk invocation (not an assumed
+# name) via a structural cross-check against .claude/skills/discover/SKILL.md
+# itself; the two jq pipelines the Assess prompt instructs are extracted
+# VERBATIM from the module's ACTUAL runtime prompt text (driven for real via
+# the Workflow-runtime's async-function-body framing) and executed for real
+# against a thin/saturated fixture matrix; the Decide prompt's stated priority
+# order (unmet-check-impact > attrition > thinness > staleness) plus the
+# saturated-is-a-reject rule are checked structurally, in stated order; target
+# checks named per deepening pick are proven to be real goal check ids, never
+# invented; and DECISION_SCHEMA — captured verbatim from the real agent() call,
+# never hand-retyped — is proven via ajv to require `reasoning` unconditionally
+# (the empty-plan outcome is proven end-to-end to complete with no throw and a
+# normal log line, never an error) and `targetChecks` per deepen[] entry. The
+# Decide phase's actual dimension-selection judgment is a live model call this
+# eval cannot reproduce deterministically — stated plainly, not faked.
+run "augment-decide-check" bash evals/augment-decide-check.sh
+
 # release.yml never uploads to an already-published (immutable) release
 # (#537): tag-push trigger, no post-publish `gh release upload`, artifact
 # attached in the same `gh release create` call.

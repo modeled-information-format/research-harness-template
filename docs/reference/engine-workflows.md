@@ -2,7 +2,7 @@
 id: reference-engine-workflows
 type: semantic
 created: '2026-07-17T20:25:00-04:00'
-modified: '2026-07-18T14:22:55.338Z'
+modified: '2026-07-18T16:10:21.452Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -30,13 +30,14 @@ provenance:
 engine-path counterparts to the interactive slash commands in
 [commands](commands.md). A workflow module is composed programmatically (by a
 research pipeline or an orchestrating session) and returns a typed result; it
-never converses with the user. Six modules ship today: `research-goal`
+never converses with the user. Seven modules ship today: `research-goal`
 (atomic step 1 of the research pipeline, vendored under Epic #539),
 `research-fanout` (atomic step 2, vendored under Epic #540), `research-falsify`
 (atomic step 3, vendored under Epic #541), `research-synthesis` (atomic
 step 4, vendored under Epic #542), `research-projection` (atomic step 5,
-vendored under Epic #543), and `research-deliverables` (atomic step 6,
-vendored under Epic #544).
+vendored under Epic #543), `research-deliverables` (atomic step 6,
+vendored under Epic #544), and `research-augment` (atomic action A —
+deepening decision, vendored under Epic #545).
 
 ## Module shape and parse-check
 
@@ -696,3 +697,96 @@ could not be served with its distinguishing reason, and `ok` true iff at
 least one deliverable rendered. An empty `plan[]` (nothing servable) returns
 `{ ok: false, artifacts: [], unavailable }` before the Render phase ever
 runs.
+
+## research-augment
+
+Atomic action A (augment): a pure **decision** workflow — haiku Assess
+computes the per-dimension coverage/verdict/staleness matrix, then sonnet
+Decide judges which dimensions to deepen, with stated reasoning, rejected
+alternatives, and named target checks. It gathers nothing itself: the
+orchestrator (#550, not yet vendored) is what feeds its `deepen[]` plan to
+`research-fanout` (gathering) and `research-falsify` (the gate). Source:
+`.claude/workflows/research-augment.js`.
+
+### Args
+
+| Arg | Required | Default | Description |
+| --- | --- | --- | --- |
+| `topic` | yes | — | Topic whose `reports/<topic>/goal.json` and `reports/<topic>/findings/` drive the assessment. A missing `topic` throws before any phase runs. |
+| `harnessDir` | no | `.` | Path to the harness instance. The in-repo default is the instance root (the #552/#556/#560/#564/#569/#573 precedent), so a pipeline running inside a clone passes nothing. |
+| `focusHint` | no | — | User steer (e.g. a dimension id or unmet check ids). Decide honors it unless it contradicts the evidence — and says so explicitly when it does. |
+| `checkCoverage` | no | — | A `research-synthesis` per-check grade list, when a synthesis round just ran. Folded into Decide's reasoning when supplied; the module runs standalone without it. |
+
+### Phases
+
+| Phase | Model | What it does |
+| --- | --- | --- |
+| Assess | haiku (low effort) | Computes the per-dimension matrix (`findings`, `survived`, `weakened`, `falsified`, `inconclusive`, `ungated`, `oldestFindingDate`) plus the goal's `goal_statement` and `completion_condition.checks[]`, read verbatim. |
+| Decide | sonnet | Judges which dimensions (at most 3) to deepen, in what depth, with stated reasoning and named target checks — or that nothing warrants deepening. |
+
+### Assess is discover-delegated, not a re-derivation
+
+The count/verdict portion of Assess's matrix is **delegated to the harness's
+own `discover` skill** (`.claude/skills/discover/SKILL.md`): its
+coverage-gaps pipeline already groups findings by dimension over
+`research-index.json`, and its stale-findings pipeline already filters by
+that same index's top-level `.verdict` field — the module composes both into one
+`jq` pipeline over that same index rather than having an agent re-derive the
+counts by reading and eyeballing raw finding files. This is the same class of
+"delegate to a real, existing mechanism instead of reimplementing it via a
+free-form prompt" gap Epics #543/#544 (`research-projection`/
+`research-deliverables`) found and fixed for their own script-delegated
+phases — cited here rather than restated; see `research-augment.js`'s own
+vendoring header and Task #578 for the confirmed-gap writeup. The one piece `research-index.json`
+genuinely cannot supply — it carries no timestamp, exactly as `discover`'s
+own README notes for its age-based staleness signal — is
+`oldestFindingDate`: that is real incremental logic layered on top, read
+from the raw finding files' `created` and `extensions.harness.dimension`
+fields, the same way `discover`'s own age-based staleness pipeline does it.
+
+### Decide-phase priority order
+
+Deepening signals are judged in a fixed priority: **unmet-check-impact >
+attrition > thinness > staleness**. A check graded `no`/`partially` whose
+evidence would come from a given dimension outranks everything else; high
+falsification attrition (falsified+weakened dominating survived) is treated
+as a **distinct sourcing-strategy signal** — the dimension's angle of attack
+needs to change, not just get more volume — and is never folded into plain
+thinness. A dimension already saturated with survivors is a reject
+(diminishing returns), reported in `rejected[]` with its reason.
+
+### The empty-plan outcome is valid, not an error
+
+If Decide finds nothing worth deepening, it returns an empty `deepen[]` with
+`reasoning` stating why — evidence may simply not exist yet for a check, or
+every dimension may already be well-covered. This is a normal, non-error
+return, never surfaced as a failure the caller must handle specially.
+
+### Supersession: decides in place of the orchestrator's `augment` mode flag
+
+For engine-composed deepening, `research-augment` **supersedes** the old
+engine's `augment` orchestrator-mode flag — Decision D-7 of the workspace
+research-pipeline architecture document (the source this module was
+vendored from) states the rationale: steering decisions (augment among them)
+become standalone, independently invocable, testable workflows with typed
+outputs, instead of being folded into orchestrator mode flags with no
+engine integration of their own. Cited here rather than restated; see that
+document's "D-7 — Steering decisions are first-class atomic workflows"
+section and its "Atomic action A — augment" section for the fuller design
+rationale and flowchart.
+
+What is *not* superseded: this module only **decides** — it never gathers
+or gates. The orchestrator (#550, not yet vendored) remains the piece that
+composes `research-augment`'s `deepen[]` plan into actual `research-fanout`
+(gathering) and `research-falsify` (gate) calls; until it lands,
+`research-augment` is confirmed safe to invoke standalone (no
+live-orchestrator-context dependency), consuming an optional `checkCoverage`/
+`focusHint` when a caller has them.
+
+### Returns
+
+A typed result: `{ deepen, rejected, reasoning, matrix }` — `deepen[]` the
+accepted `{ dimension, depth, rationale, targetChecks }` entries (at most 3),
+`rejected[]` the `{ dimension, why }` pairs Decide declined, `reasoning` its
+overall explanation (populated even when `deepen[]` is empty), and `matrix`
+the per-dimension coverage data Assess computed.
