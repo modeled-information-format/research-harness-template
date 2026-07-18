@@ -1,0 +1,45 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@type": "Concept",
+  "@id": "urn:mif:concept:harness:fanout-eval-pair-old",
+  "conceptType": "semantic",
+  "namespace": "harness/fanout-lane-eval",
+  "title": "Update-propagating template engines re-apply upstream changes",
+  "content": "Template engines with an update channel (e.g. Copier) can re-apply later upstream template changes to an instantiated project, unlike one-time snapshot generators.",
+  "summary": "Update-channel template engines propagate upstream changes to instances.",
+  "created": "2026-07-17T12:00:00Z",
+  "modified": "2026-07-17T12:00:00Z",
+  "temporal": {
+    "@type": "TemporalMetadata",
+    "validFrom": "2026-07-17T12:00:00Z"
+  },
+  "tags": [
+    "fanout-eval",
+    "template-engine"
+  ],
+  "provenance": {
+    "@type": "Provenance",
+    "sourceType": "agent_inferred",
+    "confidence": 0.85,
+    "trustLevel": "high_confidence"
+  },
+  "citations": [
+    {
+      "@type": "Citation",
+      "citationType": "documentation",
+      "citationRole": "supports",
+      "title": "Copier documentation — updating a project",
+      "url": "https://copier.readthedocs.io/en/stable/updating/",
+      "accessed": "2026-07-17"
+    }
+  ],
+  "extensions": {
+    "harness": {
+      "dimension": "landscape",
+      "verification": {
+        "verdict": "survived",
+        "verdict_basis": "Copier's documented update mechanism directly demonstrates the claim."
+      }
+    }
+  }
+}

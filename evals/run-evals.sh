@@ -71,6 +71,16 @@ run "workflow-docs-check" bash evals/workflow-docs-check.sh
 # closed when repair is exhausted.
 run "goal-lint-repair" bash evals/goal-lint-repair.sh
 
+# The research-fanout lane contract has deterministic teeth (#558): the ajv
+# finding gate (findings.schema.json + vendored schemas/mif/ closure) FAILS
+# the seeded-invalid fixture naming both issue classes, the lane's
+# dimension-pin gate rejects an ajv-valid finding pinned outside its lane,
+# relate/dedup annotation is provably additive (file count, older file, and
+# claim content all preserved), and research-fanout.js keeps FINDING_CONTRACT
+# in the analyst brief, crossDimensionLeads required, and the never-delete
+# repair/relate constraints.
+run "fanout-lane-contract" bash evals/fanout-lane-contract.sh
+
 # release.yml never uploads to an already-published (immutable) release
 # (#537): tag-push trigger, no post-publish `gh release upload`, artifact
 # attached in the same `gh release create` call.

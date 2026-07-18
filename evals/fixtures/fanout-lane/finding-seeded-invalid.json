@@ -1,0 +1,31 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@type": "Concept",
+  "@id": "urn:mif:concept:harness:fanout-eval-seeded-invalid",
+  "conceptType": "semantic",
+  "namespace": "harness/fanout-lane-eval",
+  "title": "Seeded-invalid finding: no citations, no verification record",
+  "content": "This fixture violates schemas/findings.schema.json in exactly two named issue classes: its citations array is empty (the schema requires minItems 1 so every finding is source-traceable) and its extensions.harness block carries no verification record (the schema requires the falsification-gate verdict trait). The MIF base object is otherwise well-formed, so the failure isolates the harness-layer gate.",
+  "summary": "Deliberately fails the ajv finding gate: empty citations and missing extensions.harness.verification.",
+  "created": "2026-07-17T12:00:00Z",
+  "modified": "2026-07-17T12:00:00Z",
+  "temporal": {
+    "@type": "TemporalMetadata",
+    "validFrom": "2026-07-17T12:00:00Z"
+  },
+  "tags": [
+    "fanout-eval"
+  ],
+  "provenance": {
+    "@type": "Provenance",
+    "sourceType": "agent_inferred",
+    "confidence": 0.5,
+    "trustLevel": "uncertain"
+  },
+  "citations": [],
+  "extensions": {
+    "harness": {
+      "dimension": "landscape"
+    }
+  }
+}
