@@ -2,7 +2,7 @@
 id: reference-engine-workflows
 type: semantic
 created: '2026-07-17T20:25:00-04:00'
-modified: '2026-07-18T17:22:40.969Z'
+modified: '2026-07-18T18:07:55.328Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -30,15 +30,17 @@ provenance:
 engine-path counterparts to the interactive slash commands in
 [commands](commands.md). A workflow module is composed programmatically (by a
 research pipeline or an orchestrating session) and returns a typed result; it
-never converses with the user. Eight modules ship today: `research-goal`
+never converses with the user. Nine modules ship today: `research-goal`
 (atomic step 1 of the research pipeline, vendored under Epic #539),
 `research-fanout` (atomic step 2, vendored under Epic #540), `research-falsify`
 (atomic step 3, vendored under Epic #541), `research-synthesis` (atomic
 step 4, vendored under Epic #542), `research-projection` (atomic step 5,
 vendored under Epic #543), `research-deliverables` (atomic step 6,
 vendored under Epic #544), `research-augment` (atomic action A —
-deepening decision, vendored under Epic #545), and `research-add-dimensions`
-(atomic action B — widen the dimension set, vendored under Epic #546).
+deepening decision, vendored under Epic #545), `research-add-dimensions`
+(atomic action B — widen the dimension set, vendored under Epic #546), and
+`research-pivot` (atomic action C — pivot research focus, vendored under
+Epic #547).
 
 ## Module shape and parse-check
 
@@ -906,13 +908,15 @@ for the fuller generator-critic rationale and flowchart.
 
 What is *not* superseded: `/goal-writer --reshape` remains the interactive
 path for an actual goal *reshape* (a changed question — atomic action C,
-`research-pivot`, not yet vendored) and for any conversational dimension
-change a user drives directly; this module is the engine-composed
-widen-only path, invoked with an explicit `hints`/`leads` payload rather
-than a dialogue turn. Its `fanoutPlan` output hands the newly-added
-dimensions to `research-fanout` for the very next round — the same "typed
-hand-off, no filesystem coordination" contract every other module on this
-page already follows.
+[`research-pivot`](#research-pivot), vendored under Epic #547 — see that
+section below for its own supersession relationship with
+`/goal-writer --reshape`) and for any conversational dimension change a
+user drives directly; this module is the engine-composed widen-only path,
+invoked with an explicit `hints`/`leads` payload rather than a dialogue
+turn. Its `fanoutPlan` output hands the newly-added dimensions to
+`research-fanout` for the very next round — the same "typed hand-off, no
+filesystem coordination" contract every other module on this page already
+follows.
 
 ### Returns
 
@@ -926,3 +930,187 @@ the prior version's real id (never `null` once Amend runs — this module
 only widens an already-existing goal, so `OLD` is always a real `gv-` id),
 and `fanoutPlan` a `{ dimensions, depth: 'standard' }` hint for the
 orchestrator to fan out only the newly-added dimensions next round.
+
+## research-pivot
+
+Atomic action C (pivot research focus): the question itself changes.
+Sonnet Reshape mints a new goal version in the append-only `gv-` lineage
+from a required `delta` (snapshot, delta applied, content-hash identity,
+`supersedes`, `revision`); parallel haiku Classify batches grade every
+existing finding against the NEW goal as carry / stale / out-of-scope —
+findings are gathered once and reused across goal versions, classification
+never deletes; sonnet Plan computes `gapDimensions` (which dimensions the
+carried corpus cannot answer the new checks from) and `reverifyIds` (the
+stale re-gate list). Source: `.claude/workflows/research-pivot.js`.
+
+### Args
+
+| Arg | Required | Default | Description |
+| --- | --- | --- | --- |
+| `topic` | yes | — | Topic whose `reports/<topic>/goal.json` the run reshapes and whose `reports/<topic>/findings/` the Classify phase grades. A missing `topic` throws before any phase runs. |
+| `delta` | yes | — | What changed and why. A pivot without a stated delta throws before Reshape runs — see [Delta-required refusal](#delta-required-refusal-and-out-of-scope-findings-kept-unused-are-both-non-error) below. |
+| `harnessDir` | no | `.` | Path to the harness instance. The in-repo default is the instance root (the #552/#556/#560/#564/#569/#573/#578/#582 precedent), so a pipeline running inside a clone passes nothing. |
+| `batchSize` | no | `15` | Findings graded per Classify batch. |
+
+### Phases
+
+| Phase | Model | What it does |
+| --- | --- | --- |
+| Reshape | sonnet | `reports/<topic>/goal.json` must already exist — pivot **evolves** an existing goal, it never authors one fresh; if it is missing, the phase stops and reports that `/goal-writer` must run first (an explicit precondition this phase states in its own prompt, not carried from another module). Applies the delta to `goal_statement`/`scope`/`dimensions`/`completion_condition`, then mints the new version — see [Goal-version delegation](#goal-version-delegation-scriptsgoal-versionsh-not-a-freehand-hash-a-third-time) below. Returns the new `goalVersion`/`supersedes` (both read back from `goal.json` after minting, never a self-computed value), the new/dropped dimension ids, the new check ids, and the new `goal_statement`. |
+| Classify — List | haiku (low effort) | Lists the `@id` of every finding under `reports/<topic>/findings/` (quarantine/archive siblings excluded). |
+| Classify — grade | haiku, parallel batches of `batchSize` | Grades every listed finding against the NEW goal version as `carry` (in the new scope, evidence still current), `stale` (in scope, but its verification predates what the delta changed, or its evidence is time-sensitive and old — needs **re-gating**, not re-gathering), or `out-of-scope` (the new scope/`non_goals` exclude it — it stays on disk, simply unused by this version). Classification never deletes a finding file, regardless of class. |
+| Plan | sonnet | Reads the carried/stale id lists, the new checks, and the new/dropped dimensions; decides `gapDimensions` — always including the brand-new dimensions, plus any existing dimension whose carried evidence cannot answer the new checks — and returns `reverifyIds` (the stale list) plus a rationale. |
+
+### Delta-required refusal and out-of-scope-findings-kept-unused are both non-error
+
+A pivot call with no `delta` throws before Reshape runs
+(`research-pivot: args.delta is required — a pivot without a stated delta
+is not a pivot`) — a hard precondition, not a soft default to an empty
+delta, since a pivot with no stated change is a contradiction in terms, not
+a degenerate case to tolerate. Separately, and explicitly **not** an error
+path: findings the Classify phase grades `out-of-scope` are never deleted,
+moved, or quarantined — they stay on disk under `reports/<topic>/findings/`,
+simply unreferenced by the new goal version's evidence pool. This mirrors,
+for the findings a goal version's evidence draws from, the same append-only,
+nothing-discarded posture ADR-0006 already imposes on the goal document
+itself.
+
+### The falsify regate hookup: `reverifyIds` feeds `research-falsify` directly, no adapter
+
+This is stated as a **verified fact**, not an assumed interface — both
+modules' real signatures were read before writing this section, not carried
+forward from the reference design's prose. `research-pivot`'s `reverifyIds`
+is a plain array of finding `@id` strings (the Plan phase's stale list).
+[`research-falsify`](#research-falsify)'s `scope` argument accepts exactly
+`'all' | 'dimension:<d>' | { paths?: string[], ids?: string[] }`, and its
+`regate: true` flag is gated to require that explicit `paths`/`ids` scope —
+it throws on `'all'`/`'dimension:*'` (see falsify's
+[Regate section](#regate-a-client-side-verification-block-reset)).
+`reverifyIds` already **is** that `ids[]` array, so the orchestrator hookup
+is a direct pass-through with zero translation:
+
+```js
+research-falsify({ ..., scope: { ids: pivotResult.reverifyIds }, regate: true })
+```
+
+No adapter, wrapper, or field-renaming sits between pivot's output shape and
+falsify's scope-argument shape — this is the one intended way stale
+findings get re-gated after a pivot; they are never re-gathered.
+
+### Goal-version delegation: `scripts/goal-version.sh`, not a freehand hash (a third time)
+
+This is the as-built account of a confirmed gap, not a restatement of the
+reference design: `research-pivot.js`'s own vendoring header records that
+the reference implementation's Reshape phase instructs its agent to
+compute the `gv-` content hash **freehand** — a prose description of the
+algorithm for the agent to re-derive itself, rather than invoking the
+script this repo already ships for exactly that purpose. This is the same
+class of "delegate to a real, existing mechanism instead of reimplementing
+it via a free-form prompt" gap Epics #543/#544/#545/#546
+(`research-projection`/`research-deliverables`/`research-augment`/
+`research-add-dimensions`) found and fixed for their own script-, skill-,
+and goal-version-delegated phases — cited here rather than restated.
+
+The fix wires Reshape to the same snapshot-then-mint idiom already
+established for goal evolution (`.claude/commands/goal-writer.md`'s
+`--reshape` flow; `research-add-dimensions.js`'s own Amend phase): snapshot
+the live goal to `reports/<topic>/goals/goal-<OLD>.json` **before** editing,
+apply the stated delta, then mint `OLD`/`NEW` by actually running
+`bash scripts/goal-version.sh reports/<topic>/goal.json` — once before the
+edit, once after — and stamp `.version`/`.supersedes`/`.revision` with `jq`.
+The agent returns the version it read back from the amended `goal.json`
+after minting, never a value it would have computed itself. This is a
+deliberate deviation from the reference implementation's own Reshape-phase
+text, not carried forward as-is.
+
+`research-pivot` is the **third** module in this codebase to invoke
+`scripts/goal-version.sh` for `gv-` minting — after `research-goal.js`'s
+re-authoring branch (whose own vendoring header already routes through it,
+confirmed by inspection — it was written this way from the start and never
+carried the freehand-hash gap the other two did) and
+`research-add-dimensions.js`'s Amend phase (the confirmed-gap fix Epic #546
+made, closing the exact same freehand-hash gap this section fixes for
+Reshape). `scripts/goal-version.sh` itself has delegated to the canonical
+`mif-rh-cli` engine mechanism since the Category-B cutover
+(research-harness-template#276, Story #298) — this module's own vendoring
+header cites that history, not restated in full here. Precision worth
+stating explicitly: `research-falsify`'s
+regate-reset is the complementary **consumer** side of this same ADR-0006
+lineage event — it re-opens verification for findings a goal-version pivot
+already classified stale (see falsify's
+[Regate section](#regate-a-client-side-verification-block-reset)) — but it
+does not itself mint a `gv-` version and never calls
+`scripts/goal-version.sh`; confirmed by inspection of
+`research-falsify.js`, which contains no `goal-version.sh` invocation
+anywhere in its source. Minting a lineage version and reacting to one
+having been minted are two distinct roles, not the same delegation counted
+twice.
+
+### Goal lineage: ADR-0006 (`proposed`, not yet `accepted`)
+
+The immutability rule Reshape's goal-minting step enforces — a goal is
+fixed per version, and a pivot is an append to that version's lineage,
+never an in-place edit of the live `goal.json` — is
+[ADR-0006: Content-hashed, append-only goal versioning](../adr/0006-content-hashed-append-only-goal-versioning.md).
+Cited here rather than restated; see that record for the content-hash
+scheme, the `supersedes`/`revision` fields, and the findings-reuse
+rationale. ADR-0006's own status is **`proposed`**, not `accepted`,
+verified fresh against `docs/adr/0006-content-hashed-append-only-goal-versioning.md`'s
+frontmatter at documentation time (unchanged from the `proposed` status
+Task #583 recorded for the same record) — it records a design this module
+(and `research-goal`'s re-authoring branch, and `research-add-dimensions`'
+Amend phase) already implements against, but the record itself has not been
+promoted to accepted, and nothing in this Epic changes that status.
+`supersedes` is never `null` here — Reshape only ever runs against an
+already-existing `goal.json` (its own first precondition check), so `OLD`
+is always a real `gv-` id `scripts/goal-version.sh` computes over that live
+content. (`schemas/goal.schema.json`'s `null` case covers a topic's
+genuinely first goal, before any content exists to hash — out of scope for
+a pivot call, which reshapes an already-existing goal.)
+
+### Cross-reference: the workspace architecture document's design rationale
+
+The fuller design rationale and the
+`Reshape → List → Classify(batches of 15) → Plan` flowchart this module was
+vendored from live in the workspace research-pipeline architecture
+document's "Atomic action C — pivot research focus" section — cited here
+rather than restated; see that document for the mermaid flow and the
+container catalog this module implements against.
+
+That document's own description of the version-minting step is the
+abstracted `content-hash`/`gv-hash identity` shorthand shown in its
+flowchart — it does not itself specify a computation mechanism, so there is
+no literal contradiction between it and this module. Where this vendored
+module's real delegation differs is one level down, against the **upstream
+reference implementation's actual Reshape-phase prompt text** (recorded in
+`research-pivot.js`'s own vendoring header, not in the architecture
+document): that reference text instructs a **freehand, prose-derived** hash
+computation, which this module deliberately replaces with the concrete
+`scripts/goal-version.sh` delegation described above — see
+[Goal-version delegation](#goal-version-delegation-scriptsgoal-versionsh-not-a-freehand-hash-a-third-time).
+
+### Supersession: the actual reshape case, not the widen-only case
+
+`research-add-dimensions` (Epic #546) supersedes `/goal-writer --reshape`
+only for the widen-only case (adding dimensions with no other change to the
+goal). `research-pivot` is the engine-composed counterpart for the case
+`research-add-dimensions`' own docs left open: an actual reshape — a
+changed question, dropped/reweighted dimensions, a revised decision. For
+engine-composed pivots, this module's classify-then-plan chain supersedes
+running `/goal-writer --reshape` and then hand-driving re-verification
+decisions in conversation; what is *not* superseded is the command itself,
+which remains the interactive path for a user-driven reshape or for any
+reshape outside a pipeline's typed composition.
+
+### Returns
+
+A typed result:
+`{ goalVersion, supersedes, goalStatement, carry, stale, outOfScope, gapDimensions, reverifyIds, rationale }`
+— `goalVersion`/`supersedes` the new/old `gv-` ids `scripts/goal-version.sh`
+computed, `goalStatement` the reshaped goal's new statement, `carry`/`stale`/
+`outOfScope` the Classify phase's three finding-id buckets, `gapDimensions`
+the dimensions the next fan-out round should target (falling back to just
+the new dimensions if Plan fails), `reverifyIds` the stale-list handed
+straight to `research-falsify`'s `scope.ids`/`regate: true` (falling back to
+the `stale` bucket itself if Plan fails), and `rationale` Plan's stated
+reasoning (or a defaulted-fallback note if the Plan agent failed).
