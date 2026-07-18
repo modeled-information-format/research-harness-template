@@ -97,8 +97,8 @@ grep -qF "const pivot = await wf('pivot', { delta: args.delta })" <<<"$pivot_spa
 grep -qF "if (pivot.reverifyIds && pivot.reverifyIds.length) {" <<<"$pivot_span" \
   || { note "the regate falsify gate is no longer literally on reverifyIds.length"; fail=1; }
 
-grep -qF "await wf('falsify', { scope: { ids: pivot.reverifyIds }, regate: true, claimBudget: args && args.claimBudget })" <<<"$pivot_span" \
-  || { note "the regate falsify call no longer carries the documented { scope: { ids }, regate: true, claimBudget } shape"; fail=1; }
+grep -qF "await wf('falsify', { scope: { ids: pivot.reverifyIds }, regate: true, claimBudget: args && args.claimBudget, queryBudget: args && args.queryBudget, lenses: args && args.lenses })" <<<"$pivot_span" \
+  || { note "the regate falsify call no longer carries the documented { scope: { ids }, regate: true, claimBudget, queryBudget, lenses } shape"; fail=1; }
 
 grep -qF "if (pivot.gapDimensions && pivot.gapDimensions.length && !budgetLow()) {" <<<"$pivot_span" \
   || { note "the gap-fill fanout guard is no longer the documented two-condition (gapDimensions.length AND !budgetLow()) guard"; fail=1; }
@@ -237,11 +237,11 @@ fi
 # ============================================================================
 # B2+B4. reverifyIds non-empty AND gapDimensions non-empty with budget fine:
 # the regate falsify call carries the exact { scope: {ids}, regate: true,
-# claimBudget } shape; fanout runs over exactly the gap dimensions; a
-# SEPARATE falsifyAll() drain call (scope: 'all') follows -- two
-# behaviorally distinct falsify invocations in one run.
+# claimBudget, queryBudget, lenses } shape; fanout runs over exactly the gap
+# dimensions; a SEPARATE falsifyAll() drain call (scope: 'all') follows --
+# two behaviorally distinct falsify invocations in one run.
 # ============================================================================
-printf '%s' "{\"harnessDir\":\"$TMP/h\",\"topic\":\"pipeline-eval-topic\",\"mode\":\"pivot\",\"delta\":\"scope narrowed to defensive use-cases only\",\"claimBudget\":40}" > "$TMP/args-b24.json"
+printf '%s' "{\"harnessDir\":\"$TMP/h\",\"topic\":\"pipeline-eval-topic\",\"mode\":\"pivot\",\"delta\":\"scope narrowed to defensive use-cases only\",\"claimBudget\":40,\"queryBudget\":12,\"lenses\":3}" > "$TMP/args-b24.json"
 cat > "$TMP/stubs-b24.cjs" <<'NODE'
 'use strict';
 let falsifyCalls = 0;
@@ -293,7 +293,7 @@ falsify_calls = bn.get('falsify', [])
 check('falsify ran EXACTLY TWICE (one regate call, one falsifyAll() drain call) -- two behaviorally distinct invocations in one run', len(falsify_calls) == 2, str(len(falsify_calls)))
 if len(falsify_calls) >= 1:
     regate_call = falsify_calls[0]['args']
-    check("the FIRST falsify call is the regate call: scope={ids: reverifyIds}, regate:true, claimBudget passed through", regate_call.get('scope') == {'ids': ['urn:mif:concept:x:finding-4']} and regate_call.get('regate') is True and regate_call.get('claimBudget') == 40, json.dumps(regate_call))
+    check("the FIRST falsify call is the regate call: scope={ids: reverifyIds}, regate:true, claimBudget/queryBudget/lenses all passed through", regate_call.get('scope') == {'ids': ['urn:mif:concept:x:finding-4']} and regate_call.get('regate') is True and regate_call.get('claimBudget') == 40 and regate_call.get('queryBudget') == 12 and regate_call.get('lenses') == 3, json.dumps(regate_call))
 if len(falsify_calls) >= 2:
     drain_call = falsify_calls[1]['args']
     check("the SECOND falsify call is the falsifyAll() drain call: scope='all', distinct from the regate call's ids-scope", drain_call.get('scope') == 'all', json.dumps(drain_call))

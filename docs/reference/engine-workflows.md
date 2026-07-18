@@ -2,7 +2,7 @@
 id: reference-engine-workflows
 type: semantic
 created: '2026-07-17T20:25:00-04:00'
-modified: '2026-07-18T22:09:11.251Z'
+modified: '2026-07-18T23:07:28.831Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -1421,9 +1421,12 @@ loops `r = 1..maxRounds`, breaking early the moment `done` is set:
    `roundContext`; any `crossDimensionLeads` accumulate across rounds for the
    audit/add-dimensions steps later.
 3. **Falsify drain.** `falsifyAll()` repeat-calls `research-falsify` with
-   `scope: 'all'` until `deferredIds` is empty or the budget floor trips —
-   the same bounded-drain shape [research-falsify](#research-falsify)'s own
-   `claimBudget` deferral already documents.
+   `scope: 'all'` until `deferredIds` is empty, the budget floor trips, or a
+   hard safety cap of 5 drain iterations is reached (whichever comes first)
+   — the same bounded-drain shape [research-falsify](#research-falsify)'s
+   own `claimBudget` deferral already documents, plus the iteration cap as
+   a belt-and-suspenders bound against a pathological non-terminating
+   backlog.
 4. **Synthesis.** `research-synthesis` over the surviving corpus.
 5. **Independent completion check.** A dedicated sonnet evaluator — never the
    agent that did the round's work — reads `goal.json`, runs each

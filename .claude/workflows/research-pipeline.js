@@ -156,7 +156,7 @@ if (MODE === 'pivot') {
   const pivot = await wf('pivot', { delta: args.delta })
   // Re-gate the stale carry-overs through falsify.sh's re-verify path, then research only the gaps.
   if (pivot.reverifyIds && pivot.reverifyIds.length) {
-    await wf('falsify', { scope: { ids: pivot.reverifyIds }, regate: true, claimBudget: args && args.claimBudget })
+    await wf('falsify', { scope: { ids: pivot.reverifyIds }, regate: true, claimBudget: args && args.claimBudget, queryBudget: args && args.queryBudget, lenses: args && args.lenses })
   }
   let fan = null
   if (pivot.gapDimensions && pivot.gapDimensions.length && !budgetLow()) {
