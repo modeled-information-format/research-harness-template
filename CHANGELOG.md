@@ -34,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   alongside the eleven already there; `check-workflow-syntax.sh`'s own
   nullglob parse-check required no manual wiring for the new file.
 
-## [0.16.17] - 2026-07-18
+## 0.16.17 - 2026-07-18
 
 ### Added
 
@@ -78,7 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   same release. Version bumped via `scripts/bump-version.sh` patch
   (0.16.16 -> 0.16.17, ADR-0010).
 
-## [0.16.16] - 2026-07-18
+## 0.16.16 - 2026-07-18
 
 ### Added
 
@@ -108,7 +108,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the same `$ROOT/.eval-corpus-mutation.lock` + cp-based backup/restore
   idiom `mif-container-nfr-verification.sh` already uses.
 
-## [0.16.15] - 2026-07-18
+## 0.16.15 - 2026-07-18
 
 ### Added
 
@@ -148,7 +148,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   precedent. `scripts/verify.sh`'s `gate_workflows` gains a tenth
   hand-added per-file existence assert for the new module.
 
-## [0.16.14] - 2026-07-18
+## 0.16.14 - 2026-07-18
 
 ### Added
 
@@ -187,7 +187,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `scripts/verify.sh`'s `gate_workflows` gains a ninth hand-added per-file
   existence assert for the new module.
 
-## [0.16.13] - 2026-07-18
+## 0.16.13 - 2026-07-18
 
 ### Added
 
@@ -219,7 +219,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   research-augment.js precedent. `scripts/verify.sh`'s `gate_workflows`
   gains an eighth hand-added per-file existence assert for the new module.
 
-## [0.16.12] - 2026-07-18
+## 0.16.12 - 2026-07-18
 
 ### Added
 
@@ -249,7 +249,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   folded into thinness. `scripts/verify.sh`'s `gate_workflows` gains a
   seventh hand-added per-file existence assert for the new module.
 
-## [0.16.11] - 2026-07-18
+## 0.16.11 - 2026-07-18
 
 ### Added
 
@@ -283,7 +283,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   artifact-based pipeline's citation-leak-clean claim against a real,
   hermetic fixture run.
 
-## [0.16.10] - 2026-07-18
+## 0.16.10 - 2026-07-18
 
 ### Added
 
@@ -313,7 +313,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   research-synthesis.js precedent. `scripts/verify.sh`'s `gate_workflows`
   gains a fifth hand-added per-file existence assert for the new module.
 
-## [0.16.9] - 2026-07-18
+## 0.16.9 - 2026-07-18
 
 ### Added
 
@@ -341,7 +341,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `scripts/verify.sh`'s `gate_workflows` gained a fourth hand-added
   per-file existence assert for the new module.
 
-## [0.16.8] - 2026-07-18
+## 0.16.8 - 2026-07-18
 
 ### Added
 
@@ -369,7 +369,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   gains the third per-file existence assert; the `check-workflow-syntax.sh`
   glob parse-check covers it automatically.
 
-## [0.16.7] - 2026-07-18
+## 0.16.7 - 2026-07-18
 
 ### Added
 
@@ -388,7 +388,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   for the module; the `check-workflow-syntax.sh` glob parse-check covers it
   automatically.
 
-## [0.16.6] - 2026-07-18
+## 0.16.6 - 2026-07-18
 
 ### Added
 
@@ -408,7 +408,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   repaired goal is green, and the workflow's bounded repair arithmetic
   (max 2 rounds) converges or fails closed when repair is exhausted.
 
-## [0.16.5] - 2026-07-18
+## 0.16.5 - 2026-07-18
 
 ### Added
 
@@ -447,7 +447,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   with the module set and keeps the positioning/supersession note from
   silently regressing.
 
-## [0.16.4] - 2026-07-17
+## 0.16.4 - 2026-07-17
 
 ### Fixed
 
@@ -1739,7 +1739,8 @@ First release of the domain-general research harness template.
 - **Distribution** as a Copier living template and a Claude Code plugin
   marketplace.
 
-[Unreleased]: https://github.com/modeled-information-format/research-harness-template/compare/v0.13.0...HEAD
+[Unreleased]: https://github.com/modeled-information-format/research-harness-template/compare/v0.16.18...HEAD
+[0.16.18]: https://github.com/modeled-information-format/research-harness-template/compare/v0.16.3...v0.16.18
 [0.13.0]: https://github.com/modeled-information-format/research-harness-template/compare/v0.12.2...v0.13.0
 [0.12.2]: https://github.com/modeled-information-format/research-harness-template/compare/v0.12.1...v0.12.2
 [0.12.1]: https://github.com/modeled-information-format/research-harness-template/compare/v0.12.0...v0.12.1
@@ -1762,7 +1763,9 @@ First release of the domain-general research harness template.
 
 <!--
 Dated sections above with no bracketed heading (0.6.0, 0.6.1, 0.7.0, 0.7.1,
-0.8.2, 0.8.4, 0.10.1, 0.11.1, 0.11.2, 0.12.3) moved the `harness.config.json` version
+0.8.2, 0.8.4, 0.10.1, 0.11.1, 0.11.2, 0.12.3, 0.16.4, 0.16.5, 0.16.6, 0.16.7,
+0.16.8, 0.16.9, 0.16.10, 0.16.11, 0.16.12, 0.16.13, 0.16.14, 0.16.15, 0.16.16,
+0.16.17) moved the `harness.config.json` version
 pointer per ADR-0010's change-driven model but were folded into a later
 release before a GitHub Release/tag was ever published for them, so they omit
 a footer compare-link — nothing real exists to compare against. Convention
