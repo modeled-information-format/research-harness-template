@@ -2,7 +2,7 @@
 id: reference-engine-workflows
 type: semantic
 created: '2026-07-17T20:25:00-04:00'
-modified: '2026-07-18T12:51:44.168Z'
+modified: '2026-07-18T14:22:55.338Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -30,12 +30,13 @@ provenance:
 engine-path counterparts to the interactive slash commands in
 [commands](commands.md). A workflow module is composed programmatically (by a
 research pipeline or an orchestrating session) and returns a typed result; it
-never converses with the user. Five modules ship today: `research-goal`
+never converses with the user. Six modules ship today: `research-goal`
 (atomic step 1 of the research pipeline, vendored under Epic #539),
 `research-fanout` (atomic step 2, vendored under Epic #540), `research-falsify`
 (atomic step 3, vendored under Epic #541), `research-synthesis` (atomic
-step 4, vendored under Epic #542), and `research-projection` (atomic step 5,
-vendored under Epic #543).
+step 4, vendored under Epic #542), `research-projection` (atomic step 5,
+vendored under Epic #543), and `research-deliverables` (atomic step 6,
+vendored under Epic #544).
 
 ## Module shape and parse-check
 
@@ -581,3 +582,117 @@ hand-authored), `readmePath`/`readmeCheckPassed`/`graphRefreshed`/
 Verify phase's targeted-gate findings. A report-falsification short-circuit
 instead returns `{ ok: false, reason: 'report-falsified', reportPath,
 verificationVerdict: 'falsified' }` before the Index phase ever runs.
+
+## research-deliverables
+
+Atomic step 6 (deliverable genres): routing workflow covering **both** real
+rendering mechanisms the substrate actually has — artifact-based genre
+renders (blog/book, via the same `synthesize-artifact.sh` →
+`render-artifact.sh` pipeline the `publish-blog`/`book:book-author` skills
+use) and source-direct channel packs (pdf, jats, xbrl, ectd, notebooklm,
+github-discuss, github-issues — each built directly from findings, never
+from a rendered artifact). Source:
+`.claude/workflows/research-deliverables.js`.
+
+### Args
+
+| Arg | Required | Default | Description |
+| --- | --- | --- | --- |
+| `topic` | yes | — | Topic whose `reports/<topic>/findings/` the deliverables render from. A missing `topic` throws before any phase runs. |
+| `synthesisPath` | yes | — | The ephemeral output path from a `research-synthesis` call — same same-process-only contract as `research-projection`'s (see [above](#synthesispath-consumption-contract-same-process-only)). Consulted only by artifact-based (mechanism 1) rows, for the synthesis-only evidence cross-check; source-direct (mechanism 2) rows never read it, by design (see the [mechanism boundary](#two-disjoint-rendering-mechanisms-and-why-a-third-is-out-of-scope) below). A missing `synthesisPath` throws before any phase runs regardless, since Route can't yet know which rows will need it. |
+| `harnessDir` | no | `.` | Path to the harness instance (the #552/#556/#560/#564/#569 precedent). |
+| `genres` | no | `[]` | Requested genre packs (e.g. `['academic','engineering']`); empty renders one neutral (`genre="general"`) artifact-based deliverable per requested artifact-based channel. |
+| `channels` | no | `['blog']` | Requested channels — may mix artifact-based (`blog`, `book`) and source-direct (`pdf`, `jats`, `xbrl`, `ectd`, `notebooklm`, `github-discuss`, `github-issues`) channels in one call. |
+
+### Phases
+
+| Phase | Model | What it does |
+| --- | --- | --- |
+| Route | haiku | A same-process preflight on `synthesisPath` (verbatim from `research-projection`'s guard), then classifies every requested genre×channel pair against `harness.config.json` `packs[]` and `.claude/settings.local.json`'s native `enabledPlugins` (`"<pack>@research-harness"` key shape — never a bare pack-name lookup) into a mechanism-tagged render plan. Every pair that cannot be served lands in `unavailable[]` with a reason naming the mechanism and exactly what is missing. |
+| Render | sonnet | Mechanism 1 (artifact-based): `synthesize-artifact.sh` → synthesis-only cross-check against `synthesisPath` → `render-artifact.sh`. Mechanism 2 (source-direct): `Skill(<pack>:<pack>)` invoked directly against the findings dir, `synthesisPath` never consulted. |
+| Check | haiku | Per-artifact validation — markdownlint where the output is Markdown, the citation-leak gate (no internal research identifiers in published prose) regardless of format, and ≥1 primary-source citation. A dirty artifact is fixed in place without touching claim content. |
+
+### Two disjoint rendering mechanisms, and why a third is out of scope
+
+Genre (**what** the document is) and channel (**how** it renders) are
+**orthogonal axes** — a request names both independently, and Route resolves
+every requested pair on its own, never assuming a genre's availability says
+anything about a channel's, or vice versa. Resolving a pair is not one
+uniform enablement check, though: the real substrate backing these axes is
+**two disjoint rendering mechanisms**, verified directly against the actual
+`scripts/`/`SKILL.md` files (not assumed from prose). This module's own
+header documents the resolved dual-mechanism design decision in full;
+summarized here for the reference reader:
+
+- **Mechanism 1 — artifact-based** (channels `blog`/`book` only; `report` is
+  excluded — that channel is `research-projection`'s canonical L3 job, not
+  this module's). A genre pack (`kind: "genre"` in `harness.config.json`
+  `packs[]`) feeds `synthesize-artifact.sh` → `render-artifact.sh`, the
+  identical pipeline `publish-blog`/`book:book-author`'s own `SKILL.md`s
+  document. `blog` itself needs no pack (core, always-on); `book` is an
+  optional **channel pack** and must itself be enabled, on top of any
+  requested genre pack. The Render phase delegates to those two scripts
+  rather than free-form-authoring the content itself — the same
+  script-delegation-over-reimplementation precedent `research-projection.js`
+  established for its own Report phase (#569); cited here, not restated.
+- **Mechanism 2 — source-direct channel packs** (`pdf`, `jats`, `xbrl`,
+  `ectd`, `notebooklm`, `github-discuss`, `github-issues`): each is built
+  "directly FROM THE SOURCES... NEVER from a rendered report" per its own
+  `SKILL.md`/`plugin.json` (confirmed individually, and by
+  `docs/reference/packs/channels.md`'s own provenance/citation-grounding
+  audit) — invoked as its own Skill directly against the findings dir, with
+  no genre axis at all.
+- **Explicitly out of scope, not folded into either**: `diataxis`
+  (per-finding page generation via its own script, an entirely different
+  shape) and `ai-spec` (consumes a disjoint genre family —
+  `ai-architecture-doc`/`kiro-*`/`feature-spec` — that never renders through
+  blog/book). Requesting either surfaces in `unavailable[]` naming this
+  explicitly, never silently mapped onto mechanism 1 or 2.
+
+Every requested pair that cannot be served this way — a disabled pack, a
+genre pack whose sole consuming channel is `ai-spec`, a methodology pack
+mistaken for a genre template, an unrecognized channel, or one of the two
+out-of-scope channels above — lands in `unavailable[]` with a reason that
+names **which of the two mechanisms** the request was classified into (or
+that it is a third-mechanism/architectural-boundary case) and exactly what
+is missing; nothing is ever silently dropped.
+
+The synthesis-only evidence rule (a deliverable's claims must trace to what
+`research-synthesis` already established, never fresh raw-finding content)
+applies **only** to mechanism 1 — mechanism 2's packs are non-negotiably
+built the opposite way (`synthesize-artifact.sh` never runs for them, and
+`synthesisPath` is deliberately never read for their rows).
+
+### Supersession: a dual-mechanism substrate where the architecture doc describes one
+
+Cited rather than restated: the workspace research-pipeline architecture
+document's "Atomic action 6 — deliverable genres" section (the source this
+module was vendored from) states the routing intent — genre and channel as
+orthogonal axes, requested pairs resolved against "what is actually enabled
+(harness packs, mif-docs suite skills as fallback template source)",
+`unavailable[]` for anything that cannot be served — and that framing is
+unchanged here.
+
+What the architecture document's account does **not** capture is that "what
+is actually enabled" is not one uniform check: today's real substrate is
+bifurcated into the two disjoint mechanisms documented above, each with its
+own template-source shape, its own relationship (or lack of one) to the
+synthesis-only evidence rule, and its own `unavailable[]` reason vocabulary.
+The architecture document's own "recommended scope" for this module was
+narrower still — artifact-based rendering only, per this module's own
+vendoring header — and the epic owner explicitly chose the larger,
+dual-mechanism scope actually implemented here rather than the narrower one
+the source document suggested. This section — not the architecture
+document — is the authoritative as-built account of which mechanisms this
+module actually covers and how; the architecture document remains the
+record of the intended routing design and the orthogonal-axes rationale.
+
+### Returns
+
+A typed result: `{ ok, artifacts, unavailable }` — `artifacts[]` one entry
+per successfully rendered deliverable (`path`, `genre`, `channel`,
+`mechanism`, `citations`, `clean`), `unavailable[]` every requested pair that
+could not be served with its distinguishing reason, and `ok` true iff at
+least one deliverable rendered. An empty `plan[]` (nothing servable) returns
+`{ ok: false, artifacts: [], unavailable }` before the Render phase ever
+runs.

@@ -130,6 +130,44 @@ run "synthesis-citation-check" bash evals/synthesis-citation-check.sh
 # acceptance criterion, made a real regression trap).
 run "projection-supersession-check" bash evals/projection-supersession-check.sh
 
+# The research-deliverables module has deterministic teeth where its own
+# logic can express it (#573, Epic #544): the module's static pack-taxonomy
+# tables (which genres/methodology packs/source-direct channels/out-of-scope
+# channels it knows about) are cross-checked against the REAL
+# docs/reference/packs/index.md inventory table (parsed, not eyeballed) so a
+# drift between the module and the real docs is a caught regression; a
+# structural grep of the module's ACTUAL AGENT PROMPT BODIES proves the
+# settings.local.json "<pack>@research-harness" key shape, the
+# report-channel architectural-boundary reason, and the out-of-scope
+# third-mechanism channels are all still named in the Route prompt, and that
+# the Render prompt's two mechanism branches stay disjoint (artifact-based
+# delegates to synthesize-artifact.sh -> render-artifact.sh, source-direct
+# invokes Skill(<pack>:<pack>) directly and explicitly never touches either
+# script or synthesisPath); and a REAL, hermetic, no-model fixture run
+# through the actual synthesize-artifact.sh -> render-artifact.sh pipeline
+# (offline, reports/_meta/sample-session's real findings, blog channel)
+# proves the citation-leak gate holds by the REAL enforced pattern
+# (extracted verbatim from .claude/hooks/check-citation-leak.sh), not merely
+# asserted by the prompt text.
+run "deliverables-route-check" bash evals/deliverables-route-check.sh
+
+# research-harness-template#575 (Epic #544): a SEPARATE eval from the one
+# above, scoped to what #573 actually wired — real, currently-enabled genre
+# packs (exec-summary, engineering) are driven end-to-end through the real
+# synthesize-artifact.sh -> render-artifact.sh pipeline and every Check-phase
+# gate is asserted per rendered artifact (lint, MIF Level-1 frontmatter,
+# citation-leak, >=1 citation); a genuinely-disabled real pack
+# (sustainability-report) and a genuinely-nonexistent one are proven,
+# structurally, to land in reason categories distinct from the out-of-scope
+# source-direct/third-mechanism case (why full unavailable[] emission can't
+# be driven end-to-end without a live model call is explained inline, along
+# with a real proof that the substrate itself does not gate on pack
+# enablement); and a seeded canary-claim fixture proves synthesize-artifact.sh
+# reads the findings dir directly (never the synthesis) — the synthesis-only
+# evidence rule for mechanism 1 is enforced only by the Render agent's own
+# cross-check instruction, verified structurally.
+run "deliverables-genre-channel-route" bash evals/deliverables-genre-channel-route.sh
+
 # release.yml never uploads to an already-published (immutable) release
 # (#537): tag-push trigger, no post-publish `gh release upload`, artifact
 # attached in the same `gh release create` call.

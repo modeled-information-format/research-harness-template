@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.11] - 2026-07-18
+
+### Added
+
+- **Vendored research-deliverables workflow** (#573, Epic #544):
+  `.claude/workflows/research-deliverables.js` — atomic step 6 (deliverable
+  genres), covering BOTH real rendering mechanisms the substrate has (an
+  expansion of the reference implementation's own artifact-only
+  recommendation, an explicit epic-owner scope decision): artifact-based
+  renders (`blog`/`book` channels via the same `synthesize-artifact.sh` ->
+  `render-artifact.sh` pipeline the `publish-blog`/`book:book-author`
+  skills use, never free-form-authored) and source-direct channel packs
+  (`pdf`, `jats`, `xbrl`, `ectd`, `notebooklm`, `github-discuss`,
+  `github-issues`, each invoked as its own `Skill(<pack>:<pack>)` directly
+  against the findings dir, never through a rendered artifact or the
+  synthesis). `channel="report"` is explicitly excluded as
+  research-projection's own job, and `diataxis`/`ai-spec` are named as a
+  genuine third mechanism this module does not cover — every unavailable
+  request reports a reason naming which mechanism and what is missing,
+  never silently dropped. The Route phase reads `harness.config.json`
+  `packs[]` and `.claude/settings.local.json`'s native `enabledPlugins`
+  under its real `"<pack>@research-harness"` key shape, cross-checking
+  against a static genre/methodology/channel pack taxonomy so a methodology
+  pack (competitive-analysis, market-sizing, trend-modeling) is never
+  mistaken for a deliverable genre template. `harnessDir` defaults to `.`,
+  matching the research-goal.js/research-fanout.js/research-falsify.js/
+  research-synthesis.js/research-projection.js precedent.
+  `scripts/verify.sh`'s `gate_workflows` gains a sixth hand-added per-file
+  existence assert for the new module, and
+  `evals/deliverables-route-check.sh` proves the module's static pack
+  tables against the real `docs/reference/packs/index.md` table and the
+  artifact-based pipeline's citation-leak-clean claim against a real,
+  hermetic fixture run.
+
 ## [0.16.10] - 2026-07-18
 
 ### Added
