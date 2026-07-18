@@ -7,6 +7,76 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.16] - 2026-07-18
+
+### Added
+
+- **Deterministic eval for the research-import DryRun/Review/Apply pipeline**
+  (#592, Epic #548): `evals/import-check.sh`, wired as a tenth explicit run
+  line in `evals/run-evals.sh`. Every DryRun and Apply agent() call is
+  stubbed to invoke the REAL `scripts/mif-container-import.sh` — never a
+  mocked/fabricated verdict — proving: (A) structurally, via phase() marker
+  spans, that the DryRun phase invokes the script WITH `--dry-run` and the
+  Apply phase invokes it WITHOUT; (B) a REAL fixture container with one
+  resource's bytes corrupted after its digest was declared is rejected by
+  the real script's `--dry-run` path, with Review/Apply never called and
+  nothing written; (C) a real, uncorrupted container hits a Review NO-GO (a
+  live sonnet scope-fit judgment stubbed since it cannot be reproduced
+  deterministically) with Apply never called and nothing written; (D) a
+  real container — exactly 2 hand-authored synthetic findings, one
+  already carrying a genuine foreign verification block (`attempted_at`
+  set) and one carrying `scripts/falsify.sh`'s own documented PLACEHOLDER
+  `inconclusive`/no-`attempted_at` shape — imports for real through the
+  non-dry-run gate, and the `needsGating`/`trustedForeignVerdicts`
+  partition is correct for BOTH
+  `trustImportedVerdicts` settings against the real on-disk written files;
+  (E) `research-falsify.js` accepts the real `needsGating` output as
+  `scope:{ids:[...]},regate:true` without tripping its guard error,
+  mirroring #588's pivot->falsify interface fixture. Real repo-root
+  mutation (`harness.config.json`, `reports/concordance.json`) is guarded by
+  the same `$ROOT/.eval-corpus-mutation.lock` + cp-based backup/restore
+  idiom `mif-container-nfr-verification.sh` already uses.
+
+## [0.16.15] - 2026-07-18
+
+### Added
+
+- **Vendored research-import workflow** (#590, Epic #548):
+  `.claude/workflows/research-import.js` — atomic action D (include
+  pre-existing findings, for when findings from another harness instance,
+  an earlier campaign, or an `/export` container should join the corpus), a
+  three-phase chain: a haiku DryRun phase runs
+  `scripts/mif-container-import.sh <container> <topic> --dry-run` (manifest
+  schema, per-resource + manifest-level digests, ontology-binding
+  compatibility) — any failure rejects with nothing written; a sonnet
+  Review phase checks what the mechanical gate cannot see (same-`@id`-
+  different-content collisions, provenance coherence, scope fit vs the
+  goal) — a genuine NO-GO is possible even after DryRun passes; a haiku
+  Apply phase runs the real import (fail-closed, no partial writes) and
+  enumerates imported/foreign-verdict/unverified findings. Unlike every
+  prior module in this chain (#543 projection, #544 deliverables, #545
+  augment, #546 add-dimensions, #547 pivot — each of which found and fixed
+  a freehand-reimplementation gap in its vendor Task), this module's
+  DryRun and Apply phases were confirmed, read line by line against the
+  actual reference source, to delegate ENTIRELY to the real
+  `scripts/mif-container-import.sh` (ADR-0017,
+  `docs/adr/0017-mif-container-instance-scoped-export-import-format.md`,
+  status: accepted) — no freehand manifest/digest/ontology-binding logic
+  in either prompt. The delegation bar matters especially here: this is
+  the one workflow in the chain that ingests untrusted EXTERNAL input, so
+  the fail-closed gate's integrity depends entirely on zero freehand
+  duplication of its checks. `needsGating` (`unverified` plus, unless
+  `trustImportedVerdicts` is set, `withForeignVerdicts`) feeds directly
+  into `research-falsify.js`'s `scope: { ids: [...] }, regate: true` with
+  no adapter needed — documented at the return site so the interface
+  contract, including the foreign-verdict regate nuance, is visible at the
+  call site. `harnessDir` defaults to `.`, matching the
+  research-goal.js/research-fanout.js/research-falsify.js/
+  research-synthesis.js/research-projection.js/research-deliverables.js/
+  research-augment.js/research-add-dimensions.js/research-pivot.js
+  precedent. `scripts/verify.sh`'s `gate_workflows` gains a tenth
+  hand-added per-file existence assert for the new module.
+
 ## [0.16.14] - 2026-07-18
 
 ### Added

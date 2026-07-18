@@ -2,7 +2,7 @@
 id: reference-engine-workflows
 type: semantic
 created: '2026-07-17T20:25:00-04:00'
-modified: '2026-07-18T18:07:55.328Z'
+modified: '2026-07-18T20:11:29.201Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -18,10 +18,10 @@ provenance:
   '@type': Provenance
   agent: claude-code/claude-sonnet-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:7b4efc9f-b778-4d49-b1e4-c009adbd178a
+    '@id': urn:mif:activity:claude-code-session:7ad4c379-e7af-49d5-8175-953fca3d3a7a
     '@type': prov:Activity
   trustLevel: user_stated
-  agentVersion: 2.1.212
+  agentVersion: 2.1.214
 ---
 
 # Reference: engine workflows
@@ -30,7 +30,7 @@ provenance:
 engine-path counterparts to the interactive slash commands in
 [commands](commands.md). A workflow module is composed programmatically (by a
 research pipeline or an orchestrating session) and returns a typed result; it
-never converses with the user. Nine modules ship today: `research-goal`
+never converses with the user. Ten modules ship today: `research-goal`
 (atomic step 1 of the research pipeline, vendored under Epic #539),
 `research-fanout` (atomic step 2, vendored under Epic #540), `research-falsify`
 (atomic step 3, vendored under Epic #541), `research-synthesis` (atomic
@@ -38,9 +38,10 @@ step 4, vendored under Epic #542), `research-projection` (atomic step 5,
 vendored under Epic #543), `research-deliverables` (atomic step 6,
 vendored under Epic #544), `research-augment` (atomic action A —
 deepening decision, vendored under Epic #545), `research-add-dimensions`
-(atomic action B — widen the dimension set, vendored under Epic #546), and
+(atomic action B — widen the dimension set, vendored under Epic #546),
 `research-pivot` (atomic action C — pivot research focus, vendored under
-Epic #547).
+Epic #547), and `research-import` (atomic action D — include pre-existing
+findings, vendored under Epic #548).
 
 ## Module shape and parse-check
 
@@ -1114,3 +1115,133 @@ the new dimensions if Plan fails), `reverifyIds` the stale-list handed
 straight to `research-falsify`'s `scope.ids`/`regate: true` (falling back to
 the `stale` bucket itself if Plan fails), and `rationale` Plan's stated
 reasoning (or a defaulted-fallback note if the Plan agent failed).
+
+## research-import
+
+Atomic action D (include pre-existing findings): bring an external MIF
+Container (or a loose pre-existing finding set) into the topic through the
+fail-closed import gate. Haiku DryRun runs the mechanical gate
+(`scripts/mif-container-import.sh --dry-run`) against manifest schema,
+digests, and ontology-binding compatibility — any failure rejects with
+nothing written; sonnet Review then judges what that mechanical gate cannot
+see (same-`@id`-different-content collisions, provenance coherence, scope
+fit against the topic's goal) — a genuine NO-GO is possible even after
+DryRun passes; haiku Apply runs the real import (fail-closed, no partial
+writes) and enumerates what landed: imported `@id`s, which carry a foreign
+verification verdict, and which are wholly unverified. Source:
+`.claude/workflows/research-import.js`.
+
+### Args
+
+| Arg | Required | Default | Description |
+| --- | --- | --- | --- |
+| `topic` | yes | — | Topic whose `reports/<topic>/findings/` receives the import and whose `goal.json` Review checks scope fit against. A missing `topic` throws before any phase runs. |
+| `containerDir` | yes | — | Directory holding `mif-package.json` and the container's resources, as produced by `/export`. A missing `containerDir` throws before any phase runs. |
+| `harnessDir` | no | `.` | Path to the harness instance. The in-repo default is the instance root (the #552/#556/#560/#564/#569/#573/#578/#582/#586 precedent), so a pipeline running inside a clone passes nothing. |
+| `trustImportedVerdicts` | no | `false` | When `false` (the default), every foreign-verdict finding is queued for re-gating alongside the wholly-unverified set — imported evidence is never exempt from gating by default. When `true`, only the wholly-unverified subset queues; findings the source instance already verified are trusted as-is. |
+
+### Phases
+
+| Phase | Model | What it does |
+| --- | --- | --- |
+| DryRun | haiku (low effort) | Runs `bash scripts/mif-container-import.sh "<containerDir>" "<topic>" --dry-run` and reports its ordered validation results verbatim (manifest schema, per-resource + manifest-level digests, ontology-binding compatibility against this instance's cataloged packs — ADR-0017). The topic must already be registered; if the gate says otherwise, `passed` is `false`. A `passed: false` result short-circuits with `{ ok: false, stage: 'dry-run', detail }` — nothing is written. |
+| Review | sonnet | Judges the three things the mechanical gate cannot: (1) `@id` collisions — container resource ids already present under the topic's `findings/` (the gate itself is idempotent, but a silent same-id overwrite of *different* content is a no-go); (2) provenance plausibility — does the manifest's origin metadata cohere with its actual contents; (3) scope fit — sampled container findings against the topic's `goal.json` scope, since a container that is mostly out-of-scope is worth rejecting before it dilutes the corpus. `proceed: false` (with `reasons`) short-circuits with `{ ok: false, stage: 'review', detail }` before anything is applied. |
+| Apply | haiku | Runs `bash scripts/mif-container-import.sh "<containerDir>" "<topic>"` (no `--dry-run`) — a failure at any step rejects the whole import, never a partial hand-written fallback. Enumerates every `@id` that landed under the topic's `findings/`, partitioned into which carry a **foreign** `extensions.harness.verification.attempted_at` (a verdict already minted by the source instance — a placeholder verification block with no `attempted_at` still counts as unverified) and which have no `attempted_at` set at all. Reports only — it never edits a verification block itself. |
+
+### Confirmed clean delegation — no reimplementation gap, unlike #543–#547's vendor Tasks
+
+This is a **verified clean pass**, stated explicitly rather than left implicit: unlike every other module vendored in this Epic chain — Epics #543, #544, #545, #546, and #547's vendor Tasks each found and fixed a real freehand-reimplementation gap in their own reference source (a script or skill the reference prompt told an agent to re-derive by hand instead of invoking) — `research-import.js` has **no analogous gap**. Read line by line against the actual reference source before vendoring: the DryRun phase's prompt runs exactly `scripts/mif-container-import.sh ... --dry-run` and reports the gate's own ordered results; the Apply phase runs the identical script without `--dry-run`. Neither phase's prompt describes or
+re-derives any manifest/digest/ontology-binding logic freehand anywhere in
+the module — the entire mechanical validation surface is delegated to the
+real `scripts/mif-container-import.sh` (Stories #318–#328's fail-closed,
+ordered, no-partial-write design, confirmed present and matching its own
+header comment).
+
+The delegation bar was held especially high here because this is the *one*
+workflow in the whole chain that ingests **untrusted external input** —
+another harness instance's export container, not this instance's own
+research output. The fail-closed gate's integrity depends entirely on zero
+freehand duplication of its manifest/digest/ontology-binding checks: a
+prompt that re-derived even one of those checks by hand would be an
+untrusted-input validation path with no script backing it, exactly the
+class of gap the other four modules' Tasks in this Epic had to close for
+their own (lower-stakes, same-instance) delegated surfaces.
+
+ADR-0017 ([MIF Container: an instance-scoped export/import manifest
+format](../adr/0017-mif-container-instance-scoped-export-import-format.md))
+governs the container format `mif-container-import.sh` validates against.
+Its status, verified fresh against the record's own frontmatter at
+documentation time rather than inherited from another module's assumption
+— #546's and #547's docs Tasks each recorded their own cited ADR
+(ADR-0006) as `proposed`, not yet `accepted`, at their own documentation
+time — is **`accepted`**.
+
+### The falsify regate hookup: `needsGating` feeds `research-falsify` directly, with a `regate: true` nuance beyond #547's
+
+This is stated as a **verified fact**, not an assumed interface — both
+modules' real signatures were read before writing this section. `needsGating`
+is a plain array of finding `@id` strings, and
+[`research-falsify`](#research-falsify)'s `scope` argument accepts exactly
+`'all' | 'dimension:<d>' | { paths?: string[], ids?: string[] }`. `needsGating`
+already **is** that `ids[]` array, so — as with #547's `reverifyIds` hookup —
+the orchestrator composes it with zero adapter:
+
+```js
+research-falsify({ ..., scope: { ids: importResult.needsGating }, regate: true })
+```
+
+`research-import` is the **second** module whose gating output feeds
+`research-falsify`'s `scope` argument via `{ ids }` this way, after
+`research-pivot`'s `reverifyIds` — see [pivot's own regate-hookup
+section](#the-falsify-regate-hookup-reverifyids-feeds-research-falsify-directly-no-adapter)
+for the precedent, cited here rather than restated.
+
+The one real difference between the two hookups is *why* `regate: true` is
+needed. Pivot's `reverifyIds` always needs it — every id in that list is
+stale-by-definition (a goal-version pivot classified it so), so its prior
+verification block is this instance's own, just outdated. Import's
+`needsGating` needs it for a different, instance-external reason: when
+`trustImportedVerdicts` is `false` (the default), `needsGating` also
+includes `withForeignVerdicts` ids, and those already carry a **foreign**
+`extensions.harness.verification.attempted_at` block — written by the
+*source* instance, not this one. Without `regate: true`, `research-falsify`'s
+one-round rule would silently skip every one of them at Enumerate (that
+phase excludes anything already carrying `attempted_at`, foreign or not,
+before any model call — see [research-falsify](#research-falsify)'s own
+Enumerate phase). `research-falsify`'s existing client-side [regate-reset
+step](#regate-a-client-side-verification-block-reset) — the same mechanism
+`research-pivot`'s hookup already uses, not a separate "import-reset"
+mechanism — clears whatever verification block is present, foreign or
+stale, before re-invoking `falsify.sh`, so either source of a pre-existing
+`attempted_at` is handled identically once `regate: true` is passed.
+
+Passing `regate: true` is safe and idempotent even for the plain
+`unverified` members of `needsGating` — findings that carry no prior
+verification block at all, foreign or otherwise. The regate-reset step's
+`jq 'del(.extensions.harness.verification)'` is a no-op on a finding with
+no such block to delete, so the orchestrator hookup above passes
+`regate: true` unconditionally for the whole `needsGating` array rather
+than branching on which subset actually needs it.
+
+### Cross-reference: the workspace architecture document's design rationale
+
+The fuller design rationale for this module — the fail-closed-gates
+chaining pattern, the never-exempt-from-gating posture, and the
+`DryRun → Review → Apply` flowchart this module was vendored from — lives
+in the workspace research-pipeline architecture document's "Atomic action
+D — include pre-existing findings" section, cited here rather than
+restated; see that document for the mermaid flow and the container catalog
+this module implements against.
+
+### Returns
+
+A typed result: `{ ok, imported, needsGating, trustedForeignVerdicts, collisionsChecked }`
+— `imported` the Apply phase's full `importedIds` list, `needsGating` the
+`unverified` set (plus `withForeignVerdicts` unless `trustImportedVerdicts`
+is `true`) handed straight to `research-falsify`'s `scope.ids`/`regate: true`
+per the hookup above, `trustedForeignVerdicts` the `withForeignVerdicts` ids
+excluded from gating when `trustImportedVerdicts` is `true` (else empty),
+and `collisionsChecked` the Review phase's `@id`-collision list. Any
+short-circuit instead returns `{ ok: false, stage: 'dry-run' | 'review' | 'apply', detail }`
+with the failing phase's own result attached — nothing is imported and
+nothing is queued for gating.

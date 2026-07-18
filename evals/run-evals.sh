@@ -241,6 +241,41 @@ run "add-dimensions-check" bash evals/add-dimensions-check.sh
 # header rather than faked.
 run "pivot-check" bash evals/pivot-check.sh
 
+# The research-import module's DryRun/Review/Apply pipeline has deterministic
+# teeth against the REAL fail-closed gate, not a mocked substitute (#592,
+# Epic #548, following #590's vendoring and #591's docs): the DryRun and
+# Apply phases are proven, structurally (phase() marker spans, never a
+# header comment), to invoke the REAL bash scripts/mif-container-import.sh,
+# with and without --dry-run; a REAL fixture container (exported from a
+# fresh, synthetic, from-scratch source topic this eval registers and
+# tears down itself, mif-generic-only so no vendored domain-pack
+# dependency, avoiding deliverable-report corpus contamination) with one
+# resource's bytes corrupted after its digest was declared is REJECTED by
+# the real script's --dry-run path, with Review/Apply never called and
+# nothing landing under the destination topic's findings/; the same real,
+# uncorrupted container hits a Review NO-GO (a live sonnet
+# scope-fit/collision/provenance judgment this eval cannot reproduce
+# deterministically, stated plainly, not faked) with Apply never called
+# and nothing written; a REAL container — exactly 2 hand-authored
+# synthetic findings, one already carrying a genuine foreign verification
+# block (attempted_at set) and one carrying the dimension-analyst.md
+# pre-falsification placeholder (verdict: inconclusive, no attempted_at —
+# genuinely unverified, still schema-valid) — imports for real through the
+# non-dry-run gate, and the needsGating/trustedForeignVerdicts partition is
+# proven correct for BOTH trustImportedVerdicts settings against the real
+# on-disk written files (driven twice against the same real container/topic,
+# the second invocation a real idempotent no-op upsert); and
+# research-falsify.js is driven for real with the fixture's actual REAL
+# needsGating as scope:{ids:[...]},regate:true, proving the two
+# independently-vendored modules' interface boundary actually holds —
+# mirroring #588's pivot->falsify interface fixture for this Epic's own
+# action D -> falsify boundary. Real repo-root mutation (harness.config.json,
+# reports/concordance.json) is guarded by the same mkdir-based
+# $ROOT/.eval-corpus-mutation.lock + cp-based backup/restore idiom
+# mif-container-nfr-verification.sh already uses for this exact shared
+# real-corpus-mutation window.
+run "import-check" bash evals/import-check.sh
+
 # release.yml never uploads to an already-published (immutable) release
 # (#537): tag-push trigger, no post-publish `gh release upload`, artifact
 # attached in the same `gh release create` call.
