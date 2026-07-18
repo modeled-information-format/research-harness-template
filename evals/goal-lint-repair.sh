@@ -24,7 +24,9 @@
 #      sequence exhausts the bound and fails CLOSED (still invalid after 2);
 #   6. structural contract of the workflow module itself: the 2-round bound,
 #      the fail-closed ok gate on lint validity, and the Gate phase routing
-#      through scripts/lint-goal.sh are all present in research-goal.js.
+#      through scripts/lint-goal.sh are all present in research-goal.js;
+#   7. a --config pointing at malformed JSON is rejected early with a clear
+#      error (exit 2), never a confusing downstream jq failure.
 #
 # Hermetic: only evals/fixtures/goal-lint/* and mktemp scratch; no real topic,
 # no harness.config.json mutation, no model APIs.
@@ -108,6 +110,14 @@ got=$(drive_loop "$FX/goal-half-repaired.json" "$FX/goal-repaired.json")
 # still invalid after 2 rounds, never a silent pass.
 got=$(drive_loop "$FX/goal-half-repaired.json" "$FX/goal-half-repaired.json")
 [ "$got" = "0 2" ] || { note "exhausted repair sequence: expected 'valid=0 repairs=2' (fail closed), got '$got'"; fail=1; }
+
+# Case 7: a malformed-JSON config fails closed, early and clearly (exit 2).
+printf '{not json' > "$TMP/bad-config.json"
+LINT "$FX/goal-repaired.json" --config "$TMP/bad-config.json" > "$TMP/badcfg.out" 2>&1
+rc=$?
+[ "$rc" -eq 2 ] || { note "malformed config: expected exit 2, got $rc"; fail=1; }
+grep -q "config is not valid JSON" "$TMP/badcfg.out" \
+  || { note "malformed config not rejected with the clear early error"; fail=1; }
 
 # Case 6: the workflow module encodes the same contract.
 grep -q 'repairs < 2' "$WF" \

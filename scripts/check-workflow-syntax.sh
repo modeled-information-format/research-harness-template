@@ -46,9 +46,12 @@ for f in "${files[@]}"; do
     const fs = require("fs");
     const file = process.argv[1];
     let src = fs.readFileSync(file, "utf8");
-    // Mirror the runtime framing: drop the export keyword, then compile the
+    // Mirror the runtime framing: drop the export keyword from the one
+    // statement the runtime rewrites (`export const meta`), then compile the
     // source as an async function body (top-level return/await stay legal).
-    src = src.replace(/^export[ \t]+/gm, "");
+    // Any OTHER export is left intact so it fails the compile loudly — the
+    // runtime does not rewrite it, so it would be a real runtime failure.
+    src = src.replace(/^export[ \t]+(const[ \t]+meta\b)/gm, "$1");
     const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
     try {
       new AsyncFunction("args", "phase", "agent", "log", "workflow", src);

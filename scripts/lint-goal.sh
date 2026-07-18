@@ -52,6 +52,13 @@ for tool in jq ajv; do
   }
 done
 
+# Fail closed on a non-JSON config before any jq reads it — a malformed
+# config must be a clear early error, not a confusing downstream jq failure.
+jq -e . "$CONFIG" >/dev/null 2>&1 || {
+  echo "lint-goal: config is not valid JSON: $CONFIG" >&2
+  exit 2
+}
+
 issues=0
 flag() { printf 'lint-goal: %s: %s\n' "$GOAL" "$1"; issues=$((issues + 1)); }
 

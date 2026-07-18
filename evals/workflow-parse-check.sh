@@ -18,7 +18,10 @@
 #   4. a seeded valid async-body module (export + top-level return) passes,
 #      so the checker accepts the shape itself, not just this one file;
 #   5. the verify.sh surface covers it: a scoped run of gate_workflows
-#      exits 0 on the shipped tree.
+#      exits 0 on the shipped tree;
+#   6. a module with an extra `export` beyond `export const meta` FAILS —
+#      the runtime only rewrites the meta export, so any other export is a
+#      real runtime failure the checker must not mask by stripping it.
 #
 # Exit 0 = every case holds. Exit 1 = a case failed.
 set -uo pipefail
@@ -65,6 +68,18 @@ return { ok: true, who }
 EOF
 if ! bash scripts/check-workflow-syntax.sh "$TMP/valid.js" > "$TMP/valid.out" 2>&1; then
   note "checker rejected a minimal valid async-body module: $(tail -2 "$TMP/valid.out")"
+  fail=1
+fi
+
+# Case 6: an extra export (beyond `export const meta`) fails loudly — the
+# runtime does not rewrite it, so the checker must not strip it either.
+cat > "$TMP/extra-export.js" <<'EOF'
+export const meta = { name: 'extra-export-eval-seed' }
+export function helper() {}
+return { ok: true }
+EOF
+if bash scripts/check-workflow-syntax.sh "$TMP/extra-export.js" > "$TMP/extra.out" 2>&1; then
+  note "checker passed a module with an export the runtime does not rewrite (only 'export const meta' is legal)"
   fail=1
 fi
 
