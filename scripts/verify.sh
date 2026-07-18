@@ -28,9 +28,11 @@ cd "$(dirname "$0")/.." || exit 2
 # mif-rh engine (Story #287, research-harness-template#276) rather than a hand-rolled
 # yq+jq registry walk. Only source the resolver function here — the engine binary
 # itself is resolved lazily, INSIDE gate_m20/gate_m22 (research-harness-template#567),
-# so a `--gates`-scoped run of any of the other 35+ gates (none of which touch the
-# engine) never pays for it, and a run that never selects those two gates never
-# hard-fails on a missing/too-old mif-rh-cli it doesn't need.
+# just as the other engine-dependent gates already resolve it only when they run
+# (gate_m11 directly, and the gates that shell out to reconcile-session.sh /
+# resolve-ontology.sh / ontology-review.sh). Removing the old unconditional
+# top-of-script resolution means a `--gates`-scoped run that selects only
+# engine-free gates (e.g. gate_workflows) never pays for the engine at all.
 # shellcheck source=scripts/lib/engine.sh
 . scripts/lib/engine.sh
 
@@ -4595,10 +4597,12 @@ gate_workflows() {
 
 gate_engine_lazy_gating() {
   info "verify.sh --gates: a scoped run of a non-engine gate must not require mif-rh-cli (#567)"
-  # gate_m20/gate_m22 are the only two gates that touch the mif-rh engine (via a
-  # locally-resolved $ENGINE, see scripts/lib/engine.sh's engine_bin). A
-  # --gates-scoped run that selects NEITHER of them must succeed even with no
-  # engine binary reachable via any of engine_bin's three resolution paths
+  # gate_workflows is an engine-free gate, unlike gate_m11/gate_m20/gate_m22 and
+  # the gates that shell out to reconcile-session.sh / resolve-ontology.sh /
+  # ontology-review.sh — all of which resolve the mif-rh engine (via engine_bin,
+  # see scripts/lib/engine.sh) only when they actually run. A --gates-scoped run
+  # that selects only such an engine-free gate must succeed even with no engine
+  # binary reachable via any of engine_bin's three resolution paths
   # ($MIF_RH_CLI, PATH, <root>/bin/mif-rh-cli) — regression coverage for
   # research-harness-template#567, where the top of this script unconditionally
   # resolved the engine (and exited 5 if it couldn't) before gate selection was
