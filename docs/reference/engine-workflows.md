@@ -2,7 +2,7 @@
 id: reference-engine-workflows
 type: semantic
 created: '2026-07-17T20:25:00-04:00'
-modified: '2026-07-18T20:11:29.201Z'
+modified: '2026-07-18T21:23:05.836Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -18,7 +18,7 @@ provenance:
   '@type': Provenance
   agent: claude-code/claude-sonnet-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:7ad4c379-e7af-49d5-8175-953fca3d3a7a
+    '@id': urn:mif:activity:claude-code-session:b2469198-e9ec-4668-9761-7ee0f983c48a
     '@type': prov:Activity
   trustLevel: user_stated
   agentVersion: 2.1.214
@@ -30,7 +30,7 @@ provenance:
 engine-path counterparts to the interactive slash commands in
 [commands](commands.md). A workflow module is composed programmatically (by a
 research pipeline or an orchestrating session) and returns a typed result; it
-never converses with the user. Ten modules ship today: `research-goal`
+never converses with the user. Eleven modules ship today: `research-goal`
 (atomic step 1 of the research pipeline, vendored under Epic #539),
 `research-fanout` (atomic step 2, vendored under Epic #540), `research-falsify`
 (atomic step 3, vendored under Epic #541), `research-synthesis` (atomic
@@ -40,8 +40,9 @@ vendored under Epic #544), `research-augment` (atomic action A —
 deepening decision, vendored under Epic #545), `research-add-dimensions`
 (atomic action B — widen the dimension set, vendored under Epic #546),
 `research-pivot` (atomic action C — pivot research focus, vendored under
-Epic #547), and `research-import` (atomic action D — include pre-existing
-findings, vendored under Epic #548).
+Epic #547), `research-import` (atomic action D — include pre-existing
+findings, vendored under Epic #548), and `research-coverage-audit`
+(atomic action Z — corpus audit, vendored under Epic #549).
 
 ## Module shape and parse-check
 
@@ -1245,3 +1246,117 @@ and `collisionsChecked` the Review phase's `@id`-collision list. Any
 short-circuit instead returns `{ ok: false, stage: 'dry-run' | 'review' | 'apply', detail }`
 with the failing phase's own result attached — nothing is imported and
 nothing is queued for gating.
+
+## research-coverage-audit
+
+Atomic action Z (corpus audit): a multi-modal sweep, not a decision or a
+gate. Six parallel **blind** auditors each probe the topic's corpus a
+different way; a sonnet completeness critic asks what no auditor covered
+and spot-checks its top suspicions; a sonnet prioritizer merges both sets
+into a single **routed** backlog — every item names which workflow fixes
+it. Source: `.claude/workflows/research-coverage-audit.js`.
+
+### Args
+
+| Arg | Required | Default | Description |
+| --- | --- | --- | --- |
+| `topic` | yes | — | Topic whose `reports/<topic>/findings/` (plus `quarantine/`/`archive/` siblings), `goal.json`, and `knowledge-graph.json` (if present) the sweep reads. A missing `topic` throws before any phase runs. |
+| `harnessDir` | no | `.` | Path to the harness instance. The in-repo default is the instance root (the #552/#556/#560/#564/#569/#573/#578/#582/#586/#590 precedent), so a pipeline running inside a clone passes nothing. |
+| `leads` | no | — | Accumulated `{ from, lead }` pairs — the same `crossDimensionLeads` shape `research-fanout` emits and `research-add-dimensions` consumes (see that module's [Args](#research-add-dimensions)). Folded into the `homeless-leads` auditor's brief when supplied; the sweep runs standalone without it. |
+| `checkCoverage` | no | — | A `research-synthesis` per-check grade list. Folded into the `check-traceability` auditor's brief when supplied. |
+
+### The six blind auditors
+
+Each auditor sees only the corpus and its own modality brief — never the
+other five auditors' output — so the panel's coverage is a genuine sweep,
+not five agents converging on the same signal.
+
+| Auditor | Model | Probes |
+| --- | --- | --- |
+| `thin-dimensions` | haiku | Per-dimension finding counts weighed against how many of the goal's `completion_condition.checks[]` each dimension is supposed to carry. |
+| `staleness` | haiku | Verdict-based staleness (anything not `survived`) and age-based staleness (oldest `created` dates), plus time-sensitive claims a recent event could have superseded. |
+| `quarantine-review` | haiku | The quarantine ledger: what sits there, why, and whether any falsification basis has plausibly expired. |
+| `graph-orphans` | haiku | Graph connectivity: findings with no relationship edge, single-edge concepts/entities, and suspiciously absent relationship types. |
+| `check-traceability` | sonnet | For each goal completion check, which surviving finding `@id`s actually bear on it — flags checks resting on zero/one finding or all-weakened evidence. |
+| `homeless-leads` | sonnet | Leads that fit no declared dimension, plus findings whose dimension pin looks like a force-fit — the raw signal for `research-add-dimensions`. |
+
+### Phases
+
+| Phase | Model | What it does |
+| --- | --- | --- |
+| Sweep | haiku ×4, sonnet ×2 (parallel) | Runs all six auditors above concurrently via `parallel()`; each returns a schema-valid `{ modality, items[] }` (an empty `items[]` is a valid "verified genuinely nothing" result, not a failure). |
+| Critique | sonnet | Given every auditor's items, asks what modality nobody ran (citation rot? contradiction density? ontology-pin drift? concordance drift across topics?) and spot-checks its top 2 suspicions against the real corpus, reporting only what it actually finds. |
+| Prioritize | sonnet | Merges the sweep's items with the critic's `extraItems`, deduplicates same-action-and-target entries, and ranks by unmet-check impact, then severity, then cost — emitting the routed backlog. |
+
+### Per-auditor discover-skill cross-reference — not a blanket subsumption
+
+The epic's own framing — that this module "subsumes much of the `discover`
+skill's audit role" — is accurate for only part of the panel, not the
+whole thing. `discover` ([`.claude/skills/discover/SKILL.md`](../../.claude/skills/discover/SKILL.md))
+only ever **reports**; it never routes a finding to the workflow that fixes
+it. Stated per auditor rather than as one blanket claim:
+
+| Auditor | Relationship to `discover` |
+| --- | --- |
+| `thin-dimensions` | Substantive overlap: delegates its count computation to the same `jq` pipeline `discover --gaps` uses, adapted from `harness.config.json`'s corpus-wide taxonomy to this topic's own `goal.json` `dimensions[]`. The auditor's own judgment (weighing counts against how many completion checks a dimension carries) is layered on top — `discover --gaps` itself has no notion of checks. |
+| `staleness` | Substantive overlap: delegates both signals verbatim to `discover --stale`'s two pipelines (the index's verdict filter; the raw finding files' `created`-date extraction). The auditor's own judgment (recent-event awareness — a claim can be stale even when young) is layered on top. |
+| `graph-orphans` | Related, not identical: both are graph-derived, but `graph-orphans` runs the **inverse** of `discover --clusters` — it flags nodes with *no* (or one) edge, where `--clusters` groups nodes that *share* edges. Do not read this as the same signal run twice. |
+| `quarantine-review` | No `discover` equivalent — net-new. `discover` has no quarantine-ledger analysis at all. |
+| `check-traceability` | No `discover` equivalent — net-new. `discover` has no concept of a goal completion check. |
+| `homeless-leads` | No `discover` equivalent — net-new. `discover`'s coverage-gaps output is corpus-wide-taxonomy-relative; it does not surface evidence that fits no dimension at all, nor force-fit pins. |
+
+The completeness critic and the prioritizer/routing layer have no
+`discover` equivalent either — they are net-new capability the corpus never
+had before this module, on top of the two auditors that genuinely overlap
+`discover`'s existing reporting.
+
+This module's own vendoring header describes the delegation the same way
+`research-augment.js`'s "[Assess is discover-delegated, not a
+re-derivation](#assess-is-discover-delegated-not-a-re-derivation)" section
+does — a documentation-level citation of shared method (the same `jq`
+pipelines, invoked from a prompt), not a live runtime call to the `discover`
+skill. Neither module invokes `discover` at runtime (confirmed by reading
+both `.js` sources in full: `discover` is a `SKILL.md`, not a script either
+module's code calls); both describe the relationship consistently rather
+than implying one has a more literal delegation than the other.
+
+### The routed backlog: `target` is a routing signal, not a directly-forwardable arg
+
+The prioritizer's backlog entries are `{ action, target, why, priority }`,
+where `action` is one of `augment | add-dimensions | falsify | import |
+projection | manual`. `target` names *what* the item is about (a dimension
+id, finding `@id`, check id, or file) — it does not, by itself, assemble
+into the named workflow's own args shape:
+
+| Routes to | That workflow's args | Gap a consumer must close |
+| --- | --- | --- |
+| `augment` | [`research-augment`](#research-augment): `{ harnessDir, topic, focusHint?, checkCoverage? }` | `focusHint` accepts free text ("a dimension or unmet check ids"), so `target` maps here directly. |
+| `add-dimensions` | [`research-add-dimensions`](#research-add-dimensions): `{ harnessDir, topic, hints?: string[], leads? }` | `hints` is an array; a bare `target` string needs wrapping (`[target]`). |
+| `falsify` | [`research-falsify`](#research-falsify): `{ harnessDir, topic, scope?: 'all' \| 'dimension:<d>' \| { paths?, ids? } }` | `scope` is a tagged union — none of which is a bare string; the consumer must construct one of these shapes from what `target` actually references. |
+| `import` | [`research-import`](#research-import): `{ harnessDir, topic, containerDir: string }` | `containerDir` is required and names a real exported MIF package directory (as `/export` produces). A corpus audit cannot manufacture one — a `target` routed here means "go obtain an external export," not a ready arg. |
+| `projection` | [`research-projection`](#research-projection): `{ harnessDir, topic, synthesisPath, slug?, genre? }` | `synthesisPath` is a same-process-only ephemeral handle from a preceding `research-synthesis` call. An audit run standalone has none — a `target` routed here means "re-run synthesis, then projection," not a direct call. |
+| `manual` | — (no workflow) | Needs a human decision; the backlog item's `why` says what decision. |
+
+Per the architecture document's own flowchart (cited below), the
+orchestrator's `mode: audit` returns this backlog as a **report** — it does
+not auto-dispatch any of the five workflows itself. Closing the gaps above
+is deliberately left to a future consumer (most likely #550, the
+not-yet-vendored orchestrator), not silently assumed away by this module.
+
+### Cross-reference: the workspace architecture document's design rationale
+
+The fuller design rationale for this module — the six-auditor blind-panel
+design, the completeness critic, and the prioritizer/routing flowchart this
+module was vendored from — lives in the workspace research-pipeline
+architecture document's "Atomic action Z — corpus audit" section, cited
+here rather than restated; see that document for the mermaid flow and the
+orchestrator's `mode: audit` composition.
+
+### Returns
+
+A typed result: `{ backlog, summary, rawItems, uncoveredAngles }` —
+`backlog` the prioritizer's ranked, routed entries (see the routing table
+above), `summary` its 3-sentence recap (or a raw-items fallback note if the
+prioritizer itself fails), `rawItems` every auditor item plus the critic's
+`extraItems` before merge/dedup/ranking, and `uncoveredAngles` the critic's
+list of modalities no auditor ran.

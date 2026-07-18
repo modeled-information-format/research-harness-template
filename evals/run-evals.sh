@@ -276,6 +276,38 @@ run "pivot-check" bash evals/pivot-check.sh
 # real-corpus-mutation window.
 run "import-check" bash evals/import-check.sh
 
+# The research-coverage-audit module's Sweep/Critique/Prioritize pipeline has
+# deterministic teeth where its own logic can express it (#597, Epic #549,
+# following #595's vendoring and #596's docs): BACKLOG_SCHEMA's action enum
+# names the real five downstream modules (augment/add-dimensions/falsify/
+# import/projection, plus manual), cross-checked against those five modules
+# actually existing on disk, and the Prioritize prompt's own
+# "target is a routing signal, not a directly-forwardable arg" disclaimer is
+# proven intact; the thin-dimensions and staleness auditors' jq pipelines,
+# extracted VERBATIM from the real, already-interpolated runtime prompt text,
+# are EXECUTED FOR REAL against a fixture corpus, proving a genuinely-ungated
+# (verdict: null) finding is invisible to the real verdict-based staleness
+# pipeline (excluded by its own .verdict != null clause) but visible to the
+# real age-based one; a hand-corrupted README Findings count is proven
+# objectively stale via build-topic-readme.sh's real --check gate in an
+# isolated instance (the same mechanism projection-supersession-check.sh's own
+# Part D established); the full module, driven end to end, routes the real
+# ungated finding to falsify and the real stale README to projection, ranked
+# above two lower-impact items by the priority FIELD despite a deliberately
+# scrambled stub insertion order (proving the ranking is field-driven, not an
+# insertion-order illusion); CRITIC_SCHEMA (captured verbatim from the real
+# audit:critic call, never hand-retyped) mechanically rejects a hypothetical
+# no-target extraItems entry while accepting a concrete one, making the
+# seed's own "concrete facts, not hypotheticals" acceptance criterion a real
+# ajv-enforced regression trap; and AUDIT_SCHEMA (also captured verbatim) is
+# proven to have no dedicated absence-justification field, so this eval
+# enforces "no bare empty array" itself, checked per-auditor against all six
+# real captured prompts. The one gap this eval cannot close -- whether a live
+# model actually performs the staleness/critic/prioritize JUDGMENT the way
+# this fixture's stubs assume -- is genuine and non-deterministic, documented
+# in the eval's own header rather than faked.
+run "coverage-audit-check" bash evals/coverage-audit-check.sh
+
 # release.yml never uploads to an already-published (immutable) release
 # (#537): tag-push trigger, no post-publish `gh release upload`, artifact
 # attached in the same `gh release create` call.
