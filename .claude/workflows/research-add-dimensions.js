@@ -45,9 +45,13 @@
 // content hash over the post-edit goal with the lineage fields themselves
 // excluded (so stamping supersedes/revision never perturbs the hash it
 // describes), and supersedes must point at the prior version's real id —
-// never null unless the prior goal genuinely had no explicit version yet
-// (the implicit unversioned baseline, schemas/goal.schema.json's own
-// documented case).
+// this workflow only ever runs against an already-existing goal.json (the
+// Propose phase reads it as its own precondition), so OLD is always the
+// gv- id scripts/goal-version.sh computes over that live content and
+// supersedes is never null here. (schemas/goal.schema.json's null case is
+// for the genuinely first goal a topic ever mints, before any content
+// exists to hash — out of scope for an add-dimensions call, which widens
+// an existing goal.)
 //
 // Prune-phase attack surface (overlap / scope / decision-relevance) and the
 // Propose phase's homeless-evidence-leads + user-hints inputs are carried
@@ -111,7 +115,7 @@ const AMEND_SCHEMA = {
   properties: {
     configPatched: { type: 'boolean' },
     goalVersion: { type: 'string', description: 'the gv- id scripts/goal-version.sh computed over the NEW goal content, not model-narrated' },
-    supersedes: { type: ['string', 'null'] },
+    supersedes: { type: 'string', description: 'the OLD gv- id scripts/goal-version.sh computed over the goal content before this edit — never null, since Amend only ever runs against an already-existing goal.json' },
     added: { type: 'array', items: { type: 'string' } },
   },
   required: ['configPatched', 'goalVersion', 'supersedes', 'added'],
@@ -155,7 +159,7 @@ const amend = await agent(
     `   NEW=$(bash ${H}/scripts/goal-version.sh ${RDIR}/goal.json)\n` +
     `   jq --arg n "$NEW" --arg o "$OLD" --arg d "$(date -u +%Y-%m-%d)" '.version=$n | .supersedes=$o | .revision={rationale:"widen dimension set",changed:[<added ids, one string per new dimension>],date:$d}' ${RDIR}/goal.json > tmp.$$ && mv tmp.$$ ${RDIR}/goal.json\n` +
     `   ajv validate --spec=draft2020 --strict=false -c ajv-formats -s ${H}/schemas/goal.schema.json -d ${RDIR}/goal.json\n` +
-    `   supersedes is OLD unless the prior goal had no explicit .version at all (the implicit unversioned baseline, schemas/goal.schema.json's documented case) — then supersedes is null.\n` +
+    `   supersedes is OLD — this workflow only runs against an already-existing goal.json, so OLD is always a real gv- id and supersedes is never null here.\n` +
     `Return configPatched, the NEW gv- version (read back from goal.json after minting — never the value you would have computed yourself), what it supersedes, and the added ids.`,
   { label: 'add-dim:amend', model: 'sonnet', schema: AMEND_SCHEMA },
 )

@@ -2,7 +2,7 @@
 id: reference-engine-workflows
 type: semantic
 created: '2026-07-17T20:25:00-04:00'
-modified: '2026-07-18T16:51:33.485Z'
+modified: '2026-07-18T17:22:40.969Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -873,9 +873,13 @@ rationale. ADR-0006's own status is **`proposed`**, not `accepted` — it
 records a design this module (and `research-goal`'s re-authoring branch)
 already implements against, but the record itself has not been promoted to
 accepted, and nothing in this Epic changes that status. `supersedes` points
-at the prior version's real id, never `null`, unless the prior goal
-genuinely had no explicit `.version` yet (the implicit unversioned baseline,
-`schemas/goal.schema.json`'s own documented case).
+at the prior version's real id, never `null` — this module only ever runs
+against an already-existing `goal.json` (the Propose phase reads it as its
+own precondition), so `OLD` is always the `gv-` id
+`scripts/goal-version.sh` computes over that live content.
+(`schemas/goal.schema.json`'s `null` case covers a topic's genuinely first
+goal, before any content exists to hash — out of scope for an add-dimensions
+call, which widens an existing goal.)
 
 ### Propose's homeless-evidence inputs and Prune's attack surface are carried from the reference unchanged
 
@@ -918,7 +922,7 @@ from either short-circuit above — `added` the approved dimension ids
 actually wired into `harness.config.json` and the new goal version,
 `rejected` the Prune phase's `{ id, why }` pairs, `goalVersion` the `gv-` id
 `scripts/goal-version.sh` computed over the new goal content, `supersedes`
-what it supersedes (the prior version's real id, or `null` only for the
-implicit unversioned baseline), and `fanoutPlan` a
-`{ dimensions, depth: 'standard' }` hint for the orchestrator to fan out
-only the newly-added dimensions next round.
+the prior version's real id (never `null` once Amend runs — this module
+only widens an already-existing goal, so `OLD` is always a real `gv-` id),
+and `fanoutPlan` a `{ dimensions, depth: 'standard' }` hint for the
+orchestrator to fan out only the newly-added dimensions next round.
