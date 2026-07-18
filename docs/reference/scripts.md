@@ -2,7 +2,7 @@
 id: reference-scripts
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-16T17:30:04.440Z'
+modified: '2026-07-18T00:19:25.279Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -19,10 +19,10 @@ provenance:
   sourceType: agent_inferred
   agent: claude-code/claude-fable-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:ea77f44f-898f-452b-97c5-a752ed5af5a0
+    '@id': urn:mif:activity:claude-code-session:7b4efc9f-b778-4d49-b1e4-c009adbd178a
     '@type': prov:Activity
   trustLevel: user_stated
-  agentVersion: 2.1.211
+  agentVersion: 2.1.212
 ---
 
 # Reference: scripts
@@ -177,6 +177,7 @@ Scripts that verify harness integrity and attestation.
 | `scripts/verify.sh` | Harness build gate. Runs accretive gate functions (`gate_mN`) in sequence. Detects template vs instance context. Exits 0 only when all gates pass. | `jq`, `yq`, `ajv`, `ajv-formats` |
 | `scripts/bump-version.sh` | Change-driven version bump (ADR-0010). Moves the release pointer (`harness.config.json`), the marketplace catalog (`.metadata.version`), and inserts the dated `CHANGELOG.md` section; bumps a pack's `plugin.json` + `SKILL.md` + family-doc row only when named with `--pack <component>`. Accepts `patch`/`minor`/`major` or an explicit `X.Y.Z`; `--check` dry-runs; self-verifies. | `jq`, `awk`, `sed` |
 | `scripts/check-version-bump.sh` | CI enforcement for change-driven versioning (ADR-0010, amended). Fails when a changed pack/core-skill did not move its own version (diffed against a base ref, default `origin/main`), or when `harness.config.json`'s release pointer is not strictly ahead of the last git tag release — a per-release invariant, not a per-PR one. Wired as the PR-only `version-bump` CI job. | `git`, `jq` |
+| `scripts/check-workflow-syntax.sh` | Parse-check for Workflow-runtime modules (`.claude/workflows/*.js`, #552). Those modules use the runtime's async-function-body shape (top-level `return`/`await` are legal), so a bare `node --check` rejects a valid module; this checker strips the `export` keyword and compiles the source as an async function body instead, failing loudly (file + error) on genuine syntax errors. Compile-only — nothing executes. Wired into `verify.sh`'s `gate_workflows`; regression eval `evals/workflow-parse-check.sh`. | `node` |
 | `scripts/check-mermaid.py` | Structural validator for Mermaid diagrams in Markdown: flags empty blocks, unknown diagram types, markdown-escape corruption (a `\*`/`\_` leaked into a fence), and unbalanced brackets. Used by the `mermaid-render` eval; full grammar validation is left to `mmdc` (intentionally not a runtime dependency). | Python stdlib only |
 | `scripts/update.sh` | The only supported way a clone updates from the template: a fail-closed provenance gate in front of `copier update` that pins the update to a verified release commit and reproduces the release artifact before applying. | `git`, `gh`, `copier` |
 | `scripts/install-hooks.sh` | Called from `package.json`'s `postinstall`. Wires `core.hooksPath` to `.githooks/` unless a contributor already configured a different `hooksPath` on purpose (leaves it alone, warns on stderr). Always exits 0 — best-effort, never fails the install. | `git` |

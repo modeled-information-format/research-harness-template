@@ -4534,10 +4534,38 @@ gate_monitoring_workflow_sync() {
   fi
 }
 
+gate_workflows() {
+  info "Workflow modules — async-body parse-check (.claude/workflows, #552)"
+
+  # Workflow-runtime modules (vendored per Epic #539, starting with
+  # research-goal.js) use the runtime's async-function-body shape: top-level
+  # `return`/`await` are legal in the file, so a bare `node --check` rejects
+  # a valid module. scripts/check-workflow-syntax.sh reproduces the runtime
+  # framing (strip `export`, compile as an async function body) and is the
+  # single parse authority; this gate puts it on the required `verify`
+  # surface. .claude/workflows/ is NOT copier-excluded, so the same files —
+  # and this same gate — hold template-and-instance.
+  if ! command -v node >/dev/null 2>&1; then
+    bad "gate_workflows: node is required for the workflow parse-check but is not on PATH"
+    return
+  fi
+  if [ -f .claude/workflows/research-goal.js ]; then
+    ok ".claude/workflows/research-goal.js ships (vendored research-goal workflow)"
+  else
+    bad ".claude/workflows/research-goal.js is missing — the vendored research-goal workflow must travel template-and-instance"
+  fi
+  local out
+  if out="$(bash scripts/check-workflow-syntax.sh 2>&1)"; then
+    ok "every .claude/workflows/*.js compiles as a Workflow-runtime async function body"
+  else
+    bad "workflow module failed the async-body parse-check: $(printf '%s' "$out" | grep -v '^  ok ' | head -3 | tr '\n' ' ')"
+  fi
+}
+
 # ---------------------------------------------------------------------------
 # Gate registry — each milestone appends its function name here.
 # ---------------------------------------------------------------------------
-GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18 gate_m19 gate_m20 gate_m21 gate_m22 gate_m23 gate_m24 gate_m25 gate_m26 gate_m27 gate_m28 gate_m29 gate_m30 gate_m31 gate_m32 gate_ontology_lock gate_versions gate_changelog_links gate_milestone_docs gate_is_template_guard_hygiene gate_monitoring_workflow_sync)
+GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18 gate_m19 gate_m20 gate_m21 gate_m22 gate_m23 gate_m24 gate_m25 gate_m26 gate_m27 gate_m28 gate_m29 gate_m30 gate_m31 gate_m32 gate_ontology_lock gate_versions gate_changelog_links gate_milestone_docs gate_is_template_guard_hygiene gate_monitoring_workflow_sync gate_workflows)
 
 # Gate selection + profiling (#531) -- the pre-push gate is only as valuable
 # as it is runnable, so local iteration gets a scoped fast path and the

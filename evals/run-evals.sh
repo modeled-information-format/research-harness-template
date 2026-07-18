@@ -52,6 +52,12 @@ run "stdin-detach" bash evals/stdin-detach.sh
 # marked, per-gate timings are built in, unmatched patterns fail fast.
 run "verify-selector" bash evals/verify-selector.sh
 
+# Workflow-runtime modules (.claude/workflows/*.js) use the runtime's
+# async-function-body shape, so the CI parse-check must wrap before
+# checking (#552): passes on the vendored research-goal.js, fails on a
+# seeded syntax error, and runs inside verify.sh's gate_workflows.
+run "workflow-parse-check" bash evals/workflow-parse-check.sh
+
 # release.yml never uploads to an already-published (immutable) release
 # (#537): tag-push trigger, no post-publish `gh release upload`, artifact
 # attached in the same `gh release create` call.

@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.5] - 2026-07-18
+
+### Added
+
+- **Vendored `research-goal` workflow module** (#552, Epic #539):
+  `.claude/workflows/research-goal.js` — atomic step 1 of the research
+  pipeline (goal-writing: Context probe → Draft → Gate with a bounded
+  2-round repair loop) — now ships as first-class engine content. In-repo
+  arg defaults (`harnessDir` defaults to the instance root `.`), and
+  re-authoring an existing goal routes through ADR-0006's content-hashed
+  append-only lineage (`scripts/goal-version.sh`, `gv-*` versions,
+  `goals/goal-<gv>.json` snapshots) instead of an ad hoc
+  `goal.prior.json` copy. `.claude/workflows/` is not copier-excluded, so
+  the module travels byte-identical template-and-instance.
+- **Workflow-module parse-check on the `verify` surface** (#552):
+  `scripts/check-workflow-syntax.sh` compiles each
+  `.claude/workflows/*.js` as a Workflow-runtime async function body
+  (top-level `return`/`await` are legal there, so a bare `node --check`
+  rejects a valid module), wired into `verify.sh` as `gate_workflows` —
+  covered by the already-required `verify` CI context, no new required
+  check. Regression eval `evals/workflow-parse-check.sh` proves the wrap
+  is load-bearing: the vendored file passes, bare `node --check` rejects
+  it, and a seeded syntax error fails loudly.
+
 ## [0.16.4] - 2026-07-17
 
 ### Fixed
