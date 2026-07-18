@@ -23,11 +23,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   nothing written; (C) a real, uncorrupted container hits a Review NO-GO (a
   live sonnet scope-fit judgment stubbed since it cannot be reproduced
   deterministically) with Apply never called and nothing written; (D) a
-  real container — 2 real corpus findings already carrying a genuine
-  foreign verification block, plus 1 synthetic finding carrying
-  `scripts/falsify.sh`'s own documented PLACEHOLDER `inconclusive`/no-
-  `attempted_at` shape — imports for real through the non-dry-run gate, and
-  the `needsGating`/`trustedForeignVerdicts` partition is correct for BOTH
+  real container — exactly 2 hand-authored synthetic findings, one
+  already carrying a genuine foreign verification block (`attempted_at`
+  set) and one carrying `scripts/falsify.sh`'s own documented PLACEHOLDER
+  `inconclusive`/no-`attempted_at` shape — imports for real through the
+  non-dry-run gate, and the `needsGating`/`trustedForeignVerdicts`
+  partition is correct for BOTH
   `trustImportedVerdicts` settings against the real on-disk written files;
   (E) `research-falsify.js` accepts the real `needsGating` output as
   `scope:{ids:[...]},regate:true` without tripping its guard error,

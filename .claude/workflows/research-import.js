@@ -131,7 +131,7 @@ if (!review || !review.proceed) {
 phase('Apply')
 const applied = await agent(
   `Apply the reviewed MIF Container import in harness ${H}: run \`bash scripts/mif-container-import.sh "${CDIR}" "${TOPIC}"\` (no --dry-run). A failure at any step rejects the whole import — report it, never partial-write by hand.\n` +
-    `Then enumerate what landed under ${H}/reports/${TOPIC}/findings/: all imported @ids; which carry a FOREIGN extensions.harness.verification block (verdicts minted by another instance); which have none. Report only — no verdict edits.`,
+    `Then enumerate what landed under ${H}/reports/${TOPIC}/findings/: all imported @ids; which carry a FOREIGN extensions.harness.verification.attempted_at (a verdict already minted by another instance — a placeholder verification block with no attempted_at still counts as unverified here); which have no attempted_at set at all. Report only — no verdict edits.`,
   { label: 'import:apply', model: 'haiku', schema: APPLY_SCHEMA },
 )
 if (!applied || !applied.applied) {

@@ -246,17 +246,19 @@ run "pivot-check" bash evals/pivot-check.sh
 # Epic #548, following #590's vendoring and #591's docs): the DryRun and
 # Apply phases are proven, structurally (phase() marker spans, never a
 # header comment), to invoke the REAL bash scripts/mif-container-import.sh,
-# with and without --dry-run; a REAL fixture container (subset-exported from
-# the bundled sample topic, mif-generic-only so no vendored domain-pack
-# dependency) with one resource's bytes corrupted after its digest was
-# declared is REJECTED by the real script's --dry-run path, with Review/
-# Apply never called and nothing landing under the destination topic's
-# findings/; the same real, uncorrupted container hits a Review NO-GO (a
-# live sonnet scope-fit/collision/provenance judgment this eval cannot
-# reproduce deterministically, stated plainly, not faked) with Apply never
-# called and nothing written; a REAL container — 2 real corpus findings
-# already carrying a genuine foreign verification block (attempted_at set)
-# plus 1 hand-authored synthetic finding carrying the dimension-analyst.md
+# with and without --dry-run; a REAL fixture container (exported from a
+# fresh, synthetic, from-scratch source topic this eval registers and
+# tears down itself, mif-generic-only so no vendored domain-pack
+# dependency, avoiding deliverable-report corpus contamination) with one
+# resource's bytes corrupted after its digest was declared is REJECTED by
+# the real script's --dry-run path, with Review/Apply never called and
+# nothing landing under the destination topic's findings/; the same real,
+# uncorrupted container hits a Review NO-GO (a live sonnet
+# scope-fit/collision/provenance judgment this eval cannot reproduce
+# deterministically, stated plainly, not faked) with Apply never called
+# and nothing written; a REAL container — exactly 2 hand-authored
+# synthetic findings, one already carrying a genuine foreign verification
+# block (attempted_at set) and one carrying the dimension-analyst.md
 # pre-falsification placeholder (verdict: inconclusive, no attempted_at —
 # genuinely unverified, still schema-valid) — imports for real through the
 # non-dry-run gate, and the needsGating/trustedForeignVerdicts partition is

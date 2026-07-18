@@ -2,7 +2,7 @@
 id: reference-engine-workflows
 type: semantic
 created: '2026-07-17T20:25:00-04:00'
-modified: '2026-07-18T19:17:41.632Z'
+modified: '2026-07-18T20:11:29.201Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -18,7 +18,7 @@ provenance:
   '@type': Provenance
   agent: claude-code/claude-sonnet-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:b2469198-e9ec-4668-9761-7ee0f983c48a
+    '@id': urn:mif:activity:claude-code-session:7ad4c379-e7af-49d5-8175-953fca3d3a7a
     '@type': prov:Activity
   trustLevel: user_stated
   agentVersion: 2.1.214
@@ -1146,7 +1146,7 @@ verification verdict, and which are wholly unverified. Source:
 | --- | --- | --- |
 | DryRun | haiku (low effort) | Runs `bash scripts/mif-container-import.sh "<containerDir>" "<topic>" --dry-run` and reports its ordered validation results verbatim (manifest schema, per-resource + manifest-level digests, ontology-binding compatibility against this instance's cataloged packs — ADR-0017). The topic must already be registered; if the gate says otherwise, `passed` is `false`. A `passed: false` result short-circuits with `{ ok: false, stage: 'dry-run', detail }` — nothing is written. |
 | Review | sonnet | Judges the three things the mechanical gate cannot: (1) `@id` collisions — container resource ids already present under the topic's `findings/` (the gate itself is idempotent, but a silent same-id overwrite of *different* content is a no-go); (2) provenance plausibility — does the manifest's origin metadata cohere with its actual contents; (3) scope fit — sampled container findings against the topic's `goal.json` scope, since a container that is mostly out-of-scope is worth rejecting before it dilutes the corpus. `proceed: false` (with `reasons`) short-circuits with `{ ok: false, stage: 'review', detail }` before anything is applied. |
-| Apply | haiku | Runs `bash scripts/mif-container-import.sh "<containerDir>" "<topic>"` (no `--dry-run`) — a failure at any step rejects the whole import, never a partial hand-written fallback. Enumerates every `@id` that landed under the topic's `findings/`, partitioned into which carry a **foreign** `extensions.harness.verification` block (a verdict minted by the source instance) and which carry none at all. Reports only — it never edits a verification block itself. |
+| Apply | haiku | Runs `bash scripts/mif-container-import.sh "<containerDir>" "<topic>"` (no `--dry-run`) — a failure at any step rejects the whole import, never a partial hand-written fallback. Enumerates every `@id` that landed under the topic's `findings/`, partitioned into which carry a **foreign** `extensions.harness.verification.attempted_at` (a verdict already minted by the source instance — a placeholder verification block with no `attempted_at` still counts as unverified) and which have no `attempted_at` set at all. Reports only — it never edits a verification block itself. |
 
 ### Confirmed clean delegation — no reimplementation gap, unlike #543–#547's vendor Tasks
 
