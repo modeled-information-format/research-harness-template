@@ -1,0 +1,43 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@type": "Concept",
+  "@id": "urn:mif:concept:synthesis-eval:archived-0001",
+  "conceptType": "semantic",
+  "namespace": "harness/synthesis-eval-topic",
+  "title": "A survived-verdict finding, placed under archive/ at fixture-setup time",
+  "content": "This finding (research-harness-template#566) deliberately carries verdict='survived' — an otherwise-clean verdict — but is copied under archive/ (not findings/) by the eval. It exists to prove EXCLUSION IS STRUCTURAL (by directory), not verdict-based: a finding with a perfectly good verdict must still be excluded from the survivor set purely because of where it lives on disk.",
+  "summary": "Survived-verdict finding, archived — proves exclusion is structural (by directory), not by verdict.",
+  "created": "2026-07-18T00:00:00Z",
+  "modified": "2026-07-18T00:00:00Z",
+  "temporal": {
+    "@type": "TemporalMetadata",
+    "validFrom": "2026-07-18T00:00:00Z"
+  },
+  "tags": ["eval-fixture", "synthesis-citation-check"],
+  "provenance": {
+    "@type": "Provenance",
+    "sourceType": "agent_inferred",
+    "confidence": 0.7,
+    "trustLevel": "high_confidence"
+  },
+  "citations": [
+    {
+      "@type": "Citation",
+      "citationType": "documentation",
+      "citationRole": "supports",
+      "title": "Eval fixture placeholder citation",
+      "url": "https://example.com/synthesis-eval/archived",
+      "accessed": "2026-07-18"
+    }
+  ],
+  "extensions": {
+    "harness": {
+      "dimension": "technical",
+      "verification": {
+        "verdict": "survived",
+        "verdict_basis": "Placeholder gate result for the eval — genuinely 'survived', but archived and must still be excluded.",
+        "attempted_at": "2026-07-18T00:00:00Z"
+      }
+    }
+  }
+}

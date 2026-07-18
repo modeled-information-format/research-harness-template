@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.9] - 2026-07-18
+
+### Added
+
+- **Vendored research-synthesis workflow** (#564, Epic #542):
+  `.claude/workflows/research-synthesis.js` — atomic step 4 (synthesis), the
+  evaluator-optimizer loop: a haiku Select phase builds the survivor set
+  (`survived`/`weakened`/`inconclusive` verdicts; `falsified` findings are
+  structurally excluded via the `quarantine/`/`archive/` directories
+  `research-falsify.js` already moved them to, never re-derived from the
+  verdict field; findings with no verification block are counted separately
+  as `unverified`/ungated, never silently promoted into the survivor set), a
+  sonnet Draft phase writes a typed, `@id`-keyed synthesis organized around
+  `schemas/goal.schema.json`'s `completion_condition.checks[]`, and an opus Critique
+  phase grades it per-check plus citation-key integrity, fidelity, and
+  tension-burial, with a bounded `<=2`-round repair loop that reports an
+  explicit unresolved-check list rather than looping forever. Invents and
+  documents (in the module's own header comments) the ephemeral-output
+  contract this repo had no prior canonical convention for: the synthesis
+  document is written to a single `mktemp` file OUTSIDE the repo tree, and
+  its absolute path travels back to the caller in the top-level
+  `synthesisPath` field of the module's return value — the handoff shape the
+  not-yet-started research-projection workflow (#543) will consume. In-repo
+  default: `harnessDir` defaults to `.`, matching the established
+  `research-goal.js`/`research-fanout.js`/`research-falsify.js` precedent.
+  `scripts/verify.sh`'s `gate_workflows` gained a fourth hand-added
+  per-file existence assert for the new module.
+
 ## [0.16.8] - 2026-07-18
 
 ### Added

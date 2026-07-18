@@ -1,0 +1,15 @@
+{
+  "topic": "synthesis-citation-eval",
+  "goal_statement": "Enable the decision of whether the synthesis citation-integrity gate correctly excludes findings outside the Select phase's closed survivor set.",
+  "dimensions": ["technical"],
+  "completion_condition": {
+    "summary": "The synthesis cites only findings in the closed survivor set and every completion check is answered from surviving evidence.",
+    "checks": [
+      {
+        "id": "citations-in-set",
+        "assertion": "Every claim in the synthesis document cites only finding @ids present in the Select phase's survivor set.",
+        "verify": "jq -r '.claims[].citedId' <synthesisPath>"
+      }
+    ]
+  }
+}

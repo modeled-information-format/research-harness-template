@@ -2,7 +2,7 @@
 id: reference-engine-workflows
 type: semantic
 created: '2026-07-17T20:25:00-04:00'
-modified: '2026-07-18T02:32:27.394Z'
+modified: '2026-07-18T03:41:32.965Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -30,9 +30,11 @@ provenance:
 engine-path counterparts to the interactive slash commands in
 [commands](commands.md). A workflow module is composed programmatically (by a
 research pipeline or an orchestrating session) and returns a typed result; it
-never converses with the user. Two modules ship today: `research-goal`
-(atomic step 1 of the research pipeline, vendored under Epic #539) and
-`research-fanout` (atomic step 2, vendored under Epic #540).
+never converses with the user. Four modules ship today: `research-goal`
+(atomic step 1 of the research pipeline, vendored under Epic #539),
+`research-fanout` (atomic step 2, vendored under Epic #540), `research-falsify`
+(atomic step 3, vendored under Epic #541), and `research-synthesis` (atomic
+step 4, vendored under Epic #542).
 
 ## Module shape and parse-check
 
@@ -333,3 +335,130 @@ A typed result: `{ gated, rollup, verdicts, deferredIds, alreadyVerified }`
 `{ id, dimension, verdict, contested, remediation }` list, `deferredIds` any
 `@id`s pushed past `claimBudget` (re-run to continue; nothing silently
 dropped), and `alreadyVerified` the one-round-rule skip count from Enumerate.
+
+## research-synthesis
+
+Atomic step 4 (synthesis): an evaluator-optimizer loop over the surviving
+corpus. Select (haiku) builds the citable survivor set; Draft (sonnet)
+writes a typed, `@id`-keyed synthesis organized around the goal's
+`completion_condition.checks[]`; Critique (opus) grades that draft against
+the contract and drives a bounded repair loop. Source:
+`.claude/workflows/research-synthesis.js`.
+
+### Args
+
+| Arg | Required | Default | Description |
+| --- | --- | --- | --- |
+| `topic` | yes | — | Topic whose `reports/<topic>/findings/` and `goal.json` drive the run. A missing `topic` throws before any phase runs. |
+| `harnessDir` | no | `.` | Path to the harness instance (the #552/#556/#560 precedent). |
+| `maxRepairRounds` | no | `2` | Upper bound on Critique → Repair → Re-critique cycles. Unresolved issues past the bound are returned, never looped past. |
+
+### Phases
+
+| Phase | Model | What it does |
+| --- | --- | --- |
+| Select | haiku (low effort) | Builds the survivor set from `reports/<topic>/findings/`: every finding whose `extensions.harness.verification.verdict` is `survived`, `weakened`, or `inconclusive` (verdict recorded per finding — a weakened/inconclusive survivor is usable but stays marked). Findings under `reports/<topic>/quarantine/` or `reports/<topic>/archive/` are structurally excluded — `research-falsify.js` already moved every `falsified` finding there, so this phase counts them in `excluded` rather than re-deriving falsified status from the verdict field. Findings carrying no verification block at all are counted separately in `unverified` (ungated, not survivors — logged as a warning) and never silently promoted into the survivor set. Also reads `reports/<topic>/goal.json` for `goal_statement` and `completion_condition.checks[]`. Zero survivors short-circuits with `{ ok: false, reason: 'no-survivors' }`. |
+| Draft | sonnet | Writes the typed synthesis: every claim cites the finding `@id`(s) it rests on; a claim resting on a weakened/inconclusive survivor carries that confidence marker explicitly; contradictions between survivors are surfaced as tensions, never silently resolved; each goal check gets a section stating the answer the evidence supports, or that it remains open. The document is written to disk per the [ephemeral-output contract](#ephemeral-output-contract) below, and its path is returned in `synthesisPath`. |
+| Critique | opus (high effort) | Reads the file at `synthesisPath` and grades it adversarially against four axes: (1) per-check answer — `yes`/`partially`/`no`, evidence-backed; (2) citation-key integrity — every cited `@id` must be in the closed survivor set Select produced, nothing outside it and nothing uncited; (3) fidelity/overreach — spot-checks claims against the cited finding files, flags any claim going further than its citation supports and any weakened/inconclusive finding used without its confidence marker; (4) tension-burial — flags contradictory survivors merged into one smooth claim instead of surfaced as a tension. `clean: true` only if zero issues **and** no check graded `no`. |
+
+### Bounded repair loop
+
+A dirty Critique triggers at most `maxRepairRounds` (default 2) repair
+rounds. Each round is a sonnet repair **in place** at `synthesisPath` —
+fixing only what Critique flagged, never a wholesale restructure and never
+importing evidence outside the valid survivor set; a check the evidence
+genuinely cannot answer stays marked open rather than papered over — followed
+by a fresh opus re-critique. If issues remain once the bound is hit, the
+module returns `ok: false` with the unresolved `openIssues` and per-check
+`checkCoverage` rather than looping further — the same "return the
+unresolved report, do not loop past the bound" shape `research-goal`'s Gate
+loop and `research-falsify`'s `claimBudget` deferral already use.
+
+### Ephemeral-output contract
+
+No canonical `mktemp`/scratch-path convention existed anywhere in this repo
+before this module — CLAUDE.md's "ephemeral artifacts go to `mktemp` outside
+the tree" rule was already followed ad hoc by several scripts
+(`scripts/build-graph-viz.sh`, `scripts/mif-container-export.sh`,
+`research-falsify.js`'s evidence fixture), but each invented its own
+shape and none of them hand off a path to a *later, independent* workflow the
+way synthesis output must hand off to `research-projection` (#543, not yet
+started). `research-synthesis.js` is the first module to need that hand-off,
+so it states one explicitly here — a real design decision, not a restatement
+of an existing rule — for `research-projection` (and any future consumer) to
+read rather than re-derive:
+
+1. **Location.** The Draft phase's agent writes the typed synthesis as a
+   single JSON document to a path obtained from a bare `mktemp` (a file, not
+   `mktemp -d`), **outside the repo tree**. Nothing derived from a synthesis
+   run is ever written under `reports/<topic>/` — that tree holds only
+   contract-valid, tracked corpus artifacts (findings, verdicts, the report
+   of record), per the [shared architectural rule](#governing-architecture)
+   this module inherits unchanged.
+2. **Hand-off field.** The absolute path travels back to the caller in the
+   top-level `synthesisPath` field of this module's return value — never
+   nested, never renamed. A consumer reads `result.synthesisPath` to locate
+   the artifact; there is no second location to check.
+3. **Lifetime.** The file is **process-ephemeral** and this module does
+   **not** delete it — unlike `research-falsify.js`'s evidence fixture,
+   which is single-use and cleaned up immediately after `falsify.sh`
+   consumes it, the synthesis output's entire purpose is to be read by a
+   *later* phase or workflow in the same pipeline run. The path is
+   guaranteed valid only for the lifetime of the invoking process/session: a
+   caller composing `research-synthesis` → `research-projection` in one
+   pipeline run must read `synthesisPath` and act on it before that process
+   exits. No cleanup trap is installed here, and nothing guarantees the file
+   survives a process boundary.
+4. **Shape on disk.** The JSON document is
+   `{ sections: [...], findingsUsed, ...synthesis body keyed to check ids and
+   finding @ids }` — the structure the Draft phase's agent composes (see the
+   module source for the exact prompt). This module does not itself enforce
+   a schema on the file's contents beyond what the Critique phase grades;
+   citation-key integrity against the closed survivor `@id` set is the
+   Critique phase's job, not a file-level schema.
+
+This is the contract a future `research-projection` module (#543) can build
+against directly, without re-deriving it from `research-synthesis.js`'s
+source: read `result.synthesisPath` from a `research-synthesis` call in the
+same process, treat it as a single ephemeral JSON file outside the tree, and
+consume it before the process ends.
+
+### Supersession: selection and critique split into independently graded phases
+
+For engine-composed synthesis, this module's decomposition **supersedes**
+the `report-synthesizer` (and, for the cross-topic atlas, `corpus-synthesizer`)
+agents' front-door role *in mechanism*: those are single monolithic opus
+agents that select survivors and draft the synthesis in one undifferentiated
+pass, with no independent grading step. `research-synthesis.js` splits
+selection (haiku), drafting (sonnet), and critique (opus, against the goal
+contract and the closed survivor `@id` set) into separately modeled,
+separately graded phases, with a bounded repair loop between drafting and
+critique. Decision D-4 and the "Atomic action 4 — synthesis" section of the
+workspace research-pipeline architecture document (the source this module
+was vendored from) state the evaluator-optimizer rationale for that split —
+why an independent evaluator grading against the contract, with the loop-exit
+decided by code, replaces a single agent judging its own output — and are
+cited here rather than restated.
+
+What is *not* superseded: `report-synthesizer` remains the domain-general
+front door to the output pipelines for the interactive path, and
+`corpus-synthesizer`'s cross-topic atlas role (spanning every topic,
+including what was falsified) is a distinct surface this module does not
+touch. Only the *mechanism* by which a single topic's surviving findings
+become a graded, typed synthesis changes here — the finding contract, the
+verdict/quarantine substrate (ADR-0002, `research-falsify.js`), and the
+report-of-record doctrine this synthesis feeds are all inherited unchanged.
+
+### Returns
+
+A typed result:
+`{ ok, synthesisPath, sections, findingsUsed, checkCoverage, openIssues, ungatedFindings }`
+— `ok` true only once Critique reports `clean`, `synthesisPath` the
+[ephemeral-output contract](#ephemeral-output-contract) hand-off, `sections`
+and `findingsUsed` carried from the Draft phase, `checkCoverage` the
+Critique phase's final per-check `{ checkId, answered, note }` list,
+`openIssues` any issues still open after the repair bound (or
+`['critic failed']` if Critique itself did not return), and
+`ungatedFindings` the Select phase's `unverified` count. A no-survivors
+short-circuit instead returns `{ ok: false, reason: 'no-survivors', excluded,
+unverified }`.

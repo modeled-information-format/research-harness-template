@@ -1,0 +1,10 @@
+{
+  "_comment": "Seeded out-of-set-citation synthesis fixture (research-harness-template#566, #542's own named acceptance criterion). One claim cites urn:mif:concept:synthesis-eval:falsified-0001 -- a finding that lives under quarantine/, NOT in the Select phase's survivor set. The production gate that must catch this is research-synthesis.js's Critique phase (an opus model call graded against 'VALID FINDING IDS'); this fixture cannot be graded deterministically in CI -- see the eval script's Part C header comment. It exists so the fixture corpus itself is provably, deterministically seeded correctly (one in-set claim, one out-of-set claim) for that non-deterministic gate to be exercised against interactively or in a live run.",
+  "synthesisPath": "/dev/null/synthesis-bad-fixture.json",
+  "sections": ["citations-in-set"],
+  "findingsUsed": 2,
+  "claims": [
+    { "checkId": "citations-in-set", "citedId": "urn:mif:concept:synthesis-eval:survived-0001", "confidence": "high" },
+    { "checkId": "citations-in-set", "citedId": "urn:mif:concept:synthesis-eval:falsified-0001", "confidence": "high" }
+  ]
+}
