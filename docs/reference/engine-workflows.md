@@ -2,7 +2,7 @@
 id: reference-engine-workflows
 type: semantic
 created: '2026-07-17T20:25:00-04:00'
-modified: '2026-07-18T03:41:32.965Z'
+modified: '2026-07-18T12:51:44.168Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -30,11 +30,12 @@ provenance:
 engine-path counterparts to the interactive slash commands in
 [commands](commands.md). A workflow module is composed programmatically (by a
 research pipeline or an orchestrating session) and returns a typed result; it
-never converses with the user. Four modules ship today: `research-goal`
+never converses with the user. Five modules ship today: `research-goal`
 (atomic step 1 of the research pipeline, vendored under Epic #539),
 `research-fanout` (atomic step 2, vendored under Epic #540), `research-falsify`
-(atomic step 3, vendored under Epic #541), and `research-synthesis` (atomic
-step 4, vendored under Epic #542).
+(atomic step 3, vendored under Epic #541), `research-synthesis` (atomic
+step 4, vendored under Epic #542), and `research-projection` (atomic step 5,
+vendored under Epic #543).
 
 ## Module shape and parse-check
 
@@ -462,3 +463,121 @@ Critique phase's final per-check `{ checkId, answered, note }` list,
 `ungatedFindings` the Select phase's `unverified` count. A no-survivors
 short-circuit instead returns `{ ok: false, reason: 'no-survivors', excluded,
 unverified }`.
+
+## research-projection
+
+Atomic step 5 (projection): project the typed synthesis onto the durable
+corpus surfaces — the canonical MIF Level-3 report of record, the topic
+README/index, and the knowledge graph — then verify only what changed.
+Source: `.claude/workflows/research-projection.js`.
+
+### Args
+
+| Arg | Required | Default | Description |
+| --- | --- | --- | --- |
+| `topic` | yes | — | Topic whose `reports/<topic>/findings/` and `goal.json` the report/README/graph are derived from. A missing `topic` throws before any phase runs. |
+| `synthesisPath` | yes | — | The ephemeral output path from a `research-synthesis` call — see the [consumption contract](#synthesispath-consumption-contract-same-process-only) below. A missing `synthesisPath` throws before any phase runs. |
+| `harnessDir` | no | `.` | Path to the harness instance (the #552/#556/#560/#564 precedent). |
+| `slug` | no | `topic` | The report file's slug (`reports/<topic>/<slug>.md`). |
+| `genre` | no | `'general'` | Genre passed through to `synthesize-artifact.sh`. |
+
+### Phases
+
+| Phase | Model | What it does |
+| --- | --- | --- |
+| Report | sonnet | A same-process existence/non-empty/valid-JSON preflight check on `synthesisPath` (folded into the top of this phase, not a separate stage), then the `publish-report` skill's script pipeline: `synthesize-artifact.sh` → a REAL falsification pass over the report's own central claims via `falsify.sh` (never a hand-authored verdict) → `render-artifact.sh` → `mif-project.sh`. A `falsified` verdict quarantines the report — it is not shipped, and the module returns `ok: false` without proceeding to Index. |
+| Index | haiku | The `readme` skill's `build-topic-readme.sh` for the computed structural backbone (counts, dates, verdict breakdown, source total, dimension rollup, report/artifact tables — never guessed), with only the Key Findings/Purpose prose hand-authored on top; then the `graph` skill's `build-graph.sh` + `assert-graph-mif.sh` to refresh and re-verify the knowledge graph. |
+| Verify | haiku | Targeted gates (markdownlint + `ajv`) on only the files this run actually changed — never the full `verify.sh` suite. See [Decision D-10](#verify-phase-decision-d-10-targeted-gates-only) below. |
+
+### synthesisPath consumption contract (same-process only)
+
+`research-projection` consumes `research-synthesis.js`'s `synthesisPath`
+hand-off (documented in that module's own
+[ephemeral-output contract](#ephemeral-output-contract)) under the exact same
+constraint that contract states: **same-process only**. The path is a bare
+`mktemp` file outside the repo tree, with no cleanup trap but also no
+cross-process survival guarantee — it is valid only for the lifetime of the
+orchestrating process that produced it (e.g. `research-pipeline.js` calling
+`wf('projection', { synthesisPath: syn.synthesisPath })` immediately after
+`wf('synthesis', {})` in the same run). `research-projection` does not merely
+assume the file is still there: its Report phase's first action is a cheap
+existence + non-empty + valid-JSON check (`test -f`, `test -s`, `jq empty`)
+run **before any report work starts**. If any of the three fails, the module
+fails closed with an explicit error naming which check failed (`file
+missing`, `empty file`, or `invalid JSON`) rather than proceeding on an
+unchecked path or silently emitting an empty report — and the error message
+states directly that the fix is to re-run `research-synthesis` and consume
+its `synthesisPath` in the same process, not to retry `research-projection`
+standalone against a now-stale path.
+
+### Skill composition: orchestrates the existing pipeline, does not reimplement it
+
+`research-projection.js` is an **orchestrator** over the harness's existing
+`publish-report`, `readme`, and `graph` skills — it delegates to their
+underlying scripts and never re-derives or supersedes their logic:
+
+- **Report phase** invokes the `publish-report` skill's own script pipeline
+  exactly as that skill's `SKILL.md` documents it: `synthesize-artifact.sh` →
+  `falsify.sh` (the same falsification substrate `research-falsify.js`
+  writes verdicts through) → `render-artifact.sh` → `mif-project.sh`. The
+  module never authors the report's frontmatter, citations, or verification
+  verdict directly — `publish-report`'s own non-negotiable is that the
+  verdict must come from a real falsification pass, never be hand-authored,
+  and this module does not weaken that rule to save an agent call.
+- **Index phase** invokes the `readme` skill's `build-topic-readme.sh` for
+  the structural backbone and the `graph` skill's `build-graph.sh` +
+  `assert-graph-mif.sh` for the knowledge-graph refresh. The one thing
+  `build-topic-readme.sh` cannot compute — synthesis-grade Key
+  Findings/Purpose prose — is hand-authored by the haiku phase on top of the
+  script's output, per the `readme` skill's own documented division of
+  labor; every count, date, and table stays script-computed.
+
+This module composes those three skills' scripts programmatically instead of
+reimplementing an approximation of their logic in free-form prompts — the
+same "compose with the harness's existing skills rather than duplicating
+their logic wholesale" resolution the workspace research-pipeline
+architecture document states as its intent for this workflow, and the same
+delegate-to-`scripts/*.sh` precedent `research-goal`/`research-fanout`/
+`research-falsify`/`research-synthesis` already established for their own
+substrates.
+
+### Verify phase: Decision D-10, targeted gates only
+
+The Verify phase's targeted-only scope is not an implementation shortcut —
+it is Decision D-10 of the workspace research-pipeline architecture document
+governing this engine (see that document's "Atomic action 5 — projection"
+section): projection/deliverable stages lint and schema-check only the files
+they touched, and `verify.sh`'s full gate array plus `ontology-review.sh`
+remain instance/CI responsibilities the workflow never invokes itself. Cited
+here rather than restated; see the source document for the full rationale.
+This module additionally never runs alongside `ontology-review.sh` (shared
+temp/catalog state races, per this repo's own `CLAUDE.md`).
+
+### Supersession-in-place: re-rendering preserves the report's `@id`
+
+A `research-projection` run against a topic/slug that already has a report of
+record is a **supersession re-render**, not a fresh create: `render-artifact.sh`
+derives the report's `@id` deterministically from its namespace and slug
+(`urn:mif:report:<namespace>:<slug>`), so re-running the identical pipeline for
+the same topic/slug preserves the **same `@id`** automatically — the version
+field increments and `temporal.validFrom` carries forward from the prior
+render. No agent-side "remember the old `@id`" step exists or is needed; the
+module never deletes the existing file first and never hand-copies an `@id`
+forward. This is a durable identity contract other tooling (indexing,
+cross-references, the knowledge graph's own node ids) may rely on — a report's
+`@id` does not change across re-renders of the same topic/slug.
+
+### Returns
+
+A typed result:
+`{ ok, reportPath, reportId, mifLevel, checksAddressed, verificationVerdict, readmePath, readmeCheckPassed, graphRefreshed, graphAssertPassed, problems }`
+— `ok` true only once the Verify phase reports both `lintClean` and
+`schemaClean`, `reportPath`/`reportId` the rendered report's path and
+supersession-stable `@id`, `mifLevel` the achieved MIF frontmatter level,
+`checksAddressed` the goal check ids the report speaks to,
+`verificationVerdict` the verdict `falsify.sh` actually wrote (never
+hand-authored), `readmePath`/`readmeCheckPassed`/`graphRefreshed`/
+`graphAssertPassed` the Index phase's script-gate results, and `problems` the
+Verify phase's targeted-gate findings. A report-falsification short-circuit
+instead returns `{ ok: false, reason: 'report-falsified', reportPath,
+verificationVerdict: 'falsified' }` before the Index phase ever runs.
