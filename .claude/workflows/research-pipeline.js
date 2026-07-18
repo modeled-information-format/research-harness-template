@@ -245,7 +245,7 @@ return {
   mode: MODE,
   goal: { file: goal.goalFile, dimensions: goal.dimensions },
   done,
-  checks: lastCheck ? { met: lastCheck.met.map((m) => m.id), unmet: lastCheck.unmet.map((u) => ({ id: u.id, why: u.why })) } : null,
+  checks: lastCheck ? { met: lastCheck.met.map((m) => ({ id: m.id, evidence: m.evidence })), unmet: lastCheck.unmet.map((u) => ({ id: u.id, why: u.why })) } : null,
   synthesis: lastSyn ? { path: lastSyn.synthesisPath, ok: lastSyn.ok, coverage: lastSyn.checkCoverage } : null,
   projection,
   deliverables,

@@ -308,6 +308,34 @@ run "import-check" bash evals/import-check.sh
 # in the eval's own header rather than faked.
 run "coverage-audit-check" bash evals/coverage-audit-check.sh
 
+# The research-pipeline module's MODE 'full' bounded autonomous round loop has
+# deterministic teeth where its own orchestration logic can express it (#602,
+# Epic #550, following #599's vendoring and #601's docs): CHECK_SCHEMA
+# (captured verbatim from the real completionCheck() agent() call) is
+# ajv-proven to require `evidence` on every met[] entry and `why` on every
+# unmet[] entry; `done = true` is proven, by exact count, to be set in
+# exactly one place in the whole file -- the independent evaluator's own
+# unmet.length===0 check -- never by narrative or activity, proven both
+# structurally and behaviorally (a round whose fanout/falsify/synthesis all
+# succeed does NOT stop the loop while a check stays unmet); the
+# research-harness-template#611 regression (evidence silently dropped from
+# met[] in the final run report) is fixed and driven end-to-end against the
+# real module; maxRounds is proven to genuinely bound the loop even when the
+# evaluator would never naturally finish; the honest-termination path (the
+# augment judge's plan.deepen comes back empty) is proven to stop the loop
+# immediately -- never a further round, never looping forever -- with the
+# judge's own real reasoning visible in the captured log, mirroring
+# research-augment's empty-plan-is-valid precedent (#545/#580); the goal's
+# own declared boundHit is proven to stop the loop without ever reaching the
+# adaptation phase, distinct from the maxRounds stop; and the budget-floor
+# guard is proven to stop the loop before round 1 even begins, still
+# producing a well-formed run report. The one gap this eval cannot close --
+# whether a live sonnet completionCheck()/coverage-audit/augment call would
+# really grade/decide the way these fixtures' stubs assume -- is genuine and
+# non-deterministic, documented in the eval's own header rather than faked;
+# each of those judgments is already covered by its own dedicated eval.
+run "research-pipeline-full-mode-check" bash evals/research-pipeline-full-mode-check.sh
+
 # release.yml never uploads to an already-published (immutable) release
 # (#537): tag-push trigger, no post-publish `gh release upload`, artifact
 # attached in the same `gh release create` call.
