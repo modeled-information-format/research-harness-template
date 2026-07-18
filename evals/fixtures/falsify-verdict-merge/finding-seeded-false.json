@@ -32,7 +32,11 @@
   ],
   "extensions": {
     "harness": {
-      "dimension": "technical"
+      "dimension": "technical",
+      "verification": {
+        "verdict": "inconclusive",
+        "verdict_basis": "not yet verified — placeholder pre-gate state, no attempted_at, so the one-round rule's enumeration includes this finding"
+      }
     }
   }
 }

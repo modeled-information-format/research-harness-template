@@ -71,7 +71,7 @@ export const meta = {
 //                  exists) — this module clears/resets the stale finding's extensions.harness.verification block
 //                  itself, client-side, BEFORE re-invoking falsify.sh, so the write itself still routes exclusively
 //                  through falsify.sh (gap 2 above). }
-const H = (args && args.harnessDir) || 'repos/research-harness-template'
+const H = (args && args.harnessDir) || '.'
 const TOPIC = args && args.topic
 if (!TOPIC) throw new Error('research-falsify: args.topic is required')
 const RDIR = `${H}/reports/${TOPIC}`
@@ -79,7 +79,11 @@ const SCOPE = (args && args.scope) || 'all'
 const CLAIM_BUDGET = (args && args.claimBudget) || 50
 const QUERY_BUDGET = (args && args.queryBudget) || 6
 const LENS_COUNT = Math.min(4, Math.max(2, (args && args.lenses) || 3))
-const REGATE = !!(args && args.regate && typeof SCOPE === 'object' && (SCOPE.paths || SCOPE.ids))
+const REGATE_SCOPE_QUALIFIES = typeof SCOPE === 'object' && !!(SCOPE.paths || SCOPE.ids)
+if (args && args.regate && !REGATE_SCOPE_QUALIFIES) {
+  throw new Error("research-falsify: regate=true requires an explicit scope:{paths|ids:[...]} — refusing to silently fall back to the one-round rule for a broad scope ('all' or 'dimension:*')")
+}
+const REGATE = !!(args && args.regate && REGATE_SCOPE_QUALIFIES)
 
 const ENUM_SCHEMA = {
   type: 'object',
