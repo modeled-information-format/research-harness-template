@@ -99,10 +99,10 @@ if (!draft) throw new Error('research-goal: draft agent failed')
 phase('Gate')
 let lint = await agent(
   `Verifiability lint for ${draft.goalFile} in harness ${H}.\n` +
-    `1. Re-run: npx ajv validate --spec=draft2020 --strict=false -c ajv-formats -s ${H}/schemas/goal.schema.json -d ${draft.goalFile} (or the ajv binary available in the repo).\n` +
-    `2. For each completion_condition.check: flag it if the assertion is a step ("search for X") rather than an end-state fact, or if it is not transcript-verifiable (no printable fact or verify command could prove it).\n` +
+    `1. Run the deterministic gate (#554): bash ${H}/scripts/lint-goal.sh ${draft.goalFile} --config ${H}/harness.config.json — it performs the ajv schema validation (${H}/schemas/goal.schema.json) plus the step-shaped-assertion and off-config-dimension flags. Every line it reports is a lint issue; it must exit 0.\n` +
+    `2. Beyond the deterministic gate, flag any completion_condition.check that is a step rather than an end-state fact, or that is not transcript-verifiable (no printable fact or verify command could prove it).\n` +
     `3. Flag any dimensions[] entry not in ${JSON.stringify(ctx.configDimensions)}.\n` +
-    `Return valid=true only if ajv passes AND no check-level flags.`,
+    `Return valid=true only if lint-goal.sh exits 0 AND no check-level flags.`,
   { label: 'goal:lint', model: 'haiku', effort: 'low', schema: LINT_SCHEMA },
 )
 let repairs = 0
@@ -110,13 +110,13 @@ while (lint && !lint.valid && repairs < 2) {
   repairs++
   log(`Goal lint found ${lint.issues.length} issue(s) — repair round ${repairs}`)
   await agent(
-    `Repair the session goal ${draft.goalFile} (harness ${H}) against these lint issues, editing with jq and re-validating with ajv against ${H}/schemas/goal.schema.json until it passes:\n` +
+    `Repair the session goal ${draft.goalFile} (harness ${H}) against these lint issues, editing with jq and re-validating with bash ${H}/scripts/lint-goal.sh ${draft.goalFile} --config ${H}/harness.config.json (ajv against ${H}/schemas/goal.schema.json plus the deterministic flags) until it exits 0:\n` +
       lint.issues.map((i) => `- ${i}`).join('\n') +
       `\nKeep the goal_statement's intent; only strengthen verifiability/schema-validity. If the goal carries ADR-0006 lineage (version/supersedes/revision), preserve it — restamp .version with ${H}/scripts/goal-version.sh only if the content changed. Return a one-line confirmation.`,
     { label: `goal:repair-${repairs}`, model: 'sonnet' },
   )
   lint = await agent(
-    `Re-run the verifiability lint for ${draft.goalFile} (harness ${H}): ajv against ${H}/schemas/goal.schema.json plus the check-level end-state/verifiability flags. Return the structured result.`,
+    `Re-run the verifiability lint for ${draft.goalFile} (harness ${H}): bash ${H}/scripts/lint-goal.sh ${draft.goalFile} --config ${H}/harness.config.json (must exit 0) plus the check-level end-state/verifiability flags. Return the structured result.`,
     { label: `goal:relint-${repairs}`, model: 'haiku', effort: 'low', schema: LINT_SCHEMA },
   )
 }

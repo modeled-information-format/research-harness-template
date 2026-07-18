@@ -63,6 +63,14 @@ run "workflow-parse-check" bash evals/workflow-parse-check.sh
 # positioning + supersession note (#553).
 run "workflow-docs-check" bash evals/workflow-docs-check.sh
 
+# The research-goal draft→lint→repair contract has deterministic teeth
+# (#554): scripts/lint-goal.sh FAILS the seeded-invalid fixture (step-shaped
+# check assertion + off-config dimension) that ajv alone accepts, fails
+# closed on a schema-invalid goal, passes the repaired form, and the
+# workflow's bounded repair arithmetic (max 2 rounds) converges or fails
+# closed when repair is exhausted.
+run "goal-lint-repair" bash evals/goal-lint-repair.sh
+
 # release.yml never uploads to an already-published (immutable) release
 # (#537): tag-push trigger, no post-publish `gh release upload`, artifact
 # attached in the same `gh release create` call.

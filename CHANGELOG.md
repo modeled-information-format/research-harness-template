@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.6] - 2026-07-18
+
+### Added
+
+- **Deterministic goal verifiability lint + draft→lint→repair eval** (#554,
+  Epic #539): `scripts/lint-goal.sh` is the machine-checkable floor under the
+  research-goal workflow's Gate-phase lint — a fail-closed `ajv` schema gate
+  against `schemas/goal.schema.json`, step-shaped
+  `completion_condition.checks[]` assertion detection (leading imperative
+  research verb — a step, not an end-state fact), and off-config
+  `dimensions[]` detection. The vendored
+  `.claude/workflows/research-goal.js` Gate/repair prompts now route through
+  it. `evals/goal-lint-repair.sh` (registered in `evals/run-evals.sh`, so
+  CI's required `verify` context covers it) proves the contract on the
+  seeded-invalid fixture set under `evals/fixtures/goal-lint/`: the
+  seeded-invalid goal is ajv-valid yet fails the lint (both issue classes
+  named), a schema-invalid goal fails closed before the content lint, the
+  repaired goal is green, and the workflow's bounded repair arithmetic
+  (max 2 rounds) converges or fails closed when repair is exhausted.
+
 ## [0.16.5] - 2026-07-18
 
 ### Added

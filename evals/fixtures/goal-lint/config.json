@@ -1,0 +1,7 @@
+{
+  "_comment": "Reduced harness-config fixture for the goal-lint-repair eval (#554): only the config-declared dimension id set matters to scripts/lint-goal.sh. Object entries mirror the real harness.config.json dimensions[].id shape.",
+  "dimensions": [
+    { "id": "technical" },
+    { "id": "landscape" }
+  ]
+}
