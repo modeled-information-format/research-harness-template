@@ -26,10 +26,15 @@ cd "$(dirname "$0")/.." || exit 2
 
 # gate_m20/gate_m22's whole-registry ontology-integrity scans delegate to the
 # mif-rh engine (Story #287, research-harness-template#276) rather than a hand-rolled
-# yq+jq registry walk. Resolved once here since it's used by exactly those two gates.
+# yq+jq registry walk. Only source the resolver function here — the engine binary
+# itself is resolved lazily, INSIDE gate_m20/gate_m22 (research-harness-template#567),
+# just as the other engine-dependent gates already resolve it only when they run
+# (gate_m11 directly, and the gates that shell out to reconcile-session.sh /
+# resolve-ontology.sh / ontology-review.sh). Removing the old unconditional
+# top-of-script resolution means a `--gates`-scoped run that selects only
+# engine-free gates (e.g. gate_workflows) never pays for the engine at all.
 # shellcheck source=scripts/lib/engine.sh
 . scripts/lib/engine.sh
-ENGINE="$(engine_bin "$(pwd)")" || exit 5
 
 # Template vs instance. The distributable template carries copier.yml; an
 # instantiated harness has it stripped at generation. Template-only self-tests
@@ -2239,7 +2244,11 @@ gate_m20() {
   #
   # Since research-harness-template#276 (Story #287), this whole-registry scan
   # delegates to the mif-rh engine (mif-rh-cli harness check-ontology-registry).
-  local reg_out reg_err reg_n reg_orphans
+  # Resolved lazily here (research-harness-template#567) rather than unconditionally
+  # at the top of the script, so a `--gates`-scoped run that doesn't select this
+  # gate never hard-requires the engine binary.
+  local ENGINE reg_out reg_err reg_n reg_orphans
+  ENGINE="$(engine_bin "$(pwd)")" || { bad "gate_m20 needs the mif-rh-cli engine for check-ontology-registry (not found/too old — see the engine: diagnostic above)"; return; }
   reg_err="$(mktemp)"
   reg_out=$("$ENGINE" harness check-ontology-registry --root "$(pwd)" 2>"$reg_err")
   if [ $? -gt 1 ]; then
@@ -2334,8 +2343,12 @@ JSON
   vw22 "$T/bad.json"; local b=$?
   # subtype_of parent integrity across the whole registry. Since
   # research-harness-template#276 (Story #287), this whole-registry scan delegates to
-  # the mif-rh engine (mif-rh-cli harness check-ontology-registry).
-  local reg_out reg_err orphan
+  # the mif-rh engine (mif-rh-cli harness check-ontology-registry). Resolved lazily
+  # here (research-harness-template#567) rather than unconditionally at the top of
+  # the script, so a `--gates`-scoped run that doesn't select this gate never
+  # hard-requires the engine binary.
+  local ENGINE reg_out reg_err orphan
+  ENGINE="$(engine_bin "$(pwd)")" || { bad "gate_m22 needs the mif-rh-cli engine for check-ontology-registry (not found/too old — see the engine: diagnostic above)"; rm -rf "$T"; return; }
   reg_err="$T/m22-registry.err"
   reg_out=$("$ENGINE" harness check-ontology-registry --root "$(pwd)" 2>"$reg_err")
   if [ $? -gt 1 ]; then
@@ -4582,10 +4595,54 @@ gate_workflows() {
   fi
 }
 
+gate_engine_lazy_gating() {
+  info "verify.sh --gates: a scoped run of a non-engine gate must not require mif-rh-cli (#567)"
+  # gate_workflows is an engine-free gate, unlike gate_m11/gate_m20/gate_m22 and
+  # the gates that shell out to reconcile-session.sh / resolve-ontology.sh /
+  # ontology-review.sh — all of which resolve the mif-rh engine (via engine_bin,
+  # see scripts/lib/engine.sh) only when they actually run. A --gates-scoped run
+  # that selects only such an engine-free gate must succeed even with no engine
+  # binary reachable via any of engine_bin's three resolution paths
+  # ($MIF_RH_CLI, PATH, <root>/bin/mif-rh-cli) — regression coverage for
+  # research-harness-template#567, where the top of this script unconditionally
+  # resolved the engine (and exited 5 if it couldn't) before gate selection was
+  # even parsed, hard-failing every scoped run regardless of which gate was
+  # actually asked for.
+  local hidden_bin=0
+  if [ -x bin/mif-rh-cli ]; then
+    mv bin/mif-rh-cli bin/mif-rh-cli.gate_engine_lazy_gating.bak
+    hidden_bin=1
+  fi
+  # Resolve bash's absolute path *before* PATH filtering below -- if
+  # mif-rh-cli happens to live in the same directory as bash (common when
+  # both are in /usr/bin), filtering that directory out of PATH and then
+  # invoking the nested verifier via a bare `bash` would fail to resolve
+  # bash itself (rc=127), making this gate flaky/false-failing.
+  local bash_bin
+  bash_bin="${BASH:-$(command -v bash)}"
+  local clean_path="" d
+  local -a _egl_dirs
+  IFS=: read -ra _egl_dirs <<< "$PATH"
+  for d in "${_egl_dirs[@]}"; do
+    [ -x "$d/mif-rh-cli" ] && continue
+    clean_path="${clean_path:+$clean_path:}$d"
+  done
+  local out rc
+  out=$(env -u MIF_RH_CLI PATH="$clean_path" "$bash_bin" scripts/verify.sh --gates 'gate_workflows$' 2>&1); rc=$?
+  if [ "$hidden_bin" -eq 1 ]; then
+    mv bin/mif-rh-cli.gate_engine_lazy_gating.bak bin/mif-rh-cli
+  fi
+  if [ "$rc" -eq 0 ] && ! printf '%s' "$out" | grep -q 'engine: mif-rh-cli not found'; then
+    ok "a --gates run selecting only a non-engine gate succeeds with no mif-rh-cli reachable via any resolution path"
+  else
+    bad "a --gates run selecting only a non-engine gate should not require the engine (rc=$rc); output: ${out//$'\n'/ | }"
+  fi
+}
+
 # ---------------------------------------------------------------------------
 # Gate registry — each milestone appends its function name here.
 # ---------------------------------------------------------------------------
-GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18 gate_m19 gate_m20 gate_m21 gate_m22 gate_m23 gate_m24 gate_m25 gate_m26 gate_m27 gate_m28 gate_m29 gate_m30 gate_m31 gate_m32 gate_ontology_lock gate_versions gate_changelog_links gate_milestone_docs gate_is_template_guard_hygiene gate_monitoring_workflow_sync gate_workflows)
+GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18 gate_m19 gate_m20 gate_m21 gate_m22 gate_m23 gate_m24 gate_m25 gate_m26 gate_m27 gate_m28 gate_m29 gate_m30 gate_m31 gate_m32 gate_ontology_lock gate_versions gate_changelog_links gate_milestone_docs gate_is_template_guard_hygiene gate_monitoring_workflow_sync gate_workflows gate_engine_lazy_gating)
 
 # Gate selection + profiling (#531) -- the pre-push gate is only as valuable
 # as it is runnable, so local iteration gets a scoped fast path and the
