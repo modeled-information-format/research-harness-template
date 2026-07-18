@@ -13,19 +13,22 @@ allowed-tools:
 
 > **Engine path.** This command is a **thin invocation surface** over the
 > vendored workflow-of-workflows, `.claude/workflows/research-pipeline.js`
-> (Epic #550; see its own header comment and
-> [the architecture doc](../workflows/research-pipeline-architecture.md),
-> Decision D-11's first forward-improvement item, for the mode-router and
-> bounded-round-loop design this command wraps). It **supersedes `/start`'s
-> spawn of the `orchestrator` subagent** as the primary entry point for a
-> research campaign — the issue #392 failure class (subagent poll loops,
+> (Epic #550; see its own header comment and, for the mode-router and
+> bounded-round-loop design this command wraps, Decision D-11's first
+> forward-improvement item in the workspace research-pipeline architecture
+> document — a workspace-level design document, not a file in this repo,
+> cited by name rather than linked). It **supersedes `/start`'s spawn of the
+> `orchestrator` subagent** as the primary entry point for a research
+> campaign — the issue #392 failure class (subagent poll loops,
 > filesystem-as-message-bus, self-graded completion) is structurally
 > unexpressible in the Workflow runtime's `pipeline()`/`parallel()`/`workflow()`
-> primitives (architecture doc Decision D-1). **`/start` and
-> `.claude/agents/orchestrator.md` are NOT deleted or disabled by this
-> command** — the interactive/legacy path remains fully available during
-> migration, per Epic #550's and parent Epic #551's explicit non-deletion
-> requirement.
+> primitives (that architecture document's Decision D-1; see
+> [engine-workflows.md's migration
+> note](../../docs/reference/engine-workflows.md#migration-note-supersedes-starts-orchestrator-spawn-in-place)
+> for the in-repo account). **`/start` and `.claude/agents/orchestrator.md`
+> are NOT deleted or disabled by this command** — the interactive/legacy
+> path remains fully available during migration, per Epic #550's and parent
+> Epic #551's explicit non-deletion requirement.
 >
 > This command carries **no orchestration logic of its own**. Everything
 > after argument resolution below is exactly one `Workflow` tool call — the

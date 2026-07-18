@@ -2,7 +2,7 @@
 id: reference-engine-workflows
 type: semantic
 created: '2026-07-17T20:25:00-04:00'
-modified: '2026-07-18T21:23:05.836Z'
+modified: '2026-07-18T22:09:11.251Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -30,7 +30,7 @@ provenance:
 engine-path counterparts to the interactive slash commands in
 [commands](commands.md). A workflow module is composed programmatically (by a
 research pipeline or an orchestrating session) and returns a typed result; it
-never converses with the user. Eleven modules ship today: `research-goal`
+never converses with the user. Twelve modules ship today: `research-goal`
 (atomic step 1 of the research pipeline, vendored under Epic #539),
 `research-fanout` (atomic step 2, vendored under Epic #540), `research-falsify`
 (atomic step 3, vendored under Epic #541), `research-synthesis` (atomic
@@ -41,8 +41,10 @@ deepening decision, vendored under Epic #545), `research-add-dimensions`
 (atomic action B — widen the dimension set, vendored under Epic #546),
 `research-pivot` (atomic action C — pivot research focus, vendored under
 Epic #547), `research-import` (atomic action D — include pre-existing
-findings, vendored under Epic #548), and `research-coverage-audit`
-(atomic action Z — corpus audit, vendored under Epic #549).
+findings, vendored under Epic #548), `research-coverage-audit`
+(atomic action Z — corpus audit, vendored under Epic #549), and
+`research-pipeline` (the workflow-of-workflows orchestrator — mode router
+plus bounded round loop, vendored under Epic #550).
 
 ## Module shape and parse-check
 
@@ -1360,3 +1362,161 @@ above), `summary` its 3-sentence recap (or a raw-items fallback note if the
 prioritizer itself fails), `rawItems` every auditor item plus the critic's
 `extraItems` before merge/dedup/ranking, and `uncoveredAngles` the critic's
 list of modalities no auditor ran.
+
+## research-pipeline
+
+The workflow-of-workflows: a deterministic mode router plus a bounded
+autonomous round loop, composing all eleven sibling modules above via
+`workflow()`. This is the **only** module in the set that composes — every
+other module on this page bottoms out in `agent()`/`parallel()` calls, never
+in a nested `workflow()` call of its own (re-confirmed by grepping all eleven
+siblings for `workflow(` at implementation time: zero real composition
+calls). The platform's one-level `workflow()` nesting rule means the eleven
+atomic modules only ever *return* plans or results for this script to act
+on — they never invoke a child workflow themselves. Source:
+`.claude/workflows/research-pipeline.js`.
+
+### Args
+
+| Arg | Required | Default | Description |
+| --- | --- | --- | --- |
+| `topic` | yes | — | Topic the run operates against. A missing `topic` throws before any phase runs. |
+| `harnessDir` | no | `.` | Path to the harness instance (the #552-precedent in-repo default every sibling module already uses). |
+| `mode` | no | `'full'` | `'full' \| 'augment' \| 'pivot' \| 'import' \| 'audit'` — selects the mode-router branch; see [Mode router](#mode-router) below. |
+| `ask` | no | `''` | `full` mode: the raw research ask passed to the `research-goal` child workflow. An empty string lets that workflow derive the sharpest goal from the topic's existing context. |
+| `maxRounds` | no | `3` | `full` mode: caps the round loop. |
+| `genres` / `channels` | no | — | `full` mode: requested deliverable renders, passed to `research-deliverables` once the loop ends. Omitting both skips the Deliver phase entirely. |
+| `focusHint` | no | — | `augment` mode: a steer for the deepening judge, passed straight through to `research-augment`. |
+| `delta` | yes for `pivot` | — | `pivot` mode: what changed. The script throws `pivot mode requires args.delta` if omitted. |
+| `containerDir` | yes for `import` | — | `import` mode: the MIF Container directory (as `/export` produces). The script throws `import mode requires args.containerDir` if omitted. |
+| `trustImportedVerdicts` | no | `false` | `import` mode: passed through to `research-import` unchanged. |
+| `claimBudget` / `queryBudget` / `lenses` | no | — | Passed through to every internal `research-falsify` call (`falsifyAll()`'s drain loop and the `pivot` regate call). |
+| `workflowsDir` | no | `.claude/workflows` | Where the sibling atomic modules live; `wf(name, …)` resolves each child as `${workflowsDir}/research-<name>.js`. |
+
+### Mode router
+
+`phase('Route')` is a plain code `switch` on `mode` — five branches share this
+one entry point, each a different, shorter composition of the same atomic
+modules the `full` round loop also uses:
+
+| Mode | Composition |
+| --- | --- |
+| `audit` | `research-coverage-audit` alone → returns the routed backlog report. No fan-out, falsify, synthesis, or projection follows. |
+| `import` | `research-import` → (if `needsGating` is non-empty) a falsify drain over `scope: 'all'` → `research-synthesis` → `research-projection`. An import-gate failure (`!imp.ok`) short-circuits before any gating runs. |
+| `pivot` | `research-pivot` → a regate falsify call scoped to `pivot.reverifyIds` (`regate: true`) → (if `gapDimensions` is non-empty and the budget floor hasn't been hit) `research-fanout` over just the gap dimensions plus a falsify drain → `research-synthesis` → `research-projection`. |
+| `augment` | `research-augment` → an empty `deepen[]` returns `{ deepened: [], reasoning }` immediately (an honest, non-error terminal state) → otherwise `research-fanout` over the deepen plan's dimensions plus a falsify drain → `research-synthesis` → `research-projection`. |
+| `full` | The bounded autonomous goal loop — see [The full-mode round loop](#the-full-mode-round-loop) below. |
+
+### The full-mode round loop
+
+`full` mode first runs `research-goal` (a `goal.ok === false` result
+short-circuits the whole call with `{ stage: 'goal', failed: true }`), then
+loops `r = 1..maxRounds`, breaking early the moment `done` is set:
+
+1. **Budget floor check.** `budgetLow()` (remaining token budget under the
+   60 000-token floor) stops the loop *before* opening a new round, logging
+   the stop reason — a code comparison, not a prompt-enforced discipline
+   (Decision D-5, cited below).
+2. **Fanout.** `research-fanout` over the round's current `dims`/`depth`/
+   `roundContext`; any `crossDimensionLeads` accumulate across rounds for the
+   audit/add-dimensions steps later.
+3. **Falsify drain.** `falsifyAll()` repeat-calls `research-falsify` with
+   `scope: 'all'` until `deferredIds` is empty or the budget floor trips —
+   the same bounded-drain shape [research-falsify](#research-falsify)'s own
+   `claimBudget` deferral already documents.
+4. **Synthesis.** `research-synthesis` over the surviving corpus.
+5. **Independent completion check.** A dedicated sonnet evaluator — never the
+   agent that did the round's work — reads `goal.json`, runs each
+   `completion_condition.check`'s own `verify` command where one exists (or
+   grades the assertion strictly against current corpus state otherwise),
+   and returns `{ met, unmet, boundHit }`. `done` is set **only** by
+   `unmet.length === 0` from this evaluator's typed output — never by round
+   activity, and never by the script's own narrative (Decision D-4, cited
+   below). A missing/failed evaluator call stops the loop conservatively
+   rather than assuming success.
+6. **Adapt.** If checks remain unmet, the goal's own bound hasn't been hit,
+   and rounds remain, `research-coverage-audit` runs (fed the accumulated
+   leads and the last synthesis's `checkCoverage`) and its top-3-priority
+   backlog items decide the next round's shape: a backlog wanting
+   `add-dimensions` runs `research-add-dimensions` and, if it actually added
+   anything, the next round researches only the new dimensions; otherwise
+   `research-augment` (steered by the unmet checks) either returns a deepen
+   plan the next round targets, or an empty plan — which **stops the loop
+   with the judge's own stated reasoning logged**, a real code path (not
+   merely documented behavior) matching the
+   [empty-plan outcome](#the-empty-plan-outcome-is-valid-not-an-error)
+   `research-augment` itself already treats as a valid, non-error result.
+
+Once the loop exits (by `done`, a bound/floor stop, or exhausting
+`maxRounds`), `research-projection` runs against the last synthesis's
+`synthesisPath` (skipped if no synthesis ever completed), then
+`research-deliverables` runs only if the caller requested `genres`/
+`channels`.
+
+### Returns
+
+Every mode returns a typed result tagged with `mode`; shape varies by branch
+— `audit`: `{ mode, backlog, summary, rawItems, uncoveredAngles }` (the
+`research-coverage-audit` result spread with `mode`); `import`:
+`{ mode, imported, gate, synthesis, projection }` on success, or
+`{ mode, imported: <failed result> }` if the import gate itself failed;
+`pivot`: `{ mode, goalVersion, carried, stale, fanout, synthesis, projection }`;
+`augment`: `{ mode, deepened: [], reasoning }` when nothing warranted
+deepening, or `{ mode, deepened, fanout, gate, synthesis, projection }`
+otherwise; `full`:
+`{ mode, goal: { file, dimensions }, done, checks: { met, unmet } | null, synthesis, projection, deliverables }`.
+A `full`-mode goal-stage failure instead returns
+`{ mode, stage: 'goal', failed: true, detail }` before the round loop ever
+starts.
+
+### The `/research` command: the engine's new entry point
+
+[`/research`](commands.md#research) (Epic #550, Task #600) is the thin
+slash-command invocation surface over this module — exactly one `Workflow`
+tool call per invocation, with no orchestration logic of its own. It resolves
+`--topic`/`--mode` and the mode-specific args documented in this module's own
+Args table above (asking the user rather than invoking the tool when a
+required arg
+like `--delta`/`--container-dir` is missing), makes the single call, and
+reports the typed result plainly per mode — never re-narrating the run as if
+the command had performed the work itself. `/research` is this engine's new
+entry point; see [commands.md](commands.md#research) for its full argument
+reference.
+
+### Migration note: supersedes `/start`'s orchestrator spawn, in place
+
+**What this module structurally removes.** The old engine's `/start` command
+spawns `.claude/agents/orchestrator.md` as a subagent that fans out nameless
+background workers and must babysit them with `Bash` poll loops — ending its
+turn mid-wait permanently abandons that work, since a subagent gets no
+completion notification it can act on after its own turn ends. This is not
+hypothetical: it reproduced twice in one real session
+([issue #392](https://github.com/modeled-information-format/research-harness-template/issues/392)),
+once in the orchestrator's Phase 1 fan-out wait and once in its Phase 2
+falsification-gate loop. `research-pipeline.js` removes this failure class
+*structurally*, not by prompt discipline layered on top of the same shape:
+every sequencing, waiting, and reaping decision above — the round loop, the
+falsify drain, the mode router — is owned by the deterministic Workflow
+runtime (`workflow()`/`agent()`/`parallel()`), so no agent is ever
+responsible for supervising another agent's lifecycle, and there is no
+background spawn for a turn boundary to abandon. This is Decision D-1 of the
+workspace research-pipeline architecture document (the source this module
+and its ten siblings were vendored from — a workspace-level design document,
+not a file in this repo, so it is cited by name here rather than linked, the
+same as every other Decision-Log citation on this page) — cited here rather
+than restated; see that document's Decision Log for the full
+context/decision/consequences write-up, and its "The orchestrator —
+`research-pipeline.js`" Level-3 section (cited throughout this page's
+per-module sections above) for the mode-router and round-loop design this
+page documents as built.
+
+**Superseded in place, not deleted.** Consistent with parent Epic #551's own
+acceptance criterion ("every supersession is documented in place, nothing
+silently deleted"): `.claude/agents/orchestrator.md` and the `/start`,
+`/resume`, and `/falsify` commands that spawn or drive it are **untouched**
+by this vendor and remain fully available as the interactive, legacy
+research path. Nothing about this migration disables, deprecates, or removes
+them — `/research` is a new, additional entry point, not a replacement that
+breaks the old one. A reader landing on `.claude/agents/orchestrator.md`
+finds a cross-link back to this section (see that file's own header note);
+a reader landing here finds the reverse pointer in this paragraph.

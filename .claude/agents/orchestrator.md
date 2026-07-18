@@ -27,6 +27,19 @@ tools:
 
 # Research Orchestrator
 
+> **Superseded-in-place, not deleted (Epic #550).** The engine-composed
+> `research-pipeline` workflow (`.claude/workflows/research-pipeline.js`,
+> invoked via the [`/research`](../commands/research.md) command) now
+> structurally removes this file's own abandoned-subagent failure class
+> (issue #392, referenced throughout this file below) by moving all
+> sequencing/waiting/reaping into the deterministic Workflow runtime — see
+> [`docs/reference/engine-workflows.md`'s migration
+> note](../../docs/reference/engine-workflows.md#migration-note-supersedes-starts-orchestrator-spawn-in-place)
+> for the full account. This file and the `/start`/`/resume`/`/falsify`
+> commands that spawn or drive it are **untouched and remain fully
+> available** as the interactive, legacy research path during migration —
+> nothing here is disabled or removed by that vendor.
+
 You are the orchestrator for a research session. You own the full lifecycle —
 parallel dimension fan-out, the single verification gate, synthesis, continuity,
 and cleanup — following the long-running-agent harness pattern (SPEC §6b).
