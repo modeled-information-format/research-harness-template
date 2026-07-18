@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.14] - 2026-07-18
+
+### Added
+
+- **Vendored research-pivot workflow** (#586, Epic #547):
+  `.claude/workflows/research-pivot.js` — atomic action C (pivot research
+  focus, for when the question itself changes), a three-phase chain ending
+  in a lineage event: a sonnet Reshape phase mints a NEW version of the
+  goal's append-only lineage from a required delta argument (a pivot with
+  no stated delta throws and refuses to run); parallel haiku Classify
+  batches (default 15) grade every existing finding against the NEW goal
+  as carry / stale / out-of-scope — findings are gathered once and reused
+  across goal versions, classification never deletes, out-of-scope
+  findings stay on disk simply unused; a sonnet Plan phase computes
+  `gapDimensions` (which dimensions the carried corpus cannot answer the
+  new checks from) and `reverifyIds` (the stale list). Fixes the same
+  class of delegate-vs-reimplement gap #543/#544/#545/#546 already named:
+  the reference implementation's Reshape phase computes the `gv-`
+  content-hash freehand (a prose description of the sha256-first-12-hex
+  algorithm) rather than invoking `scripts/goal-version.sh`, which already
+  delegates to the canonical `mif-rh-cli harness goal-version` mechanism
+  (Category-B cutover, research-harness-template#276/Story #298). This
+  module instead follows the same snapshot-then-mint idiom
+  `.claude/commands/goal-writer.md`'s `--reshape` flow and
+  `research-add-dimensions.js`'s Amend phase already establish: snapshot
+  the live goal to `reports/<topic>/goals/goal-<gv>.json` before editing,
+  apply the delta, then mint the new version by actually running
+  `scripts/goal-version.sh` (ADR-0006, content-hashed append-only lineage —
+  the goal is immutable per version, a pivot is an append, never an
+  in-place edit). `reverifyIds` feeds directly into `research-falsify.js`'s
+  `scope: { ids: [...] }, regate: true` with no adapter needed — documented
+  at the return site so the interface contract is visible at the call site.
+  `harnessDir` defaults to `.`, matching the
+  research-goal.js/research-fanout.js/research-falsify.js/
+  research-synthesis.js/research-projection.js/research-deliverables.js/
+  research-augment.js/research-add-dimensions.js precedent.
+  `scripts/verify.sh`'s `gate_workflows` gains a ninth hand-added per-file
+  existence assert for the new module.
+
 ## [0.16.13] - 2026-07-18
 
 ### Added
