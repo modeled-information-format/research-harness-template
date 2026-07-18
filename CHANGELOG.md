@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.18] - 2026-07-18
+
+### Added
+
+- **Vendor the research-pipeline workflow (the workflow-of-workflows
+  orchestrator)** (#599, Epic #550): `.claude/workflows/research-pipeline.js`,
+  the twelfth and last workflow module and the sole composer of the eleven
+  atomic ones (D-9, one-level `workflow()` nesting). Implements the
+  deterministic mode router (`full | augment | pivot | import | audit`) and
+  the bounded autonomous round loop for `full` runs — `goal` -> [`fanout` ->
+  `falsify` (bounded drain) -> `synthesis` -> an independent sonnet
+  completion check that runs each goal check's own verify command and
+  grades adversarially]\* -> audit-driven adaptation (routes to
+  `add-dimensions` or `augment`) -> `projection` -> optional `deliverables`.
+  Loop-exit, round bounds (`maxRounds`), and the token-budget floor (60 000
+  remaining) are code comparisons on typed agent output, never prompt
+  instructions; when the augment judge finds nothing left to deepen while
+  checks remain unmet, the loop stops with the judge's own stated reasoning
+  logged (NFR-10, a real code path). `harnessDir` defaults to `.`, matching
+  every prior vendored module; `workflowsDir` keeps the reference's own
+  `.claude/workflows` default unchanged. The old agent engine
+  (`.claude/agents/orchestrator.md`, `/start`) remains untouched.
+- `scripts/verify.sh`'s `gate_workflows` gained its twelfth hand-added
+  per-file existence assert for `.claude/workflows/research-pipeline.js`,
+  alongside the eleven already there; `check-workflow-syntax.sh`'s own
+  nullglob parse-check required no manual wiring for the new file.
+
 ## [0.16.17] - 2026-07-18
 
 ### Added
