@@ -334,8 +334,11 @@ fi
 
 # Defense-in-depth structural grep of the bound constant itself, matching
 # the falsify-verdict-merge (#562) precedent's structural-grep pattern.
-grep -qE "MAX_REPAIR = \(args && args\.maxRepairRounds\) \|\| 2" "$WF" \
-  || { note "$WF's MAX_REPAIR default changed from 2 -- the <=2 repair-round bound this eval proves no longer matches the module's actual default"; fail=1; }
+# NOTE: the default is an explicit undefined-check, not `|| 2` -- `|| 2` was a
+# real bug (a caller-supplied maxRepairRounds:0, meaning "no repair loop",
+# is falsy and silently replaced by 2), fixed on review (PR #568).
+grep -qE "MAX_REPAIR = \(args && args\.maxRepairRounds\) !== undefined \? args\.maxRepairRounds : 2" "$WF" \
+  || { note "$WF's MAX_REPAIR default no longer distinguishes an explicit 0 from unset -- the <=2 repair-round bound this eval proves no longer matches the module's actual default"; fail=1; }
 grep -qF 'rounds < MAX_REPAIR' "$WF" \
   || { note "$WF's repair while-loop no longer bounds on MAX_REPAIR"; fail=1; }
 

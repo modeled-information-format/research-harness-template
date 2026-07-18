@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   verdict field; findings with no verification block are counted separately
   as `unverified`/ungated, never silently promoted into the survivor set), a
   sonnet Draft phase writes a typed, `@id`-keyed synthesis organized around
-  `goal.schema.json`'s `completion_condition.checks[]`, and an opus Critique
+  `schemas/goal.schema.json`'s `completion_condition.checks[]`, and an opus Critique
   phase grades it per-check plus citation-key integrity, fidelity, and
   tension-burial, with a bounded `<=2`-round repair loop that reports an
   explicit unresolved-check list rather than looping forever. Invents and

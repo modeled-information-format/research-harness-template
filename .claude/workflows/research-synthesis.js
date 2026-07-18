@@ -96,7 +96,7 @@ const H = (args && args.harnessDir) || '.'
 const TOPIC = args && args.topic
 if (!TOPIC) throw new Error('research-synthesis: args.topic is required')
 const RDIR = `${H}/reports/${TOPIC}`
-const MAX_REPAIR = (args && args.maxRepairRounds) || 2
+const MAX_REPAIR = (args && args.maxRepairRounds) !== undefined ? args.maxRepairRounds : 2
 
 const SELECT_SCHEMA = {
   type: 'object',
@@ -167,8 +167,8 @@ phase('Select')
 const sel = await agent(
   `Build the synthesis input set for topic ${TOPIC}, harness ${H}.\n` +
     `1. Survivors: every finding under ${RDIR}/findings/ whose extensions.harness.verification.verdict is survived, weakened, or inconclusive (report the verdict per finding — weakened/inconclusive are usable but must be marked). Structurally EXCLUDE everything under ${RDIR}/quarantine/ or ${RDIR}/archive/ (research-falsify.js already moved every falsified finding there — count them in excluded, do not re-derive falsified status from the verdict field). Count findings with NO verification block in unverified (they are not survivors — they are ungated, run research-falsify first).\n` +
-    `2. Goal: read ${RDIR}/goal.json — return goal_statement and completion_condition.checks[] (each {id, assertion, verify?} per schemas/goal.schema.json).\n` +
-    `Return one row per survivor: @id, path, dimension, verdict, one-sentence claim summary.`,
+    `2. Goal: read ${RDIR}/goal.json — return goalStatement (its goal_statement field) and checks[] (its completion_condition.checks[], each {id, assertion, verify?} per schemas/goal.schema.json).\n` +
+    `Return one row per survivor: id (the finding's @id), path, dimension, verdict, claimSummary (one sentence).`,
   { label: 'synthesis:select', model: 'haiku', effort: 'low', schema: SELECT_SCHEMA },
 )
 if (!sel) throw new Error('research-synthesis: selection failed')
