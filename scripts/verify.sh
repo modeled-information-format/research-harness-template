@@ -4613,14 +4613,22 @@ gate_engine_lazy_gating() {
     mv bin/mif-rh-cli bin/mif-rh-cli.gate_engine_lazy_gating.bak
     hidden_bin=1
   fi
+  # Resolve bash's absolute path *before* PATH filtering below -- if
+  # mif-rh-cli happens to live in the same directory as bash (common when
+  # both are in /usr/bin), filtering that directory out of PATH and then
+  # invoking the nested verifier via a bare `bash` would fail to resolve
+  # bash itself (rc=127), making this gate flaky/false-failing.
+  local bash_bin
+  bash_bin="${BASH:-$(command -v bash)}"
   local clean_path="" d
+  local -a _egl_dirs
   IFS=: read -ra _egl_dirs <<< "$PATH"
   for d in "${_egl_dirs[@]}"; do
     [ -x "$d/mif-rh-cli" ] && continue
     clean_path="${clean_path:+$clean_path:}$d"
   done
   local out rc
-  out=$(env -u MIF_RH_CLI PATH="$clean_path" bash scripts/verify.sh --gates 'gate_workflows$' 2>&1); rc=$?
+  out=$(env -u MIF_RH_CLI PATH="$clean_path" "$bash_bin" scripts/verify.sh --gates 'gate_workflows$' 2>&1); rc=$?
   if [ "$hidden_bin" -eq 1 ]; then
     mv bin/mif-rh-cli.gate_engine_lazy_gating.bak bin/mif-rh-cli
   fi
