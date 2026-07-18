@@ -93,7 +93,7 @@ const FINDING_CONTRACT =
 
 phase('Plan')
 const plan = await agent(
-  `Read ${RDIR}/goal.json in the research-harness instance at ${H}. Return dimensions[], goal_statement, and a 2-3 sentence researcher brief from scope.in_scope/out_of_scope/non_goals.` +
+  `Read ${RDIR}/goal.json in the research-harness instance at ${H}. Return dimensions[], goalStatement, and scopeBrief (a 2-3 sentence researcher brief from scope.in_scope/out_of_scope/non_goals).` +
     ((args && args.dimensions && args.dimensions.length)
       ? ` Then restrict the returned dimensions to this requested subset, noting in scopeBrief any requested id absent from the goal: ${JSON.stringify(args.dimensions)}.`
       : ''),
@@ -130,11 +130,33 @@ const perDimension = await pipeline(
       : null,
   (v, d) => {
     if (!v || !v.validation || !v.validation.invalid.length) return v
+    const invalidPaths = v.validation.invalid.map((i) => i.path)
     return agent(
       `Repair these schema-invalid MIF finding files so each validates against ${H}/schemas/findings.schema.json (jq edits, re-run ajv until clean). Fix structure, citation objects, and the extensions.harness.dimension="${d}" pin ONLY — never delete a finding or weaken its claim to make validation pass:\n` +
         v.validation.invalid.map((i) => `- ${i.path}: ${i.error}`).join('\n'),
       { label: `repair:${d}`, phase: 'Research', model: 'sonnet' },
-    ).then(() => v)
+    )
+      .then(() =>
+        // Re-validate the repaired files — a repair is not done until it proves out
+        // against the same checks that failed it (write-validate atomicity, fail-closed).
+        agent(
+          `Validate each finding file with ajv (draft2020, ajv-formats) against ${H}/schemas/findings.schema.json registering the vendored ${H}/schemas/mif/ schemas: ${JSON.stringify(invalidPaths)}. ` +
+            `Additionally mark invalid: extensions.harness.dimension != "${d}", empty citations, or a citation whose URL was clearly never retrieved (no retrieval metadata). Return validPaths + invalid[{path,error}].`,
+          { label: `revalidate:${d}`, phase: 'Research', model: 'haiku', effort: 'low', schema: VALIDATE_SCHEMA },
+        ),
+      )
+      .then((rv) => {
+        if (rv.invalid.length)
+          throw new Error(
+            `research-fanout: ${d}: ${rv.invalid.length} finding(s) still schema-invalid after repair: ` +
+              rv.invalid.map((i) => `${i.path} (${i.error})`).join('; '),
+          )
+        return {
+          dimension: d,
+          research: v.research,
+          validation: { validPaths: v.validation.validPaths.concat(rv.validPaths), invalid: [] },
+        }
+      })
   },
 )
 
