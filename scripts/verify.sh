@@ -4587,6 +4587,11 @@ gate_workflows() {
   else
     bad ".claude/workflows/research-projection.js is missing — the vendored research-projection workflow must travel template-and-instance"
   fi
+  if [ -f .claude/workflows/research-deliverables.js ]; then
+    ok ".claude/workflows/research-deliverables.js ships (vendored research-deliverables workflow)"
+  else
+    bad ".claude/workflows/research-deliverables.js is missing — the vendored research-deliverables workflow must travel template-and-instance"
+  fi
   local out
   if out="$(bash scripts/check-workflow-syntax.sh 2>&1)"; then
     ok "every .claude/workflows/*.js compiles as a Workflow-runtime async function body"

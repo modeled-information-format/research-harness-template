@@ -130,6 +130,27 @@ run "synthesis-citation-check" bash evals/synthesis-citation-check.sh
 # acceptance criterion, made a real regression trap).
 run "projection-supersession-check" bash evals/projection-supersession-check.sh
 
+# The research-deliverables module has deterministic teeth where its own
+# logic can express it (#573, Epic #544): the module's static pack-taxonomy
+# tables (which genres/methodology packs/source-direct channels/out-of-scope
+# channels it knows about) are cross-checked against the REAL
+# docs/reference/packs/index.md inventory table (parsed, not eyeballed) so a
+# drift between the module and the real docs is a caught regression; a
+# structural grep of the module's ACTUAL AGENT PROMPT BODIES proves the
+# settings.local.json "<pack>@research-harness" key shape, the
+# report-channel architectural-boundary reason, and the out-of-scope
+# third-mechanism channels are all still named in the Route prompt, and that
+# the Render prompt's two mechanism branches stay disjoint (artifact-based
+# delegates to synthesize-artifact.sh -> render-artifact.sh, source-direct
+# invokes Skill(<pack>:<pack>) directly and explicitly never touches either
+# script or synthesisPath); and a REAL, hermetic, no-model fixture run
+# through the actual synthesize-artifact.sh -> render-artifact.sh pipeline
+# (offline, reports/_meta/sample-session's real findings, blog channel)
+# proves the citation-leak gate holds by the REAL enforced pattern
+# (extracted verbatim from .claude/hooks/check-citation-leak.sh), not merely
+# asserted by the prompt text.
+run "deliverables-route-check" bash evals/deliverables-route-check.sh
+
 # release.yml never uploads to an already-published (immutable) release
 # (#537): tag-push trigger, no post-publish `gh release upload`, artifact
 # attached in the same `gh release create` call.
