@@ -1,0 +1,20 @@
+{
+  "topic": "goal-lint-fixture",
+  "goal_statement": "Enable the decision of whether the harness should adopt streaming ingestion for corpus updates.",
+  "dimensions": ["technical", "landscape"],
+  "completion_condition": {
+    "summary": "Enough falsification-surviving evidence to decide for or against streaming ingestion.",
+    "checks": [
+      {
+        "id": "sources-surveyed",
+        "assertion": "At least five falsification-surviving findings cite distinct vendor benchmarks covering streaming ingestion throughput.",
+        "verify": "jq -s '[.[] | select(.extensions.harness.verification.verdict == \"verified\")] | length' reports/goal-lint-fixture/findings/*.json"
+      },
+      {
+        "id": "cost-bounded",
+        "assertion": "The corpus holds a falsification-surviving cost-model finding with an upper-bound estimate per million events.",
+        "verify": "jq '.summary' reports/goal-lint-fixture/findings/cost-model.json"
+      }
+    ]
+  }
+}

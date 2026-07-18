@@ -1,0 +1,8 @@
+{
+  "topic": "goal-lint-fixture",
+  "goal_statement": "Enable the decision of whether the harness should adopt streaming ingestion for corpus updates.",
+  "dimensions": ["technical"],
+  "completion_condition": {
+    "summary": "Missing the required checks[] array — must fail the ajv schema gate, never reach the content lint."
+  }
+}

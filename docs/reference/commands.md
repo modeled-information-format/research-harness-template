@@ -2,7 +2,7 @@
 id: reference-commands
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-12T15:46:11.442Z'
+modified: '2026-07-18T00:25:52.278Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -16,12 +16,12 @@ temporal:
   recordedAt: '2026-06-24T10:25:46-04:00'
 provenance:
   '@type': Provenance
-  agent: claude-code/claude-sonnet-5
+  agent: claude-code/claude-fable-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:3eeb65b8-4027-4e9e-afbe-ccfe2ae33a26
+    '@id': urn:mif:activity:claude-code-session:7b4efc9f-b778-4d49-b1e4-c009adbd178a
     '@type': prov:Activity
   trustLevel: user_stated
-  agentVersion: 2.1.207
+  agentVersion: 2.1.212
 ---
 
 # Reference: commands
@@ -124,6 +124,16 @@ The `--reshape` flag evolves an existing goal using append-only versioning
 content-hash goal version (`gv-<sha256[:12]>`) via `scripts/goal-version.sh`
 and resolves carry/stale/gap membership via `scripts/resolve-membership.sh`.
 Does not spawn the orchestrator.
+
+**Engine counterpart:** `/goal-writer` stays the interactive, user-facing
+path. The engine path a research pipeline composes is the `research-goal`
+Workflow-runtime module (`.claude/workflows/research-goal.js` — see
+[engine workflows](engine-workflows.md)): the same contract (this command's
+manual is its Draft phase's operating manual; `schemas/goal.schema.json`;
+ADR-0006 append-only lineage), returned as a typed, non-interactive result
+with an `ajv` + verifiability-lint gate after every link and a bounded
+repair loop. For engine-composed goal authoring that deterministic chaining
+supersedes prompt-discipline gating; the interactive path is not superseded.
 
 **Usage:**
 

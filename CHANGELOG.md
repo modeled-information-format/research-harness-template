@@ -7,6 +7,65 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.6] - 2026-07-18
+
+### Added
+
+- **Deterministic goal verifiability lint + draft→lint→repair eval** (#554,
+  Epic #539): `scripts/lint-goal.sh` is the machine-checkable floor under the
+  research-goal workflow's Gate-phase lint — a fail-closed `ajv` schema gate
+  against `schemas/goal.schema.json`, step-shaped
+  `completion_condition.checks[]` assertion detection (leading imperative
+  research verb — a step, not an end-state fact), and off-config
+  `dimensions[]` detection. The vendored
+  `.claude/workflows/research-goal.js` Gate/repair prompts now route through
+  it. `evals/goal-lint-repair.sh` (registered in `evals/run-evals.sh`, so
+  CI's required `verify` context covers it) proves the contract on the
+  seeded-invalid fixture set under `evals/fixtures/goal-lint/`: the
+  seeded-invalid goal is ajv-valid yet fails the lint (both issue classes
+  named), a schema-invalid goal fails closed before the content lint, the
+  repaired goal is green, and the workflow's bounded repair arithmetic
+  (max 2 rounds) converges or fails closed when repair is exhausted.
+
+## [0.16.5] - 2026-07-18
+
+### Added
+
+- **Vendored `research-goal` workflow module** (#552, Epic #539):
+  `.claude/workflows/research-goal.js` — atomic step 1 of the research
+  pipeline (goal-writing: Context probe → Draft → Gate with a bounded
+  2-round repair loop) — now ships as first-class engine content. In-repo
+  arg defaults (`harnessDir` defaults to the instance root `.`), and
+  re-authoring an existing goal routes through ADR-0006's content-hashed
+  append-only lineage (`scripts/goal-version.sh`, `gv-*` versions,
+  `goals/goal-<gv>.json` snapshots) instead of an ad hoc
+  `goal.prior.json` copy. `.claude/workflows/` is not copier-excluded, so
+  the module travels byte-identical template-and-instance.
+- **Workflow-module parse-check on the `verify` surface** (#552):
+  `scripts/check-workflow-syntax.sh` compiles each
+  `.claude/workflows/*.js` as a Workflow-runtime async function body
+  (top-level `return`/`await` are legal there, so a bare `node --check`
+  rejects a valid module), wired into `verify.sh` as `gate_workflows` —
+  covered by the already-required `verify` CI context, no new required
+  check. Regression eval `evals/workflow-parse-check.sh` proves the wrap
+  is load-bearing: the vendored file passes, bare `node --check` rejects
+  it, and a seeded syntax error fails loudly.
+- **Engine-workflows reference entry** (#553, Epic #539):
+  `docs/reference/engine-workflows.md` documents the Workflow-runtime
+  module surface — the async-body module shape and parse-check, the
+  governing architecture's typed-hand-off and `jq`+`ajv` write-validate
+  rules, and the `research-goal` module (phases, args with in-repo
+  defaults, bounded repair loop, typed return). The `/goal-writer`
+  positioning is stated where commands are described
+  (`docs/reference/commands.md`, `.claude/commands/goal-writer.md`): the
+  command stays the interactive, user-facing path; the workflow is the
+  engine path a pipeline composes — and for engine-composed goal
+  authoring, deterministic chaining with `ajv` + verifiability gates
+  supersedes prompt-discipline gating. Regression eval
+  `evals/workflow-docs-check.sh` keeps the page bidirectionally honest
+  with the module set and keeps the positioning/supersession note from
+  silently regressing.
+
 ## [0.16.4] - 2026-07-17
 
 ### Fixed
