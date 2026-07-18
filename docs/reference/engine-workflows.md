@@ -2,13 +2,18 @@
 id: reference-engine-workflows
 type: semantic
 created: '2026-07-17T20:25:00-04:00'
-modified: '2026-07-18T00:25:38.162Z'
+modified: '2026-07-18T00:45:19.250Z'
 namespace: docs/reference
 tags:
   - documentation
   - reference
 title: "Reference: engine workflows"
 diataxis_type: reference
+temporal:
+  '@type': TemporalMetadata
+  validFrom: '2026-07-17T20:25:00-04:00'
+  ttl: P6M
+  recordedAt: '2026-07-17T20:25:00-04:00'
 provenance:
   '@type': Provenance
   agent: claude-code/claude-fable-5
