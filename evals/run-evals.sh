@@ -58,6 +58,11 @@ run "verify-selector" bash evals/verify-selector.sh
 # seeded syntax error, and runs inside verify.sh's gate_workflows.
 run "workflow-parse-check" bash evals/workflow-parse-check.sh
 
+# The engine-workflows reference entry stays bidirectionally honest with
+# the module set, cross-linked with commands.md, and keeps the /goal-writer
+# positioning + supersession note (#553).
+run "workflow-docs-check" bash evals/workflow-docs-check.sh
+
 # release.yml never uploads to an already-published (immutable) release
 # (#537): tag-push trigger, no post-publish `gh release upload`, artifact
 # attached in the same `gh release create` call.

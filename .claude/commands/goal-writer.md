@@ -6,6 +6,13 @@ argument-hint: "[your research ask] | --reshape [<what changed>]"
 
 # Goal Writer
 
+> **Engine counterpart:** this command is the interactive, user-facing path.
+> The engine path a research pipeline composes is the `research-goal`
+> Workflow-runtime module (`.claude/workflows/research-goal.js`), which
+> follows this file as its Draft-phase operating manual and gates every link
+> with `ajv` plus a verifiability lint — see
+> [docs/reference/engine-workflows.md](../../docs/reference/engine-workflows.md).
+
 ## Your task
 
 You are a research-goal-engineering expert for this domain-general research

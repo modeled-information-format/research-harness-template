@@ -30,6 +30,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   check. Regression eval `evals/workflow-parse-check.sh` proves the wrap
   is load-bearing: the vendored file passes, bare `node --check` rejects
   it, and a seeded syntax error fails loudly.
+- **Engine-workflows reference entry** (#553, Epic #539):
+  `docs/reference/engine-workflows.md` documents the Workflow-runtime
+  module surface — the async-body module shape and parse-check, the
+  governing architecture's typed-hand-off and `jq`+`ajv` write-validate
+  rules, and the `research-goal` module (phases, args with in-repo
+  defaults, bounded repair loop, typed return). The `/goal-writer`
+  positioning is stated where commands are described
+  (`docs/reference/commands.md`, `.claude/commands/goal-writer.md`): the
+  command stays the interactive, user-facing path; the workflow is the
+  engine path a pipeline composes — and for engine-composed goal
+  authoring, deterministic chaining with `ajv` + verifiability gates
+  supersedes prompt-discipline gating. Regression eval
+  `evals/workflow-docs-check.sh` keeps the page bidirectionally honest
+  with the module set and keeps the positioning/supersession note from
+  silently regressing.
 
 ## [0.16.4] - 2026-07-17
 
