@@ -1,6 +1,6 @@
 {
   "$schema": "./harness.config.schema.json",
-  "version": "0.16.6",
+  "version": "0.16.7",
   "mifConformanceLevel": 3,
   "features": {
     "internalCitations": false

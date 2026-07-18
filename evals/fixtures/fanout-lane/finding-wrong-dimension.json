@@ -1,0 +1,44 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@type": "Concept",
+  "@id": "urn:mif:concept:harness:fanout-eval-wrong-dimension",
+  "conceptType": "semantic",
+  "namespace": "harness/fanout-lane-eval",
+  "title": "Wrong-dimension-pin finding: schema-valid but pinned outside its lane",
+  "content": "This fixture is fully valid against schemas/findings.schema.json — well-formed MIF base, one real-shaped citation, a verification record — but its extensions.harness.dimension pin names 'governance' while the eval's lane is 'landscape'. The ajv gate alone accepts it; only the lane's dimension-pin enforcement (validate marks invalid any finding whose pin differs from its lane) rejects it.",
+  "summary": "Schema-valid finding pinned to governance; the landscape lane must reject it at the dimension-pin gate, not the schema gate.",
+  "created": "2026-07-17T12:00:00Z",
+  "modified": "2026-07-17T12:00:00Z",
+  "temporal": {
+    "@type": "TemporalMetadata",
+    "validFrom": "2026-07-17T12:00:00Z"
+  },
+  "tags": [
+    "fanout-eval"
+  ],
+  "provenance": {
+    "@type": "Provenance",
+    "sourceType": "agent_inferred",
+    "confidence": 0.8,
+    "trustLevel": "moderate_confidence"
+  },
+  "citations": [
+    {
+      "@type": "Citation",
+      "citationType": "documentation",
+      "citationRole": "background",
+      "title": "Example governance source",
+      "url": "https://example.org/governance-charter",
+      "accessed": "2026-07-17"
+    }
+  ],
+  "extensions": {
+    "harness": {
+      "dimension": "governance",
+      "verification": {
+        "verdict": "inconclusive",
+        "verdict_basis": "Fixture record; not yet gated."
+      }
+    }
+  }
+}

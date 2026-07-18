@@ -1,0 +1,45 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@type": "Concept",
+  "@id": "urn:mif:concept:harness:fanout-eval-pair-new",
+  "conceptType": "semantic",
+  "namespace": "harness/fanout-lane-eval",
+  "title": "Copier supports re-applying template updates to generated projects",
+  "content": "Copier ships a first-class `copier update` operation that merges later template revisions into an already-generated project, so instances track upstream template evolution.",
+  "summary": "Copier's update operation merges later template revisions into existing instances.",
+  "created": "2026-07-17T12:30:00Z",
+  "modified": "2026-07-17T12:30:00Z",
+  "temporal": {
+    "@type": "TemporalMetadata",
+    "validFrom": "2026-07-17T12:30:00Z"
+  },
+  "tags": [
+    "fanout-eval",
+    "template-engine"
+  ],
+  "provenance": {
+    "@type": "Provenance",
+    "sourceType": "agent_inferred",
+    "confidence": 0.85,
+    "trustLevel": "high_confidence"
+  },
+  "citations": [
+    {
+      "@type": "Citation",
+      "citationType": "documentation",
+      "citationRole": "supports",
+      "title": "Copier documentation — updating a project",
+      "url": "https://copier.readthedocs.io/en/stable/updating/",
+      "accessed": "2026-07-17"
+    }
+  ],
+  "extensions": {
+    "harness": {
+      "dimension": "adoption",
+      "verification": {
+        "verdict": "survived",
+        "verdict_basis": "Copier's documented update mechanism directly demonstrates the claim."
+      }
+    }
+  }
+}

@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.7] - 2026-07-18
+
+### Added
+
+- **Vendored research-fanout workflow** (#556, Epic #540):
+  `.claude/workflows/research-fanout.js` — atomic step 2 (research fan-out)
+  of the workflow-of-workflows engine, adapted from the workspace reference
+  with in-repo defaults (`harnessDir` defaults to the instance root `.`, the
+  #552 precedent). Analyst briefs are self-contained: the inlined
+  `FINDING_CONTRACT` constant carries the findings-schema rules, with no
+  dependence on `.claude/agents/dimension-analyst.md` prose. Per-dimension
+  Research→Validate→Repair lanes run with no cross-dimension barrier (repair
+  annotates/repairs, never deletes), a single cross-corpus Relate pass
+  annotates duplicates with typed MIF relationships, and the
+  `crossDimensionLeads` side-channel surfaces homeless evidence in the return
+  payload. `verify.sh` `gate_workflows` gains the per-file existence assert
+  for the module; the `check-workflow-syntax.sh` glob parse-check covers it
+  automatically.
+
 ## [0.16.6] - 2026-07-18
 
 ### Added
