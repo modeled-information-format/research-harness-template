@@ -215,6 +215,32 @@ run "augment-decide-check" bash evals/augment-decide-check.sh
 # faked.
 run "add-dimensions-check" bash evals/add-dimensions-check.sh
 
+# The research-pivot module's Reshape/Classify/Plan pipeline has deterministic
+# teeth where its own logic can express it (#588, Epic #547, following #586's
+# vendoring and #587's docs): the Reshape phase is proven, structurally
+# (phase('Reshape') marker span, never a header comment), to invoke the REAL
+# `bash ${H}/scripts/goal-version.sh` exactly twice (OLD then NEW) and to
+# explicitly forbid narrating the hash; a dedicated lineage/hash fixture drives
+# that exact snapshot-then-mint sequence against the REAL
+# scripts/goal-version.sh and cross-checks supersedes/version against
+# independent fresh recomputations of the real script, never a hand-simulated
+# hash (#584's precedent); a no-delta invocation is proven to refuse before any
+# agent() call is even made; a seeded 3-finding corpus (plus a quarantined
+# sibling that must be excluded from the listing) is classified end-to-end into
+# exactly carry/stale/out-of-scope, with every finding file proven
+# byte-identical on disk before and after — classification never deletes —
+# and reverifyIds proven to equal exactly the stale list, plus a separate case
+# proving the module's own real fallback arithmetic when the Plan agent() call
+# fails; and finally research-falsify.js is driven for real with the pivot
+# fixture's actual reverifyIds as `scope:{ids:[...]},regate:true`, proving the
+# two independently-vendored modules' interface boundary actually holds (never
+# exercised together before, per #547's chain-context note) without tripping
+# the regate-scope guard error. The one gap this eval cannot close — whether a
+# live model actually classifies/plans the way the fixture's ground truth
+# assumes — is genuine and non-deterministic, documented in the eval's own
+# header rather than faked.
+run "pivot-check" bash evals/pivot-check.sh
+
 # release.yml never uploads to an already-published (immutable) release
 # (#537): tag-push trigger, no post-publish `gh release upload`, artifact
 # attached in the same `gh release create` call.
