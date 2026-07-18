@@ -1,0 +1,8 @@
+{
+  "urn:mif:concept:falsify-eval:one-round-0001": {
+    "verdict": "falsified",
+    "basis": "Eval-fixture round 3 (research-harness-template#562): a REGATE-scoped call, after the client-side reset the module's gap-2 documents, must genuinely re-process this finding.",
+    "attempted_at": "2026-01-10T00:00:00Z",
+    "disconfirming": ["https://example.com/falsify-eval/round3-regate-source"]
+  }
+}

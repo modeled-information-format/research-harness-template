@@ -1,0 +1,8 @@
+{
+  "urn:mif:concept:falsify-eval:one-round-0001": {
+    "verdict": "survived",
+    "basis": "Eval-fixture round 1 (research-harness-template#562): adversarial queries ran, no disconfirming evidence found.",
+    "attempted_at": "2026-01-01T00:00:00Z",
+    "disconfirming": []
+  }
+}

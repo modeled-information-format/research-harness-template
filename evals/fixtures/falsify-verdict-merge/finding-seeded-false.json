@@ -1,0 +1,38 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@type": "Concept",
+  "@id": "urn:mif:concept:falsify-eval:seeded-false-0001",
+  "conceptType": "semantic",
+  "namespace": "harness/falsify-eval-topic",
+  "title": "A deliberately false claim seeded for the falsify-verdict-merge eval",
+  "content": "This claim is seeded false on purpose (research-harness-template#562): it asserts something the paired evidence-falsified.json fixture directly disconfirms, so the falsification gate must return verdict='falsified' and the module's ported remediation must quarantine the finding.",
+  "summary": "Seeded-false finding fixture proving the falsify.sh -> quarantine remediation path end to end.",
+  "created": "2026-07-17T00:00:00Z",
+  "modified": "2026-07-17T00:00:00Z",
+  "temporal": {
+    "@type": "TemporalMetadata",
+    "validFrom": "2026-07-17T00:00:00Z"
+  },
+  "tags": ["eval-fixture", "falsify-verdict-merge"],
+  "provenance": {
+    "@type": "Provenance",
+    "sourceType": "agent_inferred",
+    "confidence": 0.5,
+    "trustLevel": "moderate_confidence"
+  },
+  "citations": [
+    {
+      "@type": "Citation",
+      "citationType": "documentation",
+      "citationRole": "supports",
+      "title": "Eval fixture placeholder citation",
+      "url": "https://example.com/falsify-eval/seeded-false",
+      "accessed": "2026-07-17"
+    }
+  ],
+  "extensions": {
+    "harness": {
+      "dimension": "technical"
+    }
+  }
+}

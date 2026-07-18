@@ -1,0 +1,38 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@type": "Concept",
+  "@id": "urn:mif:concept:falsify-eval:one-round-0001",
+  "conceptType": "semantic",
+  "namespace": "harness/falsify-eval-topic-oneround",
+  "title": "A finding used to exercise the one-round rule and its regate reset",
+  "content": "This finding (research-harness-template#562) is graded once, re-graded a second time under a normal (non-regate) call to prove the one-round rule excludes it, then reset client-side and re-graded a third time to prove a regate-scoped call re-processes it genuinely.",
+  "summary": "One-round-rule fixture: normal re-grade is excluded, regate reset re-processes.",
+  "created": "2026-07-17T00:00:00Z",
+  "modified": "2026-07-17T00:00:00Z",
+  "temporal": {
+    "@type": "TemporalMetadata",
+    "validFrom": "2026-07-17T00:00:00Z"
+  },
+  "tags": ["eval-fixture", "falsify-verdict-merge"],
+  "provenance": {
+    "@type": "Provenance",
+    "sourceType": "agent_inferred",
+    "confidence": 0.7,
+    "trustLevel": "high_confidence"
+  },
+  "citations": [
+    {
+      "@type": "Citation",
+      "citationType": "documentation",
+      "citationRole": "supports",
+      "title": "Eval fixture placeholder citation",
+      "url": "https://example.com/falsify-eval/one-round",
+      "accessed": "2026-07-17"
+    }
+  ],
+  "extensions": {
+    "harness": {
+      "dimension": "technical"
+    }
+  }
+}
