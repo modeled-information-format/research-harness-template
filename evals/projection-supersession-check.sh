@@ -73,6 +73,7 @@ note() { printf '  projection-supersession-check: %s\n' "$1"; }
 
 command -v node >/dev/null 2>&1 || { note "node is required but not on PATH"; exit 2; }
 command -v jq >/dev/null 2>&1 || { note "jq is required but not on PATH"; exit 2; }
+command -v python3 >/dev/null 2>&1 || { note "python3 is required but not on PATH"; exit 2; }
 [ -f "$WF" ] || { note "$WF not found — the vendored research-projection workflow must ship (Epic #543, Task #569)"; exit 2; }
 if [ -z "${MIF_RH_CLI:-}" ] && [ ! -x "$ROOT/bin/mif-rh-cli" ] && ! command -v mif-rh-cli >/dev/null 2>&1; then
   note "the mif-rh-cli engine is required (scripts/fetch-engine.sh, PATH, or MIF_RH_CLI) — see ADR-0016"
