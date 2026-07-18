@@ -308,6 +308,84 @@ run "import-check" bash evals/import-check.sh
 # in the eval's own header rather than faked.
 run "coverage-audit-check" bash evals/coverage-audit-check.sh
 
+# The research-pipeline module's MODE 'full' bounded autonomous round loop has
+# deterministic teeth where its own orchestration logic can express it (#602,
+# Epic #550, following #599's vendoring and #601's docs): CHECK_SCHEMA
+# (captured verbatim from the real completionCheck() agent() call) is
+# ajv-proven to require `evidence` on every met[] entry and `why` on every
+# unmet[] entry; `done = true` is proven, by exact count, to be set in
+# exactly one place in the whole file -- the independent evaluator's own
+# unmet.length===0 check -- never by narrative or activity, proven both
+# structurally and behaviorally (a round whose fanout/falsify/synthesis all
+# succeed does NOT stop the loop while a check stays unmet); the
+# research-harness-template#611 regression (evidence silently dropped from
+# met[] in the final run report) is fixed and driven end-to-end against the
+# real module; maxRounds is proven to genuinely bound the loop even when the
+# evaluator would never naturally finish; the honest-termination path (the
+# augment judge's plan.deepen comes back empty) is proven to stop the loop
+# immediately -- never a further round, never looping forever -- with the
+# judge's own real reasoning visible in the captured log, mirroring
+# research-augment's empty-plan-is-valid precedent (#545/#580); the goal's
+# own declared boundHit is proven to stop the loop without ever reaching the
+# adaptation phase, distinct from the maxRounds stop; and the budget-floor
+# guard is proven to stop the loop before round 1 even begins, still
+# producing a well-formed run report. The one gap this eval cannot close --
+# whether a live sonnet completionCheck()/coverage-audit/augment call would
+# really grade/decide the way these fixtures' stubs assume -- is genuine and
+# non-deterministic, documented in the eval's own header rather than faked;
+# each of those judgments is already covered by its own dedicated eval.
+run "research-pipeline-full-mode-check" bash evals/research-pipeline-full-mode-check.sh
+
+# The research-pipeline module's four standalone-mode branches --
+# audit/import/pivot/augment -- each have deterministic teeth of their own
+# (#603, Epic #550, companion to #602's full-mode eval above), proving each
+# mode dispatches to, and correctly composes, EXACTLY the atomic-workflow
+# sequence the architecture doc's mode-routing table documents for it (never
+# a step the table doesn't show), both structurally (grepping the real,
+# unmodified mode-router branch) and behaviorally (driving the real
+# research-pipeline.js source with every workflow() child stubbed to a
+# canned, schema-shaped result matching that child's own real return shape).
+# One fixture per mode, one explicit run line per mode (not globbed, matching
+# the explicit-line pattern held without exception across all eleven prior
+# epics):
+#   - audit: research-coverage-audit ALONE -> the routed backlog is returned
+#     verbatim via a plain spread; NONE of the five downstream modules a
+#     backlog item can route to (augment/add-dimensions/falsify/import/
+#     projection) is ever itself auto-invoked by this branch -- the positive
+#     proof of research-harness-template#595's own documented finding (cited
+#     by this Task's acceptance criteria) that a backlog item's `target` is
+#     a human/orchestrator-readable routing signal, never something audit
+#     mode auto-dispatches on the caller's behalf.
+#   - import: research-import -> a falsify drain gated literally on
+#     `needsGating.length` (proven conditional in BOTH directions) ->
+#     synthesis -> projection gated on `synthesis.ok`; an import-gate failure
+#     short-circuits before any gating runs.
+#   - pivot: research-pivot -> a regate falsify call scoped to
+#     `{ ids: reverifyIds }` with `regate: true` (behaviorally distinct from
+#     the separate `scope: 'all'` falsifyAll() drain call that follows the
+#     gap-fill fanout) -> a gap-fill fanout gated on a REAL two-condition
+#     guard (`gapDimensions.length && !budgetLow()`, proven to block on
+#     EITHER condition independently) -> synthesis -> projection.
+#   - augment: research-augment -> an empty `deepen[]` is a real
+#     honest-termination code path (mirrors research-augment's own
+#     empty-plan-is-valid precedent, #545/#580) -> otherwise fanout over
+#     EXACTLY the deepen plan's own dimensions at a depth that escalates to
+#     'deep' the moment ANY ONE entry requests it -> a falsify drain ->
+#     synthesis -> projection.
+# What none of these four evals can close (genuine, non-deterministic,
+# stated in each eval's own header rather than faked): whether a live child
+# workflow's own judgment (coverage-audit's Sweep/Critique/Prioritize,
+# import's Dry-Run/Review/Apply, pivot's Reshape/Classify/Plan, augment's
+# Decide) actually produces the shapes these fixtures hand-author -- each of
+# those judgments is already covered by that child's own dedicated eval
+# (coverage-audit-check.sh, import-check.sh, pivot-check.sh,
+# augment-decide-check.sh). These four evals' job is only the mode-router
+# orchestration code around those calls, not the calls' own judgment.
+run "research-pipeline-audit-check" bash evals/research-pipeline-audit-check.sh
+run "research-pipeline-import-check" bash evals/research-pipeline-import-check.sh
+run "research-pipeline-pivot-check" bash evals/research-pipeline-pivot-check.sh
+run "research-pipeline-augment-check" bash evals/research-pipeline-augment-check.sh
+
 # release.yml never uploads to an already-published (immutable) release
 # (#537): tag-push trigger, no post-publish `gh release upload`, artifact
 # attached in the same `gh release create` call.

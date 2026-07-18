@@ -1,0 +1,252 @@
+// research-pipeline.js — the workflow-of-workflows: deterministic mode
+// router + bounded autonomous round loop composing the eleven atomic
+// research workflows via workflow().
+//
+// Workflow-runtime module: the runtime strips the `export` statement and
+// evaluates the remaining source as the BODY of an async function, so
+// top-level `await` and `return` are legal here and a bare `node --check`
+// rejects this file by design. CI parse-checks it through
+// scripts/check-workflow-syntax.sh (async-body wrap), wired into verify.sh's
+// gate_workflows — see #552/#556/#560/#564/#569/#573/#578/#582/#586/#590/#595
+// precedent.
+//
+// Vendored from the workspace engine reference (Epic #550, Task #599). This
+// is an ADAPTATION of the reference script, not a drop-in port. In-repo
+// default: harnessDir defaults to the instance root '.' (the
+// #552/#556/#560/#564/#569/#573/#578/#582/#586/#590/#595 precedent) — the
+// reference's own default (a workspace-relative
+// 'repos/research-harness-template' path) does not apply inside the
+// instance/template itself. `workflowsDir` keeps its own reference default
+// ('.claude/workflows') unchanged: that path is already correct in-repo, on
+// both sides of the template/instance boundary.
+//
+// THE ONE COMPOSER (D-9, architecture doc, .claude/workflows/
+// research-pipeline-architecture.md). Every other vendored module bottoms
+// out in agent()/parallel() calls; this is the sole script in the set that
+// calls workflow() — confirmed by re-grepping all eleven sibling modules for
+// `workflow(` at implementation time (zero real composition calls; the only
+// hit, in research-projection.js, is a comment referencing this module's
+// usage, not an actual call). The platform's own one-level `workflow()`
+// nesting rule means none of the eleven may themselves compose a child
+// workflow — they only ever return plans/results for THIS script to act on.
+//
+// wf() SCRIPTPATH VERIFICATION (re-confirmed against on-disk source at
+// implementation time, not from prior planning notes): `${W}/research-${name}.js`
+// resolves exactly against every one of the eleven real vendored filenames,
+// call by call — goal, fanout, falsify (used directly in the full-mode loop
+// and via the falsifyAll() drain helper), synthesis, projection,
+// deliverables, augment, add-dimensions, pivot, import, coverage-audit. No
+// stale or renamed reference exists.
+//
+// MODE ROUTER. Five modes share this one entry point: `full` runs the
+// bounded autonomous goal loop (goal -> [fanout -> falsify-drain -> synthesis
+// -> independent completion check]* -> audit-driven adaptation ->
+// projection -> optional deliverables); `augment`, `pivot`, `import`, and
+// `audit` are each a shorter, mode-specific composition of the same atomic
+// workflows, matching the architecture doc's Level-3 orchestrator flowchart
+// exactly (no mode invents a step the flowchart does not show).
+//
+// HONEST-TERMINATION SEMANTICS (NFR-9/NFR-10): the round loop's `done` flag
+// is set ONLY by `unmet.length === 0` from the independent completionCheck()
+// agent — never by activity, and never by this script's own narrative. When
+// the augment judge in the adaptation step returns an empty `deepen` plan,
+// the loop breaks immediately with the judge's own stated reasoning logged —
+// a real code path (the `else` branch below), not merely documented
+// behavior. All bounds (`maxRounds`, the `budgetLow()` token floor, the
+// goal's own `boundHit`) are code comparisons on typed agent output, never
+// prompt-enforced discipline (D-5).
+//
+// The old agent engine (.claude/agents/orchestrator.md, /start) is left
+// completely untouched by this vendor — this script supersedes it in
+// capability only; the supersession itself is documented separately (a Docs
+// task), never by silent deletion here.
+export const meta = {
+  name: 'research-pipeline',
+  description: 'The workflow-of-workflows: deterministic router + bounded autonomous goal loop composing the atomic research workflows (goal → [fanout → falsify → synthesis → check]* → audit-adapt → projection → deliverables) via workflow(); all mode routing, round bounds, budget floors, and done-decisions live in this script, never in a model prompt',
+  whenToUse: 'The single entry point for a research campaign against a harness instance: full runs, augment/pivot/import/audit modes — each mode a different composition of the same atomic workflows',
+  phases: [
+    { title: 'Route', detail: 'deterministic mode routing (full | augment | pivot | import | audit)' },
+    { title: 'Goal', detail: 'research-goal child workflow (full mode)' },
+    { title: 'Rounds', detail: 'fanout → falsify(+drain) → synthesis → independent completion check, adapted per round' },
+    { title: 'Project', detail: 'research-projection child workflow' },
+    { title: 'Deliver', detail: 'research-deliverables child workflow (when genres/channels requested)' },
+  ],
+}
+
+// args: {
+//   harnessDir, topic,                       — the instance and topic (topic required)
+//   mode?: 'full'|'augment'|'pivot'|'import'|'audit'   (default 'full')
+//   ask?: string                             — full: the raw research ask for research-goal
+//   focusHint?: string                       — augment: user steer
+//   delta?: string                           — pivot: what changed (required for pivot)
+//   containerDir?: string                    — import: the MIF container dir (required for import)
+//   trustImportedVerdicts?: boolean          — import
+//   genres?: string[], channels?: string[]   — deliverables to render at the end
+//   maxRounds?: number (default 3), claimBudget?, queryBudget?, lenses?
+//   workflowsDir?: string (default '.claude/workflows') — where the atomic scripts live
+// }
+const H = (args && args.harnessDir) || '.'
+const TOPIC = args && args.topic
+if (!TOPIC) throw new Error('research-pipeline: args.topic is required')
+const MODE = (args && args.mode) || 'full'
+const MAX_ROUNDS = (args && args.maxRounds) || 3
+const W = (args && args.workflowsDir) || '.claude/workflows'
+const BUDGET_FLOOR = 60000 // stop opening new rounds below this many remaining tokens
+
+const wf = (name, wfArgs) => workflow({ scriptPath: `${W}/research-${name}.js` }, { harnessDir: H, topic: TOPIC, ...wfArgs })
+const budgetLow = () => !!(budget.total && budget.remaining() < BUDGET_FLOOR)
+
+const CHECK_SCHEMA = {
+  type: 'object',
+  properties: {
+    met: { type: 'array', items: { type: 'object', properties: { id: { type: 'string' }, evidence: { type: 'string' } }, required: ['id', 'evidence'] } },
+    unmet: { type: 'array', items: { type: 'object', properties: { id: { type: 'string' }, why: { type: 'string' } }, required: ['id', 'why'] } },
+    boundHit: { type: 'boolean', description: 'true if the goal declares a bound this run has now reached' },
+  },
+  required: ['met', 'unmet', 'boundHit'],
+}
+
+// Independent completion evaluator — never the agent that did the work. Checks are graded
+// against the corpus and each check's own verify command, not against the narrative.
+async function completionCheck(roundNo) {
+  return agent(
+    `Independent completion evaluation, round ${roundNo}, topic ${TOPIC}, harness ${H}. Read ${H}/reports/${TOPIC}/goal.json. ` +
+      `For each completion_condition.check: run its verify command if it has one (report actual output as evidence), else grade its assertion strictly against the CURRENT corpus state (findings + verdicts + synthesis surfaces on disk) — a check is met only when a transcript-verifiable fact proves it, never because work happened. ` +
+      `Also report boundHit per the goal's bound (max_rounds=${MAX_ROUNDS} rounds have run: ${roundNo}). You did none of this research; grade adversarially.`,
+    { label: `check:round-${roundNo}`, phase: 'Rounds', model: 'sonnet', schema: CHECK_SCHEMA },
+  )
+}
+
+// Falsify with drain: the claim budget makes each call bounded; drain until nothing is deferred.
+async function falsifyAll(extra) {
+  let total = 0
+  const rollup = {}
+  for (let i = 0; i < 5; i++) {
+    const r = await wf('falsify', { scope: 'all', claimBudget: args && args.claimBudget, queryBudget: args && args.queryBudget, lenses: args && args.lenses, ...extra })
+    if (!r) break
+    total += r.gated
+    for (const k of Object.keys(r.rollup || {})) rollup[k] = (rollup[k] || 0) + r.rollup[k]
+    if (!r.deferredIds || !r.deferredIds.length) break
+    if (budgetLow()) { log(`Budget floor: ${r.deferredIds.length} finding(s) left ungated`); break }
+    log(`Draining falsification backlog: ${r.deferredIds.length} deferred`)
+  }
+  return { gated: total, rollup }
+}
+
+phase('Route')
+log(`Mode: ${MODE}; harness: ${H}; topic: ${TOPIC}`)
+
+if (MODE === 'audit') {
+  const audit = await wf('coverage-audit', {})
+  return { mode: MODE, ...audit }
+}
+
+if (MODE === 'import') {
+  if (!args.containerDir) throw new Error('import mode requires args.containerDir')
+  const imp = await wf('import', { containerDir: args.containerDir, trustImportedVerdicts: args.trustImportedVerdicts })
+  if (!imp || !imp.ok) return { mode: MODE, imported: imp }
+  const gate = imp.needsGating.length ? await falsifyAll({}) : { gated: 0, rollup: {} }
+  const syn = await wf('synthesis', {})
+  const proj = (syn && syn.ok) ? await wf('projection', { synthesisPath: syn.synthesisPath }) : null
+  return { mode: MODE, imported: imp.imported.length, gate, synthesis: syn, projection: proj }
+}
+
+if (MODE === 'pivot') {
+  if (!args.delta) throw new Error('pivot mode requires args.delta')
+  const pivot = await wf('pivot', { delta: args.delta })
+  // Re-gate the stale carry-overs through falsify.sh's re-verify path, then research only the gaps.
+  if (pivot.reverifyIds && pivot.reverifyIds.length) {
+    await wf('falsify', { scope: { ids: pivot.reverifyIds }, regate: true, claimBudget: args && args.claimBudget, queryBudget: args && args.queryBudget, lenses: args && args.lenses })
+  }
+  let fan = null
+  if (pivot.gapDimensions && pivot.gapDimensions.length && !budgetLow()) {
+    fan = await wf('fanout', { dimensions: pivot.gapDimensions, depth: 'standard', roundContext: `Goal pivoted (${pivot.goalVersion}): ${pivot.goalStatement}. Carried ${pivot.carry.length} findings; you are filling the gaps only.` })
+    await falsifyAll({})
+  }
+  const syn = await wf('synthesis', {})
+  const proj = (syn && syn.ok) ? await wf('projection', { synthesisPath: syn.synthesisPath }) : null
+  return { mode: MODE, goalVersion: pivot.goalVersion, carried: pivot.carry.length, stale: pivot.stale.length, fanout: fan, synthesis: syn, projection: proj }
+}
+
+if (MODE === 'augment') {
+  const plan = await wf('augment', { focusHint: args && args.focusHint })
+  if (!plan.deepen.length) return { mode: MODE, deepened: [], reasoning: plan.reasoning }
+  const dims = plan.deepen.map((d) => d.dimension)
+  const fan = await wf('fanout', { dimensions: dims, depth: plan.deepen.some((d) => d.depth === 'deep') ? 'deep' : 'standard', roundContext: `Augmentation round targeting: ${plan.deepen.map((d) => `${d.dimension} (${d.rationale})`).join('; ')}` })
+  const gate = await falsifyAll({})
+  const syn = await wf('synthesis', {})
+  const proj = (syn && syn.ok) ? await wf('projection', { synthesisPath: syn.synthesisPath }) : null
+  return { mode: MODE, deepened: dims, fanout: fan, gate, synthesis: syn, projection: proj }
+}
+
+// ---- MODE full: the bounded autonomous goal loop ----
+phase('Goal')
+const goal = await wf('goal', { ask: (args && args.ask) || '' })
+if (!goal || !goal.ok) return { mode: MODE, stage: 'goal', failed: true, detail: goal }
+
+phase('Rounds')
+let dims = goal.dimensions
+let depth = 'standard'
+let roundContext = ''
+let leads = []
+let lastSyn = null
+let lastCheck = null
+let done = false
+
+for (let round = 1; round <= MAX_ROUNDS && !done; round++) {
+  if (budgetLow()) { log(`Budget floor before round ${round} — stopping with unmet checks`); break }
+  log(`— Round ${round}/${MAX_ROUNDS}: dimensions [${dims.join(', ')}], depth ${depth}`)
+
+  const fan = await wf('fanout', { dimensions: dims, depth, roundContext })
+  if (fan && fan.crossDimensionLeads) leads = leads.concat(fan.crossDimensionLeads)
+
+  await falsifyAll({})
+  lastSyn = await wf('synthesis', {})
+
+  lastCheck = await completionCheck(round)
+  if (!lastCheck) { log('Completion evaluator failed — stopping conservatively'); break }
+  log(`Checks: ${lastCheck.met.length} met, ${lastCheck.unmet.length} unmet`)
+  if (!lastCheck.unmet.length) { done = true; break }
+  if (lastCheck.boundHit) { log('Goal bound hit — stopping per contract'); break }
+  if (round === MAX_ROUNDS || budgetLow()) break
+
+  // Adapt: audit routes the next round instead of blindly re-running everything.
+  const audit = await wf('coverage-audit', { leads, checkCoverage: lastSyn ? lastSyn.checkCoverage : undefined })
+  const top = (audit.backlog || []).filter((b) => b.priority <= 3)
+  const wantsNewDim = top.some((b) => b.action === 'add-dimensions')
+  if (wantsNewDim) {
+    const added = await wf('add-dimensions', { leads })
+    if (added.added.length) { dims = added.added; depth = 'standard'; roundContext = `New dimensions added by audit (${audit.summary}); research ONLY these.`; continue }
+  }
+  const plan = await wf('augment', { checkCoverage: lastSyn ? lastSyn.checkCoverage : undefined, focusHint: `Unmet checks: ${lastCheck.unmet.map((u) => `${u.id} (${u.why})`).join('; ')}` })
+  if (plan.deepen.length) {
+    dims = plan.deepen.map((d) => d.dimension)
+    depth = plan.deepen.some((d) => d.depth === 'deep') ? 'deep' : 'standard'
+    roundContext = `Round ${round} left checks unmet: ${lastCheck.unmet.map((u) => u.id).join(', ')}. Deepening: ${plan.deepen.map((d) => d.rationale).join('; ')}`
+  } else {
+    log(`Augment judge found nothing to deepen (${plan.reasoning.slice(0, 150)}) — evidence may not exist; stopping`)
+    break
+  }
+}
+
+phase('Project')
+let projection = null
+if (lastSyn && lastSyn.synthesisPath) {
+  projection = await wf('projection', { synthesisPath: lastSyn.synthesisPath })
+}
+
+phase('Deliver')
+let deliverables = null
+if (lastSyn && lastSyn.synthesisPath && ((args && args.genres && args.genres.length) || (args && args.channels && args.channels.length))) {
+  deliverables = await wf('deliverables', { synthesisPath: lastSyn.synthesisPath, genres: args.genres, channels: args.channels })
+}
+
+return {
+  mode: MODE,
+  goal: { file: goal.goalFile, dimensions: goal.dimensions },
+  done,
+  checks: lastCheck ? { met: lastCheck.met.map((m) => ({ id: m.id, evidence: m.evidence })), unmet: lastCheck.unmet.map((u) => ({ id: u.id, why: u.why })) } : null,
+  synthesis: lastSyn ? { path: lastSyn.synthesisPath, ok: lastSyn.ok, coverage: lastSyn.checkCoverage } : null,
+  projection,
+  deliverables,
+}

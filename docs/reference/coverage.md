@@ -2,7 +2,7 @@
 id: reference-coverage
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-18T00:49:17.482Z'
+modified: '2026-07-18T22:58:47.663Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -16,12 +16,12 @@ temporal:
   recordedAt: '2026-06-24T10:25:46-04:00'
 provenance:
   '@type': Provenance
-  agent: claude-code/claude-fable-5
+  agent: claude-code/claude-sonnet-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:7b4efc9f-b778-4d49-b1e4-c009adbd178a
+    '@id': urn:mif:activity:claude-code-session:b2469198-e9ec-4668-9761-7ee0f983c48a
     '@type': prov:Activity
   trustLevel: user_stated
-  agentVersion: 2.1.212
+  agentVersion: 2.1.214
 ---
 
 # Reference: documentation coverage
@@ -37,17 +37,17 @@ the **discovered** set equals the **documented** set.
 | --- | --- | --- | --- |
 | Packs | 63 | 63 | `harness.config.json` `packs[]` + `ontologies[]` |
 | Core skills | 10 | 10 | `.claude/skills/*/SKILL.md` |
-| Commands | 11 | 11 | `.claude/commands/*.md` |
+| Commands | 12 | 12 | `.claude/commands/*.md` |
 | Agents | 7 | 7 | `.claude/agents/*.md` |
 | Scripts | 55 | 55 | `scripts/**` (excludes `__pycache__`); the 24 scripts Epic #416 added moved to `packs/monitoring/continuous-monitor/scripts/**` (research-harness-template#483) and are documented in [packs/monitoring.md](packs/monitoring.md), not counted here |
-| **Total** | **146** | **146** | — |
+| **Total** | **147** | **147** | — |
 
 Reproduce the discovered counts:
 
 ```sh
 echo $(( $(jq '.packs | length' harness.config.json) + $(jq '.ontologies | length' harness.config.json) )) # 63 packs
 ls .claude/skills | wc -l        # 10 core skills
-ls .claude/commands/*.md | wc -l # 11 commands
+ls .claude/commands/*.md | wc -l # 12 commands
 ls .claude/agents/*.md | wc -l   # 7 agents
 find scripts -type f \( -name '*.sh' -o -name '*.py' -o -name '*.jq' \) \
   | grep -v __pycache__ | wc -l  # 52 scripts
@@ -142,11 +142,11 @@ All documented in [core-skills.md](core-skills.md): `discover`, `graph`, `lab`,
 `md-fix`, `ontology-manager`, `publish-blog`, `publish-report`, `readme`,
 `search`, `topics`.
 
-## Commands (11)
+## Commands (12)
 
 All documented in [commands.md](commands.md): `/configure`, `/export`,
-`/falsify`, `/goal-writer`, `/import`, `/ontology-review`, `/resume`,
-`/start`, `/status`, `/synthesize-corpus`, `/topics`.
+`/falsify`, `/goal-writer`, `/import`, `/ontology-review`, `/research`,
+`/resume`, `/start`, `/status`, `/synthesize-corpus`, `/topics`.
 
 ## Agents (7)
 
@@ -184,5 +184,5 @@ rather than counted in this core-scripts inventory, the same way
 
 ## Assertion
 
-Discovered (146) equals documented (146) across all five categories. No pack,
+Discovered (147) equals documented (147) across all five categories. No pack,
 skill, command, agent, or script is omitted.

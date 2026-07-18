@@ -2,7 +2,7 @@
 id: reference-commands
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-18T00:25:52.278Z'
+modified: '2026-07-18T22:06:18.274Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -16,18 +16,18 @@ temporal:
   recordedAt: '2026-06-24T10:25:46-04:00'
 provenance:
   '@type': Provenance
-  agent: claude-code/claude-fable-5
+  agent: claude-code/claude-sonnet-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:7b4efc9f-b778-4d49-b1e4-c009adbd178a
+    '@id': urn:mif:activity:claude-code-session:b2469198-e9ec-4668-9761-7ee0f983c48a
     '@type': prov:Activity
   trustLevel: user_stated
-  agentVersion: 2.1.212
+  agentVersion: 2.1.214
 ---
 
 # Reference: commands
 
 Commands are slash-command entry points invoked directly in a Claude session.
-All eleven listed here are core (non-pack); they ship with the template.
+All twelve listed here are core (non-pack); they ship with the template.
 
 See [dependencies](dependencies.md) for tool installation requirements.
 
@@ -210,6 +210,45 @@ unresolved type.
 skill (Phase 3 when authoring is needed).
 
 **Dependencies:** `scripts/ontology-review.sh`, `mif-rh-cli` (the engine it delegates to, ADR-0016).
+
+---
+
+## /research
+
+Engine-path entry point for a research campaign — the non-interactive
+counterpart to `/start`.
+
+**Purpose:** A thin invocation surface over the vendored workflow-of-workflows,
+[`research-pipeline`](engine-workflows.md#research-pipeline) (Epic #550) — no
+orchestration logic of its own. Resolves `--topic`/`--mode` and the
+mode-specific arguments (asking the user via `AskUserQuestion` rather than
+invoking the tool when a mode-required argument like `--delta` or
+`--container-dir` is missing), then makes exactly one `Workflow` tool call
+into `.claude/workflows/research-pipeline.js` and reports its typed result
+plainly. Supersedes `/start`'s spawn of the `orchestrator` subagent as the
+primary entry point for a research campaign — see
+[engine-workflows.md's migration note](engine-workflows.md#migration-note-supersedes-starts-orchestrator-spawn-in-place)
+for what this structurally removes. **Does not delete or disable `/start` or
+`.claude/agents/orchestrator.md`** — both remain the interactive/legacy path
+during migration.
+
+**Usage:**
+
+```text
+/research [--topic <id>] [--mode full|augment|pivot|import|audit]
+  [--max-rounds <n>] [--focus-hint <text>] [--delta <what changed>]
+  [--container-dir <path>] [--trust-imported-verdicts]
+  [--genres <g1,g2>] [--channels <c1,c2>] [--claim-budget <n>]
+  [--query-budget <n>] [--lenses <n>] [<research ask>]
+```
+
+**What it delegates to:** the `research-pipeline` workflow (Workflow tool),
+which itself composes all eleven atomic research workflows — see
+[engine-workflows.md](engine-workflows.md#research-pipeline) for the mode
+router and round-loop composition.
+
+**Dependencies:** `.claude/workflows/research-pipeline.js`,
+`harness.config.json` `topics[]`.
 
 ---
 
