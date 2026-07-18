@@ -28,9 +28,9 @@
 // (the coverage-gaps pipeline) plus a verdict `select()` filter (the
 // stale-findings pipeline) — read verbatim from that SKILL.md, not guessed.
 // The fix here composes those two documented idioms into ONE jq pipeline
-// that groups by dimension AND breaks each group out by
-// extensions.harness.verification.verdict (survived/weakened/falsified/
-// inconclusive, plus a null-verdict "ungated" bucket) — the exact same
+// that groups by dimension AND breaks each group out by research-index.json's
+// top-level `.verdict` field (survived/weakened/falsified/inconclusive, plus a
+// null-verdict "ungated" bucket) — the exact same
 // data source (research-index.json) and the exact same grouping/filtering
 // primitives discover already uses, never a free-form re-count over raw
 // finding files. The ONE piece the index cannot supply (it carries no
@@ -85,7 +85,7 @@ const MATRIX_SCHEMA = {
           ungated: { type: 'integer' },
           oldestFindingDate: { type: ['string', 'null'] },
         },
-        required: ['dimension', 'findings', 'survived', 'weakened', 'falsified', 'inconclusive', 'ungated'],
+        required: ['dimension', 'findings', 'survived', 'weakened', 'falsified', 'inconclusive', 'ungated', 'oldestFindingDate'],
       },
     },
     goalStatement: { type: 'string' },

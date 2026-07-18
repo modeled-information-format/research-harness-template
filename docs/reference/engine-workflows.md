@@ -2,7 +2,7 @@
 id: reference-engine-workflows
 type: semantic
 created: '2026-07-17T20:25:00-04:00'
-modified: '2026-07-18T15:39:03.582Z'
+modified: '2026-07-18T16:10:21.452Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -730,7 +730,7 @@ The count/verdict portion of Assess's matrix is **delegated to the harness's
 own `discover` skill** (`.claude/skills/discover/SKILL.md`): its
 coverage-gaps pipeline already groups findings by dimension over
 `research-index.json`, and its stale-findings pipeline already filters by
-`extensions.harness.verification.verdict` — the module composes both into one
+that same index's top-level `.verdict` field — the module composes both into one
 `jq` pipeline over that same index rather than having an agent re-derive the
 counts by reading and eyeballing raw finding files. This is the same class of
 "delegate to a real, existing mechanism instead of reimplementing it via a
