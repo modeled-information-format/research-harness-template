@@ -1,0 +1,43 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@type": "Concept",
+  "@id": "urn:mif:concept:synthesis-eval:survived-0001",
+  "conceptType": "semantic",
+  "namespace": "harness/synthesis-eval-topic",
+  "title": "A survived-verdict finding usable in the synthesis citation-integrity eval",
+  "content": "This finding (research-harness-template#566) carries verdict='survived' and lives under findings/ — it belongs in the Select phase's citable survivor set.",
+  "summary": "Survived-verdict finding: a legitimate citable survivor.",
+  "created": "2026-07-18T00:00:00Z",
+  "modified": "2026-07-18T00:00:00Z",
+  "temporal": {
+    "@type": "TemporalMetadata",
+    "validFrom": "2026-07-18T00:00:00Z"
+  },
+  "tags": ["eval-fixture", "synthesis-citation-check"],
+  "provenance": {
+    "@type": "Provenance",
+    "sourceType": "agent_inferred",
+    "confidence": 0.85,
+    "trustLevel": "high_confidence"
+  },
+  "citations": [
+    {
+      "@type": "Citation",
+      "citationType": "documentation",
+      "citationRole": "supports",
+      "title": "Eval fixture placeholder citation",
+      "url": "https://example.com/synthesis-eval/survived",
+      "accessed": "2026-07-18"
+    }
+  ],
+  "extensions": {
+    "harness": {
+      "dimension": "technical",
+      "verification": {
+        "verdict": "survived",
+        "verdict_basis": "Placeholder gate result for the eval — carries a genuine 'survived' verdict.",
+        "attempted_at": "2026-07-18T00:00:00Z"
+      }
+    }
+  }
+}

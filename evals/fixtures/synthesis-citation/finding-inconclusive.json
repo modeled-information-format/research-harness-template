@@ -1,0 +1,43 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@type": "Concept",
+  "@id": "urn:mif:concept:synthesis-eval:inconclusive-0001",
+  "conceptType": "semantic",
+  "namespace": "harness/synthesis-eval-topic",
+  "title": "An inconclusive-verdict finding usable in the synthesis citation-integrity eval",
+  "content": "This finding (research-harness-template#566) carries verdict='inconclusive' and lives under findings/ — usable in synthesis but must carry its confidence marker.",
+  "summary": "Inconclusive-verdict finding: usable, but with an open confidence marker.",
+  "created": "2026-07-18T00:00:00Z",
+  "modified": "2026-07-18T00:00:00Z",
+  "temporal": {
+    "@type": "TemporalMetadata",
+    "validFrom": "2026-07-18T00:00:00Z"
+  },
+  "tags": ["eval-fixture", "synthesis-citation-check"],
+  "provenance": {
+    "@type": "Provenance",
+    "sourceType": "agent_inferred",
+    "confidence": 0.5,
+    "trustLevel": "moderate_confidence"
+  },
+  "citations": [
+    {
+      "@type": "Citation",
+      "citationType": "documentation",
+      "citationRole": "supports",
+      "title": "Eval fixture placeholder citation",
+      "url": "https://example.com/synthesis-eval/inconclusive",
+      "accessed": "2026-07-18"
+    }
+  ],
+  "extensions": {
+    "harness": {
+      "dimension": "technical",
+      "verification": {
+        "verdict": "inconclusive",
+        "verdict_basis": "Placeholder gate result for the eval — carries a genuine 'inconclusive' verdict.",
+        "attempted_at": "2026-07-18T00:00:00Z"
+      }
+    }
+  }
+}

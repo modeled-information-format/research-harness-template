@@ -1,0 +1,44 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@type": "Concept",
+  "@id": "urn:mif:concept:synthesis-eval:falsified-0001",
+  "conceptType": "semantic",
+  "namespace": "harness/synthesis-eval-topic",
+  "title": "A falsified finding, placed under quarantine/ at fixture-setup time",
+  "content": "This finding (research-harness-template#566) carries verdict='falsified'. It is copied under quarantine/ (not findings/) by the eval, exactly as research-falsify.js's REMEDIATION_CONTRACT already moves every falsified finding out of findings/ before Select ever runs — so the Select phase never re-derives falsified status from the verdict field, it structurally never sees this file. This is also the seeded out-of-set-citation @id: a synthesis document citing this id is citing outside the closed survivor set.",
+  "summary": "Falsified finding, quarantined — never a survivor, and the seeded out-of-set citation target.",
+  "created": "2026-07-18T00:00:00Z",
+  "modified": "2026-07-18T00:00:00Z",
+  "temporal": {
+    "@type": "TemporalMetadata",
+    "validFrom": "2026-07-18T00:00:00Z"
+  },
+  "tags": ["eval-fixture", "synthesis-citation-check"],
+  "provenance": {
+    "@type": "Provenance",
+    "sourceType": "agent_inferred",
+    "confidence": 0.3,
+    "trustLevel": "uncertain"
+  },
+  "citations": [
+    {
+      "@type": "Citation",
+      "citationType": "documentation",
+      "citationRole": "supports",
+      "title": "Eval fixture placeholder citation",
+      "url": "https://example.com/synthesis-eval/falsified",
+      "accessed": "2026-07-18"
+    }
+  ],
+  "extensions": {
+    "harness": {
+      "dimension": "technical",
+      "verification": {
+        "verdict": "falsified",
+        "verdict_basis": "Placeholder gate result for the eval — carries a genuine 'falsified' verdict.",
+        "attempted_at": "2026-07-18T00:00:00Z",
+        "disconfirming_evidence": ["https://example.com/synthesis-eval/falsified-evidence"]
+      }
+    }
+  }
+}

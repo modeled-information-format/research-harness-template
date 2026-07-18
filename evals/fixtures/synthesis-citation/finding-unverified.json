@@ -1,0 +1,38 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@type": "Concept",
+  "@id": "urn:mif:concept:synthesis-eval:unverified-0001",
+  "conceptType": "semantic",
+  "namespace": "harness/synthesis-eval-topic",
+  "title": "An ungated finding with no verification block at all",
+  "content": "This finding (research-harness-template#566) lives under findings/ like a real survivor but has never been through the falsification gate — extensions.harness carries no 'verification' key at all (the pre-gate shape, matching evals/fixtures/fanout-lane/finding-seeded-invalid.json's documented pre-gate state). The Select phase must count it in 'unverified', never silently promote it into the survivor set.",
+  "summary": "Ungated finding: no verification block, must not be treated as a survivor.",
+  "created": "2026-07-18T00:00:00Z",
+  "modified": "2026-07-18T00:00:00Z",
+  "temporal": {
+    "@type": "TemporalMetadata",
+    "validFrom": "2026-07-18T00:00:00Z"
+  },
+  "tags": ["eval-fixture", "synthesis-citation-check"],
+  "provenance": {
+    "@type": "Provenance",
+    "sourceType": "agent_inferred",
+    "confidence": 0.4,
+    "trustLevel": "uncertain"
+  },
+  "citations": [
+    {
+      "@type": "Citation",
+      "citationType": "documentation",
+      "citationRole": "supports",
+      "title": "Eval fixture placeholder citation",
+      "url": "https://example.com/synthesis-eval/unverified",
+      "accessed": "2026-07-18"
+    }
+  ],
+  "extensions": {
+    "harness": {
+      "dimension": "technical"
+    }
+  }
+}

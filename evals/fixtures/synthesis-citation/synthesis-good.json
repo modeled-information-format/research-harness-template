@@ -1,0 +1,10 @@
+{
+  "_comment": "Seeded-GOOD synthesis fixture (research-harness-template#566): every citedId is a member of the fixture survivor set (finding-survived.json, finding-weakened.json, finding-inconclusive.json). Used only to prove the fixture corpus is self-consistent — see the eval script's Part C header comment for why the production citation-integrity gate itself (the opus critic) cannot be exercised deterministically in CI.",
+  "synthesisPath": "/dev/null/synthesis-good-fixture.json",
+  "sections": ["citations-in-set"],
+  "findingsUsed": 2,
+  "claims": [
+    { "checkId": "citations-in-set", "citedId": "urn:mif:concept:synthesis-eval:survived-0001", "confidence": "high" },
+    { "checkId": "citations-in-set", "citedId": "urn:mif:concept:synthesis-eval:weakened-0001", "confidence": "weakened" }
+  ]
+}

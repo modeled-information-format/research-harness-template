@@ -95,6 +95,24 @@ run "fanout-lane-contract" bash evals/fanout-lane-contract.sh
 # checked structurally.
 run "falsify-verdict-merge" bash evals/falsify-verdict-merge.sh
 
+# The research-synthesis citation-integrity gate has deterministic teeth
+# where the module's own logic can express it (#566): Select-phase
+# structural exclusion (falsified/quarantined findings, and a verdict-clean
+# archived finding, are excluded by DIRECTORY not verdict, proven against a
+# seeded fixture corpus and cross-checked against the module's own prompt
+# text) and the repair-round bound (a never-converging critique is proven
+# BEHAVIORALLY -- by driving the module's own while-loop extracted verbatim
+# -- to stop at exactly MAX_REPAIR=2 rounds, an early-converging critique
+# stops sooner, an already-clean critique never loops at all). Citation-key
+# integrity itself (does a synthesis cite an @id outside the closed
+# survivor set) is delegated entirely to the opus Critique phase's model
+# judgment -- no client-side validator exists for it anywhere in this repo
+# -- so this eval proves the WIRING (closed survivorIds -> critique prompt)
+# and the seeded out-of-set-citation fixture's own shape deterministically,
+# and documents plainly (in the eval's own header) that grading the fixture
+# through the real gate is a genuine, non-deterministic gap CI cannot close.
+run "synthesis-citation-check" bash evals/synthesis-citation-check.sh
+
 # release.yml never uploads to an already-published (immutable) release
 # (#537): tag-push trigger, no post-publish `gh release upload`, artifact
 # attached in the same `gh release create` call.
