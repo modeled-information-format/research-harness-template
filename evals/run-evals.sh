@@ -188,6 +188,33 @@ run "deliverables-genre-channel-route" bash evals/deliverables-genre-channel-rou
 # eval cannot reproduce deterministically — stated plainly, not faked.
 run "augment-decide-check" bash evals/augment-decide-check.sh
 
+# The research-add-dimensions module's Propose/Prune/Amend pipeline has
+# deterministic teeth where its own logic can express it (#584, Epic #546,
+# following #582's vendoring and #583's docs): the Amend phase is proven,
+# structurally (phase('Amend') marker span, never a header comment), to
+# invoke the REAL `bash ${H}/scripts/goal-version.sh` exactly twice (OLD then
+# NEW) and to explicitly forbid narrating the hash — never the reference
+# implementation's freehand-computed one; zero-candidate and all-rejected
+# outcomes are driven for real via the Workflow-runtime's async-function-body
+# framing and proven to complete with no throw, return structured reasoning,
+# and leave the fixture harness.config.json/goal.json byte-for-byte untouched
+# because the Amend agent() call is never invoked at all on either path; a
+# seeded overlap candidate (a proposed dimension restating the existing
+# "technical" dimension) is proven to be filtered out of added[] with its
+# stated OVERLAP reason preserved, and to never reach the Amend phase; and the
+# approved-candidate path is proven end-to-end against the REAL
+# scripts/goal-version.sh (never a hand-simulated hash) — the new dimension
+# lands in an independently ajv-clean harness.config.json, and the new goal
+# version's supersedes/version fields are cross-checked against THREE
+# separate fresh invocations of the real script (a baseline computed before
+# the driver ever runs, plus two independent recomputations afterward),
+# proving the gv- hash is a stable function of content under lineage
+# stamping (ADR-0006), not merely asserted. The Prune phase's own live
+# overlap/scope/decision-relevance judgment is a model call this eval cannot
+# reproduce deterministically — stated plainly in the eval's own header, not
+# faked.
+run "add-dimensions-check" bash evals/add-dimensions-check.sh
+
 # release.yml never uploads to an already-published (immutable) release
 # (#537): tag-push trigger, no post-publish `gh release upload`, artifact
 # attached in the same `gh release create` call.

@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.13] - 2026-07-18
+
+### Added
+
+- **Vendored research-add-dimensions workflow** (#582, Epic #546):
+  `.claude/workflows/research-add-dimensions.js` — atomic action B (widen
+  the dimension set), a generator-critic chain ending in a lineage event: a
+  sonnet Propose phase derives candidate new dimensions from homeless
+  evidence leads (`crossDimensionLeads`) and user hints, justified only
+  when existing dimensions genuinely cannot house the evidence; a sonnet
+  Prune phase attacks each candidate on overlap, scope, and
+  decision-relevance; an Amend phase wires approved survivors into
+  `harness.config.json` `dimensions[]` (ajv-clean) and mints a new `gv-`
+  goal version with correct `supersedes` lineage. Fixes the same class of
+  delegate-vs-reimplement gap #543/#544/#545 already named: the reference
+  implementation's Amend phase computes the `gv-` content-hash freehand
+  (a prose description of the sha256-first-12-hex algorithm) rather than
+  invoking `scripts/goal-version.sh`, which already delegates to the
+  canonical `mif-rh-cli harness goal-version` mechanism (Category-B
+  cutover, research-harness-template#276/Story #298). This module instead
+  follows the same snapshot-then-mint idiom `.claude/commands/goal-writer.md`'s
+  update flow and `research-goal.js`'s re-authoring branch already
+  establish: snapshot the live goal to `reports/<topic>/goals/goal-<gv>.json`
+  before editing, apply the dimension-widening delta, then mint the new
+  version by actually running `scripts/goal-version.sh` (ADR-0006,
+  content-hashed append-only lineage — the goal is immutable per version,
+  widening is an append, never an in-place edit). `harnessDir` defaults to
+  `.`, matching the research-goal.js/research-fanout.js/research-falsify.js/
+  research-synthesis.js/research-projection.js/research-deliverables.js/
+  research-augment.js precedent. `scripts/verify.sh`'s `gate_workflows`
+  gains an eighth hand-added per-file existence assert for the new module.
+
 ## [0.16.12] - 2026-07-18
 
 ### Added
