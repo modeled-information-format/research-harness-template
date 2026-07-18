@@ -66,7 +66,7 @@
 // regate: true })`. See the reverifyIds return below for the call-site note.
 export const meta = {
   name: 'research-pivot',
-  description: 'Atomic action C (pivot research focus): reshape the goal into a new content-hashed version of its append-only lineage via scripts/goal-version.sh, then classify every existing finding against the NEW goal — carry / gap / stale — so the next round re-researches only the gaps and re-gates only the stale; findings are gathered once and reused across goal versions',
+  description: 'Atomic action C (pivot research focus): reshape the goal into a new content-hashed version of its append-only lineage via scripts/goal-version.sh, then classify every existing finding against the NEW goal as carry / stale / out-of-scope and plan which dimensions are gaps (gapDimensions) — so the next round re-researches only the gaps and re-gates only the stale; findings are gathered once and reused across goal versions',
   whenToUse: 'When the question itself changes — decision reframed, scope shifted, dimensions dropped/reweighted. Not for adding depth (augment) or adding an axis (add-dimensions)',
   phases: [
     { title: 'Reshape', detail: 'mint the new goal version via scripts/goal-version.sh: snapshot, delta, gv-hash, lineage', model: 'sonnet' },
@@ -84,6 +84,9 @@ if (!TOPIC) throw new Error('research-pivot: args.topic is required')
 if (!DELTA) throw new Error('research-pivot: args.delta is required — a pivot without a stated delta is not a pivot')
 const RDIR = `${H}/reports/${TOPIC}`
 const BATCH = (args && args.batchSize) || 15
+if (!Number.isInteger(BATCH) || BATCH < 1) {
+  throw new Error(`research-pivot: args.batchSize must be a positive integer, got ${JSON.stringify(args && args.batchSize)}`)
+}
 
 const RESHAPE_SCHEMA = {
   type: 'object',
@@ -134,7 +137,7 @@ phase('Reshape')
 const reshape = await agent(
   `Reshape the session goal for topic ${TOPIC}, harness ${H}, into a NEW VERSION of its append-only lineage (SPEC §11; ADR-0006, ${H}/docs/adr/0006-content-hashed-append-only-goal-versioning.md). DELTA (what changed and why): ${DELTA}\n` +
     `${RDIR}/goal.json must already exist — pivot EVOLVES an existing goal, it does not author one fresh; if it is missing, stop and report that /goal-writer must run first.\n` +
-    `The goal is immutable per version — never edit ${RDIR}/goal.json in place. Follow the SAME snapshot-then-mint idiom ${H}/.claude/commands/goal-writer.md's --reshape flow and ${H}/.claude/workflows/research-add-dimensions.js's Amend phase already use — compute every gv- id via the real script, never a freehand/prose-derived hash:\n` +
+    `The goal is immutable PER VERSION — a version's content, once minted and snapshotted, is never rewritten after the fact. That does not forbid editing the live ${RDIR}/goal.json file itself: the snapshot-then-mint idiom below IS how a new version comes to exist — snapshot the OLD content to ${RDIR}/goals/goal-$OLD.json FIRST (so it survives untouched forever), THEN rewrite ${RDIR}/goal.json in place with the delta and mint the NEW version over the result. Follow the SAME snapshot-then-mint idiom ${H}/.claude/commands/goal-writer.md's --reshape flow and ${H}/.claude/workflows/research-add-dimensions.js's Amend phase already use — compute every gv- id via the real script, never a freehand/prose-derived hash:\n` +
     `  OLD=$(bash ${H}/scripts/goal-version.sh ${RDIR}/goal.json)\n` +
     `  mkdir -p ${RDIR}/goals\n` +
     `  cp ${RDIR}/goal.json ${RDIR}/goals/goal-$OLD.json\n` +
@@ -167,7 +170,7 @@ const classified = await parallel(
     ),
   ),
 )
-const rows = classified.filter(Boolean).flatMap((c) => c.classifications)
+const rows = classified.filter(Boolean).flatMap((c) => (Array.isArray(c.classifications) ? c.classifications : []))
 const carry = rows.filter((r) => r.class === 'carry').map((r) => r.id)
 const stale = rows.filter((r) => r.class === 'stale').map((r) => r.id)
 const dropped = rows.filter((r) => r.class === 'out-of-scope').map((r) => r.id)

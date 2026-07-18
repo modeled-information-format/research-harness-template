@@ -137,6 +137,13 @@ command -v node >/dev/null 2>&1 || { note "node is required but not on PATH"; ex
 command -v jq >/dev/null 2>&1 || { note "jq is required but not on PATH"; exit 2; }
 command -v python3 >/dev/null 2>&1 || { note "python3 is required but not on PATH"; exit 2; }
 command -v ajv >/dev/null 2>&1 || { note "ajv is required but not on PATH"; exit 2; }
+# Portable sha256 probe (evals/ontology-vendoring.sh / sync-registry-ontologies.sh
+# precedent, scripts/mif-container-digest.sh's fallback) — shasum is absent on
+# minimal Linux images that do carry sha256sum, and vice versa on some macOS/BSD
+# setups, so neither alone is a safe hard requirement.
+SHA256="sha256sum"
+command -v sha256sum >/dev/null 2>&1 || SHA256="shasum -a 256"
+command -v sha256sum >/dev/null 2>&1 || command -v shasum >/dev/null 2>&1 || { note "neither sha256sum nor shasum is on PATH"; exit 2; }
 [ -f "$WF" ] || { note "$WF not found — the vendored research-pivot workflow must ship (Epic #547, Task #586)"; exit 2; }
 [ -f "$FALSIFY_WF" ] || { note "$FALSIFY_WF not found — the vendored research-falsify workflow must ship (Epic #541, Task #560)"; exit 2; }
 [ -f "$GOAL_VERSION_SCRIPT" ] || { note "$GOAL_VERSION_SCRIPT not found — the Reshape phase's delegation target does not exist on disk"; exit 2; }
@@ -448,9 +455,9 @@ EOF
 
 # Byte-for-byte snapshot of the 3 active finding files BEFORE the run, to
 # prove classification never deletes or mutates them.
-sha_before_carry="$(shasum -a 256 "$RDIR_CLASSIFY/findings/carry.json" | awk '{print $1}')"
-sha_before_stale="$(shasum -a 256 "$RDIR_CLASSIFY/findings/stale.json" | awk '{print $1}')"
-sha_before_oos="$(shasum -a 256 "$RDIR_CLASSIFY/findings/oos.json" | awk '{print $1}')"
+sha_before_carry="$($SHA256 "$RDIR_CLASSIFY/findings/carry.json" | awk '{print $1}')"
+sha_before_stale="$($SHA256 "$RDIR_CLASSIFY/findings/stale.json" | awk '{print $1}')"
+sha_before_oos="$($SHA256 "$RDIR_CLASSIFY/findings/oos.json" | awk '{print $1}')"
 
 cat > "$TMP/stubs-classify.cjs" <<NODE
 'use strict';
@@ -562,9 +569,9 @@ fi
 
 # Never-deletes proof: all 3 active finding files remain on disk,
 # byte-identical, after the run — regardless of which class they landed in.
-sha_after_carry="$(shasum -a 256 "$RDIR_CLASSIFY/findings/carry.json" | awk '{print $1}')"
-sha_after_stale="$(shasum -a 256 "$RDIR_CLASSIFY/findings/stale.json" | awk '{print $1}')"
-sha_after_oos="$(shasum -a 256 "$RDIR_CLASSIFY/findings/oos.json" | awk '{print $1}')"
+sha_after_carry="$($SHA256 "$RDIR_CLASSIFY/findings/carry.json" | awk '{print $1}')"
+sha_after_stale="$($SHA256 "$RDIR_CLASSIFY/findings/stale.json" | awk '{print $1}')"
+sha_after_oos="$($SHA256 "$RDIR_CLASSIFY/findings/oos.json" | awk '{print $1}')"
 if [ "$sha_before_carry" != "$sha_after_carry" ] || [ "$sha_before_stale" != "$sha_after_stale" ] || [ "$sha_before_oos" != "$sha_after_oos" ]; then
   note "classification mutated a finding file on disk — it must ONLY change which bucket a finding lands in, never touch the file itself"
   fail=1
