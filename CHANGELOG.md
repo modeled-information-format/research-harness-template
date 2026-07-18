@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.16] - 2026-07-18
+
+### Added
+
+- **Deterministic eval for the research-import DryRun/Review/Apply pipeline**
+  (#592, Epic #548): `evals/import-check.sh`, wired as a tenth explicit run
+  line in `evals/run-evals.sh`. Every DryRun and Apply agent() call is
+  stubbed to invoke the REAL `scripts/mif-container-import.sh` — never a
+  mocked/fabricated verdict — proving: (A) structurally, via phase() marker
+  spans, that the DryRun phase invokes the script WITH `--dry-run` and the
+  Apply phase invokes it WITHOUT; (B) a REAL fixture container with one
+  resource's bytes corrupted after its digest was declared is rejected by
+  the real script's `--dry-run` path, with Review/Apply never called and
+  nothing written; (C) a real, uncorrupted container hits a Review NO-GO (a
+  live sonnet scope-fit judgment stubbed since it cannot be reproduced
+  deterministically) with Apply never called and nothing written; (D) a
+  real container — 2 real corpus findings already carrying a genuine
+  foreign verification block, plus 1 synthetic finding carrying
+  `scripts/falsify.sh`'s own documented PLACEHOLDER `inconclusive`/no-
+  `attempted_at` shape — imports for real through the non-dry-run gate, and
+  the `needsGating`/`trustedForeignVerdicts` partition is correct for BOTH
+  `trustImportedVerdicts` settings against the real on-disk written files;
+  (E) `research-falsify.js` accepts the real `needsGating` output as
+  `scope:{ids:[...]},regate:true` without tripping its guard error,
+  mirroring #588's pivot->falsify interface fixture. Real repo-root
+  mutation (`harness.config.json`, `reports/concordance.json`) is guarded by
+  the same `$ROOT/.eval-corpus-mutation.lock` + cp-based backup/restore
+  idiom `mif-container-nfr-verification.sh` already uses.
+
 ## [0.16.15] - 2026-07-18
 
 ### Added
