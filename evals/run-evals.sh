@@ -113,6 +113,23 @@ run "falsify-verdict-merge" bash evals/falsify-verdict-merge.sh
 # through the real gate is a genuine, non-deterministic gap CI cannot close.
 run "synthesis-citation-check" bash evals/synthesis-citation-check.sh
 
+# The research-projection module has deterministic teeth where its own logic
+# can express it (#571, Epic #543): structural grep of the module's ACTUAL
+# AGENT PROMPT bodies (never a comment) proves the #569-resolved
+# script-delegated composition is really wired in (Report:
+# synthesize-artifact.sh->falsify.sh->render-artifact.sh->mif-project.sh;
+# Index: build-topic-readme.sh+build-graph.sh+assert-graph-mif.sh); a REAL,
+# hermetic, no-model fixture run through that same script pipeline (twice,
+# same topic/slug, a genuinely different artifact in between) proves
+# supersession @id identity (SAME @id, incremented version, changed content —
+# never a fresh @id and never a stale no-op); the synthesisPath preflight
+# guard is extracted VERBATIM and driven with a stubbed agent() to prove it
+# fails closed with a clear, actionable message on a missing/unusable path;
+# and a stale hand-typed README Findings count is proven caught by
+# build-topic-readme.sh's real --check gate (the seed's own "never guessed"
+# acceptance criterion, made a real regression trap).
+run "projection-supersession-check" bash evals/projection-supersession-check.sh
+
 # release.yml never uploads to an already-published (immutable) release
 # (#537): tag-push trigger, no post-publish `gh release upload`, artifact
 # attached in the same `gh release create` call.
