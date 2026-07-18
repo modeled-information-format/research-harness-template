@@ -204,19 +204,17 @@ LEAK_RE="$(grep -m1 '^LEAK_RE=' .claude/hooks/check-citation-leak.sh | sed -E "s
 [ -n "$LEAK_RE" ] || { note "could not extract LEAK_RE from .claude/hooks/check-citation-leak.sh — has its shape changed?"; fail=1; }
 
 SF="reports/_meta/sample-session/findings"
-if [ "$fail" -eq 0 ] || true; then
-  if ! bash scripts/synthesize-artifact.sh "$SF" general "$TMP/artifact.json" >"$TMP/synth.out" 2>&1; then
-    note "setup: synthesize-artifact.sh (genre=general) failed: $(cat "$TMP/synth.out")"; fail=1
-  elif ! bash scripts/render-artifact.sh "$TMP/artifact.json" blog "$TMP/blog-out.md" >"$TMP/render.out" 2>&1; then
-    note "setup: render-artifact.sh (channel=blog) failed: $(cat "$TMP/render.out")"; fail=1
-  else
-    [ -s "$TMP/blog-out.md" ] || { note "render-artifact.sh (blog) produced an empty file"; fail=1; }
-    if grep -nE "$LEAK_RE" "$TMP/blog-out.md" >"$TMP/leak.out" 2>/dev/null; then
-      note "citation-leak gate FAILED on the real blog render — the Render prompt's claim that render-artifact.sh's engine delegation keeps blog/book citation-clean does not hold against this fixture: $(cat "$TMP/leak.out")"
-      fail=1
-    fi
-    grep -qE '^## ' "$TMP/blog-out.md" || { note "blog render has no per-finding sections — the pipeline did not actually run over the fixture findings"; fail=1; }
+if ! bash scripts/synthesize-artifact.sh "$SF" general "$TMP/artifact.json" >"$TMP/synth.out" 2>&1; then
+  note "setup: synthesize-artifact.sh (genre=general) failed: $(cat "$TMP/synth.out")"; fail=1
+elif ! bash scripts/render-artifact.sh "$TMP/artifact.json" blog "$TMP/blog-out.md" >"$TMP/render.out" 2>&1; then
+  note "setup: render-artifact.sh (channel=blog) failed: $(cat "$TMP/render.out")"; fail=1
+else
+  [ -s "$TMP/blog-out.md" ] || { note "render-artifact.sh (blog) produced an empty file"; fail=1; }
+  if grep -nE "$LEAK_RE" "$TMP/blog-out.md" >"$TMP/leak.out" 2>/dev/null; then
+    note "citation-leak gate FAILED on the real blog render — the Render prompt's claim that render-artifact.sh's engine delegation keeps blog/book citation-clean does not hold against this fixture: $(cat "$TMP/leak.out")"
+    fail=1
   fi
+  grep -qE '^## ' "$TMP/blog-out.md" || { note "blog render has no per-finding sections — the pipeline did not actually run over the fixture findings"; fail=1; }
 fi
 
 # ============================================================================

@@ -216,6 +216,15 @@ const PREFLIGHT_SCHEMA = {
   required: ['exists', 'reason'],
 }
 
+// Shared Check-phase prompt — used both for the initial post-render
+// validation and for the re-validation that follows an attempted fix, so
+// both passes apply the identical criteria (write-validate atomicity).
+const checkPrompt = (outputPath, mechanism, genre, channel) =>
+  `Validate the deliverable ${outputPath} (harness ${H}, mechanism="${mechanism}"). If the output is Markdown, run ` +
+  `markdownlint-cli2 with the repo config. Confirm the citation-leak gate holds regardless of format (no ${mechanism === 'artifact' ? 'urn:mif: ids, finding handles, or reports/<slug>/ paths — public citations only' : 'internal research identity leaking into a channel whose contract says it renders from public sources'}). ` +
+  `Confirm it cites at least one primary source (a deliverable citing zero sources is a defect for "${genre}"×"${channel}"). ` +
+  `Report problems verbatim; fix nothing.`
+
 phase('Route')
 
 // Same-process contract guard, verbatim from research-projection.js (#571,
@@ -333,11 +342,8 @@ const rendered = await pipeline(
   (r, p) =>
     r
       ? agent(
-          `Validate the deliverable ${r.outputPath} (harness ${H}, mechanism="${r.mechanism}"). If the output is Markdown, run ` +
-            `markdownlint-cli2 with the repo config. Confirm the citation-leak gate holds regardless of format (no ${r.mechanism === 'artifact' ? 'urn:mif: ids, finding handles, or reports/<slug>/ paths — public citations only' : 'internal research identity leaking into a channel whose contract says it renders from public sources'}). ` +
-            `Confirm it cites at least one primary source (a deliverable citing zero sources is a defect for "${p.genre}"×"${p.channel}"). ` +
-            `Report problems verbatim; fix nothing.`,
-          { label: `check:${p.genre}x${p.channel}`, phase: 'Render', model: 'haiku', effort: 'low', schema: CHECK_SCHEMA },
+          checkPrompt(r.outputPath, r.mechanism, p.genre, p.channel),
+          { label: `check:${p.genre}x${p.channel}`, phase: 'Check', model: 'haiku', effort: 'low', schema: CHECK_SCHEMA },
         ).then((v) => ({ ...r, validation: v }))
       : null,
 )
@@ -346,15 +352,29 @@ const artifacts = rendered.filter(Boolean)
 const dirty = artifacts.filter((a) => a.validation && !a.validation.clean)
 if (dirty.length) {
   phase('Check')
-  await parallel(
-    dirty.map((a) => () =>
-      agent(
+  const refixed = await parallel(
+    dirty.map((a) => async () => {
+      await agent(
         `Fix these validation problems in ${a.outputPath} (harness ${H}) without changing any claim content or citations:\n` +
           a.validation.problems.map((p) => `- ${p}`).join('\n'),
         { label: `fix:${a.genre}x${a.channel}`, phase: 'Check', model: 'haiku' },
-      ),
-    ),
+      )
+      // Re-validate after the fix — a fix is not done until it proves out
+      // against the same check that failed it (write-validate atomicity,
+      // fail-closed; mirrors research-fanout.js's repair -> revalidate
+      // precedent). Without this, `clean` in the returned artifacts[] would
+      // permanently reflect the PRE-fix state even when the fix succeeded.
+      const rv = await agent(
+        checkPrompt(a.outputPath, a.mechanism, a.genre, a.channel),
+        { label: `recheck:${a.genre}x${a.channel}`, phase: 'Check', model: 'haiku', effort: 'low', schema: CHECK_SCHEMA },
+      )
+      return { a, rv }
+    }),
   )
+  for (const { a, rv } of refixed) {
+    if (rv) a.validation = rv
+    else log(`WARNING: re-validation after fix produced no result for ${a.outputPath} — leaving prior (failing) validation recorded`)
+  }
 }
 
 return {
