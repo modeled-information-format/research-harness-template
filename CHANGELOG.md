@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.10] - 2026-07-18
+
+### Added
+
+- **Vendored research-projection workflow** (#569, Epic #543):
+  `.claude/workflows/research-projection.js` — atomic step 5 (projection),
+  materializing the typed synthesis onto the durable corpus surfaces. The
+  Report phase delegates to the `publish-report` skill's real script
+  pipeline (`synthesize-artifact.sh` -> `falsify.sh` -> `render-artifact.sh`
+  -> `mif-project.sh`) instead of hand-authoring MIF frontmatter/citations —
+  in particular, the `extensions.harness.verification` verdict always comes
+  from a genuine falsification pass over the report's own central claims,
+  never asserted; a `falsified` verdict quarantines the report and stops
+  before rendering. The Index phase delegates to the `readme` skill's
+  `build-topic-readme.sh` for the deterministic structural backbone (haiku
+  authors only the synthesis-grade Key Findings/Purpose the script cannot
+  compute) and the `graph` skill's `build-graph.sh` +
+  `assert-graph-mif.sh` for the knowledge-graph refresh — a correctness fix
+  over the reference implementation's free-form-prompt reimplementation of
+  all three skills. Guards the same-process-only `synthesisPath` hand-off
+  from `research-synthesis.js` (#542) with an explicit existence/non-empty/
+  valid-JSON preflight check that fails closed with a clear error, rather
+  than trusting a required arg with no guard. Report supersession preserves
+  the report's `@id` across a re-render structurally (the engine derives it
+  from namespace+slug), verified against a real fixture run rather than
+  assumed. `harnessDir` defaults to `.`, matching the
+  research-goal.js/research-fanout.js/research-falsify.js/
+  research-synthesis.js precedent. `scripts/verify.sh`'s `gate_workflows`
+  gains a fifth hand-added per-file existence assert for the new module.
+
 ## [0.16.9] - 2026-07-18
 
 ### Added
