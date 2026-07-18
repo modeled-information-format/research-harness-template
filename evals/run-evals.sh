@@ -151,6 +151,23 @@ run "projection-supersession-check" bash evals/projection-supersession-check.sh
 # asserted by the prompt text.
 run "deliverables-route-check" bash evals/deliverables-route-check.sh
 
+# research-harness-template#575 (Epic #544): a SEPARATE eval from the one
+# above, scoped to what #573 actually wired — real, currently-enabled genre
+# packs (exec-summary, engineering) are driven end-to-end through the real
+# synthesize-artifact.sh -> render-artifact.sh pipeline and every Check-phase
+# gate is asserted per rendered artifact (lint, MIF Level-1 frontmatter,
+# citation-leak, >=1 citation); a genuinely-disabled real pack
+# (sustainability-report) and a genuinely-nonexistent one are proven,
+# structurally, to land in reason categories distinct from the out-of-scope
+# source-direct/third-mechanism case (why full unavailable[] emission can't
+# be driven end-to-end without a live model call is explained inline, along
+# with a real proof that the substrate itself does not gate on pack
+# enablement); and a seeded canary-claim fixture proves synthesize-artifact.sh
+# reads the findings dir directly (never the synthesis) — the synthesis-only
+# evidence rule for mechanism 1 is enforced only by the Render agent's own
+# cross-check instruction, verified structurally.
+run "deliverables-genre-channel-route" bash evals/deliverables-genre-channel-route.sh
+
 # release.yml never uploads to an already-published (immutable) release
 # (#537): tag-push trigger, no post-publish `gh release upload`, artifact
 # attached in the same `gh release create` call.
