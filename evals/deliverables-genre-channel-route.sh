@@ -390,18 +390,81 @@ grep -qF 'provenanceOutcome: a.provenanceOutcome' "$WF" \
   || { note "the module's final return no longer forwards a.provenanceOutcome per artifact — the #632 stamp result would be silently dropped even if the Render phase still computes it"; fail=1; }
 
 # ============================================================================
-# F: CHANNELS truthiness regression (research-harness-template#626). The
+# F: Genre skill invocation (research-harness-template#640, same class as
+# research-projection.js's #633). Before this fix, mechanism 1's Render step
+# passed the resolved genre straight through to synthesize-artifact.sh/
+# render-artifact.sh as pass-through metadata and never invoked any genre's
+# real Skill(mif-docs:<genre>) template — every genre rendered the identical
+# neutral body with only the frontmatter `genre:` field differing,
+# indistinguishable from a correctly-genred deliverable by inspection.
+# Structural proof (grepped from the module's ACTUAL AGENT PROMPT/source,
+# never a header comment) that: an enabled genre's Render row invokes
+# Skill(mif-docs:<genre>) — every genre pack in harness.config.json is an
+# external marketplace-ref to the "mif-docs" marketplace, which (verified
+# against the real mif-docs-plugin repo) publishes exactly ONE plugin named
+# "mif-docs" containing every genre as a skill inside it, never a
+# same-named plugin per genre — a genre="general" row does not, mechanism 2 rows
+# always report no genre applied, the outcome is surfaced through
+# RENDER_SCHEMA/the final return, and a caller-supplied genre is validated
+# against the pack-name pattern before being interpolated into a shell
+# command or Skill() reference (mirrors #633's own injection guard). This is
+# inherently model-driven (Route/Render are bare `agent()` calls, per this
+# file's own header) — proven structurally, per this repo's established
+# precedent, not faked as hermetic.
+# ============================================================================
+grep -qF "genreArg !== 'general'" "$WF" \
+  || { note "the module's source no longer branches the genre-skill step on genreArg !== 'general' — has #640's conditional wiring changed?"; fail=1; }
+grep -qF 'Skill(mif-docs:${genreArg})' "$WF" \
+  || { note "the module's source no longer contains the literal Skill(mif-docs:\${genreArg}) invocation template for mechanism 1's enabled-genre case — has #640's actual invocation shape changed, or regressed to the wrong same-named-plugin form?"; fail=1; }
+grep -qF 'GENRE SKILL APPLICATION' <<<"$render_span" \
+  || { note "Render phase prompt lost the GENRE SKILL APPLICATION step (#640) — a requested genre could once again render only the neutral body"; fail=1; }
+grep -qF 'genreApplied=false, genreSkillInvoked=""' "$WF" \
+  || { note "the module no longer has an explicit genreApplied=false/genreSkillInvoked=\"\" branch (the genre=\"general\" neutral case, or mechanism 2's no-genre-axis case) — #640's honest-fallback wiring may have regressed"; fail=1; }
+grep -qF 'There is no genre axis for this mechanism (#640)' <<<"$render_span" \
+  || { note "Render phase prompt's source-direct (mechanism 2) branch no longer states genreApplied is always false — the genre-doesn't-apply contract could silently drift"; fail=1; }
+grep -qF "'genreApplied'" "$WF" \
+  || { note "RENDER_SCHEMA no longer declares genreApplied — the #640 genre-skill outcome would no longer be surfaced to callers"; fail=1; }
+grep -qF "'genreSkillInvoked'" "$WF" \
+  || { note "RENDER_SCHEMA no longer declares genreSkillInvoked — the #640 genre-skill outcome would no longer be surfaced to callers"; fail=1; }
+grep -qF 'genreApplied: a.genreApplied' "$WF" \
+  || { note "the module's final return no longer forwards a.genreApplied per artifact — the #640 genre-skill outcome would be silently dropped even if the Render phase still computes it"; fail=1; }
+grep -qF 'genreSkillInvoked: a.genreSkillInvoked' "$WF" \
+  || { note "the module's final return no longer forwards a.genreSkillInvoked per artifact — the #640 genre-skill outcome would be silently dropped even if the Render phase still computes it"; fail=1; }
+grep -qF 'GENRE STRING VALIDATION' "$WF" \
+  || { note "the module lost its genre-string validation guard (#640, mirrors #633's own injection guard) — an unvalidated route.plan genre could flow straight into a shell command / Skill() reference"; fail=1; }
+grep -qF '/^[a-z][a-z0-9-]*$/.test(p.genre)' "$WF" \
+  || { note "the module's genre-string validation no longer matches the harness.config.schema.json packs[].name pattern (^[a-z][a-z0-9-]*\$) — has the validation regex changed or been dropped?"; fail=1; }
+# Every real GENRE_PACKS key must actually satisfy the validation pattern
+# used above — proves the guard cannot reject a genuinely enabled genre.
+python3 - "$WF" <<'PY'
+import re, sys
+wf = open(sys.argv[1]).read()
+m = re.search(r'const GENRE_PACKS = \{(.*?)\n\}', wf, re.S)
+keys = re.findall(r"'?([A-Za-z][A-Za-z0-9-]*)'?\s*:\s*\{", m.group(1)) if m else []
+pat = re.compile(r'^[a-z][a-z0-9-]*$')
+bad = [k for k in keys if not pat.match(k)]
+if bad:
+    print(f"FAIL: GENRE_PACKS entries {bad} do not match the ^[a-z][a-z0-9-]*$ pattern #640's validation guard enforces — a genuinely enabled genre would be rejected")
+    sys.exit(1)
+if not keys:
+    print("FAIL: could not extract any GENRE_PACKS keys to cross-check against the validation pattern")
+    sys.exit(1)
+PY
+[ $? -eq 0 ] || fail=1
+
+# ============================================================================
+# G: CHANNELS truthiness regression (research-harness-template#626). The
 # module's own CHANNELS default previously collapsed an explicit
 # `channels: []` ("caller wants zero channels rendered, on purpose") into
 # the SAME branch as `channels` never being passed at all ("use the default")
-# — both silently became ['blog']. F1 proves the fixed source line directly;
-# F2/F3 drive the REAL module (same async-function-body technique
+# — both silently became ['blog']. G1 proves the fixed source line directly;
+# G2/G3 drive the REAL module (same async-function-body technique
 # research-pipeline-full-mode-check.sh uses) to prove the two cases now
 # resolve to genuinely DIFFERENT CHANNELS values at runtime, not just in a
 # source-text grep.
 # ============================================================================
 grep -qF "const CHANNELS = (args && Array.isArray(args.channels)) ? args.channels : ['blog']" "$WF" \
-  || { note "F1: $WF no longer computes CHANNELS via Array.isArray — the explicit-empty-vs-omitted truthiness bug (#626) may have regressed"; fail=1; }
+  || { note "G1: $WF no longer computes CHANNELS via Array.isArray — the explicit-empty-vs-omitted truthiness bug (#626) may have regressed"; fail=1; }
 
 cat > "$TMP/channels-driver.cjs" <<'NODE'
 'use strict';
@@ -434,28 +497,28 @@ async function parallelStub(fns) { return Promise.all((fns || []).map((f) => f()
 })();
 NODE
 
-# F2: explicit channels: [] must resolve to CHANNELS=[] — "Requested channels: []"
+# G2: explicit channels: [] must resolve to CHANNELS=[] — "Requested channels: []"
 printf '%s' "{\"harnessDir\":\"$TMP/h\",\"topic\":\"channels-eval-topic\",\"synthesisPath\":\"$TMP/syn.json\",\"channels\":[]}" > "$TMP/args-f2.json"
 node "$TMP/channels-driver.cjs" "$WF" "$TMP/args-f2.json" "$TMP/out-f2.json" >"$TMP/f2.err" 2>&1
 if [ -f "$TMP/out-f2.json" ]; then
   python3 -c "import json,sys; d=json.load(open('$TMP/out-f2.json')); sys.exit(0 if 'Requested channels: []' in (d.get('routePrompt') or '') else 1)" \
-    || { note "F2: an explicit channels:[] did not resolve to CHANNELS=[] in the real Route prompt"; fail=1; }
+    || { note "G2: an explicit channels:[] did not resolve to CHANNELS=[] in the real Route prompt"; fail=1; }
 else
-  note "F2: driver produced no output ($(cat "$TMP/f2.err"))"; fail=1
+  note "G2: driver produced no output ($(cat "$TMP/f2.err"))"; fail=1
 fi
 
-# F3: channels omitted entirely must still default to CHANNELS=['blog'] —
+# G3: channels omitted entirely must still default to CHANNELS=['blog'] —
 # "Requested channels: [\"blog\"]" — the existing single-genre convention is
 # preserved unchanged for the common (no-args) case.
 printf '%s' "{\"harnessDir\":\"$TMP/h\",\"topic\":\"channels-eval-topic\",\"synthesisPath\":\"$TMP/syn.json\"}" > "$TMP/args-f3.json"
 node "$TMP/channels-driver.cjs" "$WF" "$TMP/args-f3.json" "$TMP/out-f3.json" >"$TMP/f3.err" 2>&1
 if [ -f "$TMP/out-f3.json" ]; then
   python3 -c "import json,sys; d=json.load(open('$TMP/out-f3.json')); sys.exit(0 if 'Requested channels: [\"blog\"]' in (d.get('routePrompt') or '') else 1)" \
-    || { note "F3: an omitted channels arg no longer defaults to CHANNELS=['blog'] in the real Route prompt"; fail=1; }
+    || { note "G3: an omitted channels arg no longer defaults to CHANNELS=['blog'] in the real Route prompt"; fail=1; }
 else
-  note "F3: driver produced no output ($(cat "$TMP/f3.err"))"; fail=1
+  note "G3: driver produced no output ($(cat "$TMP/f3.err"))"; fail=1
 fi
-note "F: explicit channels:[] resolves to zero channels (never silently coerced to the ['blog'] default), while an omitted channels arg still defaults to ['blog'] unchanged — proven against the real module, not just a source grep"
+note "G: explicit channels:[] resolves to zero channels (never silently coerced to the ['blog'] default), while an omitted channels arg still defaults to ['blog'] unchanged — proven against the real module, not just a source grep"
 
 if [ "$fail" -eq 0 ]; then
   echo "deliverables-genre-channel-route: all cases passed"
