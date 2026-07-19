@@ -21,7 +21,23 @@
           "label": { "type": "string" },
           "dimension": { "type": "string" },
           "entityType": { "type": "string" }
-        }
+        },
+        "allOf": [
+          {
+            "if": { "properties": { "kind": { "const": "concept" } } },
+            "then": {
+              "required": ["dimension"],
+              "not": { "required": ["entityType"] }
+            }
+          },
+          {
+            "if": { "properties": { "kind": { "const": "entity" } } },
+            "then": {
+              "required": ["entityType"],
+              "not": { "required": ["dimension"] }
+            }
+          }
+        ]
       }
     },
     "edges": {
