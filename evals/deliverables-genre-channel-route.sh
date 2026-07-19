@@ -366,6 +366,29 @@ grep -qF 'do NOT run synthesize-artifact.sh or render-artifact.sh' <<<"$render_s
 grep -qF 'read or reference the synthesis' <<<"$render_span" \
   || { note "Render phase prompt no longer forbids consulting synthesisPath for source-direct (mechanism 2) rows"; fail=1; }
 
+# ============================================================================
+# E: Witnessed provenance (research-harness-template#632). Before this fix,
+# mechanism 1 (artifact-based blog/book, which render-artifact.sh's own
+# header confirms carry real MIF Level-1 frontmatter) never invoked
+# mif-docs-plugin's mif-provenance skill, so every deliverable's provenance
+# block was whatever render-artifact.sh asserted — the same gap #632
+# reported for the report channel. Structural proof the stamp is wired for
+# mechanism 1, explicitly skipped (never silently attempted) for mechanism 2,
+# and the outcome is actually surfaced through RENDER_SCHEMA/the final return.
+# ============================================================================
+grep -qF 'Skill(mif-docs:mif-provenance)' <<<"$render_span" \
+  || { note "Render phase prompt no longer invokes Skill(mif-docs:mif-provenance) for mechanism 1 — the #632 witnessed-provenance stamp has regressed away for blog/book deliverables"; fail=1; }
+grep -qF 'Do NOT hand-author a' <<<"$render_span" \
+  || { note "Render phase prompt lost its never-hand-author-a-provenance-block-to-work-around-a-decline instruction (#632)"; fail=1; }
+grep -qF 'Do NOT attempt a Skill(mif-docs:mif-provenance) stamp for this row' <<<"$render_span" \
+  || { note "Render phase prompt no longer explicitly forbids the mif-provenance stamp for mechanism 2 (source-direct) rows — #632's mechanism-1-only scoping has regressed"; fail=1; }
+grep -qF 'not-applicable' <<<"$render_span" \
+  || { note "Render phase prompt no longer instructs mechanism 2 rows to report provenanceOutcome=\"not-applicable\""; fail=1; }
+grep -qF "'provenanceOutcome'" "$WF" \
+  || { note "RENDER_SCHEMA no longer declares provenanceOutcome — the #632 stamp result (or its mechanism-2 not-applicable status) would no longer be surfaced to callers"; fail=1; }
+grep -qF 'provenanceOutcome: a.provenanceOutcome' "$WF" \
+  || { note "the module's final return no longer forwards a.provenanceOutcome per artifact — the #632 stamp result would be silently dropped even if the Render phase still computes it"; fail=1; }
+
 if [ "$fail" -eq 0 ]; then
   echo "deliverables-genre-channel-route: all cases passed"
 else

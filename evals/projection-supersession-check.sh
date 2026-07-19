@@ -116,6 +116,28 @@ grep -qF 'D-10' <<<"$verify_span" \
   || { note "Verify phase prompt lost its D-10 citation"; fail=1; }
 
 # ============================================================================
+# F: Witnessed provenance (research-harness-template#632). Before this fix,
+# the Report phase stopped at mif-project.sh's L3 re-confirmation and never
+# invoked mif-docs-plugin's mif-provenance skill — every rendered report's
+# `provenance` block was whatever synthesize-artifact.sh/render-artifact.sh
+# asserted, identical boilerplate across every genre/run (ADR-0018's own
+# "Current Limitations" confirms this). Structural proof (grepped from the
+# Report phase's own AGENT PROMPT body, never a header-comment mention) that
+# the stamp step is actually wired, plus schema/return-shape proof the
+# outcome is actually surfaced rather than silently discarded.
+# ============================================================================
+grep -qF 'Skill(mif-docs:mif-provenance)' <<<"$report_span" \
+  || { note "Report phase prompt no longer invokes Skill(mif-docs:mif-provenance) — the #632 witnessed-provenance stamp has regressed away, reports would go back to carrying only model-asserted provenance"; fail=1; }
+grep -qF 'Do NOT hand-author a provenance' <<<"$report_span" \
+  || { note "Report phase prompt lost its explicit never-hand-author-a-provenance-block-to-work-around-a-decline instruction (#632)"; fail=1; }
+grep -qF 'DECLINES' <<<"$report_span" \
+  || { note "Report phase prompt lost its documented graceful-decline handling for the mif-provenance stamp (#632) — a capture-off/unwitnessed-file decline must never be treated as a projection failure"; fail=1; }
+grep -qF "'provenanceOutcome'" "$WF" \
+  || { note "REPORT_SCHEMA no longer declares provenanceOutcome — the #632 stamp result would no longer be surfaced to callers"; fail=1; }
+grep -qF 'provenanceOutcome: report.provenanceOutcome' "$WF" \
+  || { note "the module's final return no longer forwards report.provenanceOutcome — the #632 stamp result would be silently dropped even if the Report phase still computes it"; fail=1; }
+
+# ============================================================================
 # B: Supersession identity. REAL pipeline run, no stubs: synthesize-artifact.sh
 # -> falsify.sh (offline fixture evidence) -> render-artifact.sh ->
 # mif-project.sh, exercised TWICE against the SAME $OUT with a genuinely
@@ -381,5 +403,5 @@ else
     || { note "count-drift message did not name the stale stated value (99): $count_check_out"; fail=1; }
 fi
 
-[ "$fail" -eq 0 ] && note "script-delegated composition holds (Report: synthesize-artifact.sh->falsify.sh->render-artifact.sh->mif-project.sh; Index: build-topic-readme.sh+build-graph.sh+assert-graph-mif.sh, both grepped from the module's own AGENT PROMPT bodies, never a comment); supersession @id is proven identical across two real pipeline renders with genuinely differing content (version incremented, genre changed); the synthesisPath preflight guard is proven (by driving the verbatim-extracted branch) to fail closed with a clear, actionable message on a missing/unusable path and pass through on a usable one; computed README counts are proven to catch a stale hand-typed value via build-topic-readme.sh's real --check gate; and the Verify phase's targeted-gates-only (D-10) language is intact"
+[ "$fail" -eq 0 ] && note "script-delegated composition holds (Report: synthesize-artifact.sh->falsify.sh->render-artifact.sh->mif-project.sh; Index: build-topic-readme.sh+build-graph.sh+assert-graph-mif.sh, both grepped from the module's own AGENT PROMPT bodies, never a comment); supersession @id is proven identical across two real pipeline renders with genuinely differing content (version incremented, genre changed); the synthesisPath preflight guard is proven (by driving the verbatim-extracted branch) to fail closed with a clear, actionable message on a missing/unusable path and pass through on a usable one; computed README counts are proven to catch a stale hand-typed value via build-topic-readme.sh's real --check gate; the Verify phase's targeted-gates-only (D-10) language is intact; and the #632 witnessed-provenance stamp (Skill(mif-docs:mif-provenance), graceful decline handling, no hand-authored workaround) is wired into the Report phase prompt with its outcome surfaced through REPORT_SCHEMA and the module's final return"
 exit "$fail"
