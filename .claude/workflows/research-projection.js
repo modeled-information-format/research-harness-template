@@ -234,6 +234,20 @@ if (!SYN) throw new Error('research-projection: args.synthesisPath is required (
 const RDIR = `${H}/reports/${TOPIC}`
 const SLUG = (args && args.slug) || TOPIC
 const GENRE = (args && args.genre) || 'general'
+// GENRE is interpolated into a shell command (the jq --arg g "${GENRE}" lookup
+// below) and into a Skill() reference in the Report-phase prompt
+// (genreSkillRef = `${GENRE}:${GENRE}`). Pack names are constrained by
+// harness.config.schema.json's packs[].name pattern (^[a-z][a-z0-9-]*$) — a
+// caller composing this workflow programmatically could otherwise pass an
+// unconstrained string that produces a malformed prompt or a command/
+// skill-reference injection. Validate against that same pattern BEFORE any
+// use, and fail closed rather than silently coercing or proceeding.
+if (GENRE !== 'general' && !/^[a-z][a-z0-9-]*$/.test(GENRE)) {
+  throw new Error(
+    `research-projection: args.genre "${GENRE}" does not match the pack-name pattern harness.config.schema.json enforces ` +
+      `(^[a-z][a-z0-9-]*$) — refusing to interpolate an unvalidated genre string into a shell command or Skill() reference.`,
+  )
+}
 
 const PREFLIGHT_SCHEMA = {
   type: 'object',
