@@ -93,6 +93,39 @@
 // module's own runtime behavior — this module never calls verify.sh itself
 // (see the Verify phase below, D-10) — and is out of scope for this Task;
 // work around it locally with scripts/fetch-engine.sh, never silently.
+//
+// CONCURRENCY FIX (issue #628) — a topic-scoped lock, not a genre-suffixed
+// path. The Report phase's intermediates (${RDIR}/artifact.json,
+// report-finding.json, report-finding.falsified.json,
+// report.verification.json) are FIXED per-topic paths, not parameterized by
+// genre or slug — two concurrent invocations of this module against the
+// SAME topic with different genre/slug (exactly the multi-genre pattern
+// #626 proposes eliciting up front) previously raced on them with no error
+// surfaced: every invocation reported ok:true while one invocation's
+// synthesize-artifact.sh clobbered another's artifact.json mid-flight, so
+// concurrent renders silently stamped the wrong genre's content into each
+// other's reports, and in the reported repro, one invocation's render step
+// overwrote the topic's existing canonical report entirely. Genre-suffixing
+// these paths the way research-deliverables.js's OWN blog/book intermediates
+// already do (`artifact.<genre>.json`, see that module's header) is NOT a
+// safe option here: unlike those, ${RDIR}/artifact.json at its fixed name is
+// a well-known, unsuffixed file that mif-container-export.sh,
+// mif-container-import.sh, and verify.sh's export/import gates all expect
+// to find (or round-trip) at that exact path — renaming it per genre would
+// silently break container export/import for every topic. The Report phase
+// therefore acquires a per-topic lock — `reports/<topic>/.projection-lock`
+// — around the whole synthesize-artifact.sh -> render-artifact.sh pipeline,
+// via the SAME shared `scripts/lib/container-lock.sh` primitive
+// `mif-container-export.sh`/`mif-container-import.sh` already use for their
+// own `.container.lock` (mkdir-atomic, stale-lock self-healing, refresh-
+// capable — see that file's own header). This is a THIRD, deliberately
+// independent lock namespace, mirroring the existing intentional separation
+// between `reports/<topic>/.run-lock` (findings-mutation, the orchestrator
+// and /falsify) and `reports/<topic>/.container.lock` (export/import) —
+// merging any of the three was explicitly out of scope when #375
+// established that precedent, and holds here too: a projection run must
+// never contend with, or be blocked by, an unrelated findings-mutation run
+// or export/import.
 export const meta = {
   name: 'research-projection',
   description: 'Atomic step 5 (projection): project the typed synthesis onto the durable corpus surfaces — the canonical MIF Level-3 report of record (via the publish-report script pipeline, gated by a REAL falsification pass, never a hand-authored verdict), the topic README/knowledge graph (via the readme/graph skills\' deterministic scripts, synthesis-grade Key Findings authored on top) — then verify only what changed',
@@ -182,6 +215,24 @@ const report = await agent(
     `never hand-author the frontmatter, citations, or verification verdict directly; the verdict in particular must come from ` +
     `a REAL falsification pass, never be asserted.\n` +
     `Input: the typed synthesis at ${SYN} (read it; it is @id-keyed to surviving findings).\n` +
+    `CONCURRENCY GUARD (issue #628 — a documented incident, not precautionary): ${RDIR}/artifact.json, report-finding.json, ` +
+    `report-finding.falsified.json, and report.verification.json below are SHARED per-topic paths, fixed, never genre- or ` +
+    `slug-parameterized (mif-container-export.sh/mif-container-import.sh/verify.sh all expect ${RDIR}/artifact.json at this ` +
+    `exact well-known name, so it cannot simply be renamed per genre the way research-deliverables.js's OWN blog/book ` +
+    `intermediates already are). A second concurrent research-projection.js invocation against the SAME topic with a ` +
+    `different genre/slug (e.g. rendering "engineering" and "exec-summary" reports back to back for one topic) previously ` +
+    `raced on these shared files with no error surfaced — every invocation reported ok:true while silently stamping the ` +
+    `wrong genre's content into another invocation's report, or overwriting the canonical report entirely. BEFORE step 1, ` +
+    `acquire a topic-scoped lock so a second concurrent projection run REFUSES to start rather than racing this one — this ` +
+    `is a THIRD, independent lock namespace (reports/<topic>/.projection-lock), deliberately separate from the existing ` +
+    `reports/<topic>/.run-lock and reports/<topic>/.container.lock (mirrors the pre-existing intentional separation between ` +
+    `those two), so it never contends with the orchestrator's findings-mutation lock or a concurrent /export /import:\n` +
+    `bash -c '. "${H}/scripts/lib/container-lock.sh" && container_lock_acquire "${RDIR}/.projection-lock" "projection:${GENRE}"' ` +
+    `— a NONZERO exit means another projection run currently owns this topic; STOP immediately (do not steal a live lock, do ` +
+    `not proceed to step 1) and report failure. On success, hold the lock for the entire remainder of this Report phase and ` +
+    `release it exactly once before the phase ends, on EVERY exit path (success at step 6, a falsified verdict at step 3, or ` +
+    `any earlier failure) — never leave the topic locked:\n` +
+    `bash -c '. "${H}/scripts/lib/container-lock.sh" && container_lock_release "${RDIR}/.projection-lock"'\n` +
     `PIPELINE, IN ORDER (publish-report SKILL.md steps 2-5):\n` +
     `1. bash ${H}/scripts/synthesize-artifact.sh ${RDIR}/findings ${GENRE} ${RDIR}/artifact.json — projects the surviving ` +
     `findings into one typed Artifact (schemas/artifact.schema.json). Cross-check its sections against the synthesis at ${SYN} ` +
@@ -195,7 +246,8 @@ const report = await agent(
     `or internal memory) trying to falsify each one, then materialize an evidence fixture keyed by the report-finding's @id ` +
     `(mktemp OUTSIDE the repo tree) and write the verdict through: bash ${H}/scripts/falsify.sh ${RDIR}/report-finding.json ` +
     `<fixture-path> > ${RDIR}/report-finding.falsified.json. A falsified verdict means the report is QUARANTINED and NOT ` +
-    `shipped — report verificationVerdict="falsified" and STOP here, do not proceed to render.\n` +
+    `shipped — release the projection lock (see CONCURRENCY GUARD above) FIRST, then report verificationVerdict="falsified" ` +
+    `and STOP here, do not proceed to render.\n` +
     `4. jq '.extensions.harness.verification' ${RDIR}/report-finding.falsified.json > ${RDIR}/report.verification.json\n` +
     `5. bash ${H}/scripts/render-artifact.sh ${RDIR}/artifact.json report ${RDIR}/${SLUG}.md ${RDIR}/report.verification.json ` +
     `— write-then-validated; fails closed if it does not project to a valid L3 finding. If a report of record already exists ` +
@@ -203,7 +255,8 @@ const report = await agent(
     `from its namespace+slug, so re-running this exact command with the same topic/slug preserves the SAME @id automatically ` +
     `(version increments, temporal.validFrom carries forward) — do not delete the existing file first, and do not attempt to ` +
     `hand-copy an @id forward yourself.\n` +
-    `6. Re-confirm: bash ${H}/scripts/mif-project.sh ${RDIR}/${SLUG}.md — must report "projects to a valid MIF L3 finding".\n` +
+    `6. Re-confirm: bash ${H}/scripts/mif-project.sh ${RDIR}/${SLUG}.md — must report "projects to a valid MIF L3 finding". ` +
+    `Then release the projection lock (see CONCURRENCY GUARD above) — this phase is done, success or not.\n` +
     `Return the report path, the achieved MIF level, which goal check ids the report addresses, the verification verdict ` +
     `ACTUALLY WRITTEN by falsify.sh (never hand-authored), and the report's own @id (read it back from the rendered file's ` +
     `frontmatter after step 5/6, not invented).`,

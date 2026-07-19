@@ -9,6 +9,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Concurrent `research-projection.js` invocations against the same topic
+  silently corrupted each other via a shared `artifact.json` path** (#628):
+  the Report phase's intermediates (`reports/<topic>/artifact.json`,
+  `report-finding.json`, `report-finding.falsified.json`,
+  `report.verification.json`) are fixed, per-topic paths — not
+  genre/slug-parameterized — so two concurrent invocations rendering
+  different genres for the same topic (e.g. "engineering" and
+  "exec-summary") raced on them with no error surfaced: every invocation
+  reported `ok: true` while one invocation's `synthesize-artifact.sh`
+  clobbered another's `artifact.json` mid-flight, corrupting or overwriting
+  reports. `research-projection.js` now acquires a topic-scoped
+  `reports/<topic>/.projection-lock` (via the same shared
+  `scripts/lib/container-lock.sh` primitive `mif-container-export.sh`/
+  `mif-container-import.sh` already use for `.container.lock`) around the
+  whole `synthesize-artifact.sh` -> `render-artifact.sh` pipeline, so a
+  second concurrent projection run on the same topic refuses to start
+  rather than racing — released on every exit path (success, a falsified
+  verdict, or an earlier failure). This is a deliberately independent third
+  lock namespace, mirroring the existing separation between
+  `reports/<topic>/.run-lock` and `reports/<topic>/.container.lock`, so it
+  never contends with the orchestrator's findings-mutation lock or a
+  concurrent `/export`/`/import`. `artifact.json` itself keeps its fixed,
+  well-known name (unlike `research-deliverables.js`'s own genre-suffixed
+  blog/book intermediates) because `mif-container-export.sh`/
+  `mif-container-import.sh`/`verify.sh` all expect it at that exact path.
 - **`research-pipeline.js`'s completion check could grade `finding_valid`/
   `citation_integrity` as cleanly met without disclosing that
   `research-fanout.js`'s own repair lane had just mutated the graded
