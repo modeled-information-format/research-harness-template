@@ -59,7 +59,7 @@ export const meta = {
   phases: [
     { title: 'Enumerate', detail: 'working set = unverified findings in scope, budget-sliced in code', model: 'haiku' },
     { title: 'Gate', detail: 'per finding: decompose → parallel skeptic lenses → merged verdict → adjudicate if contested → materialize an ephemeral evidence fixture in code → write via falsify.sh <finding> <fixture> → apply remediation (quarantine/downgrade/annotate) ported from falsification-analyst.md' },
-    { title: 'Rollup' },
+    { title: 'Rollup', detail: 'tally verdicts by finding, log the rollup, return gated/rollup/verdicts/deferredIds/alreadyVerified' },
   ],
 }
 
@@ -244,18 +244,29 @@ const REMEDIATION_CONTRACT =
   `${RDIR}/findings/ set; downstream synthesis never sees it again.\n` +
   `- weakened: DOWNGRADE one rung down the real provenance.trustLevel ladder ${JSON.stringify(TRUST_LADDER)} ` +
   `(a finding already at 'uncertain' is quarantined instead, same as falsified). Lower provenance.confidence ` +
-  `proportionally if present. Append the fixture's disconfirming URLs to citations[]. Append a BOUNDED qualifier to ` +
+  `proportionally if present. Append the fixture's disconfirming URLs to citations[] as FULL, schema-valid Citation ` +
+  `objects — never a bare-URL stub. Each one needs: '@type': 'Citation' (required); 'title' (required, non-empty — ` +
+  `derive a real one from the page, never omit it); 'url' (required); 'citationType', one of EXACTLY these values ` +
+  `(no others, no invented variants like 'web' or 'source-code'): article, book, paper, website, documentation, ` +
+  `repository, video, podcast, specification, dataset, tool, other; 'citationRole', one of EXACTLY these values ` +
+  `(no others, no invented variants like 'disconfirms' or 'counter-evidence' — a disconfirming source's role is ` +
+  `'refutes'): supports, refutes, background, methodology, contradicts, extends, derived, source, example, review; ` +
+  `'accessed' (today's date). Append a BOUNDED qualifier to ` +
   `summary: schemas/mif/mif.schema.json caps summary at maxLength:500 (a vendored MIF Level-3 constraint, never ` +
   `raised here) — cap the qualifier text itself at 160 chars first (truncate the verdict_basis text it wraps, not ` +
   `the fixed template around it, if it runs long: ' [Falsification note: {basis}]'), THEN truncate the ORIGINAL ` +
   `summary to whatever budget remains under 500, THEN append the qualifier. Do this mutation with Python ` +
-  `(json.load, mutate the dict, re-emit with lib/harness_models/'s emit.write for deterministic canonical JSON) — ` +
+  `(json.load, mutate ONLY the fields named above — citations[]/summary/provenance.trustLevel/provenance.confidence ` +
+  `— never touch, drop, or null out any other top-level field (temporal, modified, created, extensions.harness.* ` +
+  `beyond verification, etc.); re-emit with lib/harness_models/'s emit.write for deterministic canonical JSON) — ` +
   `not jq -n or a heredoc: composing the appended citations[]/summary text that way breaks under the Bash eval ` +
   `wrapper's quoting on its own quotes and parentheses.\n` +
   `- survived / inconclusive: ANNOTATE ONLY — no file mutation beyond the verification block falsify.sh already wrote.\n` +
   `After any falsified/weakened mutation, re-validate the finding against schemas/findings.schema.json with the ` +
-  `full mif/ ref closure (schemas/mif/mif.schema.json + schemas/mif/definitions/entity-reference.schema.json) ` +
-  `before moving on — a maxLength or structural violation must be caught here, not deferred to reconcile-session.sh.`
+  `full mif/ ref closure (schemas/mif/mif.schema.json + schemas/mif/definitions/entity-reference.schema.json) — ` +
+  `run the actual ajv command and read its actual exit code and output, do not assume it passed. This is a hard ` +
+  `gate, not advisory: a maxLength, enum, required-field, or dropped-field violation must be caught and fixed here, ` +
+  `never deferred to reconcile-session.sh or left for a later pass to discover.`
 
 phase('Enumerate')
 const scopeDesc =
