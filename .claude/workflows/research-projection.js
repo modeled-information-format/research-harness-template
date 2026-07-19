@@ -227,8 +227,9 @@ const report = await agent(
     `beyond what the artifact already states. BOUND THE SUMMARY FIELD (research-harness-template#629, see this module's ` +
     `header note): the schema's summary maxLength is 500 chars, and a naturally-written summary over a substantial ` +
     `multi-finding synthesis can run well past that. Author it naturally, then apply this exact bound before writing the ` +
-    `file — if it exceeds 500 characters, truncate to 499 characters (stripping trailing whitespace) and append a single ` +
-    `ellipsis character, never emit a summary over 500 characters, and never rely on the Verify phase below (or the ` +
+    `file — if it exceeds 500 characters, truncate to 499 characters (stripping trailing whitespace) and append exactly ` +
+    `one U+2026 "…" ellipsis character (not three ASCII periods, not any other marker), never emit a summary over 500 ` +
+    `characters, and never rely on the Verify phase below (or the ` +
     `pipeline's own problems[] surfacing) to catch an oversized summary after the fact.\n` +
     `3. Obtain a REAL verdict over that report-finding — the SAME substrate research-falsify.js (#541) writes through, at the ` +
     `same rigor: decompose its central claims, gather INDEPENDENT web evidence (WebSearch/WebFetch only, never prior findings ` +
