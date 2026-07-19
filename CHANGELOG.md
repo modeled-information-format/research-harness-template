@@ -476,7 +476,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Together with 0.16.2's stdin-hang and eval-dedup fixes this closes #531
   (full suite 5m53s -> ~1m25s; scoped iteration is seconds).
 
-## [0.16.2] - 2026-07-16
+## 0.16.2 - 2026-07-16
 
 ### Fixed
 
@@ -494,7 +494,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`evals/stdin-detach.sh`) runs both paths under a deliberately
   never-EOF stdin.
 
-## [0.16.1] - 2026-07-16
+## 0.16.1 - 2026-07-16
 
 ### Fixed
 
@@ -509,7 +509,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   single-token sentinel fixture (I6-fieldnotes) joins the golden-set
   relevance eval, verified to fail without the fix.
 
-## [0.16.0] - 2026-07-16
+## 0.16.0 - 2026-07-16
 
 ### Added
 
@@ -543,7 +543,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   byte-identical recommendations across runs, plus schema/resolution,
   momentum/memory, digest, and gate round-trip coverage.
 
-## [0.15.4] - 2026-07-16
+## 0.15.4 - 2026-07-16
 
 ### Fixed
 
@@ -572,7 +572,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   pack ships both sources; install is byte-identical, idempotent, and
   drift-aware; the disabled-pack advisory is emitted.
 
-## [0.15.3] - 2026-07-16
+## 0.15.3 - 2026-07-16
 
 ### Fixed
 
@@ -613,7 +613,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   HTTP-200 rate-limit notice handling (#515), via a recorded-fixture
   `connector_fetch` override seam in `connector-common.sh`.
 
-## [0.15.2] - 2026-07-15
+## 0.15.2 - 2026-07-15
 
 ### Added
 
@@ -1765,9 +1765,10 @@ First release of the domain-general research harness template.
 
 <!--
 Dated sections above with no bracketed heading (0.6.0, 0.6.1, 0.7.0, 0.7.1,
-0.8.2, 0.8.4, 0.10.1, 0.11.1, 0.11.2, 0.12.3, 0.16.4, 0.16.5, 0.16.6, 0.16.7,
-0.16.8, 0.16.9, 0.16.10, 0.16.11, 0.16.12, 0.16.13, 0.16.14, 0.16.15, 0.16.16,
-0.16.17) moved the `harness.config.json` version
+0.8.2, 0.8.4, 0.10.1, 0.11.1, 0.11.2, 0.12.3, 0.15.2, 0.15.3, 0.15.4, 0.16.0,
+0.16.1, 0.16.2, 0.16.4, 0.16.5, 0.16.6, 0.16.7, 0.16.8, 0.16.9, 0.16.10,
+0.16.11, 0.16.12, 0.16.13, 0.16.14, 0.16.15, 0.16.16, 0.16.17) moved the
+`harness.config.json` version
 pointer per ADR-0010's change-driven model but were folded into a later
 release before a GitHub Release/tag was ever published for them, so they omit
 a footer compare-link — nothing real exists to compare against. Convention
