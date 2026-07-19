@@ -4674,14 +4674,22 @@ gate_workflows() {
   # topic-scoped reports/<topic>/.projection-lock (sourcing the same
   # scripts/lib/container-lock.sh primitive .container.lock already uses)
   # around the Report phase's synthesize-artifact.sh -> render-artifact.sh
-  # pipeline. Static, comment-aware grep proving the module's own prompt text
-  # still wires the acquire/release calls in, so a future edit that silently
-  # drops the guard is caught here rather than live.
+  # pipeline. Static, comment-aware, fixed-string grep proving the module's
+  # own prompt text still wires the acquire/release calls in, so a future
+  # edit that silently drops the guard -- or comments it out -- is caught
+  # here rather than live. Comment-aware: full-line `//` comments are
+  # stripped first, so a guard disabled by commenting it out no longer
+  # satisfies the check. Fixed-string (-F): the acquire/release patterns
+  # embed `${RDIR}`, whose `{...}` a BRE grep (notably BSD/macOS grep)
+  # mis-parses as an interval, so a plain grep would spuriously MISS the
+  # live guard off-CI and fail this gate for the wrong reason.
   local proj=".claude/workflows/research-projection.js"
+  local proj_code=""
+  [ -f "$proj" ] && proj_code="$(grep -vE '^[[:space:]]*//' "$proj")"
   if [ -f "$proj" ] \
-     && grep -q 'container_lock_acquire "${RDIR}/.projection-lock"' "$proj" \
-     && grep -q 'container_lock_release "${RDIR}/.projection-lock"' "$proj" \
-     && grep -q '#628' "$proj"; then
+     && printf '%s\n' "$proj_code" | grep -qF 'container_lock_acquire "${RDIR}/.projection-lock"' \
+     && printf '%s\n' "$proj_code" | grep -qF 'container_lock_release "${RDIR}/.projection-lock"' \
+     && printf '%s\n' "$proj_code" | grep -qF '#628'; then
     ok "research-projection.js's Report phase still wires the reports/<topic>/.projection-lock acquire/release guard (#628)"
   else
     bad "research-projection.js is missing the #628 projection-lock guard (container_lock_acquire/release on reports/<topic>/.projection-lock) -- concurrent projection runs on the same topic will silently corrupt each other's artifact.json again"
