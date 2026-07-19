@@ -303,17 +303,28 @@ for (let round = 1; round <= MAX_ROUNDS && !done; round++) {
 }
 
 phase('Project')
-// research-harness-template#626: the goal's own elicited deliverables.genres
-// (never the CLI A.genres — that arg is the Deliver phase's own axis, see
-// below) drives how many canonical L3 reports this phase renders. Default
-// ['general'] when the goal declared none, preserving the pre-#626 single-
-// neutral-report behavior exactly. A genre other than 'general' gets its own
-// genre-suffixed slug (reports/<topic>/<topic>.<genre>.md) so multiple
-// requested genres never collide on the one canonical report path.
+// research-harness-template#626/#650: the Project phase's per-genre
+// canonical-report loop is driven by whichever genre source is actually
+// present, an explicit CLI args.genres taking priority over the goal's own
+// elicited deliverables.genres. This closes #650: the non-interactive
+// `/research` engine path (no `/goal-writer` step) can never populate
+// goal.deliverables — before this fix, projectGenres consulted ONLY
+// goal.deliverables.genres, so an engine-path `--genres` run always fell
+// through to the ['general'] default here while the CLI's genres were
+// consumed solely by the Deliver phase below, whose own channels default
+// (research-deliverables.js's CHANNELS = [...] || ['blog']) then silently
+// wrote an unwanted blog/ deliverable instead of the requested
+// reports/<topic>/<topic>.<genre>.md report(s). Default ['general'] when
+// neither source is present, preserving the pre-#626 single-neutral-report
+// behavior exactly. A genre other than 'general' gets its own genre-suffixed
+// slug (reports/<topic>/<topic>.<genre>.md) so multiple requested genres
+// never collide on the one canonical report path.
 const projectGenres =
-  goal.deliverables && Array.isArray(goal.deliverables.genres) && goal.deliverables.genres.length
-    ? goal.deliverables.genres
-    : ['general']
+  Array.isArray(A.genres) && A.genres.length
+    ? A.genres
+    : goal.deliverables && Array.isArray(goal.deliverables.genres) && goal.deliverables.genres.length
+      ? goal.deliverables.genres
+      : ['general']
 const projections = []
 if (lastSyn && lastSyn.synthesisPath) {
   for (const genre of projectGenres) {
@@ -329,13 +340,22 @@ if (lastSyn && lastSyn.synthesisPath) {
 const projection = (projections.find((p) => p.genre === 'general') || projections[0] || {}).result || null
 
 phase('Deliver')
-// research-harness-template#626: an explicit CLI --genres/--channels arg
-// always wins (Array.isArray, not truthiness — an explicit `[]` is a real
-// "render nothing" answer, never conflated with "not passed at all", the
-// exact class of bug #626 also fixes in research-deliverables.js's own
+// research-harness-template#626/#650: an explicit CLI --genres/--channels
+// arg always wins (Array.isArray, not truthiness — an explicit `[]` is a
+// real "render nothing" answer, never conflated with "not passed at all",
+// the exact class of bug #626 also fixes in research-deliverables.js's own
 // CHANNELS default). Absent CLI args fall back to the goal's own elicited
-// deliverables.genres/.channels; absent both, this phase's trigger condition
-// below (unchanged from before #626) simply finds nothing to render.
+// deliverables.genres/.channels. deliverGenres only steers WHICH genre a
+// rendered deliverable draws from, though — this phase now fires ONLY when
+// a channel was actually requested (#650), never on genres alone: before
+// this fix the trigger condition below was `genres OR channels`, so a
+// genre-only request (CLI --genres with no --channels — the exact
+// non-interactive `/research` engine-path shape #650 reported) still fired
+// this phase, forwarding channels=undefined into research-deliverables.js,
+// whose own CHANNELS default (['blog']) then silently rendered a blog/
+// deliverable nobody asked for. A caller wanting only the Project phase's
+// canonical report(s) (see above) and no published blog/book/… artifact now
+// gets exactly that — this phase stays fully dormant.
 const deliverGenres = Array.isArray(A.genres)
   ? A.genres
   : goal.deliverables && Array.isArray(goal.deliverables.genres)
@@ -347,7 +367,7 @@ const deliverChannels = Array.isArray(A.channels)
     ? goal.deliverables.channels
     : undefined
 let deliverables = null
-if (lastSyn && lastSyn.synthesisPath && ((deliverGenres && deliverGenres.length) || (deliverChannels && deliverChannels.length))) {
+if (lastSyn && lastSyn.synthesisPath && deliverChannels && deliverChannels.length) {
   deliverables = await wf('deliverables', { synthesisPath: lastSyn.synthesisPath, genres: deliverGenres, channels: deliverChannels })
 }
 
