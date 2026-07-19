@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **`research-falsify.js` crashed on every finding needing gating** (#618):
+  `buildFixtureEntry()` called `new Date()` from inside its own body — the
+  Workflow runtime disallows `new Date()`/`Date.now()`/`Math.random()` inside
+  a script's own body (deterministic resume) — so every real `/research`
+  full-mode run (or any mode reaching the falsify gate) crashed the write
+  step for every finding needing gating, leaving them all stuck at the
+  un-gated `inconclusive` placeholder with no way to clear it. The timestamp
+  is now threaded through `args.runDate`, computed once by the `/research`
+  command (outside the Workflow runtime, before its single `Workflow` tool
+  call) and forwarded through `research-pipeline.js`'s `wf()` helper to
+  every `research-falsify` call. `research-falsify.js` fails loudly if a
+  finding needs gating and no `runDate` was supplied, rather than silently
+  computing one in-script.
+- Added `scripts/check-workflow-forbidden-globals.sh` (wired into
+  `verify.sh`'s `gate_workflows`, alongside `check-workflow-syntax.sh`): a
+  comment-aware static gate that greps every `.claude/workflows/*.js` module
+  for `new Date(`, `Date.now(`, and `Math.random(` calls, so a future
+  regression of this class is caught in CI, not discovered live against a
+  real corpus.
+
 ## [0.16.19] - 2026-07-18
 
 ## [0.16.18] - 2026-07-18

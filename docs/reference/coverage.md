@@ -2,7 +2,7 @@
 id: reference-coverage
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-18T22:58:47.663Z'
+modified: '2026-07-19T12:03:08.393Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -18,7 +18,7 @@ provenance:
   '@type': Provenance
   agent: claude-code/claude-sonnet-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:b2469198-e9ec-4668-9761-7ee0f983c48a
+    '@id': urn:mif:activity:claude-code-session:4e7d214e-8882-4413-9cf2-42393b0cc885
     '@type': prov:Activity
   trustLevel: user_stated
   agentVersion: 2.1.214
@@ -39,8 +39,8 @@ the **discovered** set equals the **documented** set.
 | Core skills | 10 | 10 | `.claude/skills/*/SKILL.md` |
 | Commands | 12 | 12 | `.claude/commands/*.md` |
 | Agents | 7 | 7 | `.claude/agents/*.md` |
-| Scripts | 55 | 55 | `scripts/**` (excludes `__pycache__`); the 24 scripts Epic #416 added moved to `packs/monitoring/continuous-monitor/scripts/**` (research-harness-template#483) and are documented in [packs/monitoring.md](packs/monitoring.md), not counted here |
-| **Total** | **147** | **147** | — |
+| Scripts | 56 | 56 | `scripts/**` (excludes `__pycache__`); the 24 scripts Epic #416 added moved to `packs/monitoring/continuous-monitor/scripts/**` (research-harness-template#483) and are documented in [packs/monitoring.md](packs/monitoring.md), not counted here |
+| **Total** | **148** | **148** | — |
 
 Reproduce the discovered counts:
 
@@ -154,7 +154,7 @@ All documented in [agents.md](agents.md): `orchestrator`, `dimension-analyst`,
 `falsification-analyst`, `report-synthesizer`, `corpus-synthesizer`,
 `harness-configurator`, `source-chunker`.
 
-## Scripts (55)
+## Scripts (56)
 
 All documented in [scripts.md](scripts.md):
 `assert-graph-mif`,
@@ -162,7 +162,7 @@ All documented in [scripts.md](scripts.md):
 `build-graph-viz`, `build-graph`, `build-index`, `build-topic-readme`,
 `bump-version`, `check-citation-integrity`, `check-mermaid.py`,
 `check-coverage-doc.py`, `check-ontology-lock`, `check-pack-docs.py`, `check-relationship-targets`,
-`check-shippable-typing`, `check-version-bump`, `check-workflow-syntax`,
+`check-shippable-typing`, `check-version-bump`, `check-workflow-forbidden-globals`, `check-workflow-syntax`,
 `codegen/bundle_schema.py`,
 `codegen/gen-models`, `falsify`, `fetch-engine`, `fetch-mif-docs-plugin`,
 `fetch-ontology`, `goal-version`, `import-corpus`, `install-hooks`,
@@ -184,5 +184,5 @@ rather than counted in this core-scripts inventory, the same way
 
 ## Assertion
 
-Discovered (147) equals documented (147) across all five categories. No pack,
+Discovered (148) equals documented (148) across all five categories. No pack,
 skill, command, agent, or script is omitted.

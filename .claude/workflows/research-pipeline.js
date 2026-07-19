@@ -84,6 +84,13 @@ export const meta = {
 //   genres?: string[], channels?: string[]   — deliverables to render at the end
 //   maxRounds?: number (default 3), claimBudget?, queryBudget?, lenses?
 //   workflowsDir?: string (default '.claude/workflows') — where the atomic scripts live
+//   runDate?: string — a stamped ISO-8601 timestamp supplied by THIS SCRIPT'S OWN CALLER (the /research command's
+//             own `date` invocation, run before it ever calls the Workflow tool). This script cannot compute one
+//             itself: new Date()/Date.now() are disallowed inside any Workflow-runtime script's own body (breaks
+//             resume determinism — #618), and research-pipeline.js is itself such a script. Forwarded verbatim,
+//             unvalidated, to every child call via wf() below — research-falsify.js is the only child that
+//             consumes it, and only once a finding actually needs gating (so 'audit' mode, which never gates
+//             anything, works fine with runDate omitted).
 // }
 // The Workflow tool's top-level `args` parameter arrives at this external
 // entry point as a JSON-encoded STRING, not a parsed object (confirmed
@@ -97,9 +104,10 @@ if (!TOPIC) throw new Error('research-pipeline: args.topic is required')
 const MODE = A.mode || 'full'
 const MAX_ROUNDS = A.maxRounds || 3
 const W = A.workflowsDir || '.claude/workflows'
+const RUN_DATE = A.runDate
 const BUDGET_FLOOR = 60000 // stop opening new rounds below this many remaining tokens
 
-const wf = (name, wfArgs) => workflow({ scriptPath: `${W}/research-${name}.js` }, { harnessDir: H, topic: TOPIC, ...wfArgs })
+const wf = (name, wfArgs) => workflow({ scriptPath: `${W}/research-${name}.js` }, { harnessDir: H, topic: TOPIC, runDate: RUN_DATE, ...wfArgs })
 const budgetLow = () => !!(budget.total && budget.remaining() < BUDGET_FLOOR)
 
 const CHECK_SCHEMA = {

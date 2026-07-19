@@ -2,7 +2,7 @@
 id: reference-engine-workflows
 type: semantic
 created: '2026-07-17T20:25:00-04:00'
-modified: '2026-07-18T23:07:28.831Z'
+modified: '2026-07-19T11:43:16.492Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -18,7 +18,7 @@ provenance:
   '@type': Provenance
   agent: claude-code/claude-sonnet-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:b2469198-e9ec-4668-9761-7ee0f983c48a
+    '@id': urn:mif:activity:claude-code-session:4e7d214e-8882-4413-9cf2-42393b0cc885
     '@type': prov:Activity
   trustLevel: user_stated
   agentVersion: 2.1.214
@@ -230,6 +230,7 @@ module. Source: `.claude/workflows/research-falsify.js`.
 | `queryBudget` | no | `6` | Disconfirming queries per claim, per lens. |
 | `lenses` | no | `3` | Skeptic lens count, clamped to `2..4`. |
 | `regate` | no | `false` | Re-open verification for findings a goal-version pivot/update classified stale. Valid **only** with an explicit `scope.paths`/`scope.ids` — see [Regate](#regate-a-client-side-verification-block-reset) below. |
+| `runDate` | required once a finding needs gating | — | A stamped ISO-8601 timestamp supplied by the caller from OUTSIDE the Workflow runtime. `new Date()`/`Date.now()` throw if called from inside this script's own body ("breaks resume") — this is the fix for [research-harness-template#618](https://github.com/modeled-information-format/research-harness-template/issues/618), where the crash was total (every finding needing gating, every real run). A working set of zero legitimately never touches this and needs nothing supplied. |
 
 ### Phases
 
@@ -1392,6 +1393,7 @@ on — they never invoke a child workflow themselves. Source:
 | `trustImportedVerdicts` | no | `false` | `import` mode: passed through to `research-import` unchanged. |
 | `claimBudget` / `queryBudget` / `lenses` | no | — | Passed through to every internal `research-falsify` call (`falsifyAll()`'s drain loop and the `pivot` regate call). |
 | `workflowsDir` | no | `.claude/workflows` | Where the sibling atomic modules live; `wf(name, …)` resolves each child as `${workflowsDir}/research-<name>.js`. |
+| `runDate` | required except `audit` mode | — | A stamped ISO-8601 timestamp from THIS SCRIPT'S OWN CALLER (the `/research` command's own `date` invocation, run before it calls the `Workflow` tool) — this script cannot compute one itself (`new Date()`/`Date.now()` throw inside a Workflow-runtime script's own body; [#618](https://github.com/modeled-information-format/research-harness-template/issues/618)). Forwarded unvalidated to every `wf(...)` child call; only `research-falsify` consumes it, and only once a finding actually needs gating — `audit` mode never gates anything, so it needs nothing supplied. |
 
 ### Mode router
 

@@ -70,10 +70,17 @@ export const meta = {
 //                  classified stale. falsify.sh's already_graded() short-circuit is unconditional (no engine override
 //                  exists) — this module clears/resets the stale finding's extensions.harness.verification block
 //                  itself, client-side, BEFORE re-invoking falsify.sh, so the write itself still routes exclusively
-//                  through falsify.sh (gap 2 above). }
+//                  through falsify.sh (gap 2 above).
+//         runDate: string — a stamped ISO-8601 timestamp the CALLER computed OUTSIDE the Workflow runtime
+//                  (new Date()/Date.now() throw if called from inside a Workflow-runtime script's own body —
+//                  "breaks resume" — see #618). research-pipeline.js forwards this from its own args (which the
+//                  /research command supplies via a plain `date` invocation before ever calling the Workflow
+//                  tool). Required only once a finding actually needs gating — see the Gate phase below; a run
+//                  whose working set is empty never touches it. }
 const H = (args && args.harnessDir) || '.'
 const TOPIC = args && args.topic
 if (!TOPIC) throw new Error('research-falsify: args.topic is required')
+const RUN_DATE = args && args.runDate
 const RDIR = `${H}/reports/${TOPIC}`
 const SCOPE = (args && args.scope) || 'all'
 const CLAIM_BUDGET = (args && args.claimBudget) || 50
@@ -183,7 +190,15 @@ function mergeVotes(votes) {
 // URLs — deterministic, so the write agent has nothing to improvise about
 // the fixture's shape or content, only where to put the file and how to
 // invoke falsify.sh with it.
-function buildFixtureEntry(id, verdict, basis, lensResults) {
+//
+// #618: attemptedAt is a REQUIRED parameter, never computed here. A Workflow-
+// runtime script's own body cannot call new Date()/Date.now() (the runtime
+// throws — "breaks resume", since replaying the script on resume must be
+// deterministic) — every finding this function was called for crashed on
+// exactly this before the fix. The caller (the Gate phase below) supplies
+// RUN_DATE, which itself is threaded in from args.runDate — a timestamp
+// stamped OUTSIDE the runtime by whatever invoked this script.
+function buildFixtureEntry(id, verdict, basis, lensResults, attemptedAt) {
   const urls = []
   for (const r of lensResults || []) {
     for (const u of r.sources || []) {
@@ -194,7 +209,7 @@ function buildFixtureEntry(id, verdict, basis, lensResults) {
     [id]: {
       verdict,
       basis: basis.slice(0, 1500),
-      attempted_at: new Date().toISOString(),
+      attempted_at: attemptedAt,
       disconfirming: urls.slice(0, 20),
     },
   }
@@ -314,7 +329,20 @@ const gated = await pipeline(
     // verdict/basis/sources already computed above — the write agent's job
     // is purely mechanical (mktemp, write this exact content, invoke
     // falsify.sh, clean up), not composing the fixture itself.
-    const fixture = buildFixtureEntry(g.f.id, verdict, basis, g.lensResults)
+    //
+    // #618: fail loudly HERE, right where a real timestamp first becomes
+    // necessary — not at module top level (an empty working set legitimately
+    // never reaches this line) and never by silently falling back to a
+    // computed-in-script Date, which is exactly the crash this guards.
+    if (!RUN_DATE) {
+      throw new Error(
+        'research-falsify: args.runDate is required once a finding needs gating — new Date()/Date.now() are ' +
+          'disallowed inside Workflow-runtime scripts (breaks resume determinism; see #618). The caller must ' +
+          'supply a stamped ISO-8601 timestamp from OUTSIDE the runtime (research-pipeline.js forwards ' +
+          "args.runDate from the /research command's own `date` invocation).",
+      )
+    }
+    const fixture = buildFixtureEntry(g.f.id, verdict, basis, g.lensResults, RUN_DATE)
     const fixtureJson = JSON.stringify(fixture)
     const written = await agent(
       `Write a falsification verdict through the deterministic substrate, harness ${H}. The evidence fixture is ` +

@@ -4655,6 +4655,17 @@ gate_workflows() {
   else
     bad "workflow module failed the async-body parse-check: $(printf '%s' "$out" | grep -v '^  ok ' | head -3 | tr '\n' ' ')"
   fi
+
+  # #618: research-falsify.js crashed on every finding because its own body
+  # called new Date() — disallowed inside a Workflow-runtime script (breaks
+  # resume determinism). Static, comment-aware grep for the three forbidden
+  # runtime globals (new Date(, Date.now(, Math.random() across every
+  # vendored module, so a future regression is caught here, not live.
+  if out="$(bash scripts/check-workflow-forbidden-globals.sh 2>&1)"; then
+    ok "no .claude/workflows/*.js calls new Date()/Date.now()/Math.random() (disallowed inside Workflow-runtime scripts — #618)"
+  else
+    bad "workflow module calls a forbidden Workflow-runtime global: $(printf '%s' "$out" | grep -v '^  ok ' | head -5 | tr '\n' ' ')"
+  fi
 }
 
 gate_engine_lazy_gating() {
