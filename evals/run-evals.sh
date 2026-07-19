@@ -459,6 +459,14 @@ run "md-guard-fix-lock" bash evals/md-guard-fix-lock.sh
 #     silently drop the qualifier to make room.
 run "bounded-summary-qualifier" bash evals/bounded-summary-qualifier.sh
 
+# 1g. research-projection.js's documented bounded summary CONSTRUCTION algorithm
+#     (#629) must hold the same 500-char schemas/mif/mif.schema.json summary cap
+#     when report-finding.json's summary is authored from scratch off an
+#     artifact's title/sections/sources, across a range of summary lengths
+#     including the real observed overrun (3937 chars), and must never alter a
+#     summary that is already under the cap.
+run "report-finding-summary-cap" bash evals/report-finding-summary-cap.sh
+
 # 2. Citation-integrity: a clean finding passes; a bad one is flagged.
 run     "citation-integrity-good" scripts/check-citation-integrity.sh schemas/samples/citation-good.sample.json
 run_neg "citation-integrity-bad"  scripts/check-citation-integrity.sh schemas/samples/citation-bad.sample.json
