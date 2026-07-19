@@ -20,8 +20,9 @@
 # research-projection are all stubbed):
 #
 #   A. STRUCTURAL, against the real, unmodified module source:
-#      - `wf('augment', { focusHint: args && args.focusHint })` passes
-#        focusHint straight through from args.
+#      - `wf('augment', { focusHint: A.focusHint })` passes focusHint
+#        straight through from the parsed args (`A`, #617's args-string
+#        parse guard).
 #      - The empty-deepen early return (`if (!plan.deepen.length) return
 #        { mode: MODE, deepened: [], reasoning: plan.reasoning }`) is a real
 #        code guard -- the SAME honest-termination shape research-augment's
@@ -84,7 +85,7 @@ command -v python3 >/dev/null 2>&1 || { note "python3 is required but not on PAT
 augment_span="$(awk "/if \(MODE === 'augment'\) \{/{f=1} f{print} f && /^\}/{exit}" "$WF")"
 [ -n "$augment_span" ] || { note "could not locate the MODE === 'augment' branch in $WF — has the mode router been reshaped?"; fail=1; }
 
-grep -qF "const plan = await wf('augment', { focusHint: args && args.focusHint })" <<<"$augment_span" \
+grep -qF "const plan = await wf('augment', { focusHint: A.focusHint })" <<<"$augment_span" \
   || { note "wf('augment', ...) no longer passes focusHint straight through from args"; fail=1; }
 
 grep -qF "if (!plan.deepen.length) return { mode: MODE, deepened: [], reasoning: plan.reasoning }" <<<"$augment_span" \

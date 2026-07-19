@@ -21,7 +21,8 @@
 # already covered by their own dedicated eval):
 #
 #   A. STRUCTURAL, against the real, unmodified module source:
-#      - The `args.delta` precondition throw is a real code guard.
+#      - The `args.delta` precondition throw (against the parsed args, `A`
+#        — #617's args-string parse guard) is a real code guard.
 #      - The regate falsify call is scoped literally to
 #        `{ ids: pivot.reverifyIds }` with `regate: true`, gated on
 #        `pivot.reverifyIds && pivot.reverifyIds.length`.
@@ -88,16 +89,16 @@ command -v python3 >/dev/null 2>&1 || { note "python3 is required but not on PAT
 pivot_span="$(awk "/if \(MODE === 'pivot'\) \{/{f=1} f{print} f && /^\}/{exit}" "$WF")"
 [ -n "$pivot_span" ] || { note "could not locate the MODE === 'pivot' branch in $WF — has the mode router been reshaped?"; fail=1; }
 
-grep -qF "if (!args.delta) throw new Error('pivot mode requires args.delta')" <<<"$pivot_span" \
+grep -qF "if (!A.delta) throw new Error('pivot mode requires args.delta')" <<<"$pivot_span" \
   || { note "the delta precondition guard is missing or reshaped"; fail=1; }
 
-grep -qF "const pivot = await wf('pivot', { delta: args.delta })" <<<"$pivot_span" \
+grep -qF "const pivot = await wf('pivot', { delta: A.delta })" <<<"$pivot_span" \
   || { note "wf('pivot', ...) no longer passes delta straight through from args"; fail=1; }
 
 grep -qF "if (pivot.reverifyIds && pivot.reverifyIds.length) {" <<<"$pivot_span" \
   || { note "the regate falsify gate is no longer literally on reverifyIds.length"; fail=1; }
 
-grep -qF "await wf('falsify', { scope: { ids: pivot.reverifyIds }, regate: true, claimBudget: args && args.claimBudget, queryBudget: args && args.queryBudget, lenses: args && args.lenses })" <<<"$pivot_span" \
+grep -qF "await wf('falsify', { scope: { ids: pivot.reverifyIds }, regate: true, claimBudget: A.claimBudget, queryBudget: A.queryBudget, lenses: A.lenses })" <<<"$pivot_span" \
   || { note "the regate falsify call no longer carries the documented { scope: { ids }, regate: true, claimBudget, queryBudget, lenses } shape"; fail=1; }
 
 grep -qF "if (pivot.gapDimensions && pivot.gapDimensions.length && !budgetLow()) {" <<<"$pivot_span" \

@@ -20,7 +20,8 @@
 # dedicated eval):
 #
 #   A. STRUCTURAL, against the real, unmodified module source:
-#      - The `args.containerDir` precondition throw is a real code guard,
+#      - The `args.containerDir` precondition throw (against the parsed
+#        args, `A` — #617's args-string parse guard) is a real code guard,
 #        never a prose-only requirement.
 #      - `wf('import', ...)` passes `containerDir`/`trustImportedVerdicts`
 #        straight through from `args`, unchanged.
@@ -93,10 +94,10 @@ command -v python3 >/dev/null 2>&1 || { note "python3 is required but not on PAT
 import_span="$(awk "/if \(MODE === 'import'\) \{/{f=1} f{print} f && /^\}/{exit}" "$WF")"
 [ -n "$import_span" ] || { note "could not locate the MODE === 'import' branch in $WF — has the mode router been reshaped?"; fail=1; }
 
-grep -qF "if (!args.containerDir) throw new Error('import mode requires args.containerDir')" <<<"$import_span" \
+grep -qF "if (!A.containerDir) throw new Error('import mode requires args.containerDir')" <<<"$import_span" \
   || { note "the containerDir precondition guard is missing or reshaped — a code guard, not a prose-only requirement"; fail=1; }
 
-grep -qF "const imp = await wf('import', { containerDir: args.containerDir, trustImportedVerdicts: args.trustImportedVerdicts })" <<<"$import_span" \
+grep -qF "const imp = await wf('import', { containerDir: A.containerDir, trustImportedVerdicts: A.trustImportedVerdicts })" <<<"$import_span" \
   || { note "wf('import', ...) no longer passes containerDir/trustImportedVerdicts straight through from args"; fail=1; }
 
 grep -qF "if (!imp || !imp.ok) return { mode: MODE, imported: imp }" <<<"$import_span" \
