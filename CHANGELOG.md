@@ -83,6 +83,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   for `new Date(`, `Date.now(`, and `Math.random(` calls, so a future
   regression of this class is caught in CI, not discovered live against a
   real corpus.
+- **`research-falsify.js`'s `scope: 'all'` silently skipped one pre-existing
+  finding across two gate attempts** (#625): the Enumerate step's
+  `workingSet`/`skippedAlreadyVerified` were both the same agent turn's own
+  classification of the findings it decided to look at, so nothing
+  independently proved it looked at ALL of them — a real 19-finding run
+  enumerated only 18, with only an aggregate skip count and no itemized
+  on-disk listing to reconcile against. Enumerate now also returns
+  `allFindingIds` (every on-disk `@id`, derived mechanically via
+  `find … | sort`, never re-derived from the same reasoning that produced
+  `workingSet`) and itemizes `skippedAlreadyVerifiedIds`; a deterministic
+  `reconcileEnumeration()` set-difference check in code confirms every
+  on-disk id is covered by `workingSet ∪ skippedAlreadyVerifiedIds`,
+  triggers one named retry on a gap, and throws loudly (naming the missing
+  id(s)) if the gap survives the retry, rather than silently gating a
+  partial working set. The reconciliation only applies to `scope: 'all'` —
+  under a narrower scope (`dimension:*`, or an explicit `paths`/`ids` set,
+  including regate) the working set is a deliberate subset, so out-of-scope
+  on-disk findings sit in neither list legitimately and would otherwise be
+  falsely flagged missing. RE-GATE mode also gained its own deterministic
+  guard: since regate exists specifically to re-open verification even for
+  findings already carrying `extensions.harness.verification.attempted_at`,
+  the module now fails loudly (naming the offending id(s)) if enumeration
+  nonetheless populates `skippedAlreadyVerifiedIds` during a regate run,
+  rather than trusting the enumeration agent's own compliance with that
+  prompt contract.
 
 ## [0.16.19] - 2026-07-18
 

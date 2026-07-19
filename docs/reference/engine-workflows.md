@@ -2,7 +2,7 @@
 id: reference-engine-workflows
 type: semantic
 created: '2026-07-17T20:25:00-04:00'
-modified: '2026-07-19T12:48:27.008Z'
+modified: '2026-07-19T13:48:05.587Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -18,10 +18,10 @@ provenance:
   '@type': Provenance
   agent: claude-code/claude-sonnet-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:4e7d214e-8882-4413-9cf2-42393b0cc885
+    '@id': urn:mif:activity:claude-code-session:b749de23-4698-4ce0-817a-dff265cce3e2
     '@type': prov:Activity
   trustLevel: user_stated
-  agentVersion: 2.1.214
+  agentVersion: 2.1.215
 ---
 
 # Reference: engine workflows
@@ -245,7 +245,7 @@ module. Source: `.claude/workflows/research-falsify.js`.
 
 | Phase | Model | What it does |
 | --- | --- | --- |
-| Enumerate | haiku (low effort) | Resolves the working set from `scope`. One-round rule enforced structurally: any finding already carrying `extensions.harness.verification.attempted_at` is excluded before any model call, counted in `skippedAlreadyVerified` — except in `regate` mode, which includes them. A working set past `claimBudget` is sliced; the remainder returns as `deferredIds`, logged, never silently dropped. |
+| Enumerate | haiku (low effort) | Resolves the working set from `scope`. One-round rule enforced structurally: any finding already carrying `extensions.harness.verification.attempted_at` is excluded before any model call, its `@id` itemized in `skippedAlreadyVerifiedIds` — except in `regate` mode, which includes them and leaves `skippedAlreadyVerifiedIds` empty. The same agent turn also returns `allFindingIds`: EVERY on-disk `@id` under `findings/`, derived mechanically via `find … \| sort`, never re-derived from the same reasoning that produced the working set. `reconcileEnumeration()` (deterministic code, [research-harness-template#625](https://github.com/modeled-information-format/research-harness-template/issues/625)) then — only for `scope: 'all'`, the one scope whose working set is meant to span the whole corpus — checks every `allFindingIds` entry is covered by `workingSet ∪ skippedAlreadyVerifiedIds`; a gap triggers one named retry naming the missing id(s), and a gap that survives the retry throws loudly rather than silently gating a partial working set (the exact failure #625 reported: `scope:'all'` enumerated 18 of 19 on-disk findings with nothing to catch the drop). Under a narrower scope (`dimension:*`, or an explicit `paths`/`ids` set including `regate`) the working set is a deliberate subset, so this reconciliation is skipped — `allFindingIds` is scope-independent and would otherwise falsely flag every out-of-scope finding. Separately, in `regate` mode a deterministic guard fails loudly (naming the offending id(s)) if enumeration nonetheless returns a non-empty `skippedAlreadyVerifiedIds` — regate's contract is that it stays empty (already-attempted findings must be re-opened, not skipped), and this is enforced in code rather than trusted from the enumeration agent's own compliance with that prompt wording. A working set past `claimBudget` is sliced; the remainder returns as `deferredIds`, logged, never silently dropped. |
 | Gate | mixed, per finding | Decompose (haiku) → parallel skeptic lenses (sonnet, web-only) → `mergeVotes()` (deterministic code) → adjudicate (opus) only if contested → [regate reset](#regate-a-client-side-verification-block-reset) if applicable → materialize an evidence fixture in code → write via `falsify.sh <finding> <fixture>` → apply [remediation](#remediation-is-implemented-in-this-module-not-by-falsifysh) ported from `falsification-analyst.md`. |
 | Rollup | — | Tallies verdicts and contested-adjudication counts, logs one summary line. |
 
