@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-harness.dev/schema/knowledge-graph.schema.json",
+  "title": "Knowledge Graph — Per-Topic",
+  "description": "The first-class, per-topic knowledge graph (SPEC §6c, §4a), built by scripts/build-graph.sh from a topic's findings directory. Derived from MIF EntityReferences and typed relationships, NOT tag co-occurrence: concept nodes (one per finding, kind=concept) and entity nodes (one per referenced MIF entity, kind=entity) are linked by edges either typed from a finding's relationships[] (via=relationship) or a finding-to-entity mentions edge (via=entity). scripts/assert-graph-mif.sh enforces the urn:mif: identity invariant this schema does not itself encode. See schemas/concordance.schema.json for the structurally analogous cross-topic spine.",
+  "type": "object",
+  "required": ["@type", "nodes", "edges"],
+  "additionalProperties": false,
+  "properties": {
+    "@type": { "const": "KnowledgeGraph" },
+    "generator": { "type": "string" },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "kind", "label"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "kind": { "type": "string", "enum": ["concept", "entity"] },
+          "label": { "type": "string" },
+          "dimension": { "type": "string" },
+          "entityType": { "type": "string" }
+        }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["source", "target", "type", "via"],
+        "additionalProperties": false,
+        "properties": {
+          "source": { "type": "string" },
+          "target": { "type": "string" },
+          "type": { "type": "string" },
+          "via": { "type": "string", "enum": ["relationship", "entity"] },
+          "strength": { "type": ["number", "null"] }
+        }
+      }
+    }
+  }
+}
