@@ -643,31 +643,38 @@ else
 fi
 
 # ============================================================================
-# B6 (research-harness-template#626): the goal's own elicited
-# deliverables.genres drives the Project phase's per-genre canonical-report
-# loop, and (absent a CLI --genres/--channels) also becomes the Deliver
-# phase's fallback source -- with an explicit CLI arg still winning.
+# B6 (research-harness-template#626, revised by #650): the Project phase's
+# per-genre canonical-report loop is driven by whichever genre source is
+# actually present, an explicit CLI args.genres now taking priority over the
+# goal's own elicited deliverables.genres (#650: the non-interactive
+# `/research` engine path can never populate goal.deliverables at all, so
+# CLI genres must be able to drive the Project phase directly, not just the
+# Deliver phase). The Deliver phase is channel-gated, not genre-gated
+# (#650): it fires ONLY when a channel was actually requested (CLI
+# --channels or the goal's own deliverables.channels), never on genres
+# alone -- an explicit CLI --channels still wins outright over the goal's.
 #
-# B6a: goal.deliverables.genres = ['exec-summary','engineering'], no CLI
-# genres/channels at all. Project phase must call wf('projection', ...)
-# EXACTLY TWICE, once per requested genre, each with its own genre-suffixed
-# slug; result.projections[] must carry both, in order, and result.projection
-# (the back-compat single field) must fall back to the FIRST requested
-# genre's real result (neither requested genre is 'general', so there is no
-# 'general' entry to pick -- the fallback is the first genre actually
-# rendered, never an invented/null value). Deliver phase must ALSO run
-# (no CLI given, so it falls back to goal.deliverables.genres), passing
-# channels=undefined through unchanged (research-deliverables.js's own
-# CHANNELS default, ['blog'], applies from there -- this eval does not
-# re-prove that module's own default, only that research-pipeline.js forwards
-# undefined rather than inventing a channels value itself).
+# B6a: goal.deliverables.genres = ['exec-summary','engineering'], NO channels
+# requested anywhere (goal declares none, no CLI --channels). Project phase
+# must call wf('projection', ...) EXACTLY TWICE, once per requested genre,
+# each with its own genre-suffixed slug; result.projections[] must carry
+# both, in order, and result.projection (the back-compat single field) must
+# fall back to the FIRST requested genre's real result (neither requested
+# genre is 'general', so there is no 'general' entry to pick -- the fallback
+# is the first genre actually rendered, never an invented/null value). The
+# Deliver phase must NOT run at all: no channel was requested anywhere, so
+# genres alone never reach research-deliverables.js -- this is the exact
+# regression #650 reported (a genre-only request silently defaulting to an
+# unrequested blog/ channel), proven absent here.
 #
 # B6b: the SAME goal.deliverables, but this run passes an explicit CLI
-# --genres/--channels. The CLI args must win outright for the Deliver phase
-# (goal.deliverables never consulted for it) while the Project-phase loop
-# stays driven by goal.deliverables.genres regardless (the two axes are
-# independent per the accepted plan -- CLI genres never redirect which
-# canonical reports the Project phase renders).
+# --genres/--channels. Both axes now prefer the CLI value outright (#650):
+# the Project-phase loop renders the CLI genres, NOT goal.deliverables.genres
+# -- a deliberate behavior change from #626's original design (CLI genres
+# now DO redirect which canonical reports the Project phase renders, since
+# #650 established that CLI genres must reach the Project phase for the
+# non-interactive engine path to work at all) -- and the Deliver phase runs
+# using the CLI genres/channels.
 # ============================================================================
 DELIV_GOAL_STUB_JS='
   goal: async () => ({
@@ -728,10 +735,7 @@ check('result.projections carries both per-genre results, each tagged with its o
 check("result.projection (the back-compat single field) falls back to the FIRST requested genre's result when none of the requested genres is 'general' -- never invents a value, never silently null when a real result exists", (r.get('projection') or {}).get('genreRequested') == 'exec-summary', json.dumps(r.get('projection')))
 
 deliv_calls = by_name.get('deliverables', [])
-check('deliverables ran exactly once (no CLI genres/channels -- falls back to goal.deliverables.genres)', len(deliv_calls) == 1, str(len(deliv_calls)))
-if deliv_calls:
-    check("the Deliver-phase fallback forwarded goal.deliverables.genres verbatim", deliv_calls[0]['args'].get('genres') == ['exec-summary', 'engineering'], json.dumps(deliv_calls[0]['args']))
-    check('the Deliver-phase fallback forwarded channels=undefined (goal.deliverables declared none) -- never invented a channels value of its own', deliv_calls[0]['args'].get('channels') is None, json.dumps(deliv_calls[0]['args']))
+check('deliverables NEVER ran (research-harness-template#650: no channel was requested anywhere -- CLI omitted --channels and goal.deliverables declared none -- so genres alone never reach the Deliver phase)', len(deliv_calls) == 0, str(len(deliv_calls)))
 
 sys.exit(0 if ok else 1)
 PY
@@ -770,10 +774,12 @@ for c in d['wfCalls']:
 
 proj_calls = by_name.get('projection', [])
 genres_seen = [c['args'].get('genre') for c in proj_calls]
-check("Project-phase genre loop is UNCHANGED by the CLI args -- still exactly goal.deliverables.genres, in order", genres_seen == ['exec-summary', 'engineering'], json.dumps(genres_seen))
+check("Project-phase genre loop now prefers the explicit CLI --genres outright over goal.deliverables.genres (research-harness-template#650)", genres_seen == ['academic'], json.dumps(genres_seen))
+slugs_seen = [c['args'].get('slug') for c in proj_calls]
+check("the CLI-genre projection call carries a genre-suffixed slug (topic.<genre>)", slugs_seen == ['pipeline-eval-topic.academic'], json.dumps(slugs_seen))
 
 deliv_calls = by_name.get('deliverables', [])
-check('deliverables ran exactly once', len(deliv_calls) == 1, str(len(deliv_calls)))
+check('deliverables ran exactly once (a channel WAS requested via CLI --channels)', len(deliv_calls) == 1, str(len(deliv_calls)))
 if deliv_calls:
     check('an explicit CLI --genres wins outright over goal.deliverables.genres for the Deliver phase', deliv_calls[0]['args'].get('genres') == ['academic'], json.dumps(deliv_calls[0]['args']))
     check('an explicit CLI --channels wins outright over goal.deliverables.channels (absent here) for the Deliver phase', deliv_calls[0]['args'].get('channels') == ['pdf'], json.dumps(deliv_calls[0]['args']))
@@ -784,6 +790,81 @@ PY
   [ "$rc" -eq 0 ] || fail=1
 else
   note "B6b: no out-b6b.json produced"
+  fail=1
+fi
+
+# ============================================================================
+# B7 (research-harness-template#650 regression trap): the exact bug-report
+# shape -- a non-interactive `/research --genres <a>,<b>` engine-path
+# invocation, WITHOUT `--channels` and WITHOUT any interactive `/goal-writer`
+# step ever having populated goal.deliverables (goal.deliverables is
+# entirely absent, never merely empty, matching research-goal.js's own
+# Draft-phase contract that the non-interactive engine path can never set
+# it). Before #650: projectGenres consulted ONLY goal.deliverables.genres,
+# so this shape fell through to the ['general'] default in the Project
+# phase, while the Deliver phase's genre-OR-channel trigger still fired on
+# genres alone, forwarding channels=undefined into
+# research-deliverables.js -- whose own CHANNELS default (['blog']) then
+# silently rendered an unrequested blog/ deliverable instead of the
+# reports/<topic>/<topic>.<genre>.md report(s) actually asked for. After
+# #650: the Project phase must render the CLI genres directly, and the
+# Deliver phase must NOT run at all (no channel was ever requested).
+# ============================================================================
+printf '%s' "{\"harnessDir\":\"$TMP/h\",\"topic\":\"pipeline-eval-topic\",\"maxRounds\":1,\"genres\":[\"exec-summary\",\"engineering\",\"briefing\"]}" > "$TMP/args-b7.json"
+cat > "$TMP/stubs-b7.cjs" <<NODE
+'use strict';
+module.exports = {
+  wf: {
+    $GOAL_STUB_JS
+    $FANOUT_FALSIFY_STUB_JS
+    synthesis: async () => ({ ok: true, synthesisPath: 'reports/pipeline-eval-topic/synthesis-only.json', sections: [], findingsUsed: [], checkCoverage: [], openIssues: [], ungatedFindings: [] }),
+    projection: async (a) => ({ ok: true, reportPath: 'reports/pipeline-eval-topic/report.' + a.genre + '.md', reportId: 'urn:mif:concept:pipeline-eval-topic:report-' + a.genre, mifLevel: 3, checksAddressed: [], verificationVerdict: 'survived', genreRequested: a.genre, genreApplied: true, genreSkillInvoked: a.genre + ':' + a.genre, readmePath: null, readmeCheckPassed: false, graphRefreshed: false, graphAssertPassed: false, problems: [], _receivedGenre: a.genre, _receivedSlug: a.slug }),
+    deliverables: async () => { throw new Error('deliverables must NOT be called -- research-harness-template#650: no channel was requested anywhere (no CLI --channels, no goal.deliverables at all), so genres alone must never reach the Deliver phase / blog fallback'); },
+  },
+  completionCheck: () => ({ met: [{ id: 'technical_check', evidence: 'ok' }, { id: 'landscape_check', evidence: 'ok' }], unmet: [], boundHit: false }),
+};
+NODE
+run_case b7 "$TMP/args-b7.json" "$TMP/stubs-b7.cjs" "$TMP/out-b7.json"
+
+if [ -f "$TMP/out-b7.json" ]; then
+  python3 - "$TMP/out-b7.json" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1], encoding='utf-8'))
+ok = True
+def check(name, cond, detail=''):
+    global ok
+    if cond:
+        print(f"  ok  B7: {name}")
+    else:
+        ok = False
+        print(f"FAIL  B7: {name}{(' -- ' + detail) if detail else ''}")
+
+check('module did not throw (proves the deliverables stub, which throws if called, was never invoked)', d['threw'] is None, str(d['threw']))
+r = d.get('result') or {}
+by_name = {}
+for c in d['wfCalls']:
+    by_name.setdefault(c['name'], []).append(c)
+
+proj_calls = by_name.get('projection', [])
+check('projection ran EXACTLY THREE times, once per CLI --genres entry (Project phase reaches reports/<topic>/<topic>.<genre>.md via the CLI genres directly, with no goal.deliverables and no /goal-writer step involved at all)', len(proj_calls) == 3, str(len(proj_calls)))
+genres_seen = [c['args'].get('genre') for c in proj_calls]
+check("projection was called with the CLI genres in order: exec-summary, engineering, briefing", genres_seen == ['exec-summary', 'engineering', 'briefing'], json.dumps(genres_seen))
+slugs_seen = [c['args'].get('slug') for c in proj_calls]
+check("each projection call carries a genre-suffixed reports/<topic>/<topic>.<genre> slug, never the bare topic slug and never a blog/ path", slugs_seen == ['pipeline-eval-topic.exec-summary', 'pipeline-eval-topic.engineering', 'pipeline-eval-topic.briefing'], json.dumps(slugs_seen))
+
+deliv_calls = by_name.get('deliverables', [])
+check('deliverables NEVER ran (no channel requested anywhere -- the #650 blog-fallback regression is proven absent)', len(deliv_calls) == 0, str(len(deliv_calls)))
+check('result.deliverables is null (the Deliver phase never fired)', r.get('deliverables') is None, str(r.get('deliverables')))
+
+projections = r.get('projections') or []
+check('result.projections carries all three per-genre results, each tagged with its own genre', [p.get('genre') for p in projections] == ['exec-summary', 'engineering', 'briefing'], json.dumps(projections))
+
+sys.exit(0 if ok else 1)
+PY
+  rc=$?
+  [ "$rc" -eq 0 ] || fail=1
+else
+  note "B7: no out-b7.json produced"
   fail=1
 fi
 

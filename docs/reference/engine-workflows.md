@@ -2,7 +2,7 @@
 id: reference-engine-workflows
 type: semantic
 created: '2026-07-17T20:25:00-04:00'
-modified: '2026-07-19T16:32:52.049Z'
+modified: '2026-07-19T20:59:15.172Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -18,7 +18,7 @@ provenance:
   '@type': Provenance
   agent: claude-code/claude-sonnet-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:b749de23-4698-4ce0-817a-dff265cce3e2
+    '@id': urn:mif:activity:claude-code-session:cc83f20c-2193-42dd-b5b5-72fe80571327
     '@type': prov:Activity
   trustLevel: user_stated
   agentVersion: 2.1.215
@@ -1512,7 +1512,7 @@ on — they never invoke a child workflow themselves. Source:
 | `mode` | no | `'full'` | `'full' \| 'augment' \| 'pivot' \| 'import' \| 'audit' \| 'deliverables'` — selects the mode-router branch; see [Mode router](#mode-router) below. An unrecognized mode string throws (`unknown mode '<mode>'`) rather than silently falling through to `full`. |
 | `ask` | no | `''` | `full` mode: the raw research ask passed to the `research-goal` child workflow. An empty string lets that workflow derive the sharpest goal from the topic's existing context. |
 | `maxRounds` | no | `3` | `full` mode: caps the round loop. |
-| `genres` / `channels` | no (required for `deliverables` mode, at least one) | — | `full` mode, **Deliver phase only** (research-harness-template#626): requested deliverable renders. An explicit `Array.isArray` arg here always wins outright; when either is omitted, the Deliver phase falls back to that same field on the goal's own `deliverables` (`goal.deliverables.genres`/`.channels`, elicited by `/goal-writer`). Omitting both here AND leaving the goal's `deliverables` empty skips the Deliver phase entirely. This arg does **not** affect the Project phase's genre loop — see [Project phase: per-genre canonical reports](#project-phase-per-genre-canonical-reports-research-harness-template626) below. `deliverables` mode: at least one of the two is required — the script throws `deliverables mode requires args.genres or args.channels` if both are omitted. |
+| `genres` / `channels` | no (required for `deliverables` mode, at least one) | — | `full` mode: `genres` now also drives the **Project phase**'s per-genre canonical-report loop (research-harness-template#650), taking priority over the goal's own elicited `deliverables.genres` when both are present — see [Project phase: per-genre canonical reports](#project-phase-per-genre-canonical-reports-research-harness-template626) below. `channels` (and `genres` when the Deliver phase actually runs) drives the **Deliver phase**: an explicit `Array.isArray` arg here always wins outright; when omitted, the Deliver phase falls back to that same field on the goal's own `deliverables` (`goal.deliverables.genres`/`.channels`, elicited by `/goal-writer`). The Deliver phase is channel-gated, not genre-gated (research-harness-template#650): it fires only when a channel was actually requested (CLI `--channels` or the goal's `deliverables.channels`) — genres alone, with no channel requested anywhere, route only through the Project phase and never touch the Deliver phase / blog fallback. `deliverables` mode: at least one of the two is required — the script throws `deliverables mode requires args.genres or args.channels` if both are omitted. |
 | `focusHint` | no | — | `augment` mode: a steer for the deepening judge, passed straight through to `research-augment`. |
 | `delta` | yes for `pivot` | — | `pivot` mode: what changed. The script throws `pivot mode requires args.delta` if omitted. |
 | `containerDir` | yes for `import` | — | `import` mode: the MIF Container directory (as `/export` produces). The script throws `import mode requires args.containerDir` if omitted. |
@@ -1599,20 +1599,29 @@ Once the loop exits (by `done`, a bound/floor stop, or exhausting
 synthesis's `synthesisPath` (skipped if no synthesis ever completed) — see
 [Project phase: per-genre canonical reports](#project-phase-per-genre-canonical-reports-research-harness-template626)
 immediately below — then the Deliver phase runs `research-deliverables` only
-if a genre or channel was actually requested (CLI or goal-declared).
+if a **channel** was actually requested (CLI `--channels` or the goal's own
+`deliverables.channels`; research-harness-template#650 — genres alone no
+longer trigger this phase, see below).
 
 ### Project phase: per-genre canonical reports (research-harness-template#626)
 
 Before #626, this phase called `research-projection` exactly once,
 unconditionally at `genre="general"` — the sole canonical report a session
 ever produced, regardless of what the goal or caller actually wanted. The
-Project phase now loops `research-projection` once per entry in
-`goal.deliverables.genres` (the field `research-goal`'s Draft phase
+Project phase now loops `research-projection` once per entry in whichever
+genre source is actually present: an explicit CLI `args.genres` wins
+outright (research-harness-template#650); absent that, the goal's own
+elicited `deliverables.genres` (the field `research-goal`'s Draft phase
 preserves-or-leaves-absent, elicited by `/goal-writer` — see
-[research-goal's Returns](#research-goal)), **defaulting to `['general']`
-unchanged when the goal declares no `deliverables`** — the pre-#626 single-
-report behavior is exactly the `['general']`-default case, not a special
-path.
+[research-goal's Returns](#research-goal)); **defaulting to `['general']`
+unchanged when neither source is present** — the pre-#626 single-report
+behavior is exactly the `['general']`-default case, not a special path.
+`#650` closed a real gap here: the non-interactive `/research` engine path
+(no `/goal-writer` step) can never populate `goal.deliverables` at all, so
+before this fix a genre-only `/research --genres ...` invocation always fell
+through to the `['general']` default here, while its CLI genres were
+consumed solely by the Deliver phase below — see that phase's note for what
+that produced.
 
 Each iteration passes its own `genre` and a genre-suffixed `slug`:
 `genre="general"` keeps the original bare `reports/<topic>/<topic>.md` slug
@@ -1624,19 +1633,24 @@ resolution then decides, per #633, whether that genre's real
 disabled/absent and it falls back to an honest `genre="general"` render at
 that same genre-suffixed slug).
 
-This is deliberately **independent of the Deliver phase's `genres`/
-`channels` axis** — the CLI `--genres`/`--channels` args (or the goal's
-`deliverables.channels`) never redirect which canonical reports the Project
-phase renders; only `goal.deliverables.genres` does. The two phases answer
+The Deliver phase's `genres`/`channels` axis resolves independently (CLI
+still wins there too, else the goal's own fields), but as of #650 it is
+**channel-gated, not genre-gated**: it fires only when a channel was
+actually requested (CLI `--channels` or the goal's `deliverables.channels`),
+never on genres alone. Before #650, a genre-only request (no channel
+requested anywhere) still fired this phase, forwarding `channels: undefined`
+into `research-deliverables.js`, whose own `CHANNELS` default (`['blog']`)
+then silently rendered an unrequested blog/ deliverable instead of nothing
+— the exact defect #650 reported and fixed. The two phases still answer
 different questions: Project renders the canonical MIF Level-3 report(s) of
 record (the harness's own source of truth); Deliver renders optional
-published artifacts (blog/book/pdf/…) from the same synthesis. A caller that
-wants, say, an `engineering` canonical report AND a `blog` published
-artifact declares `deliverables: { genres: ["engineering"], channels:
-["blog"] }` on the goal — the Project phase renders the `engineering`
-report, and the Deliver phase (falling back to the same `genres`/`channels`
-per the Args table above) renders the `blog` artifact from the same
-`engineering` genre.
+published artifacts (blog/book/pdf/…) from the same synthesis, and now only
+when actually asked for. A caller that wants, say, an `engineering`
+canonical report AND a `blog` published artifact declares `deliverables: {
+genres: ["engineering"], channels: ["blog"] }` on the goal (or passes the
+equivalent CLI `--genres engineering --channels blog`) — the Project phase
+renders the `engineering` report, and the Deliver phase renders the `blog`
+artifact from the same `engineering` genre.
 
 ### Returns
 
