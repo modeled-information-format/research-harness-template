@@ -4676,6 +4676,66 @@ gate_workflows() {
   else
     bad "workflow module calls a forbidden Workflow-runtime global: $(printf '%s' "$out" | grep -v '^  ok ' | head -5 | tr '\n' ' ')"
   fi
+
+  # #628: two concurrent research-projection.js invocations against the same
+  # topic (different genre/slug) raced on the SHARED, fixed-name
+  # reports/<topic>/artifact.json / report-finding*.json intermediates with
+  # no error surfaced -- silent corruption, not a loud failure. The fix is a
+  # topic-scoped reports/<topic>/.projection-lock (sourcing the same
+  # scripts/lib/container-lock.sh primitive .container.lock already uses)
+  # around the Report phase's synthesize-artifact.sh -> render-artifact.sh
+  # pipeline. Static, comment-aware, fixed-string grep proving the module's
+  # own prompt text still wires the acquire/release calls in, so a future
+  # edit that silently drops the guard -- or comments it out -- is caught
+  # here rather than live. Comment-aware: full-line `//` comments are
+  # stripped first, so a guard disabled by commenting it out no longer
+  # satisfies the check. Fixed-string (-F): the acquire/release patterns
+  # embed `${RDIR}`, whose `{...}` a BRE grep (notably BSD/macOS grep)
+  # mis-parses as an interval, so a plain grep would spuriously MISS the
+  # live guard off-CI and fail this gate for the wrong reason.
+  local proj=".claude/workflows/research-projection.js"
+  local proj_code=""
+  [ -f "$proj" ] && proj_code="$(grep -vE '^[[:space:]]*//' "$proj")"
+  if [ -f "$proj" ] \
+     && printf '%s\n' "$proj_code" | grep -qF 'container_lock_acquire "${RDIR}/.projection-lock"' \
+     && printf '%s\n' "$proj_code" | grep -qF 'container_lock_release "${RDIR}/.projection-lock"' \
+     && printf '%s\n' "$proj_code" | grep -qF '#628'; then
+    ok "research-projection.js's Report phase still wires the reports/<topic>/.projection-lock acquire/release guard (#628)"
+  else
+    bad "research-projection.js is missing the #628 projection-lock guard (container_lock_acquire/release on reports/<topic>/.projection-lock) -- concurrent projection runs on the same topic will silently corrupt each other's artifact.json again"
+  fi
+
+  # Functional proof, independent of the static grep above: the SAME
+  # container-lock.sh primitive under the projection lock's own name
+  # genuinely serializes two concurrent holders and releases cleanly,
+  # exactly the mechanism the prompt text above instructs the agent to
+  # invoke. A fresh scratch dir, not the real corpus -- this is testing the
+  # generic library under this consumer's lock name, not any real topic.
+  (
+    T="$(mktemp -d)" || exit 1
+    trap 'rm -rf "$T"' EXIT
+    # shellcheck source=scripts/lib/container-lock.sh
+    . scripts/lib/container-lock.sh
+    LOCK="$T/.projection-lock"
+    container_lock_acquire "$LOCK" "projection:engineering" || exit 1
+    # A second concurrent acquire (a different genre's invocation) must be
+    # DENIED while the first is fresh -- this is the exact race #628
+    # reported, now closed.
+    container_lock_acquire "$LOCK" "projection:exec-summary" 2>/dev/null && exit 1
+    [ -d "$LOCK" ] || exit 1
+    container_lock_release "$LOCK"
+    [ -d "$LOCK" ] && exit 1
+    # Once released, a subsequent (not concurrent) projection run acquires
+    # cleanly -- release must not wedge the topic.
+    container_lock_acquire "$LOCK" "projection:briefing" || exit 1
+    container_lock_release "$LOCK"
+    exit 0
+  )
+  if [ "$?" -eq 0 ]; then
+    ok "reports/<topic>/.projection-lock genuinely serializes two concurrent projection runs on one topic and releases cleanly (#628)"
+  else
+    bad "reports/<topic>/.projection-lock regression (#628): concurrent acquire was not denied, or release/re-acquire did not round-trip cleanly"
+  fi
 }
 
 gate_engine_lazy_gating() {
