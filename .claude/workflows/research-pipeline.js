@@ -38,13 +38,33 @@
 // deliverables, augment, add-dimensions, pivot, import, coverage-audit. No
 // stale or renamed reference exists.
 //
-// MODE ROUTER. Five modes share this one entry point: `full` runs the
+// MODE ROUTER. Six modes share this one entry point: `full` runs the
 // bounded autonomous goal loop (goal -> [fanout -> falsify-drain -> synthesis
 // -> independent completion check]* -> audit-driven adaptation ->
 // projection -> optional deliverables); `augment`, `pivot`, `import`, and
 // `audit` are each a shorter, mode-specific composition of the same atomic
 // workflows, matching the architecture doc's Level-3 orchestrator flowchart
 // exactly (no mode invents a step the flowchart does not show).
+//
+// MODE 'deliverables' (research-harness-template#624): render genre/channel
+// deliverables from a topic's EXISTING, already-gated corpus without
+// re-running fanout/falsify. research-synthesis.js's own ephemeral-output
+// contract (see that module's header) is explicitly SAME-PROCESS-ONLY — a
+// prior run's synthesisPath cannot be recovered here, so this mode cheaply
+// re-drafts a fresh synthesis (synthesis alone, never fanout/falsify) from
+// the survivor corpus already on disk and feeds that fresh synthesisPath
+// straight into wf('deliverables', ...) in the same process, satisfying
+// research-deliverables.js's same-process preflight check. This is a
+// deliberate, narrower composition than `full`'s Project+Deliver tail: it
+// does NOT call research-projection — the report of record
+// (reports/<topic>/<slug>.md) is left untouched by design (mirrors `audit`
+// mode's own minimalism; flagged here for reviewer sign-off, not decided
+// silently). Re-synthesizing is not byte-identical to any prior run's
+// synthesis (LLM drafting is non-deterministic) — it is a fresh synthesis
+// over the same already-gated findings, satisfying the issue's actual
+// acceptance driver ("without re-gathering findings or re-running the
+// falsification gate") even though it is not literally "replay the exact
+// prior synthesis."
 //
 // HONEST-TERMINATION SEMANTICS (NFR-9/NFR-10): the round loop's `done` flag
 // is set ONLY by `unmet.length === 0` from the independent completionCheck()
@@ -63,9 +83,9 @@
 export const meta = {
   name: 'research-pipeline',
   description: 'The workflow-of-workflows: deterministic router + bounded autonomous goal loop composing the atomic research workflows (goal → [fanout → falsify → synthesis → check]* → audit-adapt → projection → deliverables) via workflow(); all mode routing, round bounds, budget floors, and done-decisions live in this script, never in a model prompt',
-  whenToUse: 'The single entry point for a research campaign against a harness instance: full runs, augment/pivot/import/audit modes — each mode a different composition of the same atomic workflows',
+  whenToUse: 'The single entry point for a research campaign against a harness instance: full runs, augment/pivot/import/audit/deliverables modes — each mode a different composition of the same atomic workflows',
   phases: [
-    { title: 'Route', detail: 'deterministic mode routing (full | augment | pivot | import | audit)' },
+    { title: 'Route', detail: 'deterministic mode routing (full | augment | pivot | import | audit | deliverables)' },
     { title: 'Goal', detail: 'research-goal child workflow (full mode)' },
     { title: 'Rounds', detail: 'fanout → falsify(+drain) → synthesis → independent completion check, adapted per round' },
     { title: 'Project', detail: 'research-projection child workflow' },
@@ -75,7 +95,7 @@ export const meta = {
 
 // args: {
 //   harnessDir, topic,                       — the instance and topic (topic required)
-//   mode?: 'full'|'augment'|'pivot'|'import'|'audit'   (default 'full')
+//   mode?: 'full'|'augment'|'pivot'|'import'|'audit'|'deliverables'   (default 'full')
 //   ask?: string                             — full: the raw research ask for research-goal
 //   focusHint?: string                       — augment: user steer
 //   delta?: string                           — pivot: what changed (required for pivot)
@@ -102,6 +122,15 @@ const H = A.harnessDir || '.'
 const TOPIC = A.topic
 if (!TOPIC) throw new Error('research-pipeline: args.topic is required')
 const MODE = A.mode || 'full'
+// research-harness-template#624 (adjacent fix): every mode branch below is
+// an independent early-return `if`, with no terminal `else` — so an
+// unrecognized MODE string (a typo, e.g. 'deliverabels') fell through
+// silently into the full-mode round loop with no error at all. Guard once,
+// before dispatch, rather than adding a terminal else to a chain that isn't
+// actually if/else-linked (each mode's `if` returns independently; 'full'
+// is the fallthrough remainder of the script, not its own `if` branch).
+const KNOWN_MODES = ['full', 'augment', 'pivot', 'import', 'audit', 'deliverables']
+if (!KNOWN_MODES.includes(MODE)) throw new Error(`research-pipeline: unknown mode '${MODE}' (expected one of ${KNOWN_MODES.join(', ')})`)
 const MAX_ROUNDS = A.maxRounds || 3
 const W = A.workflowsDir || '.claude/workflows'
 const RUN_DATE = A.runDate
@@ -200,6 +229,20 @@ if (MODE === 'augment') {
   const syn = await wf('synthesis', {})
   const proj = (syn && syn.ok) ? await wf('projection', { synthesisPath: syn.synthesisPath }) : null
   return { mode: MODE, deepened: dims, fanout: fan, gate, synthesis: syn, projection: proj }
+}
+
+if (MODE === 'deliverables') {
+  if (!((A.genres && A.genres.length) || (A.channels && A.channels.length))) {
+    throw new Error('deliverables mode requires args.genres or args.channels')
+  }
+  // Cheap: synthesis alone, never fanout/falsify — the survivor corpus
+  // already on disk is reused as-is. See the module-header note above for
+  // why this re-synthesizes rather than reusing a prior run's synthesisPath
+  // (research-synthesis.js's ephemeral-output contract is same-process-only).
+  const syn = await wf('synthesis', {})
+  if (!syn || !syn.ok) return { mode: MODE, synthesis: syn, deliverables: null }
+  const del = await wf('deliverables', { synthesisPath: syn.synthesisPath, genres: A.genres, channels: A.channels })
+  return { mode: MODE, synthesis: syn, deliverables: del }
 }
 
 // ---- MODE full: the bounded autonomous goal loop ----

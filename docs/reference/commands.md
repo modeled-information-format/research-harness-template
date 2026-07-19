@@ -2,7 +2,7 @@
 id: reference-commands
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-19T15:51:14.160Z'
+modified: '2026-07-19T16:11:45.303Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -242,7 +242,7 @@ during migration.
 **Usage:**
 
 ```text
-/research [--topic <id>] [--mode full|augment|pivot|import|audit]
+/research [--topic <id>] [--mode full|augment|pivot|import|audit|deliverables]
   [--max-rounds <n>] [--focus-hint <text>] [--delta <what changed>]
   [--container-dir <path>] [--trust-imported-verdicts]
   [--genres <g1,g2>] [--channels <c1,c2>] [--claim-budget <n>]
