@@ -2,7 +2,7 @@
 id: reference-engine-workflows
 type: semantic
 created: '2026-07-17T20:25:00-04:00'
-modified: '2026-07-19T15:35:49.000Z'
+modified: '2026-07-19T15:45:05.578Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -1457,10 +1457,11 @@ on — they never invoke a child workflow themselves. Source:
 
 ### Mode router
 
-`phase('Route')` is a plain code `switch` on `mode` — six branches share this
-one entry point, each a different, shorter composition of the same atomic
-modules the `full` round loop also uses. A `mode` string outside this set
-throws `unknown mode '<mode>'` before any branch runs (research-harness-template#624).
+`phase('Route')` is a sequence of independent early-return `if (MODE === ...)`
+branches — six branches share this one entry point, each a different, shorter
+composition of the same atomic modules the `full` round loop also uses. A
+`mode` string outside this set throws `unknown mode '<mode>'` before any
+branch runs (research-harness-template#624).
 
 | Mode | Composition |
 | --- | --- |

@@ -131,7 +131,7 @@ Workflow(
   args: {
     topic: "{TOPIC}",
     mode: "{MODE}",
-    runDate: "{RUN_DATE}",                               // required except mode=audit (#618)
+    runDate: "{RUN_DATE}",                               // required except mode=audit or deliverables (#618)
     ask: "{ASK}",                                       // full mode
     maxRounds: {MAX_ROUNDS},                             // full mode, default 3
     genres: [{GENRES}],                                  // full mode optional; deliverables mode (genres or channels required)
