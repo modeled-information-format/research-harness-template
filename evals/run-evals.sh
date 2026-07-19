@@ -58,6 +58,16 @@ run "verify-selector" bash evals/verify-selector.sh
 # seeded syntax error, and runs inside verify.sh's gate_workflows.
 run "workflow-parse-check" bash evals/workflow-parse-check.sh
 
+# research-falsify.js's buildFixtureEntry() crashed on EVERY finding by
+# calling new Date() from inside a Workflow-runtime script's own body,
+# silently stalling the falsification gate on every real /research run
+# (#618). Static, comment-aware gate over every vendored module for the
+# three forbidden runtime globals (new Date(, Date.now(, Math.random():
+# clean on the shipped tree, catches each forbidden call by file+line,
+# never false-positives on the same strings appearing in a comment or
+# template literal, and runs inside verify.sh's gate_workflows.
+run "workflow-forbidden-globals-check" bash evals/workflow-forbidden-globals-check.sh
+
 # The engine-workflows reference entry stays bidirectionally honest with
 # the module set, cross-linked with commands.md, and keeps the /goal-writer
 # positioning + supersession note (#553).

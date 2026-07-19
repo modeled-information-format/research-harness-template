@@ -93,6 +93,17 @@ backticks and angle brackets.
 
 ## Resolve mode + args, then invoke the Workflow tool exactly once
 
+**Stamp `RUN_DATE` first, before the `Workflow` call — required, every mode
+except `audit`** (#618). `research-pipeline.js` and every workflow it composes
+run inside the Workflow runtime, which disallows `new Date()`/`Date.now()`
+in a script's own body (it would break deterministic resume) — so a real
+wall-clock timestamp can only come from OUTSIDE the runtime, i.e. from this
+command's own Bash step, before the single `Workflow` call below:
+
+```bash
+RUN_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+```
+
 Build the args object for the resolved `MODE`, including only the fields
 that mode actually consumes (omit the rest rather than passing empty
 placeholders):
@@ -103,6 +114,7 @@ Workflow(
   args: {
     topic: "{TOPIC}",
     mode: "{MODE}",
+    runDate: "{RUN_DATE}",                               // required except mode=audit (#618)
     ask: "{ASK}",                                       // full mode
     maxRounds: {MAX_ROUNDS},                             // full mode, default 3
     genres: [{GENRES}],                                  // full mode, optional

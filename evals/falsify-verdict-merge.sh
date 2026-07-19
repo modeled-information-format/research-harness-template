@@ -193,6 +193,58 @@ function mkWorkingSet(n) {
   check('exact-budget boundary: no deferral', working.length === 4 && deferred.length === 0, `working=${working.length} deferred=${JSON.stringify(deferred)}`);
 }
 
+// ---- F: extract buildFixtureEntry() VERBATIM and run it under a POISONED
+// Date/Math.random — reproducing the exact restriction the real Workflow
+// runtime enforces (research-harness-template#618: "Date.now() / new Date()
+// are unavailable in workflow scripts (breaks resume)"), which crashed this
+// function on EVERY finding needing gating before the fix. No prior eval
+// executed this function for real (the seeded-false fixture in section B
+// below exercises falsify.sh/the mif-rh engine directly, never this
+// function's own JS body) — this is the regression trap.
+{
+  let buildFixtureEntry;
+  let extractionError = null;
+  let fixtureEntryText = '';
+  try {
+    fixtureEntryText = extractBlock(src, 'function buildFixtureEntry(');
+    // Poison Date/Math.random exactly like the real runtime would refuse
+    // them, then define the extracted function in a scope where those
+    // names resolve to the poison, not the real globals — a function that
+    // still (incorrectly) called new Date()/Date.now()/Math.random() would
+    // throw here, proving the fix by ACTUALLY exercising the restriction,
+    // not merely asserting it via a source-text grep.
+    const harnessSrc =
+      `'use strict';\n` +
+      `class PoisonDate { constructor() { throw new Error('new Date() called -- forbidden inside a Workflow-runtime script (#618)'); } static now() { throw new Error('Date.now() called -- forbidden inside a Workflow-runtime script (#618)'); } }\n` +
+      `const Date = PoisonDate;\n` +
+      `const Math = new Proxy(globalThis.Math, { get(t, p) { if (p === 'random') throw new Error('Math.random() called -- forbidden inside a Workflow-runtime script (#618)'); return t[p]; } });\n` +
+      `${fixtureEntryText}\n` +
+      `module.exports = { buildFixtureEntry };\n`;
+    const harnessPath = path.join(tmpDir, 'buildfixtureentry-harness.cjs');
+    fs.writeFileSync(harnessPath, harnessSrc);
+    ({ buildFixtureEntry } = require(harnessPath));
+  } catch (e) {
+    extractionError = e;
+  }
+  check('buildFixtureEntry() extracted from the module source', !extractionError, extractionError ? extractionError.message : '');
+  check('extracted buildFixtureEntry() source has no new Date(...)/Date.now(...) call', !/new\s+Date\s*\(|Date\.now\s*\(/.test(fixtureEntryText), fixtureEntryText);
+
+  if (buildFixtureEntry) {
+    const ATTEMPTED_AT = '2026-07-19T00:00:00Z';
+    let out, threw;
+    try {
+      out = buildFixtureEntry('urn:mif:concept:t:f1', 'survived', 'basis text', [{ sources: ['https://example.com/a'] }], ATTEMPTED_AT);
+    } catch (e) {
+      threw = e;
+    }
+    check('buildFixtureEntry(...) runs to completion under a poisoned Date/Math.random (does not crash, #618)', !threw, threw ? threw.message : '');
+    if (out) {
+      check('fixture attempted_at is the CALLER-supplied timestamp verbatim, never computed in-script', out['urn:mif:concept:t:f1'] && out['urn:mif:concept:t:f1'].attempted_at === ATTEMPTED_AT, JSON.stringify(out));
+      check('fixture verdict/basis/disconfirming still populate correctly alongside the fix', out['urn:mif:concept:t:f1'] && out['urn:mif:concept:t:f1'].verdict === 'survived' && out['urn:mif:concept:t:f1'].disconfirming.length === 1, JSON.stringify(out));
+    }
+  }
+}
+
 process.exit(failed);
 NODE
 
@@ -334,5 +386,21 @@ grep -qF '${REMEDIATION_CONTRACT}' "$WF" \
 grep -qF 'falsified: QUARANTINE' "$WF" \
   || { note "$WF lost the falsified->QUARANTINE remediation rule text"; fail=1; }
 
-[ "$fail" -eq 0 ] && note "mergeVotes()/claimBudget hold against the real function, the seeded-false fixture quarantines end-to-end through the real engine, the one-round rule + regate reset are real against that same engine, and the module keeps its fixture-bridge/remediation contract"
+# #618 structural contract: buildFixtureEntry no longer computes its own
+# timestamp, the write step fails loudly (rather than silently) when the
+# caller omitted args.runDate, and the required timestamp is threaded to the
+# call site verbatim.
+grep -qF 'attempted_at: attemptedAt' "$WF" \
+  || { note "$WF's buildFixtureEntry() no longer sources attempted_at from a caller-supplied parameter -- may have regressed to computing it in-script (#618)"; fail=1; }
+# (a live new Date()/Date.now()/Math.random() CALL anywhere in this file, as
+# opposed to prose mentioning them in a comment -- this module's own #618
+# explanation legitimately says "new Date()" -- is covered by the
+# comment-aware scripts/check-workflow-forbidden-globals.sh gate, not a bare
+# grep here, which would false-positive on that very prose.)
+grep -qF 'args.runDate is required' "$WF" \
+  || { note "$WF lost the fail-loud guard for a missing args.runDate (#618) -- a missing timestamp would now silently write attempted_at: undefined instead of erroring clearly"; fail=1; }
+grep -qF 'buildFixtureEntry(g.f.id, verdict, basis, g.lensResults, RUN_DATE)' "$WF" \
+  || { note "$WF's write step no longer passes RUN_DATE into buildFixtureEntry() (#618)"; fail=1; }
+
+[ "$fail" -eq 0 ] && note "mergeVotes()/claimBudget hold against the real function, buildFixtureEntry() runs clean under a poisoned Date/Math.random and uses the caller-supplied timestamp verbatim (#618), the seeded-false fixture quarantines end-to-end through the real engine, the one-round rule + regate reset are real against that same engine, and the module keeps its fixture-bridge/remediation contract"
 exit "$fail"
