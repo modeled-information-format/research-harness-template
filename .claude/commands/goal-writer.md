@@ -145,6 +145,15 @@ invent others):
 - `bound` — `{ max_rounds, min_dimensions_complete }` (both integers ≥ 1). The
   runaway guard: the orchestrator stops looping at `max_rounds` even if checks
   remain unmet, and may stop once `min_dimensions_complete` dimensions hold.
+- `deliverables` — OPTIONAL `{ genres[], channels[] }` (research-harness-template#626).
+  What output shape(s) the user actually wants this session to produce, elicited
+  up front instead of the run silently defaulting to a genre-neutral blog post.
+  `genres[]` are deliverable genre pack ids (e.g. `engineering`, `exec-summary`,
+  `academic`); `channels[]` are render channels (e.g. `blog`, `pdf`, `book`).
+  Both arrays, when present, require `minItems: 1` — omit the whole field
+  rather than writing an empty array. See **Elicitation** below for how this
+  field is resolved; NEVER invent a genre/channel the user did not ask for and
+  never write a placeholder value.
 
 ## The evidence surface (what a check can be proven against)
 
@@ -185,6 +194,70 @@ session resolves it before fan-out:
 5. **Topic id** → a real `topic` matching (or to be added to) `harness.config`
    `topics[]`, and the `reports/<topic>/` directory it implies.
 6. **Bound** → `bound.max_rounds` and `bound.min_dimensions_complete`.
+7. **Deliverables** → `deliverables.genres` / `deliverables.channels`. This is a
+   real elicitation, not a fill-in-a-default step — see the dedicated
+   **Elicit the deliverable genres/channels up front** section immediately
+   below for exactly how to ask.
+
+### Elicit the deliverable genres/channels up front (research-harness-template#626)
+
+Do this BEFORE writing `goal.json`, right after the decision/scope/dimensions
+are settled. This is the fix for the reported failure mode: a session run to
+completion with no `deliverables` ever declared, and the caller only
+discovered afterward that the harness had silently defaulted to a
+genre-neutral blog post — never having been asked what they actually wanted.
+
+1. **Read the real enabled-genre catalog first.** `jq -r '.packs[] | select(.enabled==true) | .name' harness.config.json` — do NOT ask about a
+   genre pack that is not actually enabled in THIS instance; a disabled pack
+   silently falls back to `genre="general"` at render time (#633), so
+   offering it as a real option would be misleading.
+2. **Ask with `AskUserQuestion`** — one question, multi-select, e.g.:
+
+   ```text
+   question: "Which deliverable genre(s) should this session produce, beyond the
+   canonical report? (Leave unselected for the generic report only.)"
+   options: <the enabled genre packs from step 1, each with a one-line
+             description drawn from that pack's own SKILL.md/plugin.json —
+             e.g. "engineering — decision/evaluation report with a mandatory
+             trade-offs table">
+   ```
+
+   If NONE of the currently-enabled packs fit what the user described in
+   their raw ask, offer the **full `mif-docs-plugin` genre catalog** as a
+   fallback set of options (academic, adr, ai-architecture-doc, arc42-arch-doc,
+   briefing, business-plan, c4-model-diagram, changelog, clinical-submission,
+   competitive-quadrant, compliance-audit, computing-paper,
+   diataxis-explanation, diataxis-how-to, diataxis-reference,
+   diataxis-tutorial, engineering, exec-summary, feature-spec,
+   google-design-doc, humanities-chicago, humanities-mla, kiro-design,
+   kiro-requirements, kiro-tasks, legal-memo, market-research-report, nist-sp,
+   playbook, prd, python-pep, regulatory-disclosure, rust-rfc,
+   security-pentest, sre-runbook,
+   sustainability-report, systematic-review, trend-analysis) — but say so
+   explicitly in the question text (e.g. "not yet enabled in this instance;
+   selecting one means enabling its pack before `/start`"), never silently
+   presenting it as already-available.
+3. **A second `AskUserQuestion` (or a follow-up option in the same one) for
+   channels** if it is not obvious from the genre answer — e.g. "blog" (the
+   default, always-on), "pdf"/"book"/other channel packs. Skip this question
+   only when the genre answer already implies the channel unambiguously.
+4. **If the user selects nothing** (declines both questions, or explicitly
+   says "just the report is fine"), do NOT write a `deliverables` field at
+   all — omit it, exactly as a fresh author with no ask ever mentioning
+   deliverables does. An empty selection is a real, valid answer; it is not
+   the same as skipping the question.
+5. **Write the selections into `goal.json`** as `deliverables.genres` /
+   `deliverables.channels` (only the arrays that have entries — omit either
+   sub-key that ended up empty, and omit the whole `deliverables` object if
+   both ended up empty). This is a **normal part of composing `goal.json`
+   with `jq`**, done once, before the `ajv validate` call in Output format
+   below — never a separate pass.
+6. **`--reshape` never re-asks this question.** A reshape evolves an
+   existing goal's content per the delta text; if the delta explicitly asks
+   to change deliverables ("also produce a briefing"), update the field from
+   the delta the same way any other field changes. Otherwise carry the
+   existing `deliverables` (if any) forward unchanged — do not re-run this
+   elicitation on every reshape.
 
 ## Instructions
 

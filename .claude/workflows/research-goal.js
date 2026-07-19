@@ -54,6 +54,19 @@ const DRAFT_SCHEMA = {
         required: ['id', 'assertion'],
       },
     },
+    // (research-harness-template#626) The engine path never ELICITS
+    // deliverables (it cannot pause for AskUserQuestion — see the Draft
+    // prompt's carve-out below); it only reports back whatever goal.json
+    // actually carries after the draft/reshape write: an existing
+    // deliverables block preserved verbatim on --reshape, or absent
+    // (undefined) on a fresh author. Never invented, never a placeholder.
+    deliverables: {
+      type: 'object',
+      properties: {
+        genres: { type: 'array', items: { type: 'string' } },
+        channels: { type: 'array', items: { type: 'string' } },
+      },
+    },
     ajvPassed: { type: 'boolean' },
   },
   required: ['goalFile', 'goalProse', 'dimensions', 'checks', 'ajvPassed'],
@@ -91,7 +104,15 @@ const draft = await agent(
       ? `An existing goal exists (${ctx.existingGoalSummary}); you are re-authoring it. The goal is immutable per version (ADR-0006, content-hashed append-only lineage): follow the update flow in ${H}/.claude/commands/goal-writer.md — snapshot the live version FIRST (OLD=$(bash ${H}/scripts/goal-version.sh ${H}/reports/${TOPIC}/goal.json); mkdir -p ${H}/reports/${TOPIC}/goals; cp ${H}/reports/${TOPIC}/goal.json ${H}/reports/${TOPIC}/goals/goal-$OLD.json), then write the new content and mint its lineage (NEW=$(bash ${H}/scripts/goal-version.sh ${H}/reports/${TOPIC}/goal.json); stamp .version=$NEW, .supersedes=$OLD, and .revision {rationale, changed, date} with jq, then re-validate). Never overwrite the live goal without minting — no ad hoc goal.prior.json snapshots.`
       : 'No existing goal — author fresh.') +
     `\nProduce: (1) ${H}/reports/${TOPIC}/goal.json composed with jq and validated with ajv against ${H}/schemas/goal.schema.json (draft2020, ajv-formats); (2) the /goal prose paragraph. ` +
-    `One checkable end state, not a plan of steps: goal_statement is the decision this session enables; every completion_condition.check is a transcript-verifiable fact with a printable verify where possible; dimensions[] drawn from the config-declared set. Do not proceed past a failing ajv run — fix and re-validate.`,
+    `One checkable end state, not a plan of steps: goal_statement is the decision this session enables; every completion_condition.check is a transcript-verifiable fact with a printable verify where possible; dimensions[] drawn from the config-declared set. Do not proceed past a failing ajv run — fix and re-validate.\n` +
+    `DELIVERABLES FIELD — PRESERVE OR LEAVE ABSENT, NEVER ELICIT (research-harness-template#626): the optional top-level \`deliverables\` field ` +
+    `({genres[], channels[]}, schemas/goal.schema.json) is elicited ONLY by the interactive /goal-writer command via AskUserQuestion — this engine ` +
+    `path CANNOT pause for user input and MUST NOT attempt to elicit it, invent a value, guess a default genre/channel, or ask a clarifying ` +
+    `question about it anywhere in the goalProse. Do EXACTLY one of these two things, never anything else: ` +
+    (ctx.existingGoalPath
+      ? `an existing goal is being re-authored here, so if its live goal.json (${H}/reports/${TOPIC}/goal.json, read BEFORE you overwrite it) already carries a \`deliverables\` block, copy it into the new content VERBATIM, byte-for-byte, unchanged — never regenerate, re-elicit, or "improve" it, even if the delta text mentions genres or channels; if the live goal has no \`deliverables\` block, the new content has none either.`
+      : `this is a fresh author with no prior goal.json, so simply OMIT the \`deliverables\` field entirely from the goal.json you write — do not add it with an empty object, a guessed genre, or a placeholder.`) +
+    ` Return the actual resulting state (present-and-preserved or absent) in the draft result's own \`deliverables\` field so the Gate phase and the calling pipeline see the true on-disk fact, never a guess.`,
   { label: 'goal:draft', model: 'sonnet', schema: DRAFT_SCHEMA },
 )
 if (!draft) throw new Error('research-goal: draft agent failed')
@@ -127,5 +148,9 @@ return {
   goalProse: draft.goalProse,
   dimensions: draft.dimensions,
   checks: draft.checks,
+  // (research-harness-template#626) Whatever the Draft phase actually left
+  // on disk — preserved verbatim on reshape, absent on fresh author. Never
+  // set by this module itself; see the Draft prompt's carve-out above.
+  deliverables: draft.deliverables,
   lintIssues: lint ? lint.issues : ['lint agent failed'],
 }

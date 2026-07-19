@@ -260,15 +260,52 @@ for (let round = 1; round <= MAX_ROUNDS && !done; round++) {
 }
 
 phase('Project')
-let projection = null
+// research-harness-template#626: the goal's own elicited deliverables.genres
+// (never the CLI A.genres — that arg is the Deliver phase's own axis, see
+// below) drives how many canonical L3 reports this phase renders. Default
+// ['general'] when the goal declared none, preserving the pre-#626 single-
+// neutral-report behavior exactly. A genre other than 'general' gets its own
+// genre-suffixed slug (reports/<topic>/<topic>.<genre>.md) so multiple
+// requested genres never collide on the one canonical report path.
+const projectGenres =
+  goal.deliverables && Array.isArray(goal.deliverables.genres) && goal.deliverables.genres.length
+    ? goal.deliverables.genres
+    : ['general']
+const projections = []
 if (lastSyn && lastSyn.synthesisPath) {
-  projection = await wf('projection', { synthesisPath: lastSyn.synthesisPath })
+  for (const genre of projectGenres) {
+    const slug = genre === 'general' ? TOPIC : `${TOPIC}.${genre}`
+    const result = await wf('projection', { synthesisPath: lastSyn.synthesisPath, genre, slug })
+    projections.push({ genre, slug, result })
+  }
 }
+// Back-compat single `projection` field: the 'general' render when one was
+// produced (the common/default case — matches every caller before #626),
+// else the first requested genre's result. `projections[]` below carries
+// every render for a caller that requested more than one genre.
+const projection = (projections.find((p) => p.genre === 'general') || projections[0] || {}).result || null
 
 phase('Deliver')
+// research-harness-template#626: an explicit CLI --genres/--channels arg
+// always wins (Array.isArray, not truthiness — an explicit `[]` is a real
+// "render nothing" answer, never conflated with "not passed at all", the
+// exact class of bug #626 also fixes in research-deliverables.js's own
+// CHANNELS default). Absent CLI args fall back to the goal's own elicited
+// deliverables.genres/.channels; absent both, this phase's trigger condition
+// below (unchanged from before #626) simply finds nothing to render.
+const deliverGenres = Array.isArray(A.genres)
+  ? A.genres
+  : goal.deliverables && Array.isArray(goal.deliverables.genres)
+    ? goal.deliverables.genres
+    : undefined
+const deliverChannels = Array.isArray(A.channels)
+  ? A.channels
+  : goal.deliverables && Array.isArray(goal.deliverables.channels)
+    ? goal.deliverables.channels
+    : undefined
 let deliverables = null
-if (lastSyn && lastSyn.synthesisPath && ((A.genres && A.genres.length) || (A.channels && A.channels.length))) {
-  deliverables = await wf('deliverables', { synthesisPath: lastSyn.synthesisPath, genres: A.genres, channels: A.channels })
+if (lastSyn && lastSyn.synthesisPath && ((deliverGenres && deliverGenres.length) || (deliverChannels && deliverChannels.length))) {
+  deliverables = await wf('deliverables', { synthesisPath: lastSyn.synthesisPath, genres: deliverGenres, channels: deliverChannels })
 }
 
 return {
@@ -281,5 +318,9 @@ return {
   // 0 when every finding validated on first write.
   repaired: totalRepaired,
   projection,
+  // research-harness-template#626: every genre-projection this run actually
+  // rendered, `{ genre, slug, result }` per entry — `projection` above is
+  // just this array's 'general' (or first) entry, kept for back-compat.
+  projections,
   deliverables,
 }

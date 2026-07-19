@@ -2,7 +2,7 @@
 id: reference-commands
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-18T22:06:18.274Z'
+modified: '2026-07-19T15:51:14.160Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -18,10 +18,10 @@ provenance:
   '@type': Provenance
   agent: claude-code/claude-sonnet-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:b2469198-e9ec-4668-9761-7ee0f983c48a
+    '@id': urn:mif:activity:claude-code-session:b749de23-4698-4ce0-817a-dff265cce3e2
     '@type': prov:Activity
   trustLevel: user_stated
-  agentVersion: 2.1.214
+  agentVersion: 2.1.215
 ---
 
 # Reference: commands
@@ -119,11 +119,18 @@ Authors the session goal JSON and `/goal` prose for a topic.
 
 **Purpose:** Writes `reports/<topic>/goal.json`, validates it against
 `schemas/goal.schema.json`, and produces the companion `/goal` prose section.
-The `--reshape` flag evolves an existing goal using append-only versioning
-(SPEC §11): dimensions and checks may be added but not removed. Computes the
-content-hash goal version (`gv-<sha256[:12]>`) via `scripts/goal-version.sh`
-and resolves carry/stale/gap membership via `scripts/resolve-membership.sh`.
-Does not spawn the orchestrator.
+Before writing, elicits the optional `deliverables.genres`/`.channels`
+field via `AskUserQuestion` (research-harness-template#626) — sourced from
+the instance's currently-enabled genre packs (`harness.config.json`
+`packs[]`), falling back to the full `mif-docs-plugin` genre catalog when
+none of those fit; declining leaves `deliverables` absent, exactly like a
+fresh author who never mentioned deliverables. The `--reshape` flag evolves
+an existing goal using append-only versioning (SPEC §11): dimensions and
+checks may be added but not removed, and an existing `deliverables` block
+carries forward unchanged unless the reshape delta explicitly asks to
+change it. Computes the content-hash goal version (`gv-<sha256[:12]>`) via
+`scripts/goal-version.sh` and resolves carry/stale/gap membership via
+`scripts/resolve-membership.sh`. Does not spawn the orchestrator.
 
 **Engine counterpart:** `/goal-writer` stays the interactive, user-facing
 path. The engine path a research pipeline composes is the `research-goal`
