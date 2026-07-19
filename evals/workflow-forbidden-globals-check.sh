@@ -27,6 +27,19 @@
 #   6. a minimal valid module (no forbidden calls) passes;
 #   7. the verify.sh surface covers it: a scoped run of gate_workflows exits 0
 #      on the shipped tree and its output names the #618 gate explicitly.
+#   8. a forbidden call written INSIDE a template literal's `${...}`
+#      expression (e.g. `` `stamp=${Date.now()}` ``) still fails — proving
+#      the checker scans expression code rather than treating the whole
+#      template literal as inert text (a real Copilot-review finding on
+#      this PR: template literals are common in these modules, and a bare
+#      "strip everything between backticks" tokenizer would silently miss
+#      this);
+#   9. a forbidden call separated from its own name by a `/* */` block
+#      comment (`new/*x*/Date()`) still fails — proving comment/string
+#      removal doesn't fuse adjacent tokens together into a non-match (a
+#      second real Copilot-review finding: naive delimiter stripping can
+#      turn `new/*x*/Date(` into `newDate(`, which never matches
+#      `\bnew\s+Date\s*\(`).
 #
 # Exit 0 = every case holds. Exit 1 = a case failed.
 set -uo pipefail
@@ -129,5 +142,37 @@ else
     || { note "gate_workflows output no longer names #618 for the forbidden-globals check"; fail=1; }
 fi
 
-[ "$fail" -eq 0 ] && note "the forbidden-globals gate is real: the shipped tree is clean, seeded new Date()/Date.now()/Math.random() calls are all caught by name and line, the same strings inside comments/a template literal never false-positive, and the verify surface covers it"
+# Case 8: a forbidden call inside a template literal's ${...} expression
+# still fails, naming the correct line — proves expressions are scanned as
+# real code, not stripped away as inert template text.
+cat > "$TMP/tmpl-expr.js" <<'EOF'
+export const meta = { name: 'tmpl-expr-eval-seed' }
+const msg = `attempted_at=${Date.now()}`
+return { ok: true, msg }
+EOF
+if bash "$CHECK" "$TMP/tmpl-expr.js" > "$TMP/tmpl-expr.out" 2>&1; then
+  note "checker passed a module with Date.now() inside a template literal's \${...} expression"
+  fail=1
+else
+  grep -q "tmpl-expr.js:2: forbidden call Date.now(" "$TMP/tmpl-expr.out" \
+    || { note "template-expression Date.now() failure did not name the file at the correct line (2): $(cat "$TMP/tmpl-expr.out")"; fail=1; }
+fi
+
+# Case 9: a forbidden call with a block comment spliced between its two
+# halves still fails — proves comment stripping doesn't fuse `new` and
+# `Date(` into a non-matching `newDate(`.
+cat > "$TMP/split-call.js" <<'EOF'
+export const meta = { name: 'split-call-eval-seed' }
+const stamp = new/*inline*/Date().toISOString()
+return { ok: true, stamp }
+EOF
+if bash "$CHECK" "$TMP/split-call.js" > "$TMP/split-call.out" 2>&1; then
+  note "checker passed a module with new/*comment*/Date() (delimiter-stripping token fusion)"
+  fail=1
+else
+  grep -q "split-call.js:2: forbidden call new Date(" "$TMP/split-call.out" \
+    || { note "comment-split new Date() failure did not name the file at the correct line (2): $(cat "$TMP/split-call.out")"; fail=1; }
+fi
+
+[ "$fail" -eq 0 ] && note "the forbidden-globals gate is real: the shipped tree is clean, seeded new Date()/Date.now()/Math.random() calls are all caught by name and line (including inside a template literal's \${...} expression, and even when comment-stripping would otherwise fuse tokens together), the same strings inside comments/a template literal's static text never false-positive, and the verify surface covers it"
 exit "$fail"
