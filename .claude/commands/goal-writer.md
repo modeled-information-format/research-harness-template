@@ -207,15 +207,23 @@ completion with no `deliverables` ever declared, and the caller only
 discovered afterward that the harness had silently defaulted to a
 genre-neutral blog post — never having been asked what they actually wanted.
 
-1. **Read the real enabled-genre catalog first.** `jq -r '.packs[] | select(.enabled==true) | .name' harness.config.json` — do NOT ask about a
-   genre pack that is not actually enabled in THIS instance; a disabled pack
-   silently falls back to `genre="general"` at render time (#633), so
-   offering it as a real option would be misleading.
+1. **Read the real enabled-genre catalog first.** `jq -r '.packs[] | select(.enabled==true) | select((.source.type? == "marketplace-ref") and (.source.marketplace? == "mif-docs")) | .name' harness.config.json`
+   (the `?` guards are load-bearing — `source` is a bare string `"bundled"` for
+   vendored/methodology packs, and indexing a string with `.type` errors jq
+   without them) — filter to `mif-docs`-sourced packs specifically, not every enabled pack:
+   `packs[]` also holds channel packs (`book`, `pdf`, `github-discuss`, …) and
+   bundled methodology packs (`market-sizing`, `competitive-analysis`, …) that
+   are not deliverable genres and must never be offered as one. Do NOT ask
+   about a genre pack that is not actually enabled in THIS instance either; a
+   disabled pack silently falls back to `genre="general"` at render time
+   (#633), so offering it as a real option would be misleading.
 2. **Ask with `AskUserQuestion`** — one question, multi-select, e.g.:
 
    ```text
-   question: "Which deliverable genre(s) should this session produce, beyond the
-   canonical report? (Leave unselected for the generic report only.)"
+   question: "Which deliverable genre(s) should this session produce? Selecting
+   one replaces the default generic report with that genre's canonical report
+   (add 'general' too if you want both). Leave unselected for the generic
+   report only."
    options: <the enabled genre packs from step 1, each with a one-line
              description drawn from that pack's own SKILL.md/plugin.json —
              e.g. "engineering — decision/evaluation report with a mandatory

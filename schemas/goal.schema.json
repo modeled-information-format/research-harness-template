@@ -61,8 +61,9 @@
     },
     "deliverables": {
       "type": "object",
-      "description": "Optional up-front declaration of the desired deliverable output shapes (research-harness-template#626), elicited interactively by /goal-writer via AskUserQuestion — never invented, never a placeholder. The engine path (research-goal.js) never elicits this field itself: it only preserves an existing value verbatim on --reshape, or leaves it absent on a fresh author. Consumed by research-pipeline.js: `genres[]` drives the Project phase's per-genre canonical-report loop (each genre renders reports/<topic>/<topic>.<genre>.md via research-projection.js); `genres[]`/`channels[]` are the Deliver phase's (research-deliverables.js) fallback source when the caller passes no CLI --genres/--channels — an explicit CLI arg always wins over this field.",
+      "description": "Optional up-front declaration of the desired deliverable output shapes (research-harness-template#626), elicited interactively by /goal-writer via AskUserQuestion — never invented, never a placeholder. The engine path (research-goal.js) never elicits this field itself: it only preserves an existing value verbatim on --reshape, or leaves it absent on a fresh author. Consumed by research-pipeline.js: `genres[]` drives the Project phase's per-genre canonical-report loop (each genre renders reports/<topic>/<topic>.<genre>.md via research-projection.js); `genres[]`/`channels[]` are the Deliver phase's (research-deliverables.js) fallback source when the caller passes no CLI --genres/--channels — an explicit CLI arg always wins over this field. Omit the whole field rather than writing an empty `{}` — `minProperties: 1` rejects that shape at the schema level so a manual edit can't express a meaningless value that passes validation.",
       "additionalProperties": false,
+      "minProperties": 1,
       "properties": {
         "genres": {
           "type": "array",
