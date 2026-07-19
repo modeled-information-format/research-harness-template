@@ -32,6 +32,7 @@ SCHEMAS=(
   "schemas/goal.schema.json"
   "schemas/artifact.schema.json"
   "schemas/concordance.schema.json"
+  "schemas/knowledge-graph.schema.json"
   "schemas/pack.schema.json"
   "schemas/session-state.schema.json"
   "schemas/mif/ontology.schema.json"
