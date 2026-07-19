@@ -2,7 +2,7 @@
 id: reference-engine-workflows
 type: semantic
 created: '2026-07-17T20:25:00-04:00'
-modified: '2026-07-19T15:42:34.993Z'
+modified: '2026-07-19T15:59:14.204Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -1485,23 +1485,25 @@ on — they never invoke a child workflow themselves. Source:
 | --- | --- | --- | --- |
 | `topic` | yes | — | Topic the run operates against. A missing `topic` throws before any phase runs. |
 | `harnessDir` | no | `.` | Path to the harness instance (the #552-precedent in-repo default every sibling module already uses). |
-| `mode` | no | `'full'` | `'full' \| 'augment' \| 'pivot' \| 'import' \| 'audit'` — selects the mode-router branch; see [Mode router](#mode-router) below. |
+| `mode` | no | `'full'` | `'full' \| 'augment' \| 'pivot' \| 'import' \| 'audit' \| 'deliverables'` — selects the mode-router branch; see [Mode router](#mode-router) below. An unrecognized mode string throws (`unknown mode '<mode>'`) rather than silently falling through to `full`. |
 | `ask` | no | `''` | `full` mode: the raw research ask passed to the `research-goal` child workflow. An empty string lets that workflow derive the sharpest goal from the topic's existing context. |
 | `maxRounds` | no | `3` | `full` mode: caps the round loop. |
-| `genres` / `channels` | no | — | `full` mode: requested deliverable renders, passed to `research-deliverables` once the loop ends. Omitting both skips the Deliver phase entirely. |
+| `genres` / `channels` | no (required for `deliverables`, at least one) | — | `full` mode: requested deliverable renders, passed to `research-deliverables` once the loop ends. Omitting both skips the Deliver phase entirely. `deliverables` mode: at least one of the two is required — the script throws `deliverables mode requires args.genres or args.channels` if both are omitted. |
 | `focusHint` | no | — | `augment` mode: a steer for the deepening judge, passed straight through to `research-augment`. |
 | `delta` | yes for `pivot` | — | `pivot` mode: what changed. The script throws `pivot mode requires args.delta` if omitted. |
 | `containerDir` | yes for `import` | — | `import` mode: the MIF Container directory (as `/export` produces). The script throws `import mode requires args.containerDir` if omitted. |
 | `trustImportedVerdicts` | no | `false` | `import` mode: passed through to `research-import` unchanged. |
 | `claimBudget` / `queryBudget` / `lenses` | no | — | Passed through to every internal `research-falsify` call (`falsifyAll()`'s drain loop and the `pivot` regate call). |
 | `workflowsDir` | no | `.claude/workflows` | Where the sibling atomic modules live; `wf(name, …)` resolves each child as `${workflowsDir}/research-<name>.js`. |
-| `runDate` | required except `audit` mode | — | A stamped ISO-8601 timestamp from THIS SCRIPT'S OWN CALLER (the `/research` command's own `date` invocation, run before it calls the `Workflow` tool) — this script cannot compute one itself (`new Date()`/`Date.now()` throw inside a Workflow-runtime script's own body; [#618](https://github.com/modeled-information-format/research-harness-template/issues/618)). Forwarded unvalidated to every `wf(...)` child call; only `research-falsify` consumes it, and only once a finding actually needs gating — `audit` mode never gates anything, so it needs nothing supplied. |
+| `runDate` | required except `audit`/`deliverables` modes | — | A stamped ISO-8601 timestamp from THIS SCRIPT'S OWN CALLER (the `/research` command's own `date` invocation, run before it calls the `Workflow` tool) — this script cannot compute one itself (`new Date()`/`Date.now()` throw inside a Workflow-runtime script's own body; [#618](https://github.com/modeled-information-format/research-harness-template/issues/618)). Forwarded unvalidated to every `wf(...)` child call; only `research-falsify` consumes it, and only once a finding actually needs gating — `audit` mode never gates anything and `deliverables` mode never calls `research-falsify`, so neither needs it supplied. |
 
 ### Mode router
 
-`phase('Route')` is a plain code `switch` on `mode` — five branches share this
-one entry point, each a different, shorter composition of the same atomic
-modules the `full` round loop also uses:
+`phase('Route')` is a sequence of independent early-return `if (MODE === ...)`
+branches — six branches share this one entry point, each a different, shorter
+composition of the same atomic modules the `full` round loop also uses. A
+`mode` string outside this set throws `unknown mode '<mode>'` before any
+branch runs (research-harness-template#624).
 
 | Mode | Composition |
 | --- | --- |
@@ -1509,6 +1511,7 @@ modules the `full` round loop also uses:
 | `import` | `research-import` → (if `needsGating` is non-empty) a falsify drain over `scope: 'all'` → `research-synthesis` → `research-projection`. An import-gate failure (`!imp.ok`) short-circuits before any gating runs. |
 | `pivot` | `research-pivot` → a regate falsify call scoped to `pivot.reverifyIds` (`regate: true`) → (if `gapDimensions` is non-empty and the budget floor hasn't been hit) `research-fanout` over just the gap dimensions plus a falsify drain → `research-synthesis` → `research-projection`. |
 | `augment` | `research-augment` → an empty `deepen[]` returns `{ deepened: [], reasoning }` immediately (an honest, non-error terminal state) → otherwise `research-fanout` over the deepen plan's dimensions plus a falsify drain → `research-synthesis` → `research-projection`. |
+| `deliverables` | (research-harness-template#624) `research-synthesis` alone (no fan-out, no falsify — reuses the survivor corpus already on disk) → `research-deliverables` fed that fresh `synthesisPath` plus `genres`/`channels`. Requires at least one of `genres`/`channels`, or the script throws before either child runs. Deliberately never calls `research-projection` — the report of record is untouched by this mode. A `synthesis.ok === false` result (e.g. no surviving findings) short-circuits to `{ deliverables: null }` before `research-deliverables` is invoked. |
 | `full` | The bounded autonomous goal loop — see [The full-mode round loop](#the-full-mode-round-loop) below. |
 
 ### The full-mode round loop
@@ -1583,7 +1586,10 @@ Every mode returns a typed result tagged with `mode`; shape varies by branch
 `pivot`: `{ mode, goalVersion, carried, stale, fanout, synthesis, projection }`;
 `augment`: `{ mode, deepened: [], reasoning }` when nothing warranted
 deepening, or `{ mode, deepened, fanout, gate, synthesis, projection }`
-otherwise; `full`:
+otherwise; `deliverables`: `{ mode, synthesis, deliverables }`, where
+`deliverables` is `null` when the fresh synthesis itself came back
+`ok: false` (e.g. no surviving findings) — no `projection` field, since this
+mode never calls `research-projection`; `full`:
 `{ mode, goal: { file, dimensions }, done, checks: { met, unmet } | null, synthesis, repaired, projection, deliverables }`
 — `repaired` is the run's accumulated repair total across every round (see
 the repair-disclosure note in step 5 above; #623).
