@@ -1,7 +1,7 @@
 ---
 name: research
-description: Engine-path entry point for a research campaign — wraps ONE Workflow tool call into the vendored research-pipeline.js (mode router + bounded autonomous round loop covering full, augment, pivot, import, and audit modes). Supersedes /start's spawn of the orchestrator subagent for the engine path; does not delete or disable /start.
-argument-hint: "[--topic <id>] [--mode full|augment|pivot|import|audit] [--max-rounds <n>] [--focus-hint <text>] [--delta <what changed>] [--container-dir <path>] [--trust-imported-verdicts] [--genres <g1,g2>] [--channels <c1,c2>] [--claim-budget <n>] [--query-budget <n>] [--lenses <n>] [<research ask>]"
+description: Engine-path entry point for a research campaign — wraps ONE Workflow tool call into the vendored research-pipeline.js (mode router + bounded autonomous round loop covering full, augment, pivot, import, audit, and deliverables modes). Supersedes /start's spawn of the orchestrator subagent for the engine path; does not delete or disable /start.
+argument-hint: "[--topic <id>] [--mode full|augment|pivot|import|audit|deliverables] [--max-rounds <n>] [--focus-hint <text>] [--delta <what changed>] [--container-dir <path>] [--trust-imported-verdicts] [--genres <g1,g2>] [--channels <c1,c2>] [--claim-budget <n>] [--query-budget <n>] [--lenses <n>] [<research ask>]"
 allowed-tools:
   - Workflow
   - Bash
@@ -48,8 +48,8 @@ backticks and angle brackets.
     use it; more than one → **AskUserQuestion** which topic; none
     registered → tell the user to register one first (`/start` or
     `/configure topics`) and stop.
-- `--mode <full|augment|pivot|import|audit>` — default `full`. Selects the
-  script's mode-router branch:
+- `--mode <full|augment|pivot|import|audit|deliverables>` — default `full`.
+  Selects the script's mode-router branch:
   - `full` — the bounded autonomous goal loop (goal → [fanout →
     falsify-drain → synthesis → independent completion check]\* →
     audit-driven adaptation → projection → optional deliverables).
@@ -64,6 +64,18 @@ backticks and angle brackets.
     projects.
   - `audit` — runs the six-auditor coverage sweep alone and returns the
     routed backlog; no fan-out, falsify, synthesis, or projection follows.
+  - `deliverables` — (research-harness-template#624) renders genre/channel
+    deliverables from the topic's EXISTING, already-gated corpus without
+    re-running fanout or falsify. Re-drafts a fresh synthesis from the
+    survivor findings already on disk (cheap relative to a full round — no
+    fan-out, no falsification gate) and feeds it straight into
+    `research-deliverables`. Deliberately does **not** call
+    `research-projection` — the report of record
+    (`reports/<topic>/<slug>.md`) is left untouched. Requires a topic that
+    already has a completed `full`/`augment`/`import`/`pivot` run's findings
+    on disk; on a topic with zero surviving findings, synthesis legitimately
+    returns `ok: false` and this mode returns `{ deliverables: null }`
+    rather than erroring.
 - `--max-rounds <n>` — `full` mode only. Caps the round loop (script default
   `3`). Passed through as `maxRounds`.
 - `--focus-hint <text>` — `augment` mode only. A steer for the deepening
@@ -80,9 +92,12 @@ backticks and angle brackets.
 - `--trust-imported-verdicts` — `import` mode only. Passed through as
   `trustImportedVerdicts: true`; omit for the default (re-gate every
   imported finding regardless of its foreign verdict).
-- `--genres <g1,g2,...>` / `--channels <c1,c2,...>` — `full` mode only.
-  Comma-split into string arrays and passed through as `genres`/`channels`
-  to request deliverable renders once the run completes; omit for neither.
+- `--genres <g1,g2,...>` / `--channels <c1,c2,...>` — `full` and
+  `deliverables` modes. Comma-split into string arrays and passed through as
+  `genres`/`channels` to request deliverable renders; omit for neither in
+  `full` mode. **`deliverables` mode requires at least one of the two** —
+  `research-pipeline.js` throws `deliverables mode requires args.genres or
+  args.channels` without either.
 - `--claim-budget <n>` / `--query-budget <n>` / `--lenses <n>` — optional
   passthroughs to the falsification gate the script drives internally
   (`claimBudget`, `queryBudget`, `lenses`); omit to use the gate's own
@@ -94,7 +109,9 @@ backticks and angle brackets.
 ## Resolve mode + args, then invoke the Workflow tool exactly once
 
 **Stamp `RUN_DATE` first, before the `Workflow` call — required, every mode
-except `audit`** (#618). `research-pipeline.js` and every workflow it composes
+except `audit` and `deliverables`** (#618; `deliverables` mode never calls
+`research-falsify`, the only child that consumes `runDate`, so it works fine
+with `runDate` omitted, same as `audit`). `research-pipeline.js` and every workflow it composes
 run inside the Workflow runtime, which disallows `new Date()`/`Date.now()`
 in a script's own body (it would break deterministic resume) — so a real
 wall-clock timestamp can only come from OUTSIDE the runtime, i.e. from this
@@ -117,8 +134,8 @@ Workflow(
     runDate: "{RUN_DATE}",                               // required except mode=audit (#618)
     ask: "{ASK}",                                       // full mode
     maxRounds: {MAX_ROUNDS},                             // full mode, default 3
-    genres: [{GENRES}],                                  // full mode, optional
-    channels: [{CHANNELS}],                              // full mode, optional
+    genres: [{GENRES}],                                  // full mode optional; deliverables mode (genres or channels required)
+    channels: [{CHANNELS}],                              // full mode optional; deliverables mode (genres or channels required)
     focusHint: "{FOCUS_HINT}",                           // augment mode, optional
     delta: "{DELTA}",                                    // pivot mode, required
     containerDir: "{CONTAINER_DIR}",                     // import mode, required
@@ -158,6 +175,11 @@ if this command had performed the work itself:
 - **`augment`** — `{ deepened: [], reasoning }` when nothing warranted
   deepening (an honest terminal state, not a failure), or
   `{ deepened: [...], fanout, gate, synthesis, projection }` otherwise.
+- **`deliverables`** — `{ synthesis, deliverables }`. `deliverables: null`
+  means the fresh synthesis itself failed (`synthesis.ok: false`, e.g. no
+  surviving findings on the topic) — surface that directly rather than
+  reporting a render that never happened. No `projection` field — this mode
+  never touches the report of record.
 - **`full`** — `{ goal, done, checks: { met, unmet }, synthesis, projection,
   deliverables }`. State `done` plainly; if `done` is `false`, list the
   `unmet` checks with their `why` — never claim completion the script itself
@@ -173,6 +195,10 @@ if this command had performed the work itself:
   `/research --topic <id> --mode augment --focus-hint <dimension or check id>`.
 - The goal itself needs to change, not just deepen —
   `/research --topic <id> --mode pivot --delta "<what changed>"`.
+- A completed run's findings are gathered and gated, but a deliverable genre
+  or channel wasn't requested at the time — `/research --topic <id> --mode
+  deliverables --genres <g1,g2>` (or `--channels`), without re-running
+  fanout/falsify.
 - `/status`, `/topics`, and the interactive `/start` / `/resume` / `/falsify`
   commands remain fully available — this command adds the non-interactive
   engine path; it does not replace any of them.

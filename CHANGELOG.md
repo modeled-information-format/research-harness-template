@@ -7,7 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.20] - 2026-07-19
+
+### Added
+
+- **`research-pipeline.js` gained a `deliverables` mode** (#624): renders
+  genre/channel deliverables from a topic's EXISTING, already-gated corpus
+  without re-running `research-fanout`/`research-falsify`. Previously the
+  only way to render a deliverable genre after a completed run was to bypass
+  `/research` entirely and hand-invoke `research-deliverables.js` directly
+  through the Workflow tool with a prior run's own scratch `synthesisPath`,
+  which is not guaranteed to still exist by the time a later invocation
+  runs (`research-synthesis.js`'s ephemeral-output contract is same-
+  process-only). `deliverables` mode instead re-drafts a fresh synthesis
+  from the survivor findings already on disk (cheap relative to a full
+  round — no fan-out, no falsification gate) and feeds that fresh
+  `synthesisPath` straight into `research-deliverables` in the same
+  process. Requires at least one of `genres`/`channels`. Deliberately never
+  calls `research-projection` — the report of record
+  (`reports/<topic>/<slug>.md`) is left untouched by this mode (a
+  considered design choice, not a silent omission). `/research --mode
+  deliverables --genres <g1,g2>` (or `--channels`) is the new entry point;
+  see [engine-workflows.md](docs/reference/engine-workflows.md#research-pipeline)
+  and [commands.md](docs/reference/commands.md#research) for the full
+  reference.
+
 ### Fixed
+
+- **`research-pipeline.js`'s mode router silently fell through to `full`
+  mode on an unrecognized `mode` string** (#624, adjacent fix): every mode
+  branch was an independent early-return `if` with no terminal `else`/
+  default guard, so a typo (e.g. `deliverabels`) triggered a full
+  autonomous round loop instead of a clear error. A `KNOWN_MODES` guard now
+  throws `unknown mode '<mode>'` before any branch dispatches.
 
 - **Concurrent `research-projection.js` invocations against the same topic
   silently corrupted each other via a shared `artifact.json` path** (#628):
