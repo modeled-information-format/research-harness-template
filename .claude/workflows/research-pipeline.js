@@ -228,7 +228,7 @@ for (let round = 1; round <= MAX_ROUNDS && !done; round++) {
   if (fan && fan.crossDimensionLeads) leads = leads.concat(fan.crossDimensionLeads)
   const roundRepaired = (fan && fan.repaired) || 0
   totalRepaired += roundRepaired
-  if (roundRepaired) log(`Round ${round}: research-fanout repaired ${roundRepaired} schema-invalid/citation-defective finding(s) before validation`)
+  if (roundRepaired) log(`Round ${round}: research-fanout repaired ${roundRepaired} schema-invalid/citation-defective finding(s) after the initial validate pass, before the completion check`)
 
   await falsifyAll({})
   lastSyn = await wf('synthesis', {})
