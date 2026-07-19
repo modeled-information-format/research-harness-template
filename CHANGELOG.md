@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`research-pipeline.js`'s completion check could grade `finding_valid`/
+  `citation_integrity` as cleanly met without disclosing that
+  `research-fanout.js`'s own repair lane had just mutated the graded
+  findings in place** (#623): `research-fanout.js` now computes and returns
+  the round's true repair count — per dimension (`perDimension[].repaired`)
+  and as a total (`repaired`) — the number of findings that arrived
+  schema-invalid or citation-defective and needed the Repair phase before
+  they validated. `research-pipeline.js`'s independent completion
+  evaluator now receives that count every round and is instructed that a
+  schema/citation-validity check may never be graded `met` from the
+  post-repair corpus state without disclosing it; the run's own final
+  report also surfaces the accumulated repair total (`repaired`),
+  deterministically, independent of what the evaluator does with the
+  disclosure.
 - **`research-falsify.js` crashed on every finding needing gating** (#618):
   `buildFixtureEntry()` called `new Date()` from inside its own body — the
   Workflow runtime disallows `new Date()`/`Date.now()`/`Math.random()` inside

@@ -91,6 +91,14 @@ run "goal-lint-repair" bash evals/goal-lint-repair.sh
 # repair/relate constraints.
 run "fanout-lane-contract" bash evals/fanout-lane-contract.sh
 
+# research-harness-template#623: research-fanout.js's own validate/repair
+# lane can mutate schema-invalid/citation-defective findings in place before
+# the round loop's completion check ever runs. This eval proves the module
+# now computes and returns the true pre-repair defect count, per dimension
+# and as a round total, so a heavily-repaired corpus is never
+# indistinguishable from one that was clean from the start.
+run "fanout-repair-disclosure-check" bash evals/fanout-repair-disclosure-check.sh
+
 # The research-falsify verdict-merge table has deterministic teeth (#562):
 # mergeVotes()'s arithmetic (unanimous, majority-falsified, minority-
 # falsified-contested-escalates, mixed-non-falsified-takes-worst) and the
@@ -345,6 +353,16 @@ run "coverage-audit-check" bash evals/coverage-audit-check.sh
 # non-deterministic, documented in the eval's own header rather than faked;
 # each of those judgments is already covered by its own dedicated eval.
 run "research-pipeline-full-mode-check" bash evals/research-pipeline-full-mode-check.sh
+
+# research-harness-template#623: the independent completion evaluator's
+# prompt now discloses research-fanout's real per-round repair count (so a
+# finding_valid/citation_integrity-shaped check can never be graded 'met'
+# from post-repair corpus state without disclosing that repair happened),
+# and the run's own final report surfaces the accumulated repair total —
+# proven both structurally (against the real module source) and
+# behaviorally (driving the real module with a heavily-repaired round 1
+# followed by a clean round 2).
+run "pipeline-repair-disclosure-check" bash evals/pipeline-repair-disclosure-check.sh
 
 # The research-pipeline module's four standalone-mode branches --
 # audit/import/pivot/augment -- each have deterministic teeth of their own
