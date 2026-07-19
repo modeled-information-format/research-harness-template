@@ -681,7 +681,7 @@ from a rendered artifact). Source:
 | Phase | Model | What it does |
 | --- | --- | --- |
 | Route | haiku | A same-process preflight on `synthesisPath` (verbatim from `research-projection`'s guard), then classifies every requested genre×channel pair against `harness.config.json` `packs[]` and `.claude/settings.local.json`'s native `enabledPlugins` (`"<pack>@research-harness"` key shape — never a bare pack-name lookup) into a mechanism-tagged render plan. Every pair that cannot be served lands in `unavailable[]` with a reason naming the mechanism and exactly what is missing. |
-| Render | sonnet | Mechanism 1 (artifact-based): `synthesize-artifact.sh` → synthesis-only cross-check against `synthesisPath` → `render-artifact.sh` → `Skill(<genre>:<genre>)` applied to the rendered body whenever genre≠`"general"` (#640 — that genre's pack enablement was already confirmed by Route, so no re-check is needed here) → `Skill(mif-docs:mif-provenance)` witnessed-provenance stamp (#632). Mechanism 2 (source-direct): `Skill(<pack>:<pack>)` invoked directly against the findings dir, `synthesisPath` never consulted, no genre axis (`genreApplied` always `false`), provenance stamp explicitly `not-applicable`. |
+| Render | sonnet | Mechanism 1 (artifact-based): `synthesize-artifact.sh` → synthesis-only cross-check against `synthesisPath` → `render-artifact.sh` → `Skill(mif-docs:<genre>)` applied to the rendered body whenever genre≠`"general"` (#640 — that genre's pack enablement was already confirmed by Route, so no re-check is needed here) → `Skill(mif-docs:mif-provenance)` witnessed-provenance stamp (#632). Mechanism 2 (source-direct): `Skill(<pack>:<pack>)` invoked directly against the findings dir, `synthesisPath` never consulted, no genre axis (`genreApplied` always `false`), provenance stamp explicitly `not-applicable`. |
 | Check | haiku | Per-artifact validation — markdownlint where the output is Markdown, the citation-leak gate (no internal research identifiers in published prose) regardless of format, and ≥1 primary-source citation. A dirty artifact is fixed in place without touching claim content. |
 
 ### Two disjoint rendering mechanisms, and why a third is out of scope
@@ -735,7 +735,7 @@ applies **only** to mechanism 1 — mechanism 2's packs are non-negotiably
 built the opposite way (`synthesize-artifact.sh` never runs for them, and
 `synthesisPath` is deliberately never read for their rows).
 
-### Genre resolution: `Skill(<genre>:<genre>)` applied only when enabled (#640)
+### Genre resolution: `Skill(mif-docs:<genre>)` applied only when enabled (#640)
 
 Before this fix, mechanism 1's Render step passed the resolved genre straight
 into `synthesize-artifact.sh`/`render-artifact.sh` as pass-through metadata
@@ -752,13 +752,13 @@ own pack confirmed enabled by Route.
 
 - `genre="general"` renders the neutral body from `synthesize-artifact.sh` →
   `render-artifact.sh` unchanged — no skill invocation, `genreApplied=false`.
-- Any other genre invokes `Skill(<genre>:<genre>)` (a new Render step,
+- Any other genre invokes `Skill(mif-docs:<genre>)` (a new Render step,
   inserted between `render-artifact.sh` and the `#632` provenance stamp) to
   restructure the rendered body per that genre's real documented template —
   built from the same artifact claims already established, never inventing
   new content, never touching the citation/References section
   `render-artifact.sh` already wrote — then reports `genreApplied=true` and
-  `genreSkillInvoked="<genre>:<genre>"`.
+  `genreSkillInvoked="mif-docs:<genre>"`.
 - Mechanism 2 (source-direct channel packs) has no genre axis at all — every
   row reports `genreApplied=false`, `genreSkillInvoked=""` regardless of
   whether a genre was requested alongside it (matching the existing
@@ -802,7 +802,7 @@ successfully rendered deliverable (`path`, `genre`, `channel`, `mechanism`,
 `provenanceReason`), `unavailable[]` every requested pair that could not be
 served with its distinguishing reason, and `ok` true iff at least one
 deliverable rendered. `genreApplied`/`genreSkillInvoked` are the genre
-resolution's outcome (#640 — `true`/`"<genre>:<genre>"` only for a
+resolution's outcome (#640 — `true`/`"mif-docs:<genre>"` only for a
 mechanism-1 row whose genre was not `"general"`; `false`/`""` for a
 `"general"` render or any mechanism-2 row). `provenanceOutcome`/
 `provenanceReason` are the `Skill(mif-docs:mif-provenance)` stamp attempt's
