@@ -30,14 +30,25 @@ is_tag_ref() {
 
 all_tags=1
 saw_ref=0
-while read -r local_ref _local_sha remote_ref _remote_sha; do
-  [ -n "${local_ref:-}" ] || continue
-  saw_ref=1
-  if ! is_tag_ref "$local_ref" && ! is_tag_ref "${remote_ref:-}"; then
-    all_tags=0
-    break
-  fi
-done
+if [ ! -t 0 ]; then
+  # Fully drain stdin — do not `break` out early on the first non-tag ref.
+  # git writes one line per ref being pushed and this hook runs `git fetch`
+  # + the version check afterward; if the loop stops reading before git has
+  # finished writing, the pipe buffer can fill and the push can hang. Once
+  # any ref proves the push isn't tag-only, keep reading (cheaply) to EOF
+  # instead of stopping.
+  while read -r local_ref _local_sha remote_ref _remote_sha; do
+    [ -n "${local_ref:-}" ] || continue
+    saw_ref=1
+    if ! is_tag_ref "$local_ref" && ! is_tag_ref "${remote_ref:-}"; then
+      all_tags=0
+    fi
+  done
+fi
+# A TTY on stdin means a manual invocation with no piped refs (e.g. running
+# the hook directly to test it) — there is nothing to scan and reading would
+# just block, so skip the loop entirely and fall through to running the
+# check as a normal (non-tag) push.
 
 if [ "$saw_ref" -eq 1 ] && [ "$all_tags" -eq 1 ]; then
   echo "pre-push: only tag ref(s) being pushed — skipping the version-bump check (ADR-0010's Rule B has nothing meaningful to validate about pushing the release tag itself, #648)" >&2

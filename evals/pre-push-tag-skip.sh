@@ -41,7 +41,7 @@ if [ ! -x "$HOOK" ] && [ ! -f "$HOOK" ]; then
   exit 1
 fi
 
-TMP="$(mktemp -d)"
+TMP="$(mktemp -d "${TMPDIR:-/tmp}/pre-push-tag-skip.XXXXXX")"
 trap 'rm -rf "$TMP"' EXIT
 
 # Build a throwaway git repo that looks enough like the real one for the
