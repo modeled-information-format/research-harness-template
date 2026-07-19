@@ -2239,7 +2239,7 @@ gate_m19() {
   #      so this eval failed hard, permanently, in every instantiated clone.
   #      Lock the exact guard condition (a missing copier.yml, the same IS_TEMPLATE
   #      signal scripts/verify.sh's own gate_* functions use, #507).
-  if grep -qE '^\s*if \[ ! -f copier\.yml \]; then' evals/release-workflow-immutable-safe.sh; then
+  if grep -qE '^[[:space:]]*if \[ ! -f copier\.yml \]; then' evals/release-workflow-immutable-safe.sh; then
     ok "release-workflow-immutable-safe.sh guard matches the IS_TEMPLATE instance condition (missing copier.yml)"
   else
     bad "release-workflow-immutable-safe.sh guard does not match '[ ! -f copier.yml ]' — a regressed guard could fail hard in every instance again (#616)"
