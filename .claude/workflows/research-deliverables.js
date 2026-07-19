@@ -123,13 +123,48 @@
 // module's own established convention of naming scope explicitly rather
 // than silently doing something inconsistent (see OUT_OF_SCOPE_CHANNELS
 // above).
+//
+// GENRE SKILL INVOCATION GAP — closed, not carried forward
+// (research-harness-template#640, same class as research-projection.js's
+// #633). This module's mechanism-1 (artifact-based, blog/book) Render step
+// previously passed the resolved genre straight through to
+// synthesize-artifact.sh/render-artifact.sh as pass-through metadata and
+// never invoked any genre's real Skill(<genre>:<genre>) template — every
+// genre rendered the identical genre-neutral body with only the frontmatter
+// `genre:` field differing, indistinguishable from a correctly-genred
+// deliverable by inspection. Unlike research-projection.js, this module
+// ALREADY has a dedicated Route phase that resolves genre×channel
+// servability (pack enablement, methodology-vs-genre, out-of-scope
+// third-mechanism/architectural-boundary channels) BEFORE Render ever runs
+// — so, unlike #633's fix, no separate per-row enablement re-check is
+// needed in Render: a genre reaching route.plan with mechanism="artifact"
+// and genre!=="general" already has its own pack confirmed enabled by
+// Route. The Render step therefore only needed a new step (see step 4 in
+// the artifact-mechanism prompt below) that invokes
+// Skill(<genre>:<genre>) on the rendered body — built from the same
+// artifact claims steps 1-3 already established, never inventing new
+// content, never touching the citation/References section render-
+// artifact.sh already wrote — whenever genre!=="general", and reports the
+// outcome via `genreApplied`/`genreSkillInvoked` instead of leaving it
+// silently cosmetic. `genre="general"` (the default, or the Route-resolved
+// fallback for a would-be-unavailable request) needs no skill invocation —
+// it is definitionally the neutral render, `genreApplied=false`. Mechanism
+// 2 (source-direct channel packs) has no genre axis at all (see
+// MECHANISM 2 above) — those rows always report `genreApplied=false,
+// genreSkillInvoked=""`, matching their existing "genre does not apply,
+// ignore it" handling. A caller-supplied `p.genre` is validated against
+// the same `^[a-z][a-z0-9-]*$` pack-name pattern
+// harness.config.schema.json enforces (mirrors #633's own injection guard)
+// before it is interpolated into either a shell command argument or a
+// Skill() reference, below — never proceeding with an unvalidated string
+// in either position.
 export const meta = {
   name: 'research-deliverables',
   description: 'Atomic step 6 (deliverable genres): routing workflow covering BOTH real rendering mechanisms — artifact-based (synthesize-artifact.sh -> render-artifact.sh for blog/book, delegated never free-form-authored) and source-direct channel packs (pdf/jats/xbrl/ectd/notebooklm/github-discuss/github-issues, each invoked as its own Skill directly against findings, never through a rendered artifact); a requested pair whose backing pack/script is not enabled or whose mechanism this module does not cover reports via unavailable[] with a reason naming which mechanism and what is missing, never silently dropped',
   whenToUse: 'After projection — produces the optional deliverables (blog post, book chapter, exec-summary, engineering report, academic, briefing, PDF, JATS, …) from the same synthesis the report of record used',
   phases: [
     { title: 'Route', detail: 'requested genre×channel pairs vs harness.config.json packs[] + .claude/settings.local.json enabledPlugins ("<pack>@research-harness" key shape) → mechanism-tagged render plan; unavailable pairs get a reason naming the mechanism and what is missing', model: 'haiku' },
-    { title: 'Render', detail: 'mechanism 1: synthesize-artifact.sh -> render-artifact.sh per genre×channel row, synthesis cross-checked, then Skill(mif-docs:mif-provenance) witnessed-provenance stamp (ADR-0018, #632; declines gracefully when capture is off); mechanism 2: Skill(<pack>:<pack>) invoked directly against findings, synthesis never consulted, provenance stamp explicitly not-applicable (each pack owns its own output/format)', model: 'sonnet' },
+    { title: 'Render', detail: 'mechanism 1: synthesize-artifact.sh -> render-artifact.sh per genre×channel row, synthesis cross-checked, then Skill(<genre>:<genre>) applied to the body when genre!=="general" (#640) and re-checked, then Skill(mif-docs:mif-provenance) witnessed-provenance stamp (ADR-0018, #632; declines gracefully when capture is off); mechanism 2: Skill(<pack>:<pack>) invoked directly against findings, synthesis never consulted, no genre axis (genreApplied always false), provenance stamp explicitly not-applicable (each pack owns its own output/format)', model: 'sonnet' },
     { title: 'Check', detail: 'per-artifact lint (where markdown) + frontmatter/citation-leak conformance + ≥1 citation', model: 'haiku' },
   ],
 }
@@ -215,10 +250,12 @@ const RENDER_SCHEMA = {
     channel: { type: 'string' },
     mechanism: { type: 'string', enum: ['artifact', 'source-direct'] },
     citationsCount: { type: 'integer', description: 'distinct citations the rendered output carries (finding-traced for mechanism 1, primary-source for mechanism 2)' },
+    genreApplied: { type: 'boolean', description: '(#640) true only if the Render step actually invoked Skill(<genre>:<genre>) and restructured the body per that genre\'s template; false when genre="general" (mechanism 1) or for every mechanism-2 row (no genre axis) — never true for a genre whose template was not actually applied' },
+    genreSkillInvoked: { type: 'string', description: '(#640) the "<genre>:<genre>" Skill reference actually invoked, or "" when genreApplied is false' },
     provenanceOutcome: { type: 'string', enum: ['stamped', 'declined', 'error', 'not-applicable'], description: 'result of the Skill(mif-docs:mif-provenance) stamp attempt (#632) for mechanism 1 rows; "not-applicable" for mechanism 2 rows (each pack owns its own output/format, see module header) — "declined" is expected/healthy when capture is off or the session ledger never witnessed this file, never a render failure' },
     provenanceReason: { type: 'string', description: 'why declined/error/not-applicable, or "witnessed" when stamped' },
   },
-  required: ['outputPath', 'genre', 'channel', 'mechanism', 'citationsCount', 'provenanceOutcome', 'provenanceReason'],
+  required: ['outputPath', 'genre', 'channel', 'mechanism', 'citationsCount', 'genreApplied', 'genreSkillInvoked', 'provenanceOutcome', 'provenanceReason'],
 }
 const CHECK_SCHEMA = {
   type: 'object',
@@ -322,11 +359,48 @@ if (!route.plan.length) {
 }
 log(`Rendering ${route.plan.length} deliverable(s): ${route.plan.map((p) => `${p.genre}×${p.channel} (${p.mechanism})`).join(', ')}`)
 
+// GENRE STRING VALIDATION (research-harness-template#640, mirrors #633's own
+// guard in research-projection.js): every non-general/non-'-' genre below is
+// interpolated into a shell command argument (synthesize-artifact.sh/
+// render-artifact.sh's genreArg) AND, for artifact rows, into a Skill()
+// reference (genreSkillRef = `${genre}:${genre}`). Pack names are
+// constrained by harness.config.schema.json's packs[].name pattern
+// (^[a-z][a-z0-9-]*$) — Route is a model call, not code, so its plan[]
+// cannot be trusted to have enforced this itself. Validate BEFORE any use
+// and fail closed rather than silently coercing or proceeding.
+for (const p of route.plan) {
+  if (p.genre !== 'general' && p.genre !== '-' && !/^[a-z][a-z0-9-]*$/.test(p.genre)) {
+    throw new Error(
+      `research-deliverables: route.plan genre "${p.genre}" (channel "${p.channel}") does not match the pack-name pattern ` +
+        `harness.config.schema.json enforces (^[a-z][a-z0-9-]*$) — refusing to interpolate an unvalidated genre string into a shell ` +
+        `command or Skill() reference.`,
+    )
+  }
+}
+
 phase('Render')
 const rendered = await pipeline(
   route.plan,
   (p) => {
     const genreArg = p.genre === '-' ? 'general' : p.genre
+    // GENRE SKILL APPLICATION (#640): every artifact-based row reaching this
+    // point already had its genre's pack enablement confirmed by the Route
+    // phase (see module header) — no separate re-check needed here, unlike
+    // #633's fix in research-projection.js which had no prior routing phase
+    // to lean on. genre="general" needs no skill invocation (neutral render
+    // stands as-is); anything else gets Skill(<genre>:<genre>) applied.
+    const genreStepText =
+      genreArg !== 'general'
+        ? `4. GENRE SKILL APPLICATION (research-harness-template#640): genre "${genreArg}"'s pack was already confirmed enabled by the ` +
+          `Route phase (templateSource: ${p.templateSource}) — invoke Skill(${genreArg}:${genreArg}) to restructure ONLY ` +
+          `${p.outputHint}'s BODY content into that genre's actual documented section structure (its own template's required ` +
+          `sections — e.g. engineering's mandatory Problem/Context/Options/Trade-offs-table/Decision/Implementation-Notes/` +
+          `Consequences, briefing's Headline/What's-New/Why-It-Matters/What's-Next), built from the SAME artifact claims steps 1-3 ` +
+          `already established — invent no new claims, never touch the citation/References/Sources section step 3 already wrote ` +
+          `(public-citation-only; restructuring the body must not introduce a citation leak). Set genreApplied=true, ` +
+          `genreSkillInvoked="${genreArg}:${genreArg}".\n`
+        : `4. GENRE SKILL APPLICATION (research-harness-template#640): genre="general" — no genre template applies, the neutral ` +
+          `artifact-rendered body from step 3 stands unchanged. Set genreApplied=false, genreSkillInvoked="".\n`
     return p.mechanism === 'artifact'
       ? agent(
           `Render ONE artifact-based deliverable for topic ${TOPIC}, harness ${H}: genre="${p.genre}", channel="${p.channel}", ` +
@@ -342,20 +416,22 @@ const rendered = await pipeline(
             `validated; produces public-citation-only prose (the citation-leak gate is enforced by this script's own engine delegation ` +
             `for blog/book, per scripts/render-artifact.sh's own header — do not hand-craft finding-@id citation keys into the output, ` +
             `that would BE a citation leak, not a feature).\n` +
-            `4. Stamp WITNESSED provenance (mif-docs-plugin's mif-provenance skill, ADR-0018, #632) on top of — never instead of — the ` +
+            genreStepText +
+            `5. Stamp WITNESSED provenance (mif-docs-plugin's mif-provenance skill, ADR-0018, #632) on top of — never instead of — the ` +
             `MIF Level-1 frontmatter step 3 already wrote (render-artifact.sh's own header: blog/book carry a real ` +
-            `@context/@type/@id/conceptType/created concept). Invoke it via the Skill tool, namespaced pack:skill, never a hand-rolled ` +
-            `script path into the plugin's install cache:\n` +
+            `@context/@type/@id/conceptType/created concept), and on top of step 4's restructuring if genreApplied=true. Invoke it via ` +
+            `the Skill tool, namespaced pack:skill, never a hand-rolled script path into the plugin's install cache:\n` +
             `   Skill(mif-docs:mif-provenance) — "stamp ${p.outputHint}"\n` +
             `If capture is disabled (mifProvenance.capture unset or false at every settings scope) or the session ledger has no ` +
             `witnessed touch of this file, stamp DECLINES (exit 3) — this is expected and healthy, not a render failure to surface as ` +
-            `broken; the deliverable's provenance block stays whatever step 3 already asserted (model-asserted). Do NOT hand-author a ` +
-            `provenance block to work around a decline. On success the block carries hook-observed agent/agentVersion/wasGeneratedBy ` +
-            `fields instead of only model-asserted ones; trustLevel stays user_stated (a local, unsigned witness) — never overstate it ` +
-            `as anything higher when reporting the outcome.\n` +
+            `broken; the deliverable's provenance block stays whatever step 3 (and step 4, if applied) already asserted (model-` +
+            `asserted). Do NOT hand-author a provenance block to work around a decline. On success the block carries hook-observed ` +
+            `agent/agentVersion/wasGeneratedBy fields instead of only model-asserted ones; trustLevel stays user_stated (a local, ` +
+            `unsigned witness) — never overstate it as anything higher when reporting the outcome.\n` +
             `Return the output path, genre, channel, mechanism="artifact", how many distinct primary-source citations the rendered ` +
-            `output's References/Sources section lists, and the provenance stamp outcome from step 4 (provenanceOutcome: ` +
-            `"stamped"/"declined"/"error", plus provenanceReason naming why, or "witnessed" when stamped).`,
+            `output's References/Sources section lists, the genre outcome from step 4 (genreApplied/genreSkillInvoked, per step 4's ` +
+            `own instruction above), and the provenance stamp outcome from step 5 (provenanceOutcome: "stamped"/"declined"/"error", ` +
+            `plus provenanceReason naming why, or "witnessed" when stamped).`,
           { label: `render:${p.genre}x${p.channel}`, phase: 'Render', model: 'sonnet', schema: RENDER_SCHEMA },
         )
       : agent(
@@ -367,12 +443,15 @@ const rendered = await pipeline(
             `read or reference the synthesis at ${SYN} for this row — the synthesis-only evidence rule does not apply to source-direct ` +
             `channels by design.${p.genre !== '-' ? ` A genre ("${p.genre}") was requested alongside this channel but does not apply — ` +
             `there is no genre axis here; ignore it.` : ''}\n` +
+            `There is no genre axis for this mechanism (#640) — always return genreApplied=false, genreSkillInvoked="" regardless of ` +
+            `whether a genre was requested alongside this channel.\n` +
             `Do NOT attempt a Skill(mif-docs:mif-provenance) stamp for this row — mechanism 2 is explicitly out of scope for it (each ` +
             `pack owns its own output format/invocation with no dedicated backing script this module controls, and several formats ` +
             `aren't even MIF-frontmatter-bearing markdown; see module header). Return provenanceOutcome="not-applicable" with that ` +
             `reason verbatim.\n` +
             `Return the output path, genre="-", channel, mechanism="source-direct", how many distinct primary-source citations the ` +
-            `output carries, and the provenance fields (provenanceOutcome="not-applicable", provenanceReason naming why).`,
+            `output carries, genreApplied=false/genreSkillInvoked="", and the provenance fields (provenanceOutcome="not-applicable", ` +
+            `provenanceReason naming why).`,
           { label: `render:${p.channel}`, phase: 'Render', model: 'sonnet', schema: RENDER_SCHEMA },
         )
   },
@@ -416,6 +495,6 @@ if (dirty.length) {
 
 return {
   ok: artifacts.length > 0,
-  artifacts: artifacts.map((a) => ({ path: a.outputPath, genre: a.genre, channel: a.channel, mechanism: a.mechanism, citations: a.citationsCount, clean: a.validation ? a.validation.clean : null, provenanceOutcome: a.provenanceOutcome, provenanceReason: a.provenanceReason })),
+  artifacts: artifacts.map((a) => ({ path: a.outputPath, genre: a.genre, channel: a.channel, mechanism: a.mechanism, citations: a.citationsCount, clean: a.validation ? a.validation.clean : null, genreApplied: a.genreApplied, genreSkillInvoked: a.genreSkillInvoked, provenanceOutcome: a.provenanceOutcome, provenanceReason: a.provenanceReason })),
   unavailable: route.unavailable,
 }
