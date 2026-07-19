@@ -20,6 +20,18 @@
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 2
 
+# Template-only gate (research-harness-template#616). Cutting a GitHub Release is
+# the TEMPLATE's own distribution concern, not something an instantiated clone
+# does — .github/workflows/release.yml only exists in the template repository
+# itself. copier.yml is `_exclude`d at generation (copier.yml's own `_exclude:`
+# block), so its presence is the same IS_TEMPLATE signal scripts/verify.sh's
+# gate_* functions already use (#507) — skip cleanly in an instance instead of
+# failing hard with no path to green.
+if [ ! -f copier.yml ]; then
+  echo "release-workflow-immutable-safe: SKIP — no release.yml in an instantiated clone (cutting a release is the template's own distribution concern, not an instance's)"
+  exit 0
+fi
+
 WF=".github/workflows/release.yml"
 fail=0
 
