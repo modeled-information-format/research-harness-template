@@ -1,7 +1,7 @@
 ---
 name: research
-description: Engine-path entry point for a research campaign — wraps ONE Workflow tool call into the vendored research-pipeline.js (mode router + bounded autonomous round loop covering full, augment, pivot, import, audit, and deliverables modes). Supersedes /start's spawn of the orchestrator subagent for the engine path; does not delete or disable /start.
-argument-hint: "[--topic <id>] [--mode full|augment|pivot|import|audit|deliverables] [--max-rounds <n>] [--focus-hint <text>] [--delta <what changed>] [--container-dir <path>] [--trust-imported-verdicts] [--genres <g1,g2>] [--channels <c1,c2>] [--claim-budget <n>] [--query-budget <n>] [--lenses <n>] [<research ask>]"
+description: Engine-path entry point for a research campaign — wraps ONE Workflow tool call into the vendored research-pipeline.js (mode router + bounded autonomous round loop covering full, augment, pivot, import, audit, deliverables, and falsify modes). Supersedes /start's spawn of the orchestrator subagent for the engine path; does not delete or disable /start.
+argument-hint: "[--topic <id>] [--mode full|augment|pivot|import|audit|deliverables|falsify] [--max-rounds <n>] [--focus-hint <text>] [--delta <what changed>] [--container-dir <path>] [--trust-imported-verdicts] [--genres <g1,g2>] [--channels <c1,c2>] [--claim-budget <n>] [--query-budget <n>] [--lenses <n>] [<research ask>]"
 allowed-tools:
   - Workflow
   - Bash
@@ -48,7 +48,7 @@ backticks and angle brackets.
     use it; more than one → **AskUserQuestion** which topic; none
     registered → tell the user to register one first (`/start` or
     `/configure topics`) and stop.
-- `--mode <full|augment|pivot|import|audit|deliverables>` — default `full`.
+- `--mode <full|augment|pivot|import|audit|deliverables|falsify>` — default `full`.
   Selects the script's mode-router branch:
   - `full` — the bounded autonomous goal loop (goal → [fanout →
     falsify-drain → synthesis → independent completion check]\* →
@@ -76,6 +76,20 @@ backticks and angle brackets.
     on disk; on a topic with zero surviving findings, synthesis legitimately
     returns `ok: false` and this mode returns `{ deliverables: null }`
     rather than erroring.
+  - `falsify` — gates whatever findings are already on disk under
+    `reports/<topic>/`, no new research. Nothing but a call into the same
+    `falsifyAll` helper `full`/`augment`/`pivot`/`import` already use
+    internally — no fan-out, no synthesis, no projection. Exists because
+    every atomic module (`research-falsify.js` included) fails when invoked
+    standalone via the top-level `Workflow` tool (confirmed systemic across
+    multiple atomic modules, not specific to falsify — see
+    research-harness-template#654), and every OTHER mode that reaches the
+    gate couples it to a fresh fanout round first. Resumable for free: each
+    finding's verdict is written to disk immediately as the gate runs, and
+    the one-round rule (`extensions.harness.verification.attempted_at`)
+    means a re-run's Enumerate step automatically skips whatever is already
+    gated — an interrupted run picks up exactly where it left off on
+    re-invocation.
 - `--max-rounds <n>` — `full` mode only. Caps the round loop (script default
   `3`). Passed through as `maxRounds`.
 - `--focus-hint <text>` — `augment` mode only. A steer for the deepening
@@ -111,7 +125,8 @@ backticks and angle brackets.
 **Stamp `RUN_DATE` first, before the `Workflow` call — required, every mode
 except `audit` and `deliverables`** (#618; `deliverables` mode never calls
 `research-falsify`, the only child that consumes `runDate`, so it works fine
-with `runDate` omitted, same as `audit`). `research-pipeline.js` and every workflow it composes
+with `runDate` omitted, same as `audit`). `falsify` mode DOES need it — it
+calls `research-falsify` directly. `research-pipeline.js` and every workflow it composes
 run inside the Workflow runtime, which disallows `new Date()`/`Date.now()`
 in a script's own body (it would break deterministic resume) — so a real
 wall-clock timestamp can only come from OUTSIDE the runtime, i.e. from this
@@ -184,6 +199,12 @@ if this command had performed the work itself:
   deliverables }`. State `done` plainly; if `done` is `false`, list the
   `unmet` checks with their `why` — never claim completion the script itself
   did not report.
+- **`falsify`** — `{ gate: { gated, rollup, verdicts, deferredIds, alreadyVerified } }`.
+  Report the verdict rollup (counts per ordinal) plainly. A non-empty
+  `deferredIds` means the working set exceeded the claim budget and some
+  findings were left ungated on purpose (never silently dropped) — tell the
+  user to re-run `--mode falsify` on the same topic to continue; it resumes
+  automatically via the one-round rule.
 
 ## Next steps
 
