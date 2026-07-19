@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-07-18
+
+### Added
+
+- **Workflow-tool orchestration as a parallel path to the orchestrator
+  subagent** (ADR-0020): `.claude/workflows/research.js`, a 9-phase
+  (Prepare -> Research -> Gate & Remediate -> Type -> Check -> Synthesize ->
+  Render -> Project -> Finalize) Claude Code Workflow script driving full-,
+  augment-, and update-mode research sessions with deterministic
+  `pipeline`/`parallel` control flow and awaited `agent()` calls, eliminating
+  the orchestrator subagent's poll/reap/zombie/shortfall-reconciliation bug
+  class by construction for this path. Every reused subagent
+  (`dimension-analyst`, `falsification-analyst`, `report-synthesizer`,
+  `source-chunker`) is spawned unmodified via `agentType` + `schema`
+  composition, so its hardened authoring rules apply without duplication.
+  Adds parallel genre/channel rendering across the enabled pack surface as
+  new capability the orchestrator's sequential synthesis step did not offer.
+  Invoked via the new `.claude/commands/research.md`, which sits alongside
+  `/start` as a genuinely parallel entry point -- `/start` and the
+  orchestrator subagent are unchanged. Five structural evals
+  (`workflow-research-parses`, `workflow-research-structure`,
+  `workflow-research-update-mode`, `workflow-research-mode-integrity`,
+  `command-research-mode-flags`) are wired into `evals/run-evals.sh`, static
+  checks only, no live agent spawning in CI. Prototyped and live-tested in a
+  research-harness instance before this port (two full end-to-end dry runs
+  plus five targeted spikes found and fixed four real defects, all
+  re-verified live); the one known limitation --
+  `try`/`finally` cleanup does not reliably run on a host-level `TaskStop`
+  mid-gate -- is documented with concrete manual-recovery steps in
+  `research.md`'s Error Handling section rather than papered over.
+
 ## [0.16.3] - 2026-07-16
 
 ### Added

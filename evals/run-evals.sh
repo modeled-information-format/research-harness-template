@@ -439,6 +439,32 @@ fi
 run "anti-narration-guard-start"  bash -c 'grep -q "Issue #490" .claude/commands/start.md && grep -q "output ONLY a bare factual" .claude/commands/start.md'
 run "anti-narration-guard-resume" bash -c 'grep -q "Issue #490" .claude/commands/resume.md && grep -q "output ONLY a bare factual" .claude/commands/resume.md'
 
+# 9. Workflow-tool orchestration (.claude/workflows/research.js, ADR-0020) --
+#    structural checks only (no live agent spawning): the script parses as
+#    the Workflow runtime would execute it and meta.phases matches every
+#    phase() call; every *_SCHEMA constant compiles as real JSON Schema,
+#    every scripts/*.sh path it references exists, and every prompt touching
+#    an engine-delegating script carries the exit-5 handling clause;
+#    update-mode's membership/tag-gap resolution content is present; and
+#    mode-resolution integrity holds across all three modes (full/augment/
+#    update) -- no duplicate MODE declaration, no mode silently collapsing to
+#    another, and resolve-membership.sh's update-mode call site guarded
+#    correctly (research-harness#22).
+run "workflow-research-parses"         bash evals/workflow-research-parses.sh
+run "workflow-research-structure"      bash evals/workflow-research-structure.sh
+run "workflow-research-update-mode"    bash evals/workflow-research-update-mode.sh
+run "workflow-research-mode-integrity" bash evals/workflow-research-mode-integrity.sh
+
+# 10. Mode resolution wired into /research (research-harness#21) --
+#     complements the workflow-research-* evals above (which cover
+#     research.js itself) by checking the command surface (research.md)
+#     actually exposes --augment/--update, resolves MODE the same way
+#     start.md does, requires an existing goal in augment/update mode, and
+#     threads mode/dimension through to the Workflow() call -- and
+#     cross-checks that against research.js's real SUPPORTED_MODES so docs
+#     and implementation can't silently drift apart.
+run "command-research-mode-flags" bash evals/command-research-mode-flags.sh
+
 echo
 if [ "$FAIL" -gt 0 ]; then
   printf '%srun-evals: %d passed, %d FAILED%s\n' "$RED" "$PASS" "$FAIL" "$RST"
