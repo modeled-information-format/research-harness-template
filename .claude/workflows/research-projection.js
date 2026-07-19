@@ -149,8 +149,8 @@ const REPORT_SCHEMA = {
     checksAddressed: { type: 'array', items: { type: 'string' } },
     verificationVerdict: { type: 'string', enum: ['falsified', 'weakened', 'survived', 'inconclusive'] },
     reportId: { type: 'string', description: 'the report\'s own @id — same across a supersession re-run, by construction of render-artifact.sh (see header note)' },
-    provenanceOutcome: { type: 'string', enum: ['stamped', 'declined', 'error'], description: 'result of the Skill(mif-docs:mif-provenance) stamp attempt (#632) — "declined" is expected/healthy when capture is off or the session ledger never witnessed this file, never a projection failure' },
-    provenanceReason: { type: 'string', description: 'why declined/error (the skill\'s own stated reason), or "witnessed" when stamped' },
+    provenanceOutcome: { type: 'string', enum: ['stamped', 'declined', 'error', 'not-applicable'], description: 'result of the Skill(mif-docs:mif-provenance) stamp attempt (#632) — "declined" is expected/healthy when capture is off or the session ledger never witnessed this file, never a projection failure; "not-applicable" is the ONLY correct value when step 3\'s verificationVerdict="falsified" stopped the pipeline before step 7 ever ran — never fabricate "stamped"/"declined"/"error" for a report that was quarantined before the stamp attempt' },
+    provenanceReason: { type: 'string', description: 'why declined/error (the skill\'s own stated reason), "witnessed" when stamped, or "report quarantined at step 3 (falsified) — step 7 never reached" when provenanceOutcome is "not-applicable"' },
   },
   required: ['reportPath', 'frontmatterLevel', 'checksAddressed', 'verificationVerdict', 'reportId', 'provenanceOutcome', 'provenanceReason'],
 }
@@ -216,7 +216,9 @@ const report = await agent(
     `or internal memory) trying to falsify each one, then materialize an evidence fixture keyed by the report-finding's @id ` +
     `(mktemp OUTSIDE the repo tree) and write the verdict through: bash ${H}/scripts/falsify.sh ${RDIR}/report-finding.json ` +
     `<fixture-path> > ${RDIR}/report-finding.falsified.json. A falsified verdict means the report is QUARANTINED and NOT ` +
-    `shipped — report verificationVerdict="falsified" and STOP here, do not proceed to render.\n` +
+    `shipped — report verificationVerdict="falsified" and STOP here, do not proceed to render. In this case step 7 (provenance ` +
+    `stamping) never runs: set provenanceOutcome="not-applicable" and provenanceReason="report quarantined at step 3 (falsified) ` +
+    `— step 7 never reached" — do NOT fabricate a stamped/declined/error outcome for a stamp attempt that never happened.\n` +
     `4. jq '.extensions.harness.verification' ${RDIR}/report-finding.falsified.json > ${RDIR}/report.verification.json\n` +
     `5. bash ${H}/scripts/render-artifact.sh ${RDIR}/artifact.json report ${RDIR}/${SLUG}.md ${RDIR}/report.verification.json ` +
     `— write-then-validated; fails closed if it does not project to a valid L3 finding. If a report of record already exists ` +
@@ -240,7 +242,9 @@ const report = await agent(
     `Return the report path, the achieved MIF level, which goal check ids the report addresses, the verification verdict ` +
     `ACTUALLY WRITTEN by falsify.sh (never hand-authored), the report's own @id (read it back from the rendered file's ` +
     `frontmatter after step 5/6, not invented), and the provenance stamp outcome from step 7 (provenanceOutcome: ` +
-    `"stamped"/"declined"/"error", plus provenanceReason naming why, or "witnessed" when stamped).`,
+    `"stamped"/"declined"/"error", plus provenanceReason naming why, or "witnessed" when stamped — UNLESS verificationVerdict ` +
+    `is "falsified" and step 3 already stopped you before step 7, in which case provenanceOutcome="not-applicable" and ` +
+    `provenanceReason="report quarantined at step 3 (falsified) — step 7 never reached", per step 3's own instruction).`,
   { label: 'projection:report', model: 'sonnet', schema: REPORT_SCHEMA },
 )
 if (!report) throw new Error('research-projection: report rendering failed')
