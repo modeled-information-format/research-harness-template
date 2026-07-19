@@ -2,7 +2,7 @@
 id: reference-engine-workflows
 type: semantic
 created: '2026-07-17T20:25:00-04:00'
-modified: '2026-07-19T13:48:05.587Z'
+modified: '2026-07-19T15:16:29.316Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -18,7 +18,7 @@ provenance:
   '@type': Provenance
   agent: claude-code/claude-sonnet-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:b749de23-4698-4ce0-817a-dff265cce3e2
+    '@id': urn:mif:activity:claude-code-session:cc83f20c-2193-42dd-b5b5-72fe80571327
     '@type': prov:Activity
   trustLevel: user_stated
   agentVersion: 2.1.215
@@ -501,13 +501,13 @@ Source: `.claude/workflows/research-projection.js`.
 | `synthesisPath` | yes | — | The ephemeral output path from a `research-synthesis` call — see the [consumption contract](#synthesispath-consumption-contract-same-process-only) below. A missing `synthesisPath` throws before any phase runs. |
 | `harnessDir` | no | `.` | Path to the harness instance (the #552/#556/#560/#564 precedent). |
 | `slug` | no | `topic` | The report file's slug (`reports/<topic>/<slug>.md`). |
-| `genre` | no | `'general'` | Genre passed through to `synthesize-artifact.sh`. |
+| `genre` | no | `'general'` | The requested genre. Resolved against `harness.config.json` `packs[]` enablement before rendering (#633): only an ENABLED genre pack's real `Skill(<genre>:<genre>)` template is actually applied to the rendered report body; `'general'` or a disabled/absent genre pack renders the neutral script pipeline honestly under `genreArg="general"` — the report's own genre metadata never claims a genre whose template was not actually applied. See [Genre resolution](#genre-resolution-skillgenregenre-applied-only-when-enabled-633) below. |
 
 ### Phases
 
 | Phase | Model | What it does |
 | --- | --- | --- |
-| Report | sonnet | A same-process existence/non-empty/valid-JSON preflight check on `synthesisPath` (folded into the top of this phase, not a separate stage), then the `publish-report` skill's script pipeline: `synthesize-artifact.sh` → a REAL falsification pass over the report's own central claims via `falsify.sh` (never a hand-authored verdict) → `render-artifact.sh` → `mif-project.sh`. A `falsified` verdict quarantines the report — it is not shipped, and the module returns `ok: false` without proceeding to Index. |
+| Report | sonnet | A same-process existence/non-empty/valid-JSON preflight check on `synthesisPath` (folded into the top of this phase, not a separate stage), then genre resolution against `harness.config.json` `packs[]` enablement (#633), then the `publish-report` skill's script pipeline: `synthesize-artifact.sh` → a REAL falsification pass over the report's own central claims via `falsify.sh` (never a hand-authored verdict) → `render-artifact.sh` → `mif-project.sh` → `Skill(<genre>:<genre>)` applied + re-confirmed only when that genre's pack is enabled. A `falsified` verdict quarantines the report — it is not shipped, and the module returns `ok: false` without proceeding to Index. |
 | Index | haiku | The `readme` skill's `build-topic-readme.sh` for the computed structural backbone (counts, dates, verdict breakdown, source total, dimension rollup, report/artifact tables — never guessed), with only the Key Findings/Purpose prose hand-authored on top; then the `graph` skill's `build-graph.sh` + `assert-graph-mif.sh` to refresh and re-verify the knowledge graph. |
 | Verify | haiku | Targeted gates (markdownlint + `ajv`) on only the files this run actually changed — never the full `verify.sh` suite. See [Decision D-10](#verify-phase-decision-d-10-targeted-gates-only) below. |
 
@@ -563,6 +563,49 @@ delegate-to-`scripts/*.sh` precedent `research-goal`/`research-fanout`/
 `research-falsify`/`research-synthesis` already established for their own
 substrates.
 
+### Genre resolution: `Skill(<genre>:<genre>)` applied only when enabled (#633)
+
+Before this fix, `genre` flowed straight into `synthesize-artifact.sh` as
+pass-through metadata — the deterministic script is genre-neutral by design,
+so every requested genre rendered the identical findings-dump body with only
+the frontmatter `genre:` field differing from a neutral render, indistinguishable
+from a correctly-genred report without diffing bodies across two genres. The Report phase now resolves the requested genre **before**
+rendering, mirroring `.claude/agents/report-synthesizer.md`'s own Step 2
+("Resolve the genre (optional, pack-provided)") — the known-working
+mechanism for the interactive `/start` path:
+
+- `genre="general"` (the default) needs no lookup: it is definitionally the
+  neutral render, `genreArg="general"`.
+- Otherwise, an enablement check (`jq` over `harness.config.json packs[]`)
+  determines whether the SPECIFIC requested genre's own pack is enabled —
+  each genre ships as its own individually-toggleable pack, never a shared
+  "reports" family pack. An **enabled** pack resolves `genreArg=<genre>` and
+  a `genreSkillRef="<genre>:<genre>"`; after the script pipeline renders the
+  neutral body, the Report phase invokes `Skill(<genre>:<genre>)` to
+  restructure that body per the genre's real documented template (e.g.
+  `engineering`'s mandatory Trade-offs comparison table, `briefing`'s
+  Headline/What's New/Why It Matters/What's Next), built from the same
+  artifact/synthesis claims already established — inventing nothing new,
+  never touching the MIF frontmatter/citations/verdict fields the script
+  pipeline already wrote — then re-confirms `mif-project.sh` since the body
+  changed.
+- A **disabled or absent** pack falls back to `genreArg="general"` instead
+  of the originally-requested genre — the neutral pipeline renders, exactly
+  as if no genre had been requested, and the report's own genre metadata
+  reads `"general"`, never the unearned requested genre (mirrors
+  `report-synthesizer.md`'s own rule that frontmatter must only claim a
+  genre whose template was really applied).
+
+The Report phase's returned `genreApplied` (boolean) and `genreSkillInvoked`
+(the `"<genre>:<genre>"` reference, or `""`) make this outcome caller-visible
+instead of silently cosmetic — see [Returns](#returns) below. A falsified
+verdict (step 3) quarantines the report before either the genre resolution's
+skill-application step or the provenance stamp ever runs:
+`genreApplied=false`, `genreSkillInvoked=""`.
+`research-deliverables.js` has a comparable `genres` pass-through gap for its
+own artifact-based channels, tracked separately as
+research-harness-template#640 — deliberately out of scope for this fix.
+
 ### Verify phase: Decision D-10, targeted gates only
 
 The Verify phase's targeted-only scope is not an implementation shortcut —
@@ -592,17 +635,25 @@ cross-references, the knowledge graph's own node ids) may rely on — a report's
 ### Returns
 
 A typed result:
-`{ ok, reportPath, reportId, mifLevel, checksAddressed, verificationVerdict, readmePath, readmeCheckPassed, graphRefreshed, graphAssertPassed, problems }`
+`{ ok, reportPath, reportId, mifLevel, checksAddressed, verificationVerdict, genreRequested, genreApplied, genreSkillInvoked, provenanceOutcome, provenanceReason, readmePath, readmeCheckPassed, graphRefreshed, graphAssertPassed, problems }`
 — `ok` true only once the Verify phase reports both `lintClean` and
 `schemaClean`, `reportPath`/`reportId` the rendered report's path and
 supersession-stable `@id`, `mifLevel` the achieved MIF frontmatter level,
 `checksAddressed` the goal check ids the report speaks to,
 `verificationVerdict` the verdict `falsify.sh` actually wrote (never
-hand-authored), `readmePath`/`readmeCheckPassed`/`graphRefreshed`/
-`graphAssertPassed` the Index phase's script-gate results, and `problems` the
-Verify phase's targeted-gate findings. A report-falsification short-circuit
-instead returns `{ ok: false, reason: 'report-falsified', reportPath,
-verificationVerdict: 'falsified' }` before the Index phase ever runs.
+hand-authored), `genreRequested` the raw `genre` arg as passed in,
+`genreApplied`/`genreSkillInvoked` the genre resolution's outcome (#633 —
+`true`/`"<genre>:<genre>"` only when that genre's pack was enabled and its
+skill actually invoked; `false`/`""` for `"general"`, a disabled/absent
+pack, or a falsified report), `provenanceOutcome`/`provenanceReason` the
+`Skill(mif-docs:mif-provenance)` stamp attempt's outcome (#632 —
+`"stamped"`/`"declined"`/`"error"`/`"not-applicable"`),
+`readmePath`/`readmeCheckPassed`/`graphRefreshed`/`graphAssertPassed` the
+Index phase's script-gate results, and `problems` the Verify phase's
+targeted-gate findings. A report-falsification short-circuit instead returns
+`{ ok: false, reason: 'report-falsified', reportPath, verificationVerdict:
+'falsified', genreRequested, genreApplied: false, genreSkillInvoked: '' }`
+before the Index phase ever runs.
 
 ## research-deliverables
 

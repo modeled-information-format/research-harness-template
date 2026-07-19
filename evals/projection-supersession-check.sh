@@ -64,6 +64,25 @@
 #      carve-out reintroduces the false-positive "root element is array but
 #      schema expects object" failure this eval traps.
 #
+#   G. Genre skill invocation (research-harness-template#633). Before this
+#      fix, `genre` was passed straight through to synthesize-artifact.sh as
+#      pass-through metadata — no genre's real Skill(<genre>:<genre>) template
+#      was ever invoked, so every genre rendered the identical neutral body
+#      with only the frontmatter `genre:` field differing, indistinguishable
+#      from a correctly-genred report by inspection. Two-part proof, mirroring
+#      the #632 precedent immediately above: (1) a REAL jq run of the EXACT
+#      pack-enablement filter the Report phase prompt instructs the agent to
+#      run (extracted from the prompt text, never hand-retyped) against a
+#      fixture harness.config.json, proving it correctly distinguishes an
+#      enabled genre pack, a disabled one, and a genre absent from packs[]
+#      entirely; (2) structural proof (grepped from the Report phase's own
+#      AGENT PROMPT body) that an enabled genre pack's resolution literally
+#      invokes Skill(<genre>:<genre>) and that a disabled/absent pack's
+#      resolution explicitly forbids the output from claiming a genre it
+#      didn't earn, plus schema/return-shape proof that genreApplied and
+#      genreSkillInvoked are actually surfaced to callers rather than
+#      silently discarded.
+#
 # Hermetic: node/jq/the vendored bin/mif-rh-cli (offline, fixture-supplied
 # evidence — ADR-0016), evals/fixtures/raw-finding.json + evidence.json,
 # schemas/samples/*, and mktemp scratch only. No network, no live model/API
@@ -159,6 +178,60 @@ grep -qF "'provenanceOutcome'" "$WF" \
   || { note "REPORT_SCHEMA no longer declares provenanceOutcome — the #632 stamp result would no longer be surfaced to callers"; fail=1; }
 grep -qF 'provenanceOutcome: report.provenanceOutcome' "$WF" \
   || { note "the module's final return no longer forwards report.provenanceOutcome — the #632 stamp result would be silently dropped even if the Report phase still computes it"; fail=1; }
+
+# ============================================================================
+# G: Genre skill invocation (research-harness-template#633).
+# ============================================================================
+
+# G1 — REAL jq run of the EXACT pack-enablement filter the Report phase
+# prompt instructs the agent to run, extracted from the prompt text (never
+# hand-retyped), proving it actually distinguishes an enabled genre pack, a
+# disabled one, and a genre absent from packs[] entirely.
+genre_filter_line="$(grep -m1 '\.packs\[\] | select' "$WF")"
+if [ -z "$genre_filter_line" ]; then
+  note "could not find the genre pack-enablement jq invocation in $WF — has the GENRE RESOLUTION step's prompt text changed shape?"
+  fail=1
+else
+  genre_filter="$(sed -E "s/.*'(\.packs\[\][^']*)'.*/\1/" <<<"$genre_filter_line")"
+  if [ -z "$genre_filter" ] || [ "$genre_filter" = "$genre_filter_line" ]; then
+    note "could not extract the jq filter expression out of the genre pack-enablement line: $genre_filter_line"
+    fail=1
+  else
+    GENRE_CFG="$TMP/genre-harness.config.json"
+    cat > "$GENRE_CFG" <<'EOF'
+{"version":"0.1.0","topics":[],"packs":[{"name":"engineering","enabled":true},{"name":"briefing","enabled":false}]}
+EOF
+    enabled_out="$(jq -r --arg g "engineering" "$genre_filter" "$GENRE_CFG" 2>"$TMP/g1.err")"
+    [ "$enabled_out" = "engineering" ] \
+      || { note "genre pack-enablement filter did not resolve an ENABLED pack ('engineering') as enabled: got '$enabled_out' ($(cat "$TMP/g1.err"))"; fail=1; }
+    disabled_out="$(jq -r --arg g "briefing" "$genre_filter" "$GENRE_CFG" 2>"$TMP/g2.err")"
+    [ -z "$disabled_out" ] \
+      || { note "genre pack-enablement filter did not resolve a DISABLED pack ('briefing') as unavailable: got '$disabled_out'"; fail=1; }
+    absent_out="$(jq -r --arg g "nonexistent-genre" "$genre_filter" "$GENRE_CFG" 2>"$TMP/g3.err")"
+    [ -z "$absent_out" ] \
+      || { note "genre pack-enablement filter did not resolve a genre ABSENT from packs[] entirely as unavailable: got '$absent_out'"; fail=1; }
+  fi
+fi
+
+# G2 — structural proof (grepped from the Report phase's own AGENT PROMPT
+# body, never a header-comment mention) that an enabled genre pack's
+# resolution literally invokes Skill(<genre>:<genre>), that a disabled/absent
+# pack's resolution explicitly forbids claiming an unearned genre, and that
+# the outcome is surfaced through REPORT_SCHEMA and the module's final return.
+grep -qF 'GENRE ENABLEMENT CHECK' <<<"$report_span" \
+  || { note "Report phase prompt lost its GENRE ENABLEMENT CHECK step — the #633 pack-enablement resolution has regressed away"; fail=1; }
+grep -qF 'Skill(${genreResolution.genreSkillRef})' "$WF" \
+  || { note "the module no longer invokes Skill(\${genreResolution.genreSkillRef}) when a genre's pack is enabled — the #633 genre-skill application has regressed away"; fail=1; }
+grep -qF 'never let the output claim a genre whose' <<<"$report_span" \
+  || { note "Report phase prompt lost its explicit never-claim-an-unearned-genre instruction (#633) — mirrors report-synthesizer.md's own rule"; fail=1; }
+grep -qF "'genreApplied'" "$WF" \
+  || { note "REPORT_SCHEMA no longer declares genreApplied — the #633 genre-skill outcome would no longer be surfaced to callers"; fail=1; }
+grep -qF "'genreSkillInvoked'" "$WF" \
+  || { note "REPORT_SCHEMA no longer declares genreSkillInvoked — the #633 genre-skill outcome would no longer be surfaced to callers"; fail=1; }
+grep -qF 'genreApplied: report.genreApplied' "$WF" \
+  || { note "the module's final return no longer forwards report.genreApplied — the #633 genre-skill outcome would be silently dropped even if the Report phase still computes it"; fail=1; }
+grep -qF 'genreSkillInvoked: report.genreSkillInvoked' "$WF" \
+  || { note "the module's final return no longer forwards report.genreSkillInvoked — the #633 genre-skill outcome would be silently dropped even if the Report phase still computes it"; fail=1; }
 
 # ============================================================================
 # B: Supersession identity. REAL pipeline run, no stubs: synthesize-artifact.sh
@@ -426,5 +499,5 @@ else
     || { note "count-drift message did not name the stale stated value (99): $count_check_out"; fail=1; }
 fi
 
-[ "$fail" -eq 0 ] && note "script-delegated composition holds (Report: synthesize-artifact.sh->falsify.sh->render-artifact.sh->mif-project.sh; Index: build-topic-readme.sh+build-graph.sh+assert-graph-mif.sh, both grepped from the module's own AGENT PROMPT bodies, never a comment); supersession @id is proven identical across two real pipeline renders with genuinely differing content (version incremented, genre changed); the synthesisPath preflight guard is proven (by driving the verbatim-extracted branch) to fail closed with a clear, actionable message on a missing/unusable path and pass through on a usable one; computed README counts are proven to catch a stale hand-typed value via build-topic-readme.sh's real --check gate; the Verify phase's targeted-gates-only (D-10) language is intact; and the #632 witnessed-provenance stamp (Skill(mif-docs:mif-provenance), graceful decline handling, no hand-authored workaround) is wired into the Report phase prompt with its outcome surfaced through REPORT_SCHEMA and the module's final return"
+[ "$fail" -eq 0 ] && note "script-delegated composition holds (Report: synthesize-artifact.sh->falsify.sh->render-artifact.sh->mif-project.sh; Index: build-topic-readme.sh+build-graph.sh+assert-graph-mif.sh, both grepped from the module's own AGENT PROMPT bodies, never a comment); supersession @id is proven identical across two real pipeline renders with genuinely differing content (version incremented, genre changed); the synthesisPath preflight guard is proven (by driving the verbatim-extracted branch) to fail closed with a clear, actionable message on a missing/unusable path and pass through on a usable one; computed README counts are proven to catch a stale hand-typed value via build-topic-readme.sh's real --check gate; the Verify phase's targeted-gates-only (D-10) language is intact; the #632 witnessed-provenance stamp (Skill(mif-docs:mif-provenance), graceful decline handling, no hand-authored workaround) is wired into the Report phase prompt with its outcome surfaced through REPORT_SCHEMA and the module's final return; and the #633 genre-skill-invocation fix holds (the pack-enablement jq filter extracted from the prompt correctly resolves enabled/disabled/absent genre packs against a real fixture, an enabled pack's resolution invokes Skill(<genre>:<genre>), a disabled/absent pack's resolution forbids claiming an unearned genre, and genreApplied/genreSkillInvoked are surfaced through REPORT_SCHEMA and the module's final return)"
 exit "$fail"
