@@ -412,7 +412,7 @@ grep -qF 'provenanceOutcome: a.provenanceOutcome' "$WF" \
 # file's own header) — proven structurally, per this repo's established
 # precedent, not faked as hermetic.
 # ============================================================================
-grep -qF 'genreArg !== ' "$WF" \
+grep -qF "genreArg !== 'general'" "$WF" \
   || { note "the module's source no longer branches the genre-skill step on genreArg !== 'general' — has #640's conditional wiring changed?"; fail=1; }
 grep -qF 'Skill(mif-docs:${genreArg})' "$WF" \
   || { note "the module's source no longer contains the literal Skill(mif-docs:\${genreArg}) invocation template for mechanism 1's enabled-genre case — has #640's actual invocation shape changed, or regressed to the wrong same-named-plugin form?"; fail=1; }

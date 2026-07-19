@@ -363,7 +363,7 @@ log(`Rendering ${route.plan.length} deliverable(s): ${route.plan.map((p) => `${p
 // guard in research-projection.js): every non-general/non-'-' genre below is
 // interpolated into a shell command argument (synthesize-artifact.sh/
 // render-artifact.sh's genreArg) AND, for artifact rows, into a Skill()
-// reference (genreSkillRef = `${genre}:${genre}`). Pack names are
+// reference (genreSkillRef = `mif-docs:${genre}`). Pack names are
 // constrained by harness.config.schema.json's packs[].name pattern
 // (^[a-z][a-z0-9-]*$) — Route is a model call, not code, so its plan[]
 // cannot be trusted to have enforced this itself. Validate BEFORE any use
