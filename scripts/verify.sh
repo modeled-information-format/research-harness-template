@@ -2231,6 +2231,33 @@ gate_m19() {
   else
     ok "orchestrator.md uses no fixed cross-session snapshot heading (date-qualified summary instead)"
   fi
+
+  # 19c. evals/release-workflow-immutable-safe.sh must skip in an instance — the
+  #      same defect class as 19a's copier-update.sh guard (issue #85 D1), reported
+  #      separately as #616: .github/workflows/release.yml only exists in the
+  #      template (cutting a Release is the template's own distribution concern),
+  #      so this eval failed hard, permanently, in every instantiated clone.
+  #      Lock the exact guard condition (a missing copier.yml, the same IS_TEMPLATE
+  #      signal scripts/verify.sh's own gate_* functions use, #507).
+  if grep -qE '^\s*if \[ ! -f copier\.yml \]; then' evals/release-workflow-immutable-safe.sh; then
+    ok "release-workflow-immutable-safe.sh guard matches the IS_TEMPLATE instance condition (missing copier.yml)"
+  else
+    bad "release-workflow-immutable-safe.sh guard does not match '[ ! -f copier.yml ]' — a regressed guard could fail hard in every instance again (#616)"
+  fi
+  # Behaviorally exercise the guard: copy the real script into a throwaway repo with
+  # NO copier.yml (an instance) and confirm it actually SKIPs rather than failing on
+  # the also-absent .github/workflows/release.yml. The template path (copier.yml
+  # present -> runs the real assertions) is covered by this same eval running fully
+  # as part of `bash evals/run-evals.sh` in the template's own CI.
+  local rt; rt="$(mktemp -d)"
+  mkdir -p "$rt/evals"
+  cp evals/release-workflow-immutable-safe.sh "$rt/evals/release-workflow-immutable-safe.sh"
+  if ( cd "$rt" && bash evals/release-workflow-immutable-safe.sh 2>/dev/null | grep -q '^release-workflow-immutable-safe: SKIP' ); then
+    ok "release-workflow-immutable-safe.sh behaviorally SKIPs in an instance (no copier.yml, no release.yml)"
+  else
+    bad "release-workflow-immutable-safe.sh did NOT skip in an instance — instance CI would fail (#616)"
+  fi
+  rm -rf "$rt"
 }
 
 gate_m20() {
