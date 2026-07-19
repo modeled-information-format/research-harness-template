@@ -56,7 +56,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   on-disk id is covered by `workingSet ∪ skippedAlreadyVerifiedIds`,
   triggers one named retry on a gap, and throws loudly (naming the missing
   id(s)) if the gap survives the retry, rather than silently gating a
-  partial working set.
+  partial working set. The reconciliation only applies to `scope: 'all'` —
+  under a narrower scope (`dimension:*`, or an explicit `paths`/`ids` set,
+  including regate) the working set is a deliberate subset, so out-of-scope
+  on-disk findings sit in neither list legitimately and would otherwise be
+  falsely flagged missing. RE-GATE mode also gained its own deterministic
+  guard: since regate exists specifically to re-open verification even for
+  findings already carrying `extensions.harness.verification.attempted_at`,
+  the module now fails loudly (naming the offending id(s)) if enumeration
+  nonetheless populates `skippedAlreadyVerifiedIds` during a regate run,
+  rather than trusting the enumeration agent's own compliance with that
+  prompt contract.
 
 ## [0.16.19] - 2026-07-18
 

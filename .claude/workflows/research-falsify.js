@@ -330,6 +330,26 @@ if (missing.length) {
   log(`Enumerate reconciliation retry succeeded: all ${enumerated.allFindingIds.length} on-disk finding id(s) now accounted for.`)
 }
 
+// Review follow-up (#625 PR, Copilot): RE-GATE mode's contract is that
+// skippedAlreadyVerifiedIds stays empty — regate exists specifically to
+// re-open verification even for findings that already carry
+// extensions.harness.verification.attempted_at (see the REGATE branch of the
+// enumeration prompt above), so anything the enumeration agent placed in
+// skippedAlreadyVerifiedIds instead would silently escape re-gating. Enforce
+// this deterministically rather than trusting the agent's own compliance
+// with the prompt wording — the same "verdict/budget arithmetic never left
+// to a model's own judgment" idiom as reconcileEnumeration() above.
+if (REGATE && enumerated.skippedAlreadyVerifiedIds && enumerated.skippedAlreadyVerifiedIds.length) {
+  throw new Error(
+    `research-falsify: RE-GATE mode requires skippedAlreadyVerifiedIds to be empty (regate re-opens verification ` +
+      `even for findings that already carry extensions.harness.verification.attempted_at), but enumeration ` +
+      `returned ${enumerated.skippedAlreadyVerifiedIds.length} id(s) in it: ` +
+      `${JSON.stringify(enumerated.skippedAlreadyVerifiedIds)}. This means the enumeration agent treated ` +
+      `already-verified findings as covered instead of re-opening them — investigate rather than silently ` +
+      `dropping them from the re-gate working set.`,
+  )
+}
+
 let working = enumerated.workingSet
 let deferred = []
 if (working.length > CLAIM_BUDGET) {
