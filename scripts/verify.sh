@@ -316,7 +316,7 @@ gate_m3() {
   # to both workflow modules' actual source.
   local RD=".claude/workflows/research-deliverables.js" RP=".claude/workflows/research-projection.js" genre_fail=""
   for f in "$RD" "$RP"; do
-    if grep -oE 'Skill\(mif-docs:\$\{[A-Za-z.]+\}\)' "$f" | grep -q .; then
+    if grep -oE 'Skill\(mif-docs:\$\{[A-Za-z0-9_.]+\}\)' "$f" | grep -q .; then
       genre_fail="${genre_fail}${f} interpolates a genre variable into Skill(mif-docs:\${...}) — genre packs are self-named (pack:pack), never namespaced under mif-docs (#645); "
     fi
     if grep -E '"mif-docs:<genre>"|Skill\(mif-docs:<genre>\)' "$f" | grep -vE 'NOT `?Skill\(mif-docs' | grep -q .; then
