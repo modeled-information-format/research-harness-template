@@ -94,6 +94,40 @@
 // (see the Verify phase below, D-10) — and is out of scope for this Task;
 // work around it locally with scripts/fetch-engine.sh, never silently.
 //
+// GENRE SKILL INVOCATION GAP — closed, not carried forward
+// (research-harness-template#633). This module previously passed `genre` to
+// synthesize-artifact.sh as a plain pass-through argument and never invoked
+// any genre's real skill — every genre (`engineering`, `briefing`, …)
+// therefore rendered the identical genre-neutral findings-dump body, with
+// `genre:` merely stamped into the output metadata: indistinguishable from a
+// correctly-genred report by inspection unless you diffed the body against a
+// different genre's output. Confirmed against the KNOWN-WORKING mechanism
+// (`.claude/agents/report-synthesizer.md`'s Step 2 — "Resolve the genre
+// (optional, pack-provided)"), which correctly applies every genre's real
+// template in the interactive `/start` path: each genre ships as its own
+// individually-toggleable pack (`harness.config.json packs[]`, no shared
+// "reports" family pack), the correct invocation is `Skill(<genre>:<genre>)`
+// (e.g. `Skill(engineering:engineering)`) — NOT `Skill(mif-docs:<genre>)` —
+// and this only happens when that SPECIFIC genre's pack is enabled;
+// otherwise report-synthesizer falls back to neutral synthesis and does NOT
+// stamp a genre it didn't earn. The Report phase below now mirrors that
+// exact resolution before rendering (see the GENRE RESOLUTION step ahead of
+// the pipeline): `genre="general"` (the default) or a disabled/absent genre
+// pack renders the neutral script pipeline unchanged, under
+// `genreArg="general"`, and reports genre="general" honestly; an ENABLED
+// genre pack additionally invokes `Skill(<genre>:<genre>)` (pipeline step
+// 6b) to restructure the rendered report's body into that genre's real
+// documented structure — built from the same artifact/synthesis claims,
+// never inventing new content, never touching the MIF frontmatter/
+// citations/verdict fields the script pipeline already established — and
+// re-confirms `mif-project.sh` since the body changed. The returned
+// `genreApplied`/`genreSkillInvoked` fields make this outcome caller-visible
+// instead of silently cosmetic. `research-deliverables.js` has a comparable
+// `GENRES` pass-through gap for its OWN artifact-based channels (confirmed
+// while fixing this issue, not yet repro'd end-to-end); that is tracked
+// separately as research-harness-template#640, deliberately out of scope
+// here.
+//
 // CONCURRENCY FIX (issue #628) — a topic-scoped lock, not a genre-suffixed
 // path. The Report phase's intermediates (${RDIR}/artifact.json,
 // report-finding.json, report-finding.falsified.json,
@@ -185,7 +219,7 @@ export const meta = {
   description: 'Atomic step 5 (projection): project the typed synthesis onto the durable corpus surfaces — the canonical MIF Level-3 report of record (via the publish-report script pipeline, gated by a REAL falsification pass, never a hand-authored verdict), the topic README/knowledge graph (via the readme/graph skills\' deterministic scripts, synthesis-grade Key Findings authored on top) — then verify only what changed',
   whenToUse: 'After a clean synthesis — materializes the tracked, in-repo projections (the report channel is the source of truth; deliverable genres are a separate workflow)',
   phases: [
-    { title: 'Report', detail: 'existence-checked synthesisPath (same-process contract) -> publish-report pipeline: synthesize-artifact.sh -> REAL falsify.sh gate over the report\'s own central claims (never hand-authored) -> render-artifact.sh -> mif-project.sh -> Skill(mif-docs:mif-provenance) witnessed-provenance stamp (ADR-0018, #632; declines gracefully when capture is off, never hand-authored as a workaround)', model: 'sonnet' },
+    { title: 'Report', detail: 'existence-checked synthesisPath (same-process contract) -> genre resolved against harness.config.json packs[] enablement (#633) -> publish-report pipeline: synthesize-artifact.sh -> REAL falsify.sh gate over the report\'s own central claims (never hand-authored) -> render-artifact.sh -> mif-project.sh -> Skill(<genre>:<genre>) applied + re-confirmed when that genre\'s pack is enabled, else an honest genre="general" (#633, never a claimed-but-unapplied genre) -> Skill(mif-docs:mif-provenance) witnessed-provenance stamp (ADR-0018, #632; declines gracefully when capture is off, never hand-authored as a workaround)', model: 'sonnet' },
     { title: 'Index', detail: 'readme skill\'s build-topic-readme.sh backbone + synthesis-grade Key Findings/Purpose authored on top -> graph skill\'s build-graph.sh + assert-graph-mif.sh', model: 'haiku' },
     { title: 'Verify', detail: 'targeted gates on changed files only (D-10) — never the full verify.sh suite', model: 'haiku' },
   ],
@@ -217,10 +251,21 @@ const REPORT_SCHEMA = {
     checksAddressed: { type: 'array', items: { type: 'string' } },
     verificationVerdict: { type: 'string', enum: ['falsified', 'weakened', 'survived', 'inconclusive'] },
     reportId: { type: 'string', description: 'the report\'s own @id — same across a supersession re-run, by construction of render-artifact.sh (see header note)' },
+    genreApplied: { type: 'boolean', description: '(#633) true only if step 6b actually invoked Skill(<genre>:<genre>) and restructured the body per that genre\'s template; false when genre="general" was requested or the requested genre\'s pack was disabled/absent, in which case the report\'s own genre metadata must read "general", never the originally-requested genre' },
+    genreSkillInvoked: { type: 'string', description: '(#633) the "<genre>:<genre>" Skill reference actually invoked at step 6b, or "" when genreApplied is false' },
     provenanceOutcome: { type: 'string', enum: ['stamped', 'declined', 'error', 'not-applicable'], description: 'result of the Skill(mif-docs:mif-provenance) stamp attempt (#632) — "declined" is expected/healthy when capture is off or the session ledger never witnessed this file, never a projection failure; "not-applicable" is the ONLY correct value when step 3\'s verificationVerdict="falsified" stopped the pipeline before step 7 ever ran — never fabricate "stamped"/"declined"/"error" for a report that was quarantined before the stamp attempt' },
     provenanceReason: { type: 'string', description: 'why declined/error (the skill\'s own stated reason), "witnessed" when stamped, or "report quarantined at step 3 (falsified) — step 7 never reached" when provenanceOutcome is "not-applicable"' },
   },
-  required: ['reportPath', 'frontmatterLevel', 'checksAddressed', 'verificationVerdict', 'reportId', 'provenanceOutcome', 'provenanceReason'],
+  required: ['reportPath', 'frontmatterLevel', 'checksAddressed', 'verificationVerdict', 'reportId', 'genreApplied', 'genreSkillInvoked', 'provenanceOutcome', 'provenanceReason'],
+}
+const GENRE_SCHEMA = {
+  type: 'object',
+  properties: {
+    genreArg: { type: 'string', description: '(#633) the genre string to actually pass to synthesize-artifact.sh — "general" unless the requested genre\'s own pack is enabled' },
+    genrePackEnabled: { type: 'boolean' },
+    genreSkillRef: { type: 'string', description: '"<genre>:<genre>" Skill reference to invoke after rendering when genrePackEnabled is true, else ""' },
+  },
+  required: ['genreArg', 'genrePackEnabled', 'genreSkillRef'],
 }
 const INDEX_SCHEMA = {
   type: 'object',
@@ -265,6 +310,45 @@ if (!preflight || !preflight.exists) {
   )
 }
 
+// GENRE RESOLUTION (research-harness-template#633): resolve the requested
+// genre against harness.config.json packs[] enablement BEFORE any Report
+// work starts, mirroring report-synthesizer.md's Step 2 exactly (see header
+// note). "general" (the default, no genre requested) needs no lookup — it
+// is definitionally the neutral render. Otherwise a disabled/absent pack
+// falls back to genreArg="general" honestly rather than silently letting a
+// GENRE the pipeline cannot actually apply flow into synthesize-artifact.sh
+// and the output frontmatter.
+const genreResolution =
+  GENRE === 'general'
+    ? { genreArg: 'general', genrePackEnabled: false, genreSkillRef: '' }
+    : await agent(
+        `GENRE ENABLEMENT CHECK (research-harness-template#633 — mirrors report-synthesizer.md's Step 2, never treat a requested genre ` +
+          `as automatically applicable). Genre "${GENRE}" was requested for topic ${TOPIC} in harness ${H}. Run: jq -r --arg g "${GENRE}" ` +
+          `'.packs[] | select(.name==$g and .enabled) | .name' ${H}/harness.config.json. If it prints "${GENRE}", the pack IS enabled: ` +
+          `return genreArg="${GENRE}", genrePackEnabled=true, genreSkillRef="${GENRE}:${GENRE}". If it prints nothing (pack disabled or ` +
+          `absent from packs[] entirely), return genreArg="general", genrePackEnabled=false, genreSkillRef="" — the neutral pipeline ` +
+          `renders instead, and the caller must be told this happened (never silently proceed with the requested genre string when no ` +
+          `template will actually be applied for it).`,
+        { label: 'projection:genre-resolve', model: 'haiku', effort: 'low', schema: GENRE_SCHEMA },
+      )
+if (!genreResolution) throw new Error('research-projection: genre resolution failed')
+if (GENRE !== 'general' && !genreResolution.genrePackEnabled) {
+  log(`Genre "${GENRE}" requested but its pack is not enabled — falling back to genreArg="general" honestly (research-harness-template#633); the report will NOT claim genre="${GENRE}" in frontmatter`)
+}
+
+const genreStepText = genreResolution.genrePackEnabled
+  ? `6b. GENRE SKILL APPLICATION (research-harness-template#633): genre "${GENRE}"'s pack is enabled (resolved above) — invoke ` +
+    `Skill(${genreResolution.genreSkillRef}) to restructure ONLY ${RDIR}/${SLUG}.md's BODY content into that genre's actual documented ` +
+    `section structure (its own template's required sections — e.g. engineering's mandatory Problem/Context/Options/Trade-offs-table/` +
+    `Decision/Implementation-Notes/Consequences, briefing's Headline/What's-New/Why-It-Matters/What's-Next), built from the SAME ` +
+    `artifact/synthesis claims steps 1-5 already established — invent no new claims, never touch the MIF frontmatter fields (schema/` +
+    `citations/verificationVerdict) steps 1-6 already wrote. Then re-run step 6's mif-project.sh once more, since the body just changed ` +
+    `— must still report "projects to a valid MIF L3 finding". Set genreApplied=true, genreSkillInvoked="${genreResolution.genreSkillRef}".\n`
+  : `6b. GENRE SKILL APPLICATION (research-harness-template#633): no genre template applies here — either "general" was requested, or ` +
+    `"${GENRE}"'s pack is disabled/absent (resolved above), so genreArg="general" was already used at step 1 and the report stays the ` +
+    `neutral render. This report's genre metadata must read "general", NOT "${GENRE}" — never let the output claim a genre whose ` +
+    `template was never applied (mirrors report-synthesizer.md's own rule). Set genreApplied=false, genreSkillInvoked="".\n`
+
 const report = await agent(
   `Render the CANONICAL MIF Level-3 report of record for topic ${TOPIC} in harness ${H} — the harness's source of truth, held ` +
     `to the same bar as a finding (never exempt from the gate). Follow the publish-report skill's SCRIPT PIPELINE exactly — ` +
@@ -290,9 +374,10 @@ const report = await agent(
     `any earlier failure) — never leave the topic locked:\n` +
     `bash -c '. "${H}/scripts/lib/container-lock.sh" && container_lock_release "${RDIR}/.projection-lock"'\n` +
     `PIPELINE, IN ORDER (publish-report SKILL.md steps 2-5):\n` +
-    `1. bash ${H}/scripts/synthesize-artifact.sh ${RDIR}/findings ${GENRE} ${RDIR}/artifact.json — projects the surviving ` +
-    `findings into one typed Artifact (schemas/artifact.schema.json). Cross-check its sections against the synthesis at ${SYN} ` +
-    `so the artifact's claims trace to what the synthesis actually established.\n` +
+    `1. bash ${H}/scripts/synthesize-artifact.sh ${RDIR}/findings ${genreResolution.genreArg} ${RDIR}/artifact.json — ` +
+    `(genreArg resolved above per the GENRE RESOLUTION step — research-harness-template#633, "general" unless "${GENRE}"'s own pack ` +
+    `is enabled) projects the surviving findings into one typed Artifact (schemas/artifact.schema.json). Cross-check its sections ` +
+    `against the synthesis at ${SYN} so the artifact's claims trace to what the synthesis actually established.\n` +
     `2. Construct ${RDIR}/report-finding.json — a finding-shaped projection of the artifact's central claims (its citations, ` +
     `NO verification block yet) — a single MIF Concept object (@context/@type/@id/conceptType/namespace/title/content/summary/ ` +
     `citations/provenance/tags/created/modified) built from ${RDIR}/artifact.json's title/sections/sources. Invent no claims ` +
@@ -309,9 +394,10 @@ const report = await agent(
     `(mktemp OUTSIDE the repo tree) and write the verdict through: bash ${H}/scripts/falsify.sh ${RDIR}/report-finding.json ` +
     `<fixture-path> > ${RDIR}/report-finding.falsified.json. A falsified verdict means the report is QUARANTINED and NOT ` +
     `shipped — release the projection lock (see CONCURRENCY GUARD above) FIRST, then report verificationVerdict="falsified" ` +
-    `and STOP here, do not proceed to render. In this case step 7 (provenance ` +
-    `stamping) never runs: set provenanceOutcome="not-applicable" and provenanceReason="report quarantined at step 3 (falsified) ` +
-    `— step 7 never reached" — do NOT fabricate a stamped/declined/error outcome for a stamp attempt that never happened.\n` +
+    `and STOP here, do not proceed to render. In this case neither step 6b (genre skill application) nor step 7 (provenance ` +
+    `stamping) ever runs: set genreApplied=false, genreSkillInvoked="", provenanceOutcome="not-applicable", and ` +
+    `provenanceReason="report quarantined at step 3 (falsified) — step 7 never reached" — do NOT fabricate a stamped/declined/` +
+    `error outcome, or a genreApplied=true, for a report quarantined before those steps ever ran.\n` +
     `4. jq '.extensions.harness.verification' ${RDIR}/report-finding.falsified.json > ${RDIR}/report.verification.json\n` +
     `5. bash ${H}/scripts/render-artifact.sh ${RDIR}/artifact.json report ${RDIR}/${SLUG}.md ${RDIR}/report.verification.json ` +
     `— write-then-validated; fails closed if it does not project to a valid L3 finding. If a report of record already exists ` +
@@ -320,8 +406,10 @@ const report = await agent(
     `(version increments, temporal.validFrom carries forward) — do not delete the existing file first, and do not attempt to ` +
     `hand-copy an @id forward yourself.\n` +
     `6. Re-confirm: bash ${H}/scripts/mif-project.sh ${RDIR}/${SLUG}.md — must report "projects to a valid MIF L3 finding".\n` +
+    genreStepText +
     `7. Stamp WITNESSED provenance (mif-docs-plugin's mif-provenance skill, ADR-0018) on top of — never instead of — the L3 ` +
-    `schema conformance step 6 just confirmed. Invoke it via the Skill tool, namespaced pack:skill exactly like publish-report's ` +
+    `schema conformance step 6 (and step 6b's re-confirmation, if a genre skill was applied) just confirmed. Invoke it via the ` +
+    `Skill tool, namespaced pack:skill exactly like publish-report's ` +
     `own genre skills, never a hand-rolled script path into the plugin's install cache:\n` +
     `   Skill(mif-docs:mif-provenance) — "stamp ${RDIR}/${SLUG}.md"\n` +
     `If capture is disabled (mifProvenance.capture unset or false at every settings scope) or the session ledger has no witnessed ` +
@@ -335,7 +423,9 @@ const report = await agent(
     `Then release the projection lock (see CONCURRENCY GUARD above) — this phase is done, success or not.\n` +
     `Return the report path, the achieved MIF level, which goal check ids the report addresses, the verification verdict ` +
     `ACTUALLY WRITTEN by falsify.sh (never hand-authored), the report's own @id (read it back from the rendered file's ` +
-    `frontmatter after step 5/6, not invented), and the provenance stamp outcome from step 7 (provenanceOutcome: ` +
+    `frontmatter after step 5/6, not invented), the genre outcome from step 6b (genreApplied/genreSkillInvoked, per step 6b's ` +
+    `own instruction above — false/"" when quarantined at step 3 or when no template applied, true/"<genre>:<genre>" only when ` +
+    `Skill(<genre>:<genre>) was actually invoked), and the provenance stamp outcome from step 7 (provenanceOutcome: ` +
     `"stamped"/"declined"/"error", plus provenanceReason naming why, or "witnessed" when stamped — UNLESS verificationVerdict ` +
     `is "falsified" and step 3 already stopped you before step 7, in which case provenanceOutcome="not-applicable" and ` +
     `provenanceReason="report quarantined at step 3 (falsified) — step 7 never reached", per step 3's own instruction).`,
@@ -344,7 +434,15 @@ const report = await agent(
 if (!report) throw new Error('research-projection: report rendering failed')
 if (report.verificationVerdict === 'falsified') {
   log(`Report quarantined: the falsification gate returned "falsified" over the report's own claims — NOT shipping ${report.reportPath}`)
-  return { ok: false, reason: 'report-falsified', reportPath: report.reportPath, verificationVerdict: report.verificationVerdict }
+  return {
+    ok: false,
+    reason: 'report-falsified',
+    reportPath: report.reportPath,
+    verificationVerdict: report.verificationVerdict,
+    genreRequested: GENRE,
+    genreApplied: report.genreApplied,
+    genreSkillInvoked: report.genreSkillInvoked,
+  }
 }
 
 phase('Index')
@@ -394,6 +492,9 @@ return {
   mifLevel: report.frontmatterLevel,
   checksAddressed: report.checksAddressed,
   verificationVerdict: report.verificationVerdict,
+  genreRequested: GENRE,
+  genreApplied: report.genreApplied,
+  genreSkillInvoked: report.genreSkillInvoked,
   provenanceOutcome: report.provenanceOutcome,
   provenanceReason: report.provenanceReason,
   readmePath: index ? index.readmePath : null,
