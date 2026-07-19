@@ -364,8 +364,8 @@ run "research-pipeline-full-mode-check" bash evals/research-pipeline-full-mode-c
 # followed by a clean round 2).
 run "pipeline-repair-disclosure-check" bash evals/pipeline-repair-disclosure-check.sh
 
-# The research-pipeline module's four standalone-mode branches --
-# audit/import/pivot/augment -- each have deterministic teeth of their own
+# The research-pipeline module's five standalone-mode branches --
+# audit/import/pivot/augment/deliverables -- each have deterministic teeth of their own
 # (#603, Epic #550, companion to #602's full-mode eval above), proving each
 # mode dispatches to, and correctly composes, EXACTLY the atomic-workflow
 # sequence the architecture doc's mode-routing table documents for it (never
@@ -400,19 +400,32 @@ run "pipeline-repair-disclosure-check" bash evals/pipeline-repair-disclosure-che
 #     EXACTLY the deepen plan's own dimensions at a depth that escalates to
 #     'deep' the moment ANY ONE entry requests it -> a falsify drain ->
 #     synthesis -> projection.
-# What none of these four evals can close (genuine, non-deterministic,
+#   - deliverables (research-harness-template#624): research-synthesis ALONE
+#     (no fan-out, no falsify -- reuses the survivor corpus already on disk)
+#     -> research-deliverables fed that fresh synthesisPath plus
+#     genres/channels. A missing genres AND channels throws before either
+#     child runs; a synthesis.ok===false result short-circuits to
+#     deliverables:null before research-deliverables is ever invoked; this
+#     mode deliberately never calls research-projection (the report of
+#     record is untouched). Also proves the adjacent KNOWN_MODES guard
+#     (closing the mode router's previously-missing unrecognized-mode
+#     rejection) fires before ANY child dispatches, for every mode, not just
+#     this one.
+# What none of these five evals can close (genuine, non-deterministic,
 # stated in each eval's own header rather than faked): whether a live child
 # workflow's own judgment (coverage-audit's Sweep/Critique/Prioritize,
 # import's Dry-Run/Review/Apply, pivot's Reshape/Classify/Plan, augment's
-# Decide) actually produces the shapes these fixtures hand-author -- each of
-# those judgments is already covered by that child's own dedicated eval
-# (coverage-audit-check.sh, import-check.sh, pivot-check.sh,
-# augment-decide-check.sh). These four evals' job is only the mode-router
+# Decide, or a live synthesis/deliverables render) actually produces the
+# shapes these fixtures hand-author -- each of those judgments is already
+# covered by that child's own dedicated eval (coverage-audit-check.sh,
+# import-check.sh, pivot-check.sh, augment-decide-check.sh, synthesis/
+# deliverables suites). These five evals' job is only the mode-router
 # orchestration code around those calls, not the calls' own judgment.
 run "research-pipeline-audit-check" bash evals/research-pipeline-audit-check.sh
 run "research-pipeline-import-check" bash evals/research-pipeline-import-check.sh
 run "research-pipeline-pivot-check" bash evals/research-pipeline-pivot-check.sh
 run "research-pipeline-augment-check" bash evals/research-pipeline-augment-check.sh
+run "research-pipeline-deliverables-check" bash evals/research-pipeline-deliverables-check.sh
 
 # research-pipeline.js is the ONE vendored module invoked externally through
 # the real Workflow-tool boundary (D-9: composition exactly two levels

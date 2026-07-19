@@ -2,7 +2,7 @@
 id: reference-commands
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-18T22:06:18.274Z'
+modified: '2026-07-19T15:18:26.405Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -18,10 +18,10 @@ provenance:
   '@type': Provenance
   agent: claude-code/claude-sonnet-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:b2469198-e9ec-4668-9761-7ee0f983c48a
+    '@id': urn:mif:activity:claude-code-session:b749de23-4698-4ce0-817a-dff265cce3e2
     '@type': prov:Activity
   trustLevel: user_stated
-  agentVersion: 2.1.214
+  agentVersion: 2.1.215
 ---
 
 # Reference: commands
@@ -235,7 +235,7 @@ during migration.
 **Usage:**
 
 ```text
-/research [--topic <id>] [--mode full|augment|pivot|import|audit]
+/research [--topic <id>] [--mode full|augment|pivot|import|audit|deliverables]
   [--max-rounds <n>] [--focus-hint <text>] [--delta <what changed>]
   [--container-dir <path>] [--trust-imported-verdicts]
   [--genres <g1,g2>] [--channels <c1,c2>] [--claim-budget <n>]
