@@ -25,6 +25,17 @@ class CompletionCondition(TypedDict):
     checks: list[Check]
 
 
+type Genre = str
+
+
+type Channel = str
+
+
+class Deliverables(TypedDict):
+    genres: NotRequired[list[Genre]]
+    channels: NotRequired[list[Channel]]
+
+
 class Bound(TypedDict):
     max_rounds: NotRequired[int]
     min_dimensions_complete: NotRequired[int]
@@ -47,6 +58,7 @@ ResearchSessionGoal = TypedDict(
         "scope": NotRequired[Scope],
         "dimensions": list[Dimension],
         "completion_condition": CompletionCondition,
+        "deliverables": NotRequired[Deliverables],
         "bound": NotRequired[Bound],
         "version": NotRequired[str],
         "supersedes": NotRequired[str | None],

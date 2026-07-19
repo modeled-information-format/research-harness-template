@@ -643,6 +643,151 @@ else
 fi
 
 # ============================================================================
+# B6 (research-harness-template#626): the goal's own elicited
+# deliverables.genres drives the Project phase's per-genre canonical-report
+# loop, and (absent a CLI --genres/--channels) also becomes the Deliver
+# phase's fallback source -- with an explicit CLI arg still winning.
+#
+# B6a: goal.deliverables.genres = ['exec-summary','engineering'], no CLI
+# genres/channels at all. Project phase must call wf('projection', ...)
+# EXACTLY TWICE, once per requested genre, each with its own genre-suffixed
+# slug; result.projections[] must carry both, in order, and result.projection
+# (the back-compat single field) must fall back to the FIRST requested
+# genre's real result (neither requested genre is 'general', so there is no
+# 'general' entry to pick -- the fallback is the first genre actually
+# rendered, never an invented/null value). Deliver phase must ALSO run
+# (no CLI given, so it falls back to goal.deliverables.genres), passing
+# channels=undefined through unchanged (research-deliverables.js's own
+# CHANNELS default, ['blog'], applies from there -- this eval does not
+# re-prove that module's own default, only that research-pipeline.js forwards
+# undefined rather than inventing a channels value itself).
+#
+# B6b: the SAME goal.deliverables, but this run passes an explicit CLI
+# --genres/--channels. The CLI args must win outright for the Deliver phase
+# (goal.deliverables never consulted for it) while the Project-phase loop
+# stays driven by goal.deliverables.genres regardless (the two axes are
+# independent per the accepted plan -- CLI genres never redirect which
+# canonical reports the Project phase renders).
+# ============================================================================
+DELIV_GOAL_STUB_JS='
+  goal: async () => ({
+    ok: true,
+    goalFile: "reports/pipeline-eval-topic/goal.json",
+    goalProse: "Eval fixture goal.",
+    dimensions: ["technical", "landscape"],
+    checks: [{ id: "technical_check" }, { id: "landscape_check" }],
+    lintIssues: [],
+    deliverables: { genres: ["exec-summary", "engineering"] },
+  }),
+'
+printf '%s' "{\"harnessDir\":\"$TMP/h\",\"topic\":\"pipeline-eval-topic\",\"maxRounds\":1}" > "$TMP/args-b6a.json"
+cat > "$TMP/stubs-b6a.cjs" <<NODE
+'use strict';
+let projCalls = [];
+module.exports = {
+  wf: {
+    $DELIV_GOAL_STUB_JS
+    $FANOUT_FALSIFY_STUB_JS
+    synthesis: async () => ({ ok: true, synthesisPath: 'reports/pipeline-eval-topic/synthesis-only.json', sections: [], findingsUsed: [], checkCoverage: [], openIssues: [], ungatedFindings: [] }),
+    projection: async (a) => { projCalls.push(a); return { ok: true, reportPath: 'reports/pipeline-eval-topic/report.' + a.genre + '.md', reportId: 'urn:mif:concept:pipeline-eval-topic:report-' + a.genre, mifLevel: 3, checksAddressed: [], verificationVerdict: 'survived', genreRequested: a.genre, genreApplied: true, genreSkillInvoked: a.genre + ':' + a.genre, readmePath: null, readmeCheckPassed: false, graphRefreshed: false, graphAssertPassed: false, problems: [], _receivedGenre: a.genre, _receivedSlug: a.slug }; },
+    deliverables: async (a) => ({ ok: true, artifacts: [], unavailable: [], _receivedGenres: a.genres, _receivedChannels: a.channels }),
+  },
+  completionCheck: () => ({ met: [{ id: 'technical_check', evidence: 'ok' }, { id: 'landscape_check', evidence: 'ok' }], unmet: [], boundHit: false }),
+};
+NODE
+run_case b6a "$TMP/args-b6a.json" "$TMP/stubs-b6a.cjs" "$TMP/out-b6a.json"
+
+if [ -f "$TMP/out-b6a.json" ]; then
+  python3 - "$TMP/out-b6a.json" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1], encoding='utf-8'))
+ok = True
+def check(name, cond, detail=''):
+    global ok
+    if cond:
+        print(f"  ok  B6a: {name}")
+    else:
+        ok = False
+        print(f"FAIL  B6a: {name}{(' -- ' + detail) if detail else ''}")
+
+check('module did not throw', d['threw'] is None, str(d['threw']))
+r = d.get('result') or {}
+by_name = {}
+for c in d['wfCalls']:
+    by_name.setdefault(c['name'], []).append(c)
+
+proj_calls = by_name.get('projection', [])
+check('projection ran EXACTLY TWICE, once per requested goal.deliverables.genres entry', len(proj_calls) == 2, str(len(proj_calls)))
+genres_seen = [c['args'].get('genre') for c in proj_calls]
+check("projection was called with genre='exec-summary' then genre='engineering', in goal.deliverables.genres order", genres_seen == ['exec-summary', 'engineering'], json.dumps(genres_seen))
+slugs_seen = [c['args'].get('slug') for c in proj_calls]
+check("each projection call carries a genre-suffixed slug (topic.<genre>), never colliding on the bare topic slug", slugs_seen == ['pipeline-eval-topic.exec-summary', 'pipeline-eval-topic.engineering'], json.dumps(slugs_seen))
+
+projections = r.get('projections') or []
+check('result.projections carries both per-genre results, each tagged with its own genre', [p.get('genre') for p in projections] == ['exec-summary', 'engineering'], json.dumps(projections))
+check("result.projection (the back-compat single field) falls back to the FIRST requested genre's result when none of the requested genres is 'general' -- never invents a value, never silently null when a real result exists", (r.get('projection') or {}).get('genreRequested') == 'exec-summary', json.dumps(r.get('projection')))
+
+deliv_calls = by_name.get('deliverables', [])
+check('deliverables ran exactly once (no CLI genres/channels -- falls back to goal.deliverables.genres)', len(deliv_calls) == 1, str(len(deliv_calls)))
+if deliv_calls:
+    check("the Deliver-phase fallback forwarded goal.deliverables.genres verbatim", deliv_calls[0]['args'].get('genres') == ['exec-summary', 'engineering'], json.dumps(deliv_calls[0]['args']))
+    check('the Deliver-phase fallback forwarded channels=undefined (goal.deliverables declared none) -- never invented a channels value of its own', deliv_calls[0]['args'].get('channels') is None, json.dumps(deliv_calls[0]['args']))
+
+sys.exit(0 if ok else 1)
+PY
+  rc=$?
+  [ "$rc" -eq 0 ] || fail=1
+else
+  note "B6a: no out-b6a.json produced"
+  fail=1
+fi
+
+# B6b: same goal.deliverables, but the CALLER passes explicit CLI
+# genres/channels. Deliver phase must use the CLI values, NOT
+# goal.deliverables' -- while the Project-phase loop is unaffected by the CLI
+# and still renders goal.deliverables.genres' two reports.
+printf '%s' "{\"harnessDir\":\"$TMP/h\",\"topic\":\"pipeline-eval-topic\",\"maxRounds\":1,\"genres\":[\"academic\"],\"channels\":[\"pdf\"]}" > "$TMP/args-b6b.json"
+run_case b6b "$TMP/args-b6b.json" "$TMP/stubs-b6a.cjs" "$TMP/out-b6b.json"
+
+if [ -f "$TMP/out-b6b.json" ]; then
+  python3 - "$TMP/out-b6b.json" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1], encoding='utf-8'))
+ok = True
+def check(name, cond, detail=''):
+    global ok
+    if cond:
+        print(f"  ok  B6b: {name}")
+    else:
+        ok = False
+        print(f"FAIL  B6b: {name}{(' -- ' + detail) if detail else ''}")
+
+check('module did not throw', d['threw'] is None, str(d['threw']))
+r = d.get('result') or {}
+by_name = {}
+for c in d['wfCalls']:
+    by_name.setdefault(c['name'], []).append(c)
+
+proj_calls = by_name.get('projection', [])
+genres_seen = [c['args'].get('genre') for c in proj_calls]
+check("Project-phase genre loop is UNCHANGED by the CLI args -- still exactly goal.deliverables.genres, in order", genres_seen == ['exec-summary', 'engineering'], json.dumps(genres_seen))
+
+deliv_calls = by_name.get('deliverables', [])
+check('deliverables ran exactly once', len(deliv_calls) == 1, str(len(deliv_calls)))
+if deliv_calls:
+    check('an explicit CLI --genres wins outright over goal.deliverables.genres for the Deliver phase', deliv_calls[0]['args'].get('genres') == ['academic'], json.dumps(deliv_calls[0]['args']))
+    check('an explicit CLI --channels wins outright over goal.deliverables.channels (absent here) for the Deliver phase', deliv_calls[0]['args'].get('channels') == ['pdf'], json.dumps(deliv_calls[0]['args']))
+
+sys.exit(0 if ok else 1)
+PY
+  rc=$?
+  [ "$rc" -eq 0 ] || fail=1
+else
+  note "B6b: no out-b6b.json produced"
+  fail=1
+fi
+
+# ============================================================================
 # D. CHECK_SCHEMA captured VERBATIM from a real completionCheck() agent()
 # call (never hand-retyped) -- ajv-proven to mechanically require `evidence`
 # on met[] entries and `why` on unmet[] entries. Ties the structural claim in

@@ -452,6 +452,74 @@ if not keys:
 PY
 [ $? -eq 0 ] || fail=1
 
+# ============================================================================
+# G: CHANNELS truthiness regression (research-harness-template#626). The
+# module's own CHANNELS default previously collapsed an explicit
+# `channels: []` ("caller wants zero channels rendered, on purpose") into
+# the SAME branch as `channels` never being passed at all ("use the default")
+# — both silently became ['blog']. G1 proves the fixed source line directly;
+# G2/G3 drive the REAL module (same async-function-body technique
+# research-pipeline-full-mode-check.sh uses) to prove the two cases now
+# resolve to genuinely DIFFERENT CHANNELS values at runtime, not just in a
+# source-text grep.
+# ============================================================================
+grep -qF "const CHANNELS = (args && Array.isArray(args.channels)) ? args.channels : ['blog']" "$WF" \
+  || { note "G1: $WF no longer computes CHANNELS via Array.isArray — the explicit-empty-vs-omitted truthiness bug (#626) may have regressed"; fail=1; }
+
+cat > "$TMP/channels-driver.cjs" <<'NODE'
+'use strict';
+const fs = require('fs');
+const [, , wfPath, argsJsonPath, outPath] = process.argv;
+const rawSrc = fs.readFileSync(wfPath, 'utf8');
+const src = rawSrc.replace(/^export[ \t]+(const[ \t]+meta\b)/gm, '$1');
+const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+const fn = new AsyncFunction('args', 'phase', 'agent', 'log', 'pipeline', 'parallel', src);
+const args = JSON.parse(fs.readFileSync(argsJsonPath, 'utf8'));
+let routePrompt = null;
+let callCount = 0;
+async function agentStub(prompt) {
+  callCount += 1;
+  if (callCount === 1) return { exists: true, reason: 'ok' }; // preflight
+  routePrompt = prompt; // Route agent's own prompt — CHANNELS is embedded via JSON.stringify
+  throw new Error('__stop_after_route_prompt_captured__');
+}
+function phaseStub() {}
+function logStub() {}
+async function pipelineStub() { return []; }
+async function parallelStub(fns) { return Promise.all((fns || []).map((f) => f())); }
+(async () => {
+  try {
+    await fn(args, phaseStub, agentStub, logStub, pipelineStub, parallelStub);
+  } catch (e) {
+    // expected — we threw deliberately once the Route prompt was captured
+  }
+  fs.writeFileSync(outPath, JSON.stringify({ routePrompt }, null, 2));
+})();
+NODE
+
+# G2: explicit channels: [] must resolve to CHANNELS=[] — "Requested channels: []"
+printf '%s' "{\"harnessDir\":\"$TMP/h\",\"topic\":\"channels-eval-topic\",\"synthesisPath\":\"$TMP/syn.json\",\"channels\":[]}" > "$TMP/args-f2.json"
+node "$TMP/channels-driver.cjs" "$WF" "$TMP/args-f2.json" "$TMP/out-f2.json" >"$TMP/f2.err" 2>&1
+if [ -f "$TMP/out-f2.json" ]; then
+  python3 -c "import json,sys; d=json.load(open('$TMP/out-f2.json')); sys.exit(0 if 'Requested channels: []' in (d.get('routePrompt') or '') else 1)" \
+    || { note "G2: an explicit channels:[] did not resolve to CHANNELS=[] in the real Route prompt"; fail=1; }
+else
+  note "G2: driver produced no output ($(cat "$TMP/f2.err"))"; fail=1
+fi
+
+# G3: channels omitted entirely must still default to CHANNELS=['blog'] —
+# "Requested channels: [\"blog\"]" — the existing single-genre convention is
+# preserved unchanged for the common (no-args) case.
+printf '%s' "{\"harnessDir\":\"$TMP/h\",\"topic\":\"channels-eval-topic\",\"synthesisPath\":\"$TMP/syn.json\"}" > "$TMP/args-f3.json"
+node "$TMP/channels-driver.cjs" "$WF" "$TMP/args-f3.json" "$TMP/out-f3.json" >"$TMP/f3.err" 2>&1
+if [ -f "$TMP/out-f3.json" ]; then
+  python3 -c "import json,sys; d=json.load(open('$TMP/out-f3.json')); sys.exit(0 if 'Requested channels: [\"blog\"]' in (d.get('routePrompt') or '') else 1)" \
+    || { note "G3: an omitted channels arg no longer defaults to CHANNELS=['blog'] in the real Route prompt"; fail=1; }
+else
+  note "G3: driver produced no output ($(cat "$TMP/f3.err"))"; fail=1
+fi
+note "G: explicit channels:[] resolves to zero channels (never silently coerced to the ['blog'] default), while an omitted channels arg still defaults to ['blog'] unchanged — proven against the real module, not just a source grep"
+
 if [ "$fail" -eq 0 ]; then
   echo "deliverables-genre-channel-route: all cases passed"
 else

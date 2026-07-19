@@ -170,8 +170,10 @@ export const meta = {
 }
 
 // args: { harnessDir, topic, synthesisPath, genres?: string[] (e.g. ['exec-summary','engineering']),
-//         channels?: string[] (default ['blog']; may mix artifact-based (blog/book) and
-//         source-direct (pdf/jats/xbrl/ectd/notebooklm/github-discuss/github-issues) channels) }
+//         channels?: string[] (default ['blog'] ONLY when the arg is absent/not an array; an
+//         explicit [] is honored as "render zero channels", never coerced to the default — #626;
+//         may mix artifact-based (blog/book) and source-direct
+//         (pdf/jats/xbrl/ectd/notebooklm/github-discuss/github-issues) channels) }
 const H = (args && args.harnessDir) || '.'
 const TOPIC = args && args.topic
 const SYN = args && args.synthesisPath
@@ -179,7 +181,14 @@ if (!TOPIC) throw new Error('research-deliverables: args.topic is required')
 if (!SYN) throw new Error('research-deliverables: args.synthesisPath is required (mechanism-1 rows cross-check the synthesis-only evidence rule against it — see module header)')
 const RDIR = `${H}/reports/${TOPIC}`
 const GENRES = (args && args.genres) || []
-const CHANNELS = (args && args.channels && args.channels.length) ? args.channels : ['blog']
+// research-harness-template#626: Array.isArray, not truthiness. The prior
+// `args.channels && args.channels.length` collapsed an explicit `channels:
+// []` ("render nothing, on purpose") into the same branch as `channels`
+// never being passed at all ("caller didn't ask, use the default") — both
+// fell through to the ['blog'] default, silently overriding an explicit
+// empty answer. An explicit array (even empty) must be honored verbatim;
+// only an actually-absent/non-array `channels` gets the ['blog'] default.
+const CHANNELS = (args && Array.isArray(args.channels)) ? args.channels : ['blog']
 
 // Static pack taxonomy, cross-checked by evals/deliverables-route-check.sh
 // against the real docs/reference/packs/index.md "Pack inventory" table
