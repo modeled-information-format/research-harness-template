@@ -286,11 +286,22 @@ if (!enumerated) throw new Error('research-falsify: enumeration failed')
 // reports MUST appear in exactly one of workingSet or skippedAlreadyVerifiedIds;
 // if the SAME agent turn's own classification silently dropped one, this
 // catches it instead of proceeding to gate a partial working set.
+//
+// This only applies to scope:'all' — the exact scope #625 is about. allFindingIds
+// is EVERY on-disk finding (mechanical find|sort, deliberately scope-independent),
+// so the "every id must be covered by workingSet ∪ skippedAlreadyVerifiedIds"
+// invariant holds ONLY when the working set is meant to span the whole corpus.
+// Under a narrower scope (dimension:*, or an explicit paths/ids set, including
+// regate) the working set is intentionally a subset, so out-of-scope on-disk
+// findings sit in neither list legitimately; reconciling them against
+// allFindingIds would falsely flag them and turn a wasted retry into a hard
+// throw. An explicit paths/ids scope carries no #625-class enumeration-drop
+// risk anyway — the caller named the exact set to gate.
 function reconcileEnumeration(e) {
   const covered = new Set([...(e.workingSet || []).map((f) => f.id), ...(e.skippedAlreadyVerifiedIds || [])])
   return (e.allFindingIds || []).filter((id) => !covered.has(id))
 }
-let missing = reconcileEnumeration(enumerated)
+let missing = SCOPE === 'all' ? reconcileEnumeration(enumerated) : []
 if (missing.length) {
   log(`Enumerate reconciliation mismatch: ${missing.length} on-disk finding id(s) missing from BOTH workingSet and skippedAlreadyVerifiedIds — retrying once, naming them explicitly: ${JSON.stringify(missing)}`)
   const retried = await agent(

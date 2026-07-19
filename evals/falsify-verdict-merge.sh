@@ -485,5 +485,14 @@ grep -qF 'args.runDate is required' "$WF" \
 grep -qF 'buildFixtureEntry(g.f.id, verdict, basis, g.lensResults, RUN_DATE)' "$WF" \
   || { note "$WF's write step no longer passes RUN_DATE into buildFixtureEntry() (#618)"; fail=1; }
 
-[ "$fail" -eq 0 ] && note "mergeVotes()/claimBudget hold against the real function, buildFixtureEntry() runs clean under a poisoned Date/Math.random and uses the caller-supplied timestamp verbatim (#618), the seeded-false fixture quarantines end-to-end through the real engine, the one-round rule + regate reset are real against that same engine, the module keeps its fixture-bridge/remediation contract, and reconcileEnumeration() holds against its #625 set-difference matrix"
+# #625 structural contract: reconcileEnumeration() is only meaningful for
+# scope:'all' -- allFindingIds is EVERY on-disk finding, so under a narrower
+# scope (dimension:*, or an explicit paths/ids set, incl. regate) the working
+# set is a deliberate subset and out-of-scope findings would be falsely flagged
+# missing, turning a wasted retry into a hard throw. Lock the scope gate so a
+# future edit can't silently re-run reconciliation for every scope again.
+grep -qF "SCOPE === 'all' ? reconcileEnumeration(enumerated) : []" "$WF" \
+  || { note "$WF's #625 reconciliation is no longer gated to scope:'all' -- a scoped/regate run (e.g. pivot's scope:{ids} at research-pipeline.js) would reconcile its intentional subset against the full on-disk listing and throw"; fail=1; }
+
+[ "$fail" -eq 0 ] && note "mergeVotes()/claimBudget hold against the real function, buildFixtureEntry() runs clean under a poisoned Date/Math.random and uses the caller-supplied timestamp verbatim (#618), the seeded-false fixture quarantines end-to-end through the real engine, the one-round rule + regate reset are real against that same engine, the module keeps its fixture-bridge/remediation contract, and reconcileEnumeration() holds against its #625 set-difference matrix and is scope-gated to 'all'"
 exit "$fail"
