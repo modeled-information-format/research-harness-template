@@ -129,7 +129,7 @@
 // #633). This module's mechanism-1 (artifact-based, blog/book) Render step
 // previously passed the resolved genre straight through to
 // synthesize-artifact.sh/render-artifact.sh as pass-through metadata and
-// never invoked any genre's real Skill(mif-docs:<genre>) template — every
+// never invoked any genre's real Skill(<genre>:<genre>) template — every
 // genre rendered the identical genre-neutral body with only the frontmatter
 // `genre:` field differing, indistinguishable from a correctly-genred
 // deliverable by inspection. Unlike research-projection.js, this module
@@ -141,7 +141,7 @@
 // and genre!=="general" already has its own pack confirmed enabled by
 // Route. The Render step therefore only needed a new step (see step 4 in
 // the artifact-mechanism prompt below) that invokes
-// Skill(mif-docs:<genre>) on the rendered body — built from the same
+// Skill(<genre>:<genre>) on the rendered body — built from the same
 // artifact claims steps 1-3 already established, never inventing new
 // content, never touching the citation/References section render-
 // artifact.sh already wrote — whenever genre!=="general", and reports the
@@ -164,7 +164,7 @@ export const meta = {
   whenToUse: 'After projection — produces the optional deliverables (blog post, book chapter, exec-summary, engineering report, academic, briefing, PDF, JATS, …) from the same synthesis the report of record used',
   phases: [
     { title: 'Route', detail: 'requested genre×channel pairs vs harness.config.json packs[] + .claude/settings.local.json enabledPlugins ("<pack>@research-harness" key shape) → mechanism-tagged render plan; unavailable pairs get a reason naming the mechanism and what is missing', model: 'haiku' },
-    { title: 'Render', detail: 'mechanism 1: synthesize-artifact.sh -> render-artifact.sh per genre×channel row, synthesis cross-checked, then Skill(mif-docs:<genre>) applied to the body when genre!=="general" (#640) and re-checked, then Skill(mif-docs:mif-provenance) witnessed-provenance stamp (ADR-0018, #632; declines gracefully when capture is off); mechanism 2: Skill(<pack>:<pack>) invoked directly against findings, synthesis never consulted, no genre axis (genreApplied always false), provenance stamp explicitly not-applicable (each pack owns its own output/format)', model: 'sonnet' },
+    { title: 'Render', detail: 'mechanism 1: synthesize-artifact.sh -> render-artifact.sh per genre×channel row, synthesis cross-checked, then Skill(<genre>:<genre>) applied to the body when genre!=="general" (#640) and re-checked, then Skill(mif-docs:mif-provenance) witnessed-provenance stamp (ADR-0018, #632; declines gracefully when capture is off); mechanism 2: Skill(<pack>:<pack>) invoked directly against findings, synthesis never consulted, no genre axis (genreApplied always false), provenance stamp explicitly not-applicable (each pack owns its own output/format)', model: 'sonnet' },
     { title: 'Check', detail: 'per-artifact lint (where markdown) + frontmatter/citation-leak conformance + ≥1 citation', model: 'haiku' },
   ],
 }
@@ -259,8 +259,8 @@ const RENDER_SCHEMA = {
     channel: { type: 'string' },
     mechanism: { type: 'string', enum: ['artifact', 'source-direct'] },
     citationsCount: { type: 'integer', description: 'distinct citations the rendered output carries (finding-traced for mechanism 1, primary-source for mechanism 2)' },
-    genreApplied: { type: 'boolean', description: '(#640) true only if the Render step actually invoked Skill(mif-docs:<genre>) and restructured the body per that genre\'s template; false when genre="general" (mechanism 1) or for every mechanism-2 row (no genre axis) — never true for a genre whose template was not actually applied' },
-    genreSkillInvoked: { type: 'string', description: '(#640) the "mif-docs:<genre>" Skill reference actually invoked, or "" when genreApplied is false' },
+    genreApplied: { type: 'boolean', description: '(#640) true only if the Render step actually invoked Skill(<genre>:<genre>) and restructured the body per that genre\'s template; false when genre="general" (mechanism 1) or for every mechanism-2 row (no genre axis) — never true for a genre whose template was not actually applied' },
+    genreSkillInvoked: { type: 'string', description: '(#640) the "<genre>:<genre>" Skill reference actually invoked, or "" when genreApplied is false' },
     provenanceOutcome: { type: 'string', enum: ['stamped', 'declined', 'error', 'not-applicable'], description: 'result of the Skill(mif-docs:mif-provenance) stamp attempt (#632) for mechanism 1 rows; "not-applicable" for mechanism 2 rows (each pack owns its own output/format, see module header) — "declined" is expected/healthy when capture is off or the session ledger never witnessed this file, never a render failure' },
     provenanceReason: { type: 'string', description: 'why declined/error/not-applicable, or "witnessed" when stamped' },
   },
@@ -372,7 +372,7 @@ log(`Rendering ${route.plan.length} deliverable(s): ${route.plan.map((p) => `${p
 // guard in research-projection.js): every non-general/non-'-' genre below is
 // interpolated into a shell command argument (synthesize-artifact.sh/
 // render-artifact.sh's genreArg) AND, for artifact rows, into a Skill()
-// reference (genreSkillRef = `mif-docs:${genre}`). Pack names are
+// reference (genreSkillRef = `${genre}:${genre}`). Pack names are
 // constrained by harness.config.schema.json's packs[].name pattern
 // (^[a-z][a-z0-9-]*$) — Route is a model call, not code, so its plan[]
 // cannot be trusted to have enforced this itself. Validate BEFORE any use
@@ -397,17 +397,17 @@ const rendered = await pipeline(
     // phase (see module header) — no separate re-check needed here, unlike
     // #633's fix in research-projection.js which had no prior routing phase
     // to lean on. genre="general" needs no skill invocation (neutral render
-    // stands as-is); anything else gets Skill(mif-docs:<genre>) applied.
+    // stands as-is); anything else gets Skill(<genre>:<genre>) applied.
     const genreStepText =
       genreArg !== 'general'
         ? `4. GENRE SKILL APPLICATION (research-harness-template#640): genre "${genreArg}"'s pack was already confirmed enabled by the ` +
-          `Route phase (templateSource: ${p.templateSource}) — invoke Skill(mif-docs:${genreArg}) to restructure ONLY ` +
+          `Route phase (templateSource: ${p.templateSource}) — invoke Skill(${genreArg}:${genreArg}) to restructure ONLY ` +
           `${p.outputHint}'s BODY content into that genre's actual documented section structure (its own template's required ` +
           `sections — e.g. engineering's mandatory Problem/Context/Options/Trade-offs-table/Decision/Implementation-Notes/` +
           `Consequences, briefing's Headline/What's-New/Why-It-Matters/What's-Next), built from the SAME artifact claims steps 1-3 ` +
           `already established — invent no new claims, never touch the citation/References/Sources section step 3 already wrote ` +
           `(public-citation-only; restructuring the body must not introduce a citation leak). Set genreApplied=true, ` +
-          `genreSkillInvoked="mif-docs:${genreArg}".\n`
+          `genreSkillInvoked="${genreArg}:${genreArg}".\n`
         : `4. GENRE SKILL APPLICATION (research-harness-template#640): genre="general" — no genre template applies, the neutral ` +
           `artifact-rendered body from step 3 stands unchanged. Set genreApplied=false, genreSkillInvoked="".\n`
     return p.mechanism === 'artifact'

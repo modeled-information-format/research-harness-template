@@ -305,6 +305,30 @@ gate_m3() {
     bad "report-synthesizer.md (#383) regression: $rs_fail"
   fi
 
+  # research-harness-template#645: the SAME #383 mistake, made independently in
+  # research-projection.js (#633) and research-deliverables.js (#640) at the
+  # genre-skill invocation site, and briefly shipped to main via #643 before
+  # being caught and reverted. Genre packs go through packs[]/sync-packs.sh and
+  # must invoke pack:pack (self-named from packs[].name); Skill(mif-docs:<X>)
+  # is only legitimate for mif-docs-plugin's own always-on substrate skills
+  # (mif-frontmatter/mif-validate/mif-provenance), which never go through
+  # packs[] at all. Same detection technique as the #383 guard above, applied
+  # to both workflow modules' actual source.
+  local RD=".claude/workflows/research-deliverables.js" RP=".claude/workflows/research-projection.js" genre_fail=""
+  for f in "$RD" "$RP"; do
+    if grep -oE 'Skill\(mif-docs:\$\{[A-Za-z.]+\}\)' "$f" | grep -q .; then
+      genre_fail="${genre_fail}${f} interpolates a genre variable into Skill(mif-docs:\${...}) — genre packs are self-named (pack:pack), never namespaced under mif-docs (#645); "
+    fi
+    if grep -E '"mif-docs:<genre>"|Skill\(mif-docs:<genre>\)' "$f" | grep -vE 'NOT `?Skill\(mif-docs' | grep -q .; then
+      genre_fail="${genre_fail}${f} still documents the wrong Skill(mif-docs:<genre>) convention in a comment/schema description (#645); "
+    fi
+  done
+  if [ -z "$genre_fail" ]; then
+    ok "research-projection.js/research-deliverables.js (#645): genre-skill invocation stays pack:pack (self-named), never mif-docs:<genre>"
+  else
+    bad "genre-skill invocation regression (#645): $genre_fail"
+  fi
+
   # research-harness-template#479: render-artifact.sh's report-channel publish
   # is a raw filesystem mv, invisible to mif-docs-plugin's Write/Edit/MultiEdit-
   # only provenance-capture hook. Step 4d's `stamp` call can only ever succeed
