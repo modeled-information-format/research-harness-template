@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.22] - 2026-07-19
+
+### Fixed
+
+- **`.githooks/pre-push`'s version-bump check didn't distinguish tag pushes
+  from branch pushes, self-blocking every release** (#648): the hook ran
+  `scripts/check-version-bump.sh` unconditionally, with no awareness of the
+  standard git pre-push stdin protocol (`local_ref local_sha remote_ref
+  remote_sha` lines) that distinguishes what kind of ref is being pushed.
+  Pushing a release tag at the exact commit where the release pointer was
+  just bumped failed the check, because "the last actual git tag release"
+  it resolves against is the about-to-be-pushed tag itself — a paradox
+  inherent to the act of releasing, not a real versioning violation
+  (reproduced live during the v0.16.21 release, forcing a `--no-verify`
+  bypass). The hook now reads its stdin per the standard protocol and skips
+  the check entirely when every ref being pushed is a tag ref
+  (`refs/tags/*`, including a tag deletion); a branch push — including one
+  that mixes branch and tag refs in the same invocation — still runs the
+  check exactly as before.
+
 ## [0.16.21] - 2026-07-19
 
 ### Added

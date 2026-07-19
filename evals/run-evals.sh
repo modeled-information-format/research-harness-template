@@ -444,6 +444,12 @@ run "research-pipeline-args-parse-check" bash evals/research-pipeline-args-parse
 # attached in the same `gh release create` call.
 run "release-workflow-immutable-safe" bash evals/release-workflow-immutable-safe.sh
 
+# .githooks/pre-push must not self-block every release (#648): a tag-only
+# (or tag-deletion) push skips the version-bump check entirely per git's
+# standard pre-push stdin protocol, while a branch push -- including one
+# that mixes branch and tag refs -- still runs it exactly as before.
+run "pre-push-tag-skip" bash evals/pre-push-tag-skip.sh
+
 # 1b. Topic run lock: two concurrent runs on one topic are mutually exclusive
 #     (prevents the shared-findings/ corruption vector).
 run "run-lock-mutual-exclusion" bash evals/run-lock-test.sh
