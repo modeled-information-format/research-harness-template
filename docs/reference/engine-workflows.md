@@ -2,7 +2,7 @@
 id: reference-engine-workflows
 type: semantic
 created: '2026-07-17T20:25:00-04:00'
-modified: '2026-07-19T11:43:16.492Z'
+modified: '2026-07-19T12:48:27.008Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -202,11 +202,20 @@ round for both consumers to pick up.
 ### Returns
 
 A typed result:
-`{ dimensions, findings, perDimension, crossDimensionLeads, related }` —
-`findings` is the flat list of validated finding paths, `perDimension`
-carries each lane's `{ dimension, written, valid, searches, saturation }`
-accounting, `crossDimensionLeads` the `{ from, lead }` pairs above, and
-`related` the relation-pass annotation count (0 when the pass was skipped).
+`{ dimensions, findings, perDimension, crossDimensionLeads, related, repaired }`
+— `findings` is the flat list of validated finding paths, `perDimension`
+carries each lane's `{ dimension, written, valid, repaired, searches, saturation }`
+accounting, `crossDimensionLeads` the `{ from, lead }` pairs above, `related`
+the relation-pass annotation count (0 when the pass was skipped), and the
+top-level `repaired` the round's total defect count: how many findings
+arrived schema-invalid or citation-defective and needed the Repair phase
+before they validated (0 when every finding was clean on first write). This
+is the disclosure surface [research-harness-template#623](https://github.com/modeled-information-format/research-harness-template/issues/623)
+added: `research-pipeline`'s independent completion check threads this
+number into its own prompt so a `finding_valid`/`citation_integrity`-shaped
+check can never be graded `met` from the post-repair corpus state without
+disclosing that repair happened — see
+[The full-mode round loop](#the-full-mode-round-loop) below.
 
 ## research-falsify
 
@@ -1438,7 +1447,20 @@ loops `r = 1..maxRounds`, breaking early the moment `done` is set:
    `unmet.length === 0` from this evaluator's typed output — never by round
    activity, and never by the script's own narrative (Decision D-4, cited
    below). A missing/failed evaluator call stops the loop conservatively
-   rather than assuming success.
+   rather than assuming success. **Repair disclosure**
+   ([research-harness-template#623](https://github.com/modeled-information-format/research-harness-template/issues/623)):
+   `research-fanout`'s own validate/repair lane can mutate schema-invalid or
+   citation-defective findings in place before this evaluator ever runs, so
+   grading only "does the corpus currently validate" would make a
+   heavily-repaired round indistinguishable from a clean one. The round's
+   `fan.repaired` count (see [research-fanout's Returns](#research-fanout))
+   is threaded into the evaluator's own prompt every round — repair-then-
+   revalidate at authoring time is never by itself a reason to fail a
+   check, but a check about finding schema or citation validity (e.g.
+   `finding_valid`, `citation_integrity`) may not be graded `met` without
+   disclosing that repair count in its evidence. The running total also
+   accumulates into the final report's `repaired` field (see Returns
+   below), independent of what the evaluator does with the disclosure.
 6. **Adapt.** If checks remain unmet, the goal's own bound hasn't been hit,
    and rounds remain, `research-coverage-audit` runs (fed the accumulated
    leads and the last synthesis's `checkCoverage`) and its top-3-priority
@@ -1469,7 +1491,9 @@ Every mode returns a typed result tagged with `mode`; shape varies by branch
 `augment`: `{ mode, deepened: [], reasoning }` when nothing warranted
 deepening, or `{ mode, deepened, fanout, gate, synthesis, projection }`
 otherwise; `full`:
-`{ mode, goal: { file, dimensions }, done, checks: { met, unmet } | null, synthesis, projection, deliverables }`.
+`{ mode, goal: { file, dimensions }, done, checks: { met, unmet } | null, synthesis, repaired, projection, deliverables }`
+— `repaired` is the run's accumulated repair total across every round (see
+the repair-disclosure note in step 5 above; #623).
 A `full`-mode goal-stage failure instead returns
 `{ mode, stage: 'goal', failed: true, detail }` before the round loop ever
 starts.

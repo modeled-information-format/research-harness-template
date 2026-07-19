@@ -122,10 +122,19 @@ const CHECK_SCHEMA = {
 
 // Independent completion evaluator — never the agent that did the work. Checks are graded
 // against the corpus and each check's own verify command, not against the narrative.
-async function completionCheck(roundNo) {
+//
+// research-harness-template#623: research-fanout.js's per-dimension validate/repair lane
+// (the documented, sanctioned write-validate-repair-revalidate contract) can mutate findings
+// in place BEFORE this evaluator ever runs — so a corpus that arrived heavily defective and a
+// corpus that was clean from the start look identical from "current corpus state" alone. Pass
+// this round's repair count through explicitly so a schema/citation-validity check (e.g.
+// finding_valid, citation_integrity) can never be graded 'met' from the post-repair state
+// without disclosing that repair happened — the exact self-dealing #623 reported.
+async function completionCheck(roundNo, roundRepaired) {
   return agent(
     `Independent completion evaluation, round ${roundNo}, topic ${TOPIC}, harness ${H}. Read ${H}/reports/${TOPIC}/goal.json. ` +
       `For each completion_condition.check: run its verify command if it has one (report actual output as evidence), else grade its assertion strictly against the CURRENT corpus state (findings + verdicts + synthesis surfaces on disk) — a check is met only when a transcript-verifiable fact proves it, never because work happened. ` +
+      `DISCLOSURE (research-harness-template#623): research-fanout repaired ${roundRepaired} schema-invalid or citation-defective finding(s) this round before any check was graded — repair-then-revalidate at authoring time is the documented, sanctioned contract, never by itself a reason to fail a check. But grading a check about finding schema or citation validity (e.g. finding_valid, citation_integrity) 'met' from the CURRENT post-repair state, without disclosing that repair count, is exactly the self-dealing this independent evaluation exists to catch. If roundRepaired > 0 and a check you grade concerns finding schema or citation validity, your evidence string for that check MUST state the repair count verbatim — never grade it met silently as if the corpus arrived clean. ` +
       `Also report boundHit per the goal's bound (max_rounds=${MAX_ROUNDS} rounds have run: ${roundNo}). You did none of this research; grade adversarially.`,
     { label: `check:round-${roundNo}`, phase: 'Rounds', model: 'sonnet', schema: CHECK_SCHEMA },
   )
@@ -206,6 +215,10 @@ let leads = []
 let lastSyn = null
 let lastCheck = null
 let done = false
+// research-harness-template#623: running total of findings repaired across every round —
+// surfaced in the final report so a heavily-repaired corpus is never indistinguishable from a
+// clean one just because the completion check only ever sees post-repair state.
+let totalRepaired = 0
 
 for (let round = 1; round <= MAX_ROUNDS && !done; round++) {
   if (budgetLow()) { log(`Budget floor before round ${round} — stopping with unmet checks`); break }
@@ -213,11 +226,14 @@ for (let round = 1; round <= MAX_ROUNDS && !done; round++) {
 
   const fan = await wf('fanout', { dimensions: dims, depth, roundContext })
   if (fan && fan.crossDimensionLeads) leads = leads.concat(fan.crossDimensionLeads)
+  const roundRepaired = (fan && fan.repaired) || 0
+  totalRepaired += roundRepaired
+  if (roundRepaired) log(`Round ${round}: research-fanout repaired ${roundRepaired} schema-invalid/citation-defective finding(s) after the initial validate pass, before the completion check`)
 
   await falsifyAll({})
   lastSyn = await wf('synthesis', {})
 
-  lastCheck = await completionCheck(round)
+  lastCheck = await completionCheck(round, roundRepaired)
   if (!lastCheck) { log('Completion evaluator failed — stopping conservatively'); break }
   log(`Checks: ${lastCheck.met.length} met, ${lastCheck.unmet.length} unmet`)
   if (!lastCheck.unmet.length) { done = true; break }
@@ -261,6 +277,9 @@ return {
   done,
   checks: lastCheck ? { met: lastCheck.met.map((m) => ({ id: m.id, evidence: m.evidence })), unmet: lastCheck.unmet.map((u) => ({ id: u.id, why: u.why })) } : null,
   synthesis: lastSyn ? { path: lastSyn.synthesisPath, ok: lastSyn.ok, coverage: lastSyn.checkCoverage } : null,
+  // research-harness-template#623: total findings repaired across every round of this run —
+  // 0 when every finding validated on first write.
+  repaired: totalRepaired,
   projection,
   deliverables,
 }

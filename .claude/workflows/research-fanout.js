@@ -129,7 +129,13 @@ const perDimension = await pipeline(
         ).then((v) => ({ dimension: d, research: r, validation: v }))
       : null,
   (v, d) => {
-    if (!v || !v.validation || !v.validation.invalid.length) return v
+    if (!v || !v.validation || !v.validation.invalid.length) return v ? { ...v, repaired: 0 } : v
+    // research-harness-template#623: the count of findings that arrived
+    // schema-invalid or citation-defective BEFORE this repair pass ran —
+    // the defect-rate signal a completion check grading only the
+    // post-repair corpus state would otherwise never see. Captured here,
+    // before the repair mutates anything, and carried through unchanged.
+    const repairedCount = v.validation.invalid.length
     const invalidPaths = v.validation.invalid.map((i) => i.path)
     return agent(
       `Repair these schema-invalid MIF finding files so each validates against ${H}/schemas/findings.schema.json (jq edits, re-run ajv until clean). Fix structure, citation objects, and the extensions.harness.dimension="${d}" pin ONLY — never delete a finding or weaken its claim to make validation pass:\n` +
@@ -155,6 +161,7 @@ const perDimension = await pipeline(
           dimension: d,
           research: v.research,
           validation: { validPaths: v.validation.validPaths.concat(rv.validPaths), invalid: [] },
+          repaired: repairedCount,
         }
       })
   },
@@ -181,9 +188,21 @@ return {
     dimension: r.dimension,
     written: r.research.findingPaths.length,
     valid: r.validation ? r.validation.validPaths.length : null,
+    // research-harness-template#623: how many of this lane's findings
+    // arrived schema-invalid/citation-defective and needed the repair
+    // pass before they validated — 0 when the lane's findings were clean
+    // on first write.
+    repaired: r.repaired || 0,
     searches: r.research.searchesRun,
     saturation: r.research.saturationNote,
   })),
   crossDimensionLeads: leads,
   related: relate ? relate.related : 0,
+  // research-harness-template#623: total findings this round that only
+  // validate now because they were repaired — the defect-rate signal
+  // research-pipeline.js's independent completion check must be told
+  // about before it grades finding_valid/citation_integrity against the
+  // (post-repair) corpus state, rather than silently trusting that state
+  // as if it were always clean.
+  repaired: results.reduce((sum, r) => sum + (r.repaired || 0), 0),
 }
