@@ -104,13 +104,32 @@
 // this module's own runtime behavior — this module never calls verify.sh
 // itself — and is out of scope for this Task; work around it locally with
 // scripts/fetch-engine.sh, never silently.
+//
+// WITNESSED PROVENANCE — mechanism 1 only, never mechanism 2 (#632, same
+// gap research-projection.js closed for the report channel). render-
+// artifact.sh's own header states blog/book carry MIF Level-1 frontmatter
+// (a real @context/@type/@id/conceptType/created concept), so mif-docs-
+// plugin's mif-provenance skill can stamp them exactly like the report
+// channel — added as a step in the artifact-mechanism Render prompt below.
+// Mechanism 2 (source-direct channel packs: pdf, jats, xbrl, ectd,
+// notebooklm, github-discuss, github-issues) is explicitly OUT OF SCOPE for
+// this stamp: each pack owns its own output format and invocation
+// (Skill(<pack>:<pack>)) with no dedicated backing script this module
+// controls, several formats aren't even MIF-frontmatter-bearing markdown
+// (PDF, XBRL), and stamping an output this module didn't itself render
+// would be presumptuous about a contract only the pack's own SKILL.md can
+// state. Every mechanism-2 render therefore reports
+// provenanceOutcome="not-applicable" with that reason, matching this
+// module's own established convention of naming scope explicitly rather
+// than silently doing something inconsistent (see OUT_OF_SCOPE_CHANNELS
+// above).
 export const meta = {
   name: 'research-deliverables',
   description: 'Atomic step 6 (deliverable genres): routing workflow covering BOTH real rendering mechanisms — artifact-based (synthesize-artifact.sh -> render-artifact.sh for blog/book, delegated never free-form-authored) and source-direct channel packs (pdf/jats/xbrl/ectd/notebooklm/github-discuss/github-issues, each invoked as its own Skill directly against findings, never through a rendered artifact); a requested pair whose backing pack/script is not enabled or whose mechanism this module does not cover reports via unavailable[] with a reason naming which mechanism and what is missing, never silently dropped',
   whenToUse: 'After projection — produces the optional deliverables (blog post, book chapter, exec-summary, engineering report, academic, briefing, PDF, JATS, …) from the same synthesis the report of record used',
   phases: [
     { title: 'Route', detail: 'requested genre×channel pairs vs harness.config.json packs[] + .claude/settings.local.json enabledPlugins ("<pack>@research-harness" key shape) → mechanism-tagged render plan; unavailable pairs get a reason naming the mechanism and what is missing', model: 'haiku' },
-    { title: 'Render', detail: 'mechanism 1: synthesize-artifact.sh -> render-artifact.sh per genre×channel row, synthesis cross-checked; mechanism 2: Skill(<pack>:<pack>) invoked directly against findings, synthesis never consulted', model: 'sonnet' },
+    { title: 'Render', detail: 'mechanism 1: synthesize-artifact.sh -> render-artifact.sh per genre×channel row, synthesis cross-checked, then Skill(mif-docs:mif-provenance) witnessed-provenance stamp (ADR-0018, #632; declines gracefully when capture is off); mechanism 2: Skill(<pack>:<pack>) invoked directly against findings, synthesis never consulted, provenance stamp explicitly not-applicable (each pack owns its own output/format)', model: 'sonnet' },
     { title: 'Check', detail: 'per-artifact lint (where markdown) + frontmatter/citation-leak conformance + ≥1 citation', model: 'haiku' },
   ],
 }
@@ -196,8 +215,10 @@ const RENDER_SCHEMA = {
     channel: { type: 'string' },
     mechanism: { type: 'string', enum: ['artifact', 'source-direct'] },
     citationsCount: { type: 'integer', description: 'distinct citations the rendered output carries (finding-traced for mechanism 1, primary-source for mechanism 2)' },
+    provenanceOutcome: { type: 'string', enum: ['stamped', 'declined', 'error', 'not-applicable'], description: 'result of the Skill(mif-docs:mif-provenance) stamp attempt (#632) for mechanism 1 rows; "not-applicable" for mechanism 2 rows (each pack owns its own output/format, see module header) — "declined" is expected/healthy when capture is off or the session ledger never witnessed this file, never a render failure' },
+    provenanceReason: { type: 'string', description: 'why declined/error/not-applicable, or "witnessed" when stamped' },
   },
-  required: ['outputPath', 'genre', 'channel', 'mechanism', 'citationsCount'],
+  required: ['outputPath', 'genre', 'channel', 'mechanism', 'citationsCount', 'provenanceOutcome', 'provenanceReason'],
 }
 const CHECK_SCHEMA = {
   type: 'object',
@@ -321,8 +342,20 @@ const rendered = await pipeline(
             `validated; produces public-citation-only prose (the citation-leak gate is enforced by this script's own engine delegation ` +
             `for blog/book, per scripts/render-artifact.sh's own header — do not hand-craft finding-@id citation keys into the output, ` +
             `that would BE a citation leak, not a feature).\n` +
-            `Return the output path, genre, channel, mechanism="artifact", and how many distinct primary-source citations the rendered ` +
-            `output's References/Sources section lists.`,
+            `4. Stamp WITNESSED provenance (mif-docs-plugin's mif-provenance skill, ADR-0018, #632) on top of — never instead of — the ` +
+            `MIF Level-1 frontmatter step 3 already wrote (render-artifact.sh's own header: blog/book carry a real ` +
+            `@context/@type/@id/conceptType/created concept). Invoke it via the Skill tool, namespaced pack:skill, never a hand-rolled ` +
+            `script path into the plugin's install cache:\n` +
+            `   Skill(mif-docs:mif-provenance) — "stamp ${p.outputHint}"\n` +
+            `If capture is disabled (mifProvenance.capture unset or false at every settings scope) or the session ledger has no ` +
+            `witnessed touch of this file, stamp DECLINES (exit 3) — this is expected and healthy, not a render failure to surface as ` +
+            `broken; the deliverable's provenance block stays whatever step 3 already asserted (model-asserted). Do NOT hand-author a ` +
+            `provenance block to work around a decline. On success the block carries hook-observed agent/agentVersion/wasGeneratedBy ` +
+            `fields instead of only model-asserted ones; trustLevel stays user_stated (a local, unsigned witness) — never overstate it ` +
+            `as anything higher when reporting the outcome.\n` +
+            `Return the output path, genre, channel, mechanism="artifact", how many distinct primary-source citations the rendered ` +
+            `output's References/Sources section lists, and the provenance stamp outcome from step 4 (provenanceOutcome: ` +
+            `"stamped"/"declined"/"error", plus provenanceReason naming why, or "witnessed" when stamped).`,
           { label: `render:${p.genre}x${p.channel}`, phase: 'Render', model: 'sonnet', schema: RENDER_SCHEMA },
         )
       : agent(
@@ -334,8 +367,12 @@ const rendered = await pipeline(
             `read or reference the synthesis at ${SYN} for this row — the synthesis-only evidence rule does not apply to source-direct ` +
             `channels by design.${p.genre !== '-' ? ` A genre ("${p.genre}") was requested alongside this channel but does not apply — ` +
             `there is no genre axis here; ignore it.` : ''}\n` +
-            `Return the output path, genre="-", channel, mechanism="source-direct", and how many distinct primary-source citations the ` +
-            `output carries.`,
+            `Do NOT attempt a Skill(mif-docs:mif-provenance) stamp for this row — mechanism 2 is explicitly out of scope for it (each ` +
+            `pack owns its own output format/invocation with no dedicated backing script this module controls, and several formats ` +
+            `aren't even MIF-frontmatter-bearing markdown; see module header). Return provenanceOutcome="not-applicable" with that ` +
+            `reason verbatim.\n` +
+            `Return the output path, genre="-", channel, mechanism="source-direct", how many distinct primary-source citations the ` +
+            `output carries, and the provenance fields (provenanceOutcome="not-applicable", provenanceReason naming why).`,
           { label: `render:${p.channel}`, phase: 'Render', model: 'sonnet', schema: RENDER_SCHEMA },
         )
   },
@@ -379,6 +416,6 @@ if (dirty.length) {
 
 return {
   ok: artifacts.length > 0,
-  artifacts: artifacts.map((a) => ({ path: a.outputPath, genre: a.genre, channel: a.channel, mechanism: a.mechanism, citations: a.citationsCount, clean: a.validation ? a.validation.clean : null })),
+  artifacts: artifacts.map((a) => ({ path: a.outputPath, genre: a.genre, channel: a.channel, mechanism: a.mechanism, citations: a.citationsCount, clean: a.validation ? a.validation.clean : null, provenanceOutcome: a.provenanceOutcome, provenanceReason: a.provenanceReason })),
   unavailable: route.unavailable,
 }

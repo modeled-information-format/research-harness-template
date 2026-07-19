@@ -93,12 +93,31 @@
 // module's own runtime behavior — this module never calls verify.sh itself
 // (see the Verify phase below, D-10) — and is out of scope for this Task;
 // work around it locally with scripts/fetch-engine.sh, never silently.
+//
+// WITNESSED PROVENANCE GAP — closed, not carried forward (#632). This
+// module's Report phase previously stopped at step 6 (mif-project.sh's L3
+// schema re-confirmation), leaving the rendered report's `provenance` block
+// whatever `synthesize-artifact.sh`/`render-artifact.sh` asserted from the
+// artifact's own content — identical boilerplate
+// (sourceType/confidence/trustLevel) across every genre and run, never
+// hook-observed. ADR-0018 already names `mif-docs-plugin`'s `mif-provenance`
+// skill as the harness's witnessed-provenance authority (ADR-0002 stays the
+// schema-conformance authority) and its own "Current Limitations" section
+// states plainly that "every provenance block, including in synthesized
+// reports, is model-asserted" — this module was the gap. The interactive
+// `/start` orchestrator's report-synthesizer.md agent already documents the
+// correct fix (its Step 4d) for the non-workflow path; step 7 below applies
+// the IDENTICAL pattern here — Skill(mif-docs:mif-provenance) invoked via
+// the Skill tool (never a hand-rolled script path into the plugin's install
+// cache), declining gracefully (exit 3) when capture is off or the session
+// ledger never witnessed this file, never hand-authoring a block to work
+// around a decline.
 export const meta = {
   name: 'research-projection',
   description: 'Atomic step 5 (projection): project the typed synthesis onto the durable corpus surfaces — the canonical MIF Level-3 report of record (via the publish-report script pipeline, gated by a REAL falsification pass, never a hand-authored verdict), the topic README/knowledge graph (via the readme/graph skills\' deterministic scripts, synthesis-grade Key Findings authored on top) — then verify only what changed',
   whenToUse: 'After a clean synthesis — materializes the tracked, in-repo projections (the report channel is the source of truth; deliverable genres are a separate workflow)',
   phases: [
-    { title: 'Report', detail: 'existence-checked synthesisPath (same-process contract) -> publish-report pipeline: synthesize-artifact.sh -> REAL falsify.sh gate over the report\'s own central claims (never hand-authored) -> render-artifact.sh -> mif-project.sh', model: 'sonnet' },
+    { title: 'Report', detail: 'existence-checked synthesisPath (same-process contract) -> publish-report pipeline: synthesize-artifact.sh -> REAL falsify.sh gate over the report\'s own central claims (never hand-authored) -> render-artifact.sh -> mif-project.sh -> Skill(mif-docs:mif-provenance) witnessed-provenance stamp (ADR-0018, #632; declines gracefully when capture is off, never hand-authored as a workaround)', model: 'sonnet' },
     { title: 'Index', detail: 'readme skill\'s build-topic-readme.sh backbone + synthesis-grade Key Findings/Purpose authored on top -> graph skill\'s build-graph.sh + assert-graph-mif.sh', model: 'haiku' },
     { title: 'Verify', detail: 'targeted gates on changed files only (D-10) — never the full verify.sh suite', model: 'haiku' },
   ],
@@ -130,8 +149,10 @@ const REPORT_SCHEMA = {
     checksAddressed: { type: 'array', items: { type: 'string' } },
     verificationVerdict: { type: 'string', enum: ['falsified', 'weakened', 'survived', 'inconclusive'] },
     reportId: { type: 'string', description: 'the report\'s own @id — same across a supersession re-run, by construction of render-artifact.sh (see header note)' },
+    provenanceOutcome: { type: 'string', enum: ['stamped', 'declined', 'error'], description: 'result of the Skill(mif-docs:mif-provenance) stamp attempt (#632) — "declined" is expected/healthy when capture is off or the session ledger never witnessed this file, never a projection failure' },
+    provenanceReason: { type: 'string', description: 'why declined/error (the skill\'s own stated reason), or "witnessed" when stamped' },
   },
-  required: ['reportPath', 'frontmatterLevel', 'checksAddressed', 'verificationVerdict', 'reportId'],
+  required: ['reportPath', 'frontmatterLevel', 'checksAddressed', 'verificationVerdict', 'reportId', 'provenanceOutcome', 'provenanceReason'],
 }
 const INDEX_SCHEMA = {
   type: 'object',
@@ -204,9 +225,22 @@ const report = await agent(
     `(version increments, temporal.validFrom carries forward) — do not delete the existing file first, and do not attempt to ` +
     `hand-copy an @id forward yourself.\n` +
     `6. Re-confirm: bash ${H}/scripts/mif-project.sh ${RDIR}/${SLUG}.md — must report "projects to a valid MIF L3 finding".\n` +
+    `7. Stamp WITNESSED provenance (mif-docs-plugin's mif-provenance skill, ADR-0018) on top of — never instead of — the L3 ` +
+    `schema conformance step 6 just confirmed. Invoke it via the Skill tool, namespaced pack:skill exactly like publish-report's ` +
+    `own genre skills, never a hand-rolled script path into the plugin's install cache:\n` +
+    `   Skill(mif-docs:mif-provenance) — "stamp ${RDIR}/${SLUG}.md"\n` +
+    `If capture is disabled (mifProvenance.capture unset or false at every settings scope) or the session ledger has no witnessed ` +
+    `touch of this file, stamp DECLINES (exit 3) — this is expected and healthy, not a projection failure to surface as broken; ` +
+    `the report's provenance block stays whatever step 2-5 already asserted (model-asserted). Do NOT hand-author a provenance ` +
+    `block to work around a decline. On success the block carries hook-observed agent/agentVersion/wasGeneratedBy fields instead ` +
+    `of only model-asserted ones; trustLevel stays user_stated (a local, unsigned witness) — never overstate it as anything ` +
+    `higher when reporting the outcome. Stamping never trades conformance for provenance: if it would drop the report below the ` +
+    `MIF level step 6 confirmed, it declines and leaves the file untouched — if it succeeds, re-run step 6's mif-project.sh once ` +
+    `more, since a successful stamp mutates the exact frontmatter step 6 already checked.\n` +
     `Return the report path, the achieved MIF level, which goal check ids the report addresses, the verification verdict ` +
-    `ACTUALLY WRITTEN by falsify.sh (never hand-authored), and the report's own @id (read it back from the rendered file's ` +
-    `frontmatter after step 5/6, not invented).`,
+    `ACTUALLY WRITTEN by falsify.sh (never hand-authored), the report's own @id (read it back from the rendered file's ` +
+    `frontmatter after step 5/6, not invented), and the provenance stamp outcome from step 7 (provenanceOutcome: ` +
+    `"stamped"/"declined"/"error", plus provenanceReason naming why, or "witnessed" when stamped).`,
   { label: 'projection:report', model: 'sonnet', schema: REPORT_SCHEMA },
 )
 if (!report) throw new Error('research-projection: report rendering failed')
@@ -257,6 +291,8 @@ return {
   mifLevel: report.frontmatterLevel,
   checksAddressed: report.checksAddressed,
   verificationVerdict: report.verificationVerdict,
+  provenanceOutcome: report.provenanceOutcome,
+  provenanceReason: report.provenanceReason,
   readmePath: index ? index.readmePath : null,
   readmeCheckPassed: index ? index.readmeCheckPassed : false,
   graphRefreshed: index ? index.graphRefreshed : false,
