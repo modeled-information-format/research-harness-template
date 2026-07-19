@@ -44,7 +44,8 @@
 #      with) -> continues to work identically, proving the fix does not
 #      regress the non-string case.
 #
-# Exit 0 = every case holds. Exit 1 = a case failed.
+# Exit 0 = every case holds. Exit 1 = a case failed. Exit 2 = a required tool
+# is missing, or the module is not where this eval expects it.
 set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT" || exit 2
@@ -55,6 +56,10 @@ fail=0
 note() { printf '  research-pipeline-args-parse-check: %s\n' "$1"; }
 
 WF=.claude/workflows/research-pipeline.js
+
+command -v node >/dev/null 2>&1 || { note "node is required but not on PATH"; exit 2; }
+command -v python3 >/dev/null 2>&1 || { note "python3 is required but not on PATH"; exit 2; }
+[ -f "$WF" ] || { note "$WF not found — the vendored research-pipeline workflow must ship"; exit 2; }
 
 # ============================================================================
 # Driver: runs the REAL research-pipeline.js via the Workflow-runtime's own
