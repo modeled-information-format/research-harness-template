@@ -1,0 +1,27 @@
+{
+  "@type": "KnowledgeGraph",
+  "generator": "build-graph.sh (MIF-native; SPEC §6c)",
+  "nodes": [
+    {
+      "id": "urn:mif:concept:x/eng:f1",
+      "kind": "concept",
+      "label": "Kafka adoption reduces coupling between services",
+      "dimension": "technical"
+    },
+    {
+      "id": "urn:mif:entity:technology:kafka",
+      "kind": "entity",
+      "label": "Kafka",
+      "entityType": "technology"
+    }
+  ],
+  "edges": [
+    {
+      "source": "urn:mif:concept:x/eng:f1",
+      "target": "urn:mif:entity:technology:kafka",
+      "type": "mentions",
+      "strength": null,
+      "via": "entity"
+    }
+  ]
+}

@@ -34,6 +34,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   well-known name (unlike `research-deliverables.js`'s own genre-suffixed
   blog/book intermediates) because `mif-container-export.sh`/
   `mif-container-import.sh`/`verify.sh` all expect it at that exact path.
+- **`research-projection.js` and `research-deliverables.js` never invoked the
+  harness's own witnessed-provenance mechanism, so every rendered report/blog/
+  book carried identical, model-asserted `provenance` boilerplate regardless of
+  what actually happened during generation** (#632): `research-projection.js`'s
+  Report phase now stamps the rendered report via `Skill(mif-docs:mif-provenance)`
+  (ADR-0018) after its existing `mif-project.sh` re-confirmation, and
+  `research-deliverables.js` does the same for mechanism-1 (artifact-based
+  blog/book) rows after `render-artifact.sh` — both decline gracefully (never
+  hand-authoring a workaround) when capture is off or the session ledger never
+  witnessed the file, and both surface the stamp outcome
+  (`provenanceOutcome`/`provenanceReason`) through their schemas and final
+  return rather than discarding it. Mechanism-2 source-direct channel packs
+  (pdf, jats, xbrl, ectd, notebooklm, github-discuss, github-issues) are
+  explicitly out of scope (`provenanceOutcome: "not-applicable"`) — each owns
+  its own output format/invocation with no dedicated backing script this module
+  controls.
 - **`research-pipeline.js`'s completion check could grade `finding_valid`/
   `citation_integrity` as cleanly met without disclosing that
   `research-fanout.js`'s own repair lane had just mutated the graded

@@ -361,6 +361,16 @@ gate_m4() {
     scripts/assert-graph-mif.sh "$KG" 2>&1 | sed 's/^/      /' >&2
   fi
 
+  # 4b2. The per-topic knowledge graph has a structural conformance gate of its
+  #      own (#630): both the schema's bundled sample and the freshly built
+  #      sample-session graph must validate against knowledge-graph.schema.json.
+  if ajv_plain schemas/knowledge-graph.schema.json schemas/samples/knowledge-graph.sample.json \
+     && ajv_plain schemas/knowledge-graph.schema.json "$KG"; then
+    ok "knowledge graph validates against knowledge-graph.schema.json"
+  else
+    bad "knowledge graph failed schema validation against knowledge-graph.schema.json"
+  fi
+
   # 4c. The graph viz renders. Render the probe HTML into a temp dir outside the
   #     tree (the gate only asserts the renderer produces non-empty output) so it
   #     never dirties the working tree or clobbers the committed sample fixture.
