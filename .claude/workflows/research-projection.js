@@ -245,8 +245,13 @@ const changed = [report.reportPath].concat(index ? index.changedFiles : [])
 const verify = await agent(
   `Targeted verification of ONLY these changed files in harness ${H} (never the full verify.sh suite here — D-10): ` +
     `${JSON.stringify(changed)}. Run markdownlint-cli2 (repo config) on the markdown; ajv-validate any touched JSON against ` +
-    `its schema under ${H}/schemas/ (knowledge-graph, findings). Report problems verbatim; do not fix anything, and never run ` +
-    `this concurrently with scripts/ontology-review.sh (shared temp/catalog state races).`,
+    `its schema under ${H}/schemas/ (knowledge-graph, findings). If reports/<topic>/ontology-map.json is among the ` +
+    `changed/touched files, its established, correct shape is a JSON ARRAY of {finding_id, entity_type, resolved_ontology, ` +
+    `basis, valid} rows (see scripts/mif-container-import.sh, scripts/build-concordance.sh, scripts/ontology-review.sh, and ` +
+    `every existing topic's on-disk ontology-map.json) — there is no schemas/ontology-map.schema.json to ajv-validate it ` +
+    `against, so do not flag its array root as wrong or assume it should be an object; only confirm it parses as valid JSON ` +
+    `and its root is an array. Report problems verbatim; do not fix anything, and never run this concurrently with ` +
+    `scripts/ontology-review.sh (shared temp/catalog state races).`,
   { label: 'projection:verify', model: 'haiku', effort: 'low', schema: VERIFY_SCHEMA },
 )
 

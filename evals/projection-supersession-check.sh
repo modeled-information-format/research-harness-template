@@ -54,6 +54,16 @@
 #      own prompt text still says "never the full verify.sh suite" / "D-10",
 #      not a full-suite invocation.
 #
+#   F. ontology-map.json is an ARRAY, not an object (#631). The Verify phase's
+#      own prompt text must document ontology-map.json's real, established
+#      shape (a JSON array of {finding_id, entity_type, resolved_ontology,
+#      basis, valid} rows, per scripts/mif-container-import.sh and every
+#      on-disk ontology-map.json in this repo) and explicitly instruct the
+#      verifying model not to flag its array root as wrong. A regression back
+#      to a bare "ajv-validate against its schema" instruction with no such
+#      carve-out reintroduces the false-positive "root element is array but
+#      schema expects object" failure this eval traps.
+#
 # Hermetic: node/jq/the vendored bin/mif-rh-cli (offline, fixture-supplied
 # evidence — ADR-0016), evals/fixtures/raw-finding.json + evidence.json,
 # schemas/samples/*, and mktemp scratch only. No network, no live model/API
@@ -114,6 +124,19 @@ grep -qF 'never the full verify.sh suite' <<<"$verify_span" \
   || { note "Verify phase prompt lost its explicit never-the-full-verify.sh-suite instruction (D-10)"; fail=1; }
 grep -qF 'D-10' <<<"$verify_span" \
   || { note "Verify phase prompt lost its D-10 citation"; fail=1; }
+
+# ============================================================================
+# F: ontology-map.json is an established ARRAY, not an object (#631). The
+# Verify phase prompt must name the real shape and explicitly rule out
+# flagging its array root, or a false-positive "schema expects object"
+# failure fires on every topic that has a populated ontology-map.json.
+# ============================================================================
+grep -qF 'ontology-map.json' <<<"$verify_span" \
+  || { note "Verify phase prompt no longer mentions ontology-map.json — the #631 array-shape carve-out has regressed"; fail=1; }
+grep -qF 'JSON ARRAY' <<<"$verify_span" \
+  || { note "Verify phase prompt lost the 'ontology-map.json is a JSON ARRAY' shape documentation (#631)"; fail=1; }
+grep -qF 'do not flag its array root as wrong' <<<"$verify_span" \
+  || { note "Verify phase prompt lost the explicit instruction not to flag ontology-map.json's array root as wrong (#631) — regressing this reintroduces the false-positive 'schema expects object' failure"; fail=1; }
 
 # ============================================================================
 # B: Supersession identity. REAL pipeline run, no stubs: synthesize-artifact.sh
