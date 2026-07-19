@@ -85,12 +85,18 @@ export const meta = {
 //   maxRounds?: number (default 3), claimBudget?, queryBudget?, lenses?
 //   workflowsDir?: string (default '.claude/workflows') — where the atomic scripts live
 // }
-const H = (args && args.harnessDir) || '.'
-const TOPIC = args && args.topic
+// The Workflow tool's top-level `args` parameter arrives at this external
+// entry point as a JSON-encoded STRING, not a parsed object (confirmed
+// empirically — issue #617). Every other vendored module is only ever
+// invoked internally via this script's own workflow() calls, which pass
+// real in-process JS objects, so only THIS module needs the guard.
+const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
+const H = A.harnessDir || '.'
+const TOPIC = A.topic
 if (!TOPIC) throw new Error('research-pipeline: args.topic is required')
-const MODE = (args && args.mode) || 'full'
-const MAX_ROUNDS = (args && args.maxRounds) || 3
-const W = (args && args.workflowsDir) || '.claude/workflows'
+const MODE = A.mode || 'full'
+const MAX_ROUNDS = A.maxRounds || 3
+const W = A.workflowsDir || '.claude/workflows'
 const BUDGET_FLOOR = 60000 // stop opening new rounds below this many remaining tokens
 
 const wf = (name, wfArgs) => workflow({ scriptPath: `${W}/research-${name}.js` }, { harnessDir: H, topic: TOPIC, ...wfArgs })
@@ -122,7 +128,7 @@ async function falsifyAll(extra) {
   let total = 0
   const rollup = {}
   for (let i = 0; i < 5; i++) {
-    const r = await wf('falsify', { scope: 'all', claimBudget: args && args.claimBudget, queryBudget: args && args.queryBudget, lenses: args && args.lenses, ...extra })
+    const r = await wf('falsify', { scope: 'all', claimBudget: A.claimBudget, queryBudget: A.queryBudget, lenses: A.lenses, ...extra })
     if (!r) break
     total += r.gated
     for (const k of Object.keys(r.rollup || {})) rollup[k] = (rollup[k] || 0) + r.rollup[k]
@@ -142,8 +148,8 @@ if (MODE === 'audit') {
 }
 
 if (MODE === 'import') {
-  if (!args.containerDir) throw new Error('import mode requires args.containerDir')
-  const imp = await wf('import', { containerDir: args.containerDir, trustImportedVerdicts: args.trustImportedVerdicts })
+  if (!A.containerDir) throw new Error('import mode requires args.containerDir')
+  const imp = await wf('import', { containerDir: A.containerDir, trustImportedVerdicts: A.trustImportedVerdicts })
   if (!imp || !imp.ok) return { mode: MODE, imported: imp }
   const gate = imp.needsGating.length ? await falsifyAll({}) : { gated: 0, rollup: {} }
   const syn = await wf('synthesis', {})
@@ -152,11 +158,11 @@ if (MODE === 'import') {
 }
 
 if (MODE === 'pivot') {
-  if (!args.delta) throw new Error('pivot mode requires args.delta')
-  const pivot = await wf('pivot', { delta: args.delta })
+  if (!A.delta) throw new Error('pivot mode requires args.delta')
+  const pivot = await wf('pivot', { delta: A.delta })
   // Re-gate the stale carry-overs through falsify.sh's re-verify path, then research only the gaps.
   if (pivot.reverifyIds && pivot.reverifyIds.length) {
-    await wf('falsify', { scope: { ids: pivot.reverifyIds }, regate: true, claimBudget: args && args.claimBudget, queryBudget: args && args.queryBudget, lenses: args && args.lenses })
+    await wf('falsify', { scope: { ids: pivot.reverifyIds }, regate: true, claimBudget: A.claimBudget, queryBudget: A.queryBudget, lenses: A.lenses })
   }
   let fan = null
   if (pivot.gapDimensions && pivot.gapDimensions.length && !budgetLow()) {
@@ -169,7 +175,7 @@ if (MODE === 'pivot') {
 }
 
 if (MODE === 'augment') {
-  const plan = await wf('augment', { focusHint: args && args.focusHint })
+  const plan = await wf('augment', { focusHint: A.focusHint })
   if (!plan.deepen.length) return { mode: MODE, deepened: [], reasoning: plan.reasoning }
   const dims = plan.deepen.map((d) => d.dimension)
   const fan = await wf('fanout', { dimensions: dims, depth: plan.deepen.some((d) => d.depth === 'deep') ? 'deep' : 'standard', roundContext: `Augmentation round targeting: ${plan.deepen.map((d) => `${d.dimension} (${d.rationale})`).join('; ')}` })
@@ -181,7 +187,7 @@ if (MODE === 'augment') {
 
 // ---- MODE full: the bounded autonomous goal loop ----
 phase('Goal')
-const goal = await wf('goal', { ask: (args && args.ask) || '' })
+const goal = await wf('goal', { ask: A.ask || '' })
 if (!goal || !goal.ok) return { mode: MODE, stage: 'goal', failed: true, detail: goal }
 
 phase('Rounds')
@@ -237,8 +243,8 @@ if (lastSyn && lastSyn.synthesisPath) {
 
 phase('Deliver')
 let deliverables = null
-if (lastSyn && lastSyn.synthesisPath && ((args && args.genres && args.genres.length) || (args && args.channels && args.channels.length))) {
-  deliverables = await wf('deliverables', { synthesisPath: lastSyn.synthesisPath, genres: args.genres, channels: args.channels })
+if (lastSyn && lastSyn.synthesisPath && ((A.genres && A.genres.length) || (A.channels && A.channels.length))) {
+  deliverables = await wf('deliverables', { synthesisPath: lastSyn.synthesisPath, genres: A.genres, channels: A.channels })
 }
 
 return {

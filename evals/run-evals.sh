@@ -386,6 +386,18 @@ run "research-pipeline-import-check" bash evals/research-pipeline-import-check.s
 run "research-pipeline-pivot-check" bash evals/research-pipeline-pivot-check.sh
 run "research-pipeline-augment-check" bash evals/research-pipeline-augment-check.sh
 
+# research-pipeline.js is the ONE vendored module invoked externally through
+# the real Workflow-tool boundary (D-9: composition exactly two levels
+# deep) -- so it is the only module whose top-level `args` can arrive as a
+# JSON-encoded STRING rather than an already-parsed object (#617). This eval
+# drives the real, unmodified module source with args handed through BOTH
+# ways (raw string, matching the real runtime; already-parsed object,
+# matching every sibling eval's existing assumption and every internal
+# workflow() call this script itself makes) and proves both shapes resolve
+# identically, across the topic/harnessDir/workflowsDir guard and the
+# mode-specific containerDir/delta guards.
+run "research-pipeline-args-parse-check" bash evals/research-pipeline-args-parse-check.sh
+
 # release.yml never uploads to an already-published (immutable) release
 # (#537): tag-push trigger, no post-publish `gh release upload`, artifact
 # attached in the same `gh release create` call.

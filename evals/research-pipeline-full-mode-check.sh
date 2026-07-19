@@ -182,7 +182,7 @@ grep -qF 'if (round === MAX_ROUNDS || budgetLow()) break' "$WF" \
   || { note "the maxRounds/budget-floor stop guard before adaptation is missing or reshaped"; fail=1; }
 grep -qF 'const BUDGET_FLOOR = 60000' "$WF" \
   || { note "BUDGET_FLOOR's literal value moved or was removed"; fail=1; }
-grep -qF "MAX_ROUNDS = (args && args.maxRounds) || 3" "$WF" \
+grep -qF "MAX_ROUNDS = A.maxRounds || 3" "$WF" \
   || { note "MAX_ROUNDS's default-3 code comparison moved or was removed"; fail=1; }
 grep -qF 'if (lastCheck.boundHit) { log(' "$WF" \
   || { note "the goal's own boundHit stop guard is missing or reshaped"; fail=1; }
