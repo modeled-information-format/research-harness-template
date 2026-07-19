@@ -92,6 +92,19 @@ if (args && args.regate && !REGATE_SCOPE_QUALIFIES) {
 }
 const REGATE = !!(args && args.regate && REGATE_SCOPE_QUALIFIES)
 
+// #625: workingSet and skippedAlreadyVerifiedIds are the same agent turn's
+// own classification of the findings it decided to look at — nothing here
+// independently proves it looked at ALL of them. A real run (scope:'all'
+// over a 19-finding corpus) silently enumerated only 18: one pre-existing
+// finding appeared in neither list, and nothing detected the gap because
+// only an aggregate count (skippedAlreadyVerified: integer) was ever
+// returned, with no itemized on-disk listing to reconcile it against.
+// allFindingIds is that itemized listing — the agent brief below requires it
+// be derived mechanically (`find … | sort`), not re-derived from the same
+// reasoning that produced workingSet — and skippedAlreadyVerifiedIds is now
+// itemized too so every id in allFindingIds can be code-reconciled against
+// exactly one of the two other lists immediately below (see the
+// reconcileEnumeration()/retry block after the agent() call).
 const ENUM_SCHEMA = {
   type: 'object',
   properties: {
@@ -108,9 +121,10 @@ const ENUM_SCHEMA = {
         required: ['path', 'id', 'dimension', 'claimSummary'],
       },
     },
-    skippedAlreadyVerified: { type: 'integer' },
+    skippedAlreadyVerifiedIds: { type: 'array', items: { type: 'string' }, description: '@ids excluded under the one-round rule (already carrying extensions.harness.verification.attempted_at)' },
+    allFindingIds: { type: 'array', items: { type: 'string' }, description: 'EVERY @id under RDIR/findings/ (quarantine/ and archive/ excluded), derived mechanically via find|sort — not re-derived from the same pass that produced workingSet' },
   },
-  required: ['workingSet', 'skippedAlreadyVerified'],
+  required: ['workingSet', 'skippedAlreadyVerifiedIds', 'allFindingIds'],
 }
 const DECOMPOSE_SCHEMA = {
   type: 'object',
@@ -250,15 +264,61 @@ const scopeDesc =
       ? `findings whose extensions.harness.dimension == "${SCOPE.slice('dimension:'.length)}"`
       : 'every active finding'
     : `exactly these findings, given by ${SCOPE.paths ? 'file path' : '@id'}: ${JSON.stringify(SCOPE.paths || SCOPE.ids)}`
-const enumerated = await agent(
+const ENUM_BRIEF_TAIL =
+  `For each included finding return path, @id, dimension pin, and a one-sentence summary of its core claim. ` +
+  `Separately, derive allFindingIds MECHANICALLY: run \`find ${RDIR}/findings -maxdepth 1 -name '*.json' | sort\` ` +
+  `(quarantine/ and archive/ are subdirectories one level down, so -maxdepth 1 already excludes them) and read each ` +
+  `@id from its file — do NOT re-derive allFindingIds from the same reasoning that produced workingSet; it must be a ` +
+  `plain on-disk listing, independent of your inclusion/exclusion judgment, so it can catch a mistake in that judgment.`
+let enumerated = await agent(
   `Enumerate the falsification working set under ${RDIR}/findings/ (quarantine/ and archive/ siblings are excluded). Scope: ${scopeDesc}. ` +
     (REGATE
-      ? `RE-GATE MODE (stale findings re-opened by a goal-version change): include the scoped findings even when they carry extensions.harness.verification.attempted_at; set skippedAlreadyVerified to 0. `
-      : `Enforce the one-round rule structurally: EXCLUDE any finding already carrying extensions.harness.verification.attempted_at, counting them in skippedAlreadyVerified. `) +
-    `For each included finding return path, @id, dimension pin, and a one-sentence summary of its core claim.`,
+      ? `RE-GATE MODE (stale findings re-opened by a goal-version change): include the scoped findings even when they carry extensions.harness.verification.attempted_at; skippedAlreadyVerifiedIds should be empty. `
+      : `Enforce the one-round rule structurally: EXCLUDE any finding already carrying extensions.harness.verification.attempted_at from workingSet, and instead list its @id in skippedAlreadyVerifiedIds. `) +
+    ENUM_BRIEF_TAIL,
   { label: 'falsify:enumerate', model: 'haiku', effort: 'low', schema: ENUM_SCHEMA },
 )
 if (!enumerated) throw new Error('research-falsify: enumeration failed')
+
+// #625 reconciliation: deterministic set-equality check in code (the same
+// idiom as mergeVotes()/claimBudget above — verdict/budget arithmetic never
+// left to a model's own judgment). Every id the mechanical find|sort listing
+// reports MUST appear in exactly one of workingSet or skippedAlreadyVerifiedIds;
+// if the SAME agent turn's own classification silently dropped one, this
+// catches it instead of proceeding to gate a partial working set.
+function reconcileEnumeration(e) {
+  const covered = new Set([...(e.workingSet || []).map((f) => f.id), ...(e.skippedAlreadyVerifiedIds || [])])
+  return (e.allFindingIds || []).filter((id) => !covered.has(id))
+}
+let missing = reconcileEnumeration(enumerated)
+if (missing.length) {
+  log(`Enumerate reconciliation mismatch: ${missing.length} on-disk finding id(s) missing from BOTH workingSet and skippedAlreadyVerifiedIds — retrying once, naming them explicitly: ${JSON.stringify(missing)}`)
+  const retried = await agent(
+    `RETRY (research-falsify enumeration reconciliation, #625): your previous enumeration under ${RDIR}/findings/ missed ` +
+      `${missing.length} finding id(s) that exist on disk (per \`find ${RDIR}/findings -maxdepth 1 -name '*.json' | sort\`) ` +
+      `but were absent from BOTH workingSet and skippedAlreadyVerifiedIds: ${JSON.stringify(missing)}. Scope: ${scopeDesc}. ` +
+      (REGATE
+        ? `RE-GATE MODE still applies: include scoped findings even with extensions.harness.verification.attempted_at; skippedAlreadyVerifiedIds should stay empty. `
+        : `The one-round rule still applies: EXCLUDE any finding already carrying extensions.harness.verification.attempted_at from workingSet, listing its @id in skippedAlreadyVerifiedIds instead. `) +
+      `Re-enumerate from scratch and this time account for EVERY missing id above by placing it in exactly one of workingSet or skippedAlreadyVerifiedIds — do not omit any of them. ` +
+      ENUM_BRIEF_TAIL +
+      ` Return the FULL corrected workingSet, skippedAlreadyVerifiedIds, and allFindingIds — not just the previously-missing id(s).`,
+    { label: 'falsify:enumerate-retry', model: 'haiku', effort: 'low', schema: ENUM_SCHEMA },
+  )
+  if (!retried) throw new Error('research-falsify: enumeration reconciliation retry failed')
+  enumerated = retried
+  missing = reconcileEnumeration(enumerated)
+  if (missing.length) {
+    throw new Error(
+      `research-falsify: enumeration still did not account for ${missing.length} on-disk finding id(s) after one retry — ` +
+        `refusing to silently gate a partial working set (this is the exact failure class reported in #625: scope:'all' ` +
+        `silently skipping a pre-existing finding across gate attempts). Missing: ${JSON.stringify(missing)}. Investigate ` +
+        `${RDIR}/findings/ manually rather than re-running blindly.`,
+    )
+  }
+  log(`Enumerate reconciliation retry succeeded: all ${enumerated.allFindingIds.length} on-disk finding id(s) now accounted for.`)
+}
+
 let working = enumerated.workingSet
 let deferred = []
 if (working.length > CLAIM_BUDGET) {
@@ -266,8 +326,8 @@ if (working.length > CLAIM_BUDGET) {
   working = working.slice(0, CLAIM_BUDGET)
   log(`Working set ${enumerated.workingSet.length} exceeds claim budget ${CLAIM_BUDGET}: gating the first ${CLAIM_BUDGET} now, DEFERRING ${deferred.length} (returned in deferredIds — re-run to continue; nothing is silently dropped)`)
 }
-log(`Gating ${working.length} finding(s); ${enumerated.skippedAlreadyVerified} already verified (one-round rule)`)
-if (!working.length) return { gated: 0, deferredIds: deferred, rollup: {}, alreadyVerified: enumerated.skippedAlreadyVerified }
+log(`Gating ${working.length} finding(s); ${enumerated.skippedAlreadyVerifiedIds.length} already verified (one-round rule)`)
+if (!working.length) return { gated: 0, deferredIds: deferred, rollup: {}, alreadyVerified: enumerated.skippedAlreadyVerifiedIds.length }
 
 phase('Gate')
 const gated = await pipeline(
@@ -375,5 +435,5 @@ return {
   rollup,
   verdicts: done,
   deferredIds: deferred,
-  alreadyVerified: enumerated.skippedAlreadyVerified,
+  alreadyVerified: enumerated.skippedAlreadyVerifiedIds.length,
 }

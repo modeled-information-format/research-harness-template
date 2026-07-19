@@ -53,6 +53,22 @@
 #      really present in the module, not a comment claiming falsify.sh owns
 #      remediation.
 #
+#   F. buildFixtureEntry() is extracted verbatim and run under a POISONED
+#      Date/Math.random, reproducing the exact runtime restriction
+#      research-harness-template#618 fixed (new Date()/Date.now() are
+#      unavailable inside a Workflow-runtime script) — proving the function
+#      runs clean and uses the caller-supplied attempted_at verbatim, by
+#      actually exercising the restriction rather than grepping for it.
+#
+#   G. reconcileEnumeration() (research-harness-template#625) is extracted
+#      verbatim and run against a four-case matrix: fully-covered (no gap);
+#      #625's own exact 19-on-disk/18-covered shape (the one silently
+#      dropped id is reported); an id covered ONLY via
+#      skippedAlreadyVerifiedIds (proving true union semantics, not a
+#      workingSet-only check); and vacuous all-empty (the shape
+#      evals/import-check.sh's and evals/pivot-check.sh's falsify-driver
+#      stubs rely on, which must not itself trip a spurious mismatch).
+#
 # Hermetic: only evals/fixtures/falsify-verdict-merge/*, mktemp scratch, and
 # the vendored bin/mif-rh-cli (offline, fixture-driven — no network, no
 # model/API calls). Exit 0 = every case holds. Exit 1 = a case failed.
@@ -245,6 +261,73 @@ function mkWorkingSet(n) {
   }
 }
 
+// ---- G: extract reconcileEnumeration() VERBATIM and prove the #625
+// set-difference matrix (research-harness-template#625: scope:'all'
+// silently enumerated 18 of 19 on-disk findings because nothing
+// reconciled the working set against a mechanical on-disk listing).
+{
+  let reconcileEnumeration;
+  let extractionError = null;
+  let reconcileText = '';
+  try {
+    reconcileText = extractBlock(src, 'function reconcileEnumeration(e) {');
+    const harnessSrc = `'use strict';\n${reconcileText}\nmodule.exports = { reconcileEnumeration };\n`;
+    const harnessPath = path.join(tmpDir, 'reconcile-harness.cjs');
+    fs.writeFileSync(harnessPath, harnessSrc);
+    ({ reconcileEnumeration } = require(harnessPath));
+  } catch (e) {
+    extractionError = e;
+  }
+  check('reconcileEnumeration() extracted from the module source', !extractionError, extractionError ? extractionError.message : '');
+
+  if (reconcileEnumeration) {
+    // Case 1: fully-covered -- every on-disk id appears in workingSet or
+    // skippedAlreadyVerifiedIds -- no reconciliation gap.
+    {
+      const e = {
+        workingSet: [{ id: 'f1' }, { id: 'f2' }],
+        skippedAlreadyVerifiedIds: ['f3'],
+        allFindingIds: ['f1', 'f2', 'f3'],
+      };
+      const missing = reconcileEnumeration(e);
+      check('fully-covered: no missing ids', deepEqual(missing, []), JSON.stringify(missing));
+    }
+    // Case 2: #625's exact shape -- 19 on-disk ids, 18 covered (workingSet
+    // + skippedAlreadyVerifiedIds combined), one silently dropped.
+    {
+      const allIds = Array.from({ length: 19 }, (_, i) => `f${i + 1}`);
+      const covered = allIds.slice(0, 18); // f1..f18 covered; f19 dropped
+      const e = {
+        workingSet: covered.map((id) => ({ id })),
+        skippedAlreadyVerifiedIds: [],
+        allFindingIds: allIds,
+      };
+      const missing = reconcileEnumeration(e);
+      check("#625's exact 19-vs-18 shape: exactly the one dropped id is reported", deepEqual(missing, ['f19']), JSON.stringify(missing));
+    }
+    // Case 3: an id covered ONLY via skippedAlreadyVerifiedIds (not
+    // workingSet) still counts as covered -- proves the reconciliation is a
+    // true UNION of both lists, not a workingSet-only check.
+    {
+      const e = {
+        workingSet: [{ id: 'f1' }],
+        skippedAlreadyVerifiedIds: ['f2'],
+        allFindingIds: ['f1', 'f2'],
+      };
+      const missing = reconcileEnumeration(e);
+      check('skippedAlreadyVerifiedIds-only coverage counts (true union semantics)', deepEqual(missing, []), JSON.stringify(missing));
+    }
+    // Case 4: vacuous all-empty -- the shape evals/import-check.sh's and
+    // evals/pivot-check.sh's falsify-driver stubs rely on (no findings on
+    // disk at all) -- must not itself report a spurious mismatch.
+    {
+      const e = { workingSet: [], skippedAlreadyVerifiedIds: [], allFindingIds: [] };
+      const missing = reconcileEnumeration(e);
+      check('vacuous all-empty: no missing ids', deepEqual(missing, []), JSON.stringify(missing));
+    }
+  }
+}
+
 process.exit(failed);
 NODE
 
@@ -402,5 +485,5 @@ grep -qF 'args.runDate is required' "$WF" \
 grep -qF 'buildFixtureEntry(g.f.id, verdict, basis, g.lensResults, RUN_DATE)' "$WF" \
   || { note "$WF's write step no longer passes RUN_DATE into buildFixtureEntry() (#618)"; fail=1; }
 
-[ "$fail" -eq 0 ] && note "mergeVotes()/claimBudget hold against the real function, buildFixtureEntry() runs clean under a poisoned Date/Math.random and uses the caller-supplied timestamp verbatim (#618), the seeded-false fixture quarantines end-to-end through the real engine, the one-round rule + regate reset are real against that same engine, and the module keeps its fixture-bridge/remediation contract"
+[ "$fail" -eq 0 ] && note "mergeVotes()/claimBudget hold against the real function, buildFixtureEntry() runs clean under a poisoned Date/Math.random and uses the caller-supplied timestamp verbatim (#618), the seeded-false fixture quarantines end-to-end through the real engine, the one-round rule + regate reset are real against that same engine, the module keeps its fixture-bridge/remediation contract, and reconcileEnumeration() holds against its #625 set-difference matrix"
 exit "$fail"

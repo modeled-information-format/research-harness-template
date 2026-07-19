@@ -691,8 +691,11 @@ async function agentStub(prompt, opts) {
     // (`if (!working.length) return {...}`) returns immediately after this,
     // before ever reaching the Gate phase — hermetic, no skeptic votes or
     // falsify.sh writes needed (falsify-verdict-merge.sh's own eval already
-    // covers the Gate phase for real).
-    return { workingSet: [], skippedAlreadyVerified: 0 };
+    // covers the Gate phase for real). allFindingIds/skippedAlreadyVerifiedIds
+    // are itemized (#625) but all empty here, so #625's reconciliation check
+    // (every allFindingIds entry covered by workingSet ∪ skippedAlreadyVerifiedIds)
+    // is vacuously satisfied and no retry fires.
+    return { workingSet: [], skippedAlreadyVerifiedIds: [], allFindingIds: [] };
   }
   throw new Error('falsify-driver stub: unexpected label ' + (opts && opts.label));
 }
