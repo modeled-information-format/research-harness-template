@@ -93,6 +93,41 @@
 // module's own runtime behavior — this module never calls verify.sh itself
 // (see the Verify phase below, D-10) — and is out of scope for this Task;
 // work around it locally with scripts/fetch-engine.sh, never silently.
+//
+// BOUNDED SUMMARY CONSTRUCTION (research-harness-template#629). report-finding.json's
+// summary field inherits maxLength: 500 from the canonical MIF schema
+// (schemas/mif/mif.schema.json) — the same vendored MIF Level 3 constraint the
+// falsification-analyst's bounded-summary-qualifier algorithm (#503/#504) already
+// respects for a WEAKENED finding's appended qualifier. This module hits the same
+// cap from the opposite direction: Report phase step 2 below constructs
+// report-finding.json's summary FROM SCRATCH off the artifact's title/sections/
+// sources, and a naturally-written summary over a substantial multi-finding
+// synthesis can run well past 500 chars (observed 3937 chars against a real topic,
+// research-harness-template#629, reported by the pipeline's own problems[] rather
+// than caught before the file was written) — there is no qualifier being appended
+// here, just a summary being authored, so the fix is a bounded CONSTRUCTION, not a
+// bounded APPEND. The algorithm below is the EXACT snippet
+// evals/report-finding-summary-cap.sh extracts and exercises (never a hand-copied
+// reimplementation that could drift silently) — if this snippet's shape changes,
+// that eval's extraction must be updated to match.
+//
+// ```python
+// MAX_SUMMARY_LEN = 500
+//
+// def bound_summary(summary: str) -> str:
+//     """Fit `summary` under the schema's 500-char cap at construction time."""
+//     if len(summary) <= MAX_SUMMARY_LEN:
+//         return summary
+//     return summary[: MAX_SUMMARY_LEN - 1].rstrip() + "…"
+//
+// assert len(bound_summary(summary)) <= MAX_SUMMARY_LEN
+// ```
+//
+// The Report phase's step-2 prompt below requires the constructing agent to apply
+// this EXACT bound to report-finding.json's summary BEFORE writing the file — never
+// rely on the Verify phase (or the pipeline's own problems[] surfacing) to catch an
+// oversized summary after the fact; that check still runs, as a backstop, not as
+// the enforcement mechanism.
 export const meta = {
   name: 'research-projection',
   description: 'Atomic step 5 (projection): project the typed synthesis onto the durable corpus surfaces — the canonical MIF Level-3 report of record (via the publish-report script pipeline, gated by a REAL falsification pass, never a hand-authored verdict), the topic README/knowledge graph (via the readme/graph skills\' deterministic scripts, synthesis-grade Key Findings authored on top) — then verify only what changed',
@@ -189,7 +224,12 @@ const report = await agent(
     `2. Construct ${RDIR}/report-finding.json — a finding-shaped projection of the artifact's central claims (its citations, ` +
     `NO verification block yet) — a single MIF Concept object (@context/@type/@id/conceptType/namespace/title/content/summary/ ` +
     `citations/provenance/tags/created/modified) built from ${RDIR}/artifact.json's title/sections/sources. Invent no claims ` +
-    `beyond what the artifact already states.\n` +
+    `beyond what the artifact already states. BOUND THE SUMMARY FIELD (research-harness-template#629, see this module's ` +
+    `header note): the schema's summary maxLength is 500 chars, and a naturally-written summary over a substantial ` +
+    `multi-finding synthesis can run well past that. Author it naturally, then apply this exact bound before writing the ` +
+    `file — if it exceeds 500 characters, truncate to 499 characters (stripping trailing whitespace) and append a single ` +
+    `ellipsis character, never emit a summary over 500 characters, and never rely on the Verify phase below (or the ` +
+    `pipeline's own problems[] surfacing) to catch an oversized summary after the fact.\n` +
     `3. Obtain a REAL verdict over that report-finding — the SAME substrate research-falsify.js (#541) writes through, at the ` +
     `same rigor: decompose its central claims, gather INDEPENDENT web evidence (WebSearch/WebFetch only, never prior findings ` +
     `or internal memory) trying to falsify each one, then materialize an evidence fixture keyed by the report-finding's @id ` +
