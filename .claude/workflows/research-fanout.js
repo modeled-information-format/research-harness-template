@@ -89,7 +89,15 @@ const FINDING_CONTRACT =
   `(never fabricated, never from training data alone), and provenance. Compose with jq; validate immediately with ` +
   `ajv (draft2020, ajv-formats) against ${H}/schemas/findings.schema.json registering the vendored ${H}/schemas/mif/ closure. ` +
   `A write is not done until it validates. If the mif-rh MCP find_similar tool is available, check each candidate claim ` +
-  `against it first and RELATE to (or cite) a close existing finding instead of duplicating it; if the tool is absent, skip silently.`
+  `against it first and RELATE to (or cite) a close existing finding instead of duplicating it; if the tool is absent, skip silently. ` +
+  `extensions.harness.verification is schema-required (verdict + verdict_basis) but you research BEFORE the falsification ` +
+  `gate runs, so you cannot honestly know a verdict yet: set verdict="inconclusive" with a verdict_basis stating the gate ` +
+  `has not run, and NEVER write extensions.harness.verification.attempted_at — omit it entirely, do not stamp a ` +
+  `placeholder or today's date. attempted_at is the falsification gate's own one-round-rule marker for "already ` +
+  `attempted"; if you supply it, the gate treats this finding as already-gated and PERMANENTLY skips it, and it can ` +
+  `never receive a real verdict (research-harness-template — confirmed live: an entire topic's fanout came out this way ` +
+  `and every finding silently never got gated). The schema's own example (schemas/samples/finding.sample.json) shows a ` +
+  `fully-gated finding for structural reference only — do not copy its attempted_at value or presence.`
 
 phase('Plan')
 const plan = await agent(
@@ -124,7 +132,10 @@ const perDimension = await pipeline(
     r
       ? agent(
           `Validate each finding file with ajv (draft2020, ajv-formats) against ${H}/schemas/findings.schema.json registering the vendored ${H}/schemas/mif/ schemas: ${JSON.stringify(r.findingPaths)}. ` +
-            `Additionally mark invalid: extensions.harness.dimension != "${d}", empty citations, or a citation whose URL was clearly never retrieved (no retrieval metadata). Return validPaths + invalid[{path,error}].`,
+            `Additionally mark invalid: extensions.harness.dimension != "${d}", empty citations, or a citation whose URL was clearly never retrieved (no retrieval metadata). ` +
+            `Before returning, also run this MECHANICAL, unconditional step on every listed path regardless of its content — not a judgment call: ` +
+            `if extensions.harness.verification.attempted_at is present, strip it (jq 'del(.extensions.harness.verification.attempted_at)' <path> > <path>.tmp && mv <path>.tmp <path>). ` +
+            `A finding this fanout round just authored has never been through the falsification gate, so any attempted_at value present is illegitimate regardless of how it got there — it would permanently exclude the finding from ever being gated under the gate's one-round rule. Re-run ajv after stripping. Return validPaths + invalid[{path,error}].`,
           { label: `validate:${d}`, phase: 'Research', model: 'haiku', effort: 'low', schema: VALIDATE_SCHEMA },
         ).then((v) => ({ dimension: d, research: r, validation: v }))
       : null,
@@ -147,7 +158,10 @@ const perDimension = await pipeline(
         // against the same checks that failed it (write-validate atomicity, fail-closed).
         agent(
           `Validate each finding file with ajv (draft2020, ajv-formats) against ${H}/schemas/findings.schema.json registering the vendored ${H}/schemas/mif/ schemas: ${JSON.stringify(invalidPaths)}. ` +
-            `Additionally mark invalid: extensions.harness.dimension != "${d}", empty citations, or a citation whose URL was clearly never retrieved (no retrieval metadata). Return validPaths + invalid[{path,error}].`,
+            `Additionally mark invalid: extensions.harness.dimension != "${d}", empty citations, or a citation whose URL was clearly never retrieved (no retrieval metadata). ` +
+            `Before returning, also run this MECHANICAL, unconditional step on every listed path regardless of its content — not a judgment call: ` +
+            `if extensions.harness.verification.attempted_at is present, strip it (jq 'del(.extensions.harness.verification.attempted_at)' <path> > <path>.tmp && mv <path>.tmp <path>). ` +
+            `A finding this fanout round just authored has never been through the falsification gate, so any attempted_at value present is illegitimate regardless of how it got there — it would permanently exclude the finding from ever being gated under the gate's one-round rule. Re-run ajv after stripping. Return validPaths + invalid[{path,error}].`,
           { label: `revalidate:${d}`, phase: 'Research', model: 'haiku', effort: 'low', schema: VALIDATE_SCHEMA },
         ),
       )
