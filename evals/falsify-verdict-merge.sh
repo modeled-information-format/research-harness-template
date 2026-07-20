@@ -387,7 +387,131 @@ function mkWorkingSet(n) {
   }
 }
 
-process.exit(failed);
+// ---- I: extract the #659 post-write attempted_at assertion VERBATIM
+// (research-harness-template#659: falsify.sh/mif-rh-cli wrote verdict +
+// verdict_basis but silently dropped extensions.harness.verification.attempted_at
+// on a genuine, non-placeholder gate write). Trusting the write agent's own
+// "written: true" self-report is exactly what let that drop through
+// undetected -- this block asserts attemptedAtPresent deterministically, in
+// code, the same idiom as mergeVotes()/reconcileEnumeration() above: retry
+// once with a concrete re-read instruction, then throw loudly rather than
+// silently accepting a partial write.
+//
+// The extracted block itself contains an `await agent(...)` retry call, so
+// (unlike sections A-H) this test is genuinely async -- run it inside a
+// tracked promise and defer the script's final process.exit() until it
+// settles, rather than exiting synchronously while it is still pending.
+let write659Promise = Promise.resolve();
+{
+  let runAssertion;
+  let extractionError = null;
+  try {
+    const assertionText = extractBlock(
+      src,
+      "if (written && written.remediation !== 'skipped-one-round' && !written.attemptedAtPresent) {",
+    );
+    const harnessSrc =
+      `'use strict';\n` +
+      // WRITE_SCHEMA is a free variable inside the extracted block (it's
+      // passed as the retry agent() call's schema option) -- stub it so the
+      // harness doesn't need to re-extract the real schema object verbatim
+      // just to satisfy a reference that plays no role in the assertion logic
+      // under test.
+      `const WRITE_SCHEMA = {};\n` +
+      `async function runAssertion(written, agent, g, fixtureJson, H) {\n${assertionText}\n  return written;\n}\n` +
+      `module.exports = { runAssertion };\n`;
+    const harnessPath = path.join(tmpDir, 'write-assertion-harness.cjs');
+    fs.writeFileSync(harnessPath, harnessSrc);
+    ({ runAssertion } = require(harnessPath));
+  } catch (e) {
+    extractionError = e;
+  }
+  check('#659 post-write attempted_at assertion extracted from the module source', !extractionError, extractionError ? extractionError.message : '');
+
+  if (runAssertion) {
+    const G = { f: { path: 'reports/t/findings/f1.json', id: 'urn:mif:concept:t:f1' } };
+    const FIXTURE_JSON = '{"urn:mif:concept:t:f1":{"verdict":"weakened"}}';
+
+    write659Promise = (async () => {
+      // Case 1: genuine write, attemptedAtPresent already true -- no retry
+      // needed; the agent mock must never be called.
+      {
+        let agentCalled = false;
+        const w = { written: true, remediation: 'downgraded', attemptedAtPresent: true };
+        const result = await runAssertion(w, async () => { agentCalled = true; return null; }, G, FIXTURE_JSON, '.');
+        check('attemptedAtPresent already true: no retry call, written passed through unchanged', !agentCalled && result === w, JSON.stringify(result));
+      }
+      // Case 2: one-round-rule skip (no genuine write) -- must NOT retry even
+      // though attemptedAtPresent is false; that's expected on the skip path.
+      {
+        let agentCalled = false;
+        const w = { written: true, remediation: 'skipped-one-round', attemptedAtPresent: false };
+        const result = await runAssertion(w, async () => { agentCalled = true; return null; }, G, FIXTURE_JSON, '.');
+        check('skipped-one-round: no retry call (attemptedAtPresent=false is expected here, not a defect)', !agentCalled && result === w, JSON.stringify(result));
+      }
+      // Case 3: genuine write missing attemptedAtPresent -- retry confirms it
+      // WAS actually present (a reporting miss, not a real drop) -- no throw,
+      // the retried object replaces written.
+      {
+        const w = { written: true, remediation: 'annotated', attemptedAtPresent: false };
+        const retryResult = { written: true, remediation: 'annotated', attemptedAtPresent: true };
+        let agentCalled = false;
+        const result = await runAssertion(w, async () => { agentCalled = true; return retryResult; }, G, FIXTURE_JSON, '.');
+        check('genuine write, retry confirms attempted_at present: retry IS called, no throw, result is the retried object', agentCalled && result === retryResult, JSON.stringify(result));
+      }
+      // Case 4 (#659's actual failure reproduced): genuine write, retry STILL
+      // reports attempted_at absent -- must throw loudly, naming #659 and the
+      // finding, never silently accept the partial write.
+      {
+        const w = { written: true, remediation: 'quarantined', attemptedAtPresent: false };
+        const retryResult = { written: true, remediation: 'quarantined', attemptedAtPresent: false };
+        let threw = null;
+        try { await runAssertion(w, async () => retryResult, G, FIXTURE_JSON, '.'); } catch (e) { threw = e; }
+        check('genuine write, retry still confirms attempted_at absent: throws loudly', !!threw, threw ? threw.message : '(did not throw)');
+        if (threw) {
+          check('thrown error names #659', /#659/.test(threw.message), threw.message);
+          check('thrown error names the finding id', threw.message.includes(G.f.id), threw.message);
+        }
+      }
+      // Case 5: genuine write, retry agent call itself fails (returns
+      // null/undefined) -- must throw, never treat a failed retry as success.
+      {
+        const w = { written: true, remediation: 'downgraded', attemptedAtPresent: false };
+        let threw = null;
+        try { await runAssertion(w, async () => null, G, FIXTURE_JSON, '.'); } catch (e) { threw = e; }
+        check('genuine write, retry agent call fails (returns null): throws rather than treating it as success', !!threw, threw ? threw.message : '(did not throw)');
+      }
+      // Case 6: retry legitimately reports a one-round skip on the SECOND
+      // call (e.g. another process graded it in between) -- must NOT throw.
+      {
+        const w = { written: true, remediation: 'downgraded', attemptedAtPresent: false };
+        const retryResult = { written: true, remediation: 'skipped-one-round', attemptedAtPresent: false };
+        let threw = null;
+        let result;
+        try { result = await runAssertion(w, async () => retryResult, G, FIXTURE_JSON, '.'); } catch (e) { threw = e; }
+        check('retry legitimately reports skipped-one-round on second call: no throw', !threw, threw ? threw.message : '');
+        if (!threw) check('result is the retried object', result === retryResult, JSON.stringify(result));
+      }
+      // Case 7: total write failure (written is null/falsy from the start,
+      // e.g. the first agent call itself failed) -- guard must short-circuit
+      // and never crash reading .remediation off null.
+      {
+        let agentCalled = false;
+        let threw = null;
+        let result;
+        try { result = await runAssertion(null, async () => { agentCalled = true; return null; }, G, FIXTURE_JSON, '.'); } catch (e) { threw = e; }
+        check('written is null (total write failure): guard short-circuits, no retry call, no crash', !threw && !agentCalled && result === null, threw ? threw.message : JSON.stringify(result));
+      }
+    })();
+  }
+}
+
+write659Promise
+  .then(() => process.exit(failed))
+  .catch((e) => {
+    console.log(`FAIL  #659 assertion test harness threw unexpectedly: ${e.message}`);
+    process.exit(1);
+  });
 NODE
 
 if ! node "$TMP/extract-and-test.cjs" "$WF" "$TMP" > "$TMP/node.out" 2>&1; then
@@ -563,5 +687,18 @@ grep -qF "SCOPE === 'all' ? reconcileEnumeration(enumerated) : []" "$WF" \
 grep -qF "if (REGATE && enumerated.skippedAlreadyVerifiedIds && enumerated.skippedAlreadyVerifiedIds.length) {" "$WF" \
   || { note "$WF lost the RE-GATE skippedAlreadyVerifiedIds guard -- a regate run could silently skip already-attempted findings instead of re-opening them"; fail=1; }
 
-[ "$fail" -eq 0 ] && note "mergeVotes()/claimBudget hold against the real function, buildFixtureEntry() runs clean under a poisoned Date/Math.random and uses the caller-supplied timestamp verbatim (#618), the seeded-false fixture quarantines end-to-end through the real engine, the one-round rule + regate reset are real against that same engine, the module keeps its fixture-bridge/remediation contract, reconcileEnumeration() holds against its #625 set-difference matrix and is scope-gated to 'all', and the RE-GATE skippedAlreadyVerifiedIds guard holds against its truth table"
+# #659 structural contract: the write step's own self-report ("written: true")
+# is not trusted for attempted_at completeness -- WRITE_SCHEMA requires an
+# attemptedAtPresent field, and a genuine (non-one-round-rule-skipped) write
+# missing it is asserted deterministically in code, not left to the model.
+grep -qF 'attemptedAtPresent' "$WF" \
+  || { note "$WF lost the #659 attemptedAtPresent field -- a silently-dropped attempted_at would no longer be detected"; fail=1; }
+grep -qF "required: ['written', 'remediation', 'attemptedAtPresent']" "$WF" \
+  || { note "$WF's WRITE_SCHEMA no longer requires attemptedAtPresent -- the write agent could omit it and the #659 assertion would silently pass undefined"; fail=1; }
+grep -qF "if (written && written.remediation !== 'skipped-one-round' && !written.attemptedAtPresent) {" "$WF" \
+  || { note "$WF lost the #659 deterministic post-write assertion guard"; fail=1; }
+grep -qF '#659' "$WF" \
+  || { note "$WF lost its #659 traceability comments"; fail=1; }
+
+[ "$fail" -eq 0 ] && note "mergeVotes()/claimBudget hold against the real function, buildFixtureEntry() runs clean under a poisoned Date/Math.random and uses the caller-supplied timestamp verbatim (#618), the seeded-false fixture quarantines end-to-end through the real engine, the one-round rule + regate reset are real against that same engine, the module keeps its fixture-bridge/remediation contract, reconcileEnumeration() holds against its #625 set-difference matrix and is scope-gated to 'all', the RE-GATE skippedAlreadyVerifiedIds guard holds against its truth table, and the #659 post-write attempted_at assertion (retry-then-throw, never silently accepting a partial write) holds against its 7-case truth table"
 exit "$fail"

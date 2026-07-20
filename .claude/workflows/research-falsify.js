@@ -173,8 +173,17 @@ const WRITE_SCHEMA = {
   properties: {
     written: { type: 'boolean' },
     remediation: { type: 'string', description: 'quarantined | downgraded | annotated | skipped-one-round | write-failed' },
+    // #659: falsify.sh (via mif-rh-cli) has been observed to write verdict +
+    // verdict_basis but silently drop extensions.harness.verification.attempted_at
+    // on a genuine (non-placeholder) gate write — verdict/basis alone are not
+    // proof the write actually completed. true is only valid if the agent
+    // ACTUALLY read the finding file back off disk this turn and observed a
+    // present, non-null attempted_at; false covers both a genuine absence and
+    // the one-round-rule skip path (remediation === 'skipped-one-round'), where
+    // no attempted_at was ever expected from this call.
+    attemptedAtPresent: { type: 'boolean', description: 'true only if extensions.harness.verification.attempted_at was read back from the finding file AFTER the falsify.sh invocation and found present (non-null) THIS turn — never asserted from assumption' },
   },
-  required: ['written', 'remediation'],
+  required: ['written', 'remediation', 'attemptedAtPresent'],
 }
 
 // Perspective-diverse skeptic lenses: diversity catches failure modes redundancy cannot.
@@ -472,23 +481,69 @@ const gated = await pipeline(
     }
     const fixture = buildFixtureEntry(g.f.id, verdict, basis, g.lensResults, RUN_DATE)
     const fixtureJson = JSON.stringify(fixture)
-    const written = await agent(
+    const writeBrief =
       `Write a falsification verdict through the deterministic substrate, harness ${H}. The evidence fixture is ` +
-        `ALREADY COMPUTED (deterministic verdict arithmetic in code) — write it VERBATIM, do not alter or re-derive ` +
-        `it: mktemp a file OUTSIDE the repo tree (e.g. $(mktemp)), write exactly this JSON as its content: ` +
-        `${fixtureJson}\n` +
-        `Then invoke: bash ${H}/scripts/falsify.sh ${g.f.path} <fixture-path> — redirect its stdout to a temp file ` +
-        `and mv it over ${g.f.path} (write-validate atomicity: re-validate against ${H}/schemas/findings.schema.json ` +
-        `with the full mif/ ref closure before considering the write done). Remove the mktemp fixture file when ` +
-        `finished (it is ephemeral, never committed).\n` +
-        `${REMEDIATION_CONTRACT}\n` +
-        (REGATE
-          ? `This is a RE-GATE (the stale verification block was already reset client-side above) — the write above ` +
-            `should succeed genuinely, not skip under the one-round rule. If it still reports a skip, report ` +
-            `remediation="skipped-one-round" and do NOT hand-edit the verification block around it.`
-          : ''),
-      { label: `write:${g.f.id.slice(-8)}`, phase: 'Gate', model: 'haiku', effort: 'low', schema: WRITE_SCHEMA },
-    )
+      `ALREADY COMPUTED (deterministic verdict arithmetic in code) — write it VERBATIM, do not alter or re-derive ` +
+      `it: mktemp a file OUTSIDE the repo tree (e.g. $(mktemp)), write exactly this JSON as its content: ` +
+      `${fixtureJson}\n` +
+      `Then invoke: bash ${H}/scripts/falsify.sh ${g.f.path} <fixture-path> — redirect its stdout to a temp file ` +
+      `and mv it over ${g.f.path} (write-validate atomicity: re-validate against ${H}/schemas/findings.schema.json ` +
+      `with the full mif/ ref closure before considering the write done). Remove the mktemp fixture file when ` +
+      `finished (it is ephemeral, never committed).\n` +
+      `${REMEDIATION_CONTRACT}\n` +
+      (REGATE
+        ? `This is a RE-GATE (the stale verification block was already reset client-side above) — the write above ` +
+          `should succeed genuinely, not skip under the one-round rule. If it still reports a skip, report ` +
+          `remediation="skipped-one-round" and do NOT hand-edit the verification block around it.\n`
+        : '') +
+      // #659: falsify.sh (via mif-rh-cli) has been observed to write verdict +
+      // verdict_basis but silently drop attempted_at on a genuine write — the
+      // agent's own "written: true" is not proof of that; require an actual
+      // read-back this turn before reporting attemptedAtPresent.
+      `#659 CHECK (required): after the mv+re-validate above, read ${g.f.path} back off disk THIS turn (e.g. ` +
+      `jq -r '.extensions.harness.verification.attempted_at' ${g.f.path}) and report attemptedAtPresent=true only if ` +
+      `that value is a genuine, present, non-null string you just observed — never report true from assumption or ` +
+      `from the fixture you wrote, only from what the file actually contains after falsify.sh ran. If remediation is ` +
+      `"skipped-one-round" (no genuine write occurred), report attemptedAtPresent=false regardless — this field is ` +
+      `about a GENUINE write, not the one-round-rule skip path.`
+    let written = await agent(writeBrief, { label: `write:${g.f.id.slice(-8)}`, phase: 'Gate', model: 'haiku', effort: 'low', schema: WRITE_SCHEMA })
+    // Deterministic post-write assertion (#659): verdict/write-completeness is
+    // never left to a model's own self-report, the same idiom as
+    // mergeVotes()/reconcileEnumeration() above. A genuine (non-one-round-
+    // rule-skipped) write that didn't confirm attempted_at present is exactly
+    // the silent-drop defect #659 reported — retry once with the concrete
+    // read-back instruction, then fail loudly rather than silently accepting a
+    // partial write (a finding with a real verdict but no attempted_at reads
+    // as still-needing-gating to the one-round rule and fails the harness's
+    // verification_verdicts_present completion check).
+    if (written && written.remediation !== 'skipped-one-round' && !written.attemptedAtPresent) {
+      const retried = await agent(
+        `RETRY (research-falsify write assertion, #659): the previous write to ${g.f.path} reported written=${written.written} ` +
+          `remediation=${written.remediation}, but did NOT confirm extensions.harness.verification.attempted_at is present ` +
+          `in the finding file after invoking falsify.sh — this is the exact silent-drop defect #659 reported (verdict + ` +
+          `verdict_basis written, attempted_at missing). Re-read ${g.f.path} now (harness ${H}) and check ` +
+          `extensions.harness.verification.attempted_at: if it is genuinely present (a non-null string), the earlier ` +
+          `write was fine and this was only a reporting miss — report written=true, remediation="${written.remediation}", ` +
+          `attemptedAtPresent=true. If it is genuinely absent, re-invoke the write exactly as before (mktemp the SAME ` +
+          `fixture JSON verbatim: ${fixtureJson}, then bash ${H}/scripts/falsify.sh ${g.f.path} <fixture-path>, redirect ` +
+          `stdout, mv over ${g.f.path}, re-validate against ${H}/schemas/findings.schema.json with the full mif/ ref ` +
+          `closure), THEN read the file back again and report the real result — never report attemptedAtPresent=true ` +
+          `without having actually read it back from disk this turn.`,
+        { label: `write-retry:${g.f.id.slice(-8)}`, phase: 'Gate', model: 'haiku', effort: 'low', schema: WRITE_SCHEMA },
+      )
+      if (!retried || (retried.remediation !== 'skipped-one-round' && !retried.attemptedAtPresent)) {
+        throw new Error(
+          `research-falsify: #659 — finding ${g.f.id} (${g.f.path}) completed a genuine (non-one-round-rule-skipped) ` +
+            `falsify.sh write but extensions.harness.verification.attempted_at is still not confirmed present after one ` +
+            `retry. Refusing to silently accept a partial write (verdict/verdict_basis written, attempted_at dropped) — ` +
+            `this is the exact intermittent engine-level drop #659 reported. Investigate ${g.f.path} manually rather ` +
+            `than proceeding: a finding with a real verdict but no attempted_at reads as still-needing-gating to the ` +
+            `one-round rule (wasting the adversarial work already done on a re-run) and fails the harness's ` +
+            `verification_verdicts_present completion check.`,
+        )
+      }
+      written = retried
+    }
     return { id: g.f.id, dimension: g.f.dimension, verdict, contested, remediation: written ? written.remediation : 'write-failed' }
   },
 )
