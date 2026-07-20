@@ -73,6 +73,15 @@ run "workflow-forbidden-globals-check" bash evals/workflow-forbidden-globals-che
 # positioning + supersession note (#553).
 run "workflow-docs-check" bash evals/workflow-docs-check.sh
 
+# ci.yml's verify/version-bump jobs (and, via their pack sources, monitor.yml/
+# monitor-gate.yml) fed scripts/fetch-engine.sh's cross-repo read of mif-rs a
+# GitHub App installation token restricted to this repo alone -- installation
+# tokens 404 on any repo outside their scope, even a public one, so both jobs
+# failed on every run (#662). Static gate over every .github/workflows/*.yml:
+# every fetch-engine.sh step must use the default job token, never a minted
+# one.
+run "fetch-engine-gh-token-check" bash evals/fetch-engine-gh-token-check.sh
+
 # The research-goal draft→lint→repair contract has deterministic teeth
 # (#554): scripts/lint-goal.sh FAILS the seeded-invalid fixture (step-shaped
 # check assertion + off-config dimension) that ajv alone accepts, fails

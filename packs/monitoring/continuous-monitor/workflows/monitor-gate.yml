@@ -50,7 +50,19 @@ jobs:
 
       - name: fetch the mif-rh engine (ADR-0016)
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          # #662: mif-rh-cli/mif-rh-mcp come from mif-rs, a repo this job
+          # never otherwise touches (every other step here only needs the
+          # local checkout + this job's own write identity, below). The
+          # `automerge` app token above is scoped to exactly this repo (its
+          # `owner`/`repositories` inputs are deliberately omitted here —
+          # see that step's own comment) and, like any GitHub App
+          # installation token restricted to a repository list, 404s on any
+          # repo outside that list even when it's public. The default job
+          # token carries no such installation-repo-list restriction and
+          # reads mif-rs's public release + attestation data directly (same
+          # pattern as release.yml's changelog-links-check job and
+          # ci.yml's fetch-engine steps).
+          GH_TOKEN: ${{ github.token }}
         run: bash scripts/fetch-engine.sh
 
       - name: parse topic and run-id, gate and publish
