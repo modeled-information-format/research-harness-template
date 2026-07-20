@@ -1,0 +1,8 @@
+{
+  "urn:mif:concept:handoff-eval:fresh-fanout-0001": {
+    "verdict": "survived",
+    "basis": "Handoff-eval fixture (research-harness-template#652/#653): adversarial queries ran, no disconfirming evidence found.",
+    "attempted_at": "2026-07-19T00:00:00Z",
+    "disconfirming": []
+  }
+}
