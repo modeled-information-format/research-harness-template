@@ -91,12 +91,26 @@ export const meta = {
   ],
 }
 
+// research-harness-template#654: normalize a top-level standalone Workflow-tool
+// invocation. `args` arrives as a JSON-encoded STRING when this module is
+// invoked directly at the top level (confirmed empirically -- issue #617),
+// but as a real in-process object when composed as a nested child via
+// research-pipeline.js's wf() helper. research-pipeline.js already guards
+// its own external entry point for this; every atomic module is ALSO a
+// valid direct entry point and needs the identical guard -- this was #654's
+// actual root cause: `args` was a JSON string, so `args.topic` (or any
+// other args.* property) silently read `undefined` (a string property
+// access, never a thrown error) rather than the real value, and the very
+// next `if (!TOPIC) throw` line fired even though the caller's `topic`
+// argument was genuinely present in the call.
+const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
+
 // args: { harnessDir, topic, maxRepairRounds?: number (default 2) }
-const H = (args && args.harnessDir) || '.'
-const TOPIC = args && args.topic
+const H = (A && A.harnessDir) || '.'
+const TOPIC = A && A.topic
 if (!TOPIC) throw new Error('research-synthesis: args.topic is required')
 const RDIR = `${H}/reports/${TOPIC}`
-const MAX_REPAIR = (args && args.maxRepairRounds) !== undefined ? args.maxRepairRounds : 2
+const MAX_REPAIR = (A && A.maxRepairRounds) !== undefined ? A.maxRepairRounds : 2
 
 const SELECT_SCHEMA = {
   type: 'object',

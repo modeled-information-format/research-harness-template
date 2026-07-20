@@ -1,0 +1,43 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@type": "Concept",
+  "@id": "urn:mif:concept:handoff-eval:fresh-fanout-0001",
+  "conceptType": "semantic",
+  "namespace": "harness/handoff-eval-topic",
+  "title": "A finding shaped exactly as research-fanout.js's Research phase wrote it before #653's fix",
+  "content": "This finding reproduces research-harness-template#652's real incident shape: it is ajv-valid, dimension-pinned, and carries a placeholder verdict=\"inconclusive\" per FINDING_CONTRACT -- but the authoring agent also fabricated extensions.harness.verification.attempted_at at creation time, before the falsification gate ever ran. That fabricated timestamp is the exact defect: it makes the falsification gate's one-round rule treat this finding as already-attempted and permanently skip it.",
+  "summary": "Handoff-eval fixture: fabricates attempted_at exactly like #652's real defect, to prove the strip removes it and the gate then genuinely grades it.",
+  "created": "2026-07-19T00:00:00Z",
+  "modified": "2026-07-19T00:00:00Z",
+  "temporal": {
+    "@type": "TemporalMetadata",
+    "validFrom": "2026-07-19T00:00:00Z"
+  },
+  "tags": ["eval-fixture", "fanout-falsify-handoff"],
+  "provenance": {
+    "@type": "Provenance",
+    "sourceType": "agent_inferred",
+    "confidence": 0.7,
+    "trustLevel": "high_confidence"
+  },
+  "citations": [
+    {
+      "@type": "Citation",
+      "citationType": "documentation",
+      "citationRole": "supports",
+      "title": "Eval fixture placeholder citation",
+      "url": "https://example.com/fanout-falsify-handoff/fresh",
+      "accessed": "2026-07-19"
+    }
+  ],
+  "extensions": {
+    "harness": {
+      "dimension": "technical",
+      "verification": {
+        "verdict": "inconclusive",
+        "verdict_basis": "not yet verified -- the falsification gate has not run",
+        "attempted_at": "2026-07-19T00:00:00Z"
+      }
+    }
+  }
+}

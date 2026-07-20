@@ -113,6 +113,20 @@ run "fanout-repair-disclosure-check" bash evals/fanout-repair-disclosure-check.s
 # checked structurally.
 run "falsify-verdict-merge" bash evals/falsify-verdict-merge.sh
 
+# The fanout->falsify HANDOFF SEAM has deterministic teeth (#652/#653):
+# neither fanout-lane-contract.sh (structural-only: the FINDING_CONTRACT
+# constant exists/is embedded) nor falsify-verdict-merge.sh (one-round rule
+# in isolation, given a finding that ALREADY has attempted_at) proves a
+# freshly-fanned finding, run through fanout's OWN validate-step strip
+# command, actually survives into genuine grading. This eval extracts the
+# mechanical jq del(attempted_at) filter verbatim from research-fanout.js,
+# runs it for real against a fixture reproducing #652's exact incident
+# shape, proves the UN-stripped fixture is skipped by the real engine
+# (the negative control -- if this doesn't skip, the eval wouldn't have
+# caught #652), and proves the SAME finding after the strip genuinely
+# gates end to end through that same real engine.
+run "fanout-falsify-handoff" bash evals/fanout-falsify-handoff.sh
+
 # research-harness-template#656: the weakened-verdict remediation path in
 # REMEDIATION_CONTRACT (prompt text, not deterministic code -- there is no
 # pure function to extract and drive the way mergeVotes()/claimBudget
@@ -454,17 +468,29 @@ run "research-pipeline-pivot-check" bash evals/research-pipeline-pivot-check.sh
 run "research-pipeline-augment-check" bash evals/research-pipeline-augment-check.sh
 run "research-pipeline-deliverables-check" bash evals/research-pipeline-deliverables-check.sh
 
-# research-pipeline.js is the ONE vendored module invoked externally through
-# the real Workflow-tool boundary (D-9: composition exactly two levels
-# deep) -- so it is the only module whose top-level `args` can arrive as a
-# JSON-encoded STRING rather than an already-parsed object (#617). This eval
-# drives the real, unmodified module source with args handed through BOTH
-# ways (raw string, matching the real runtime; already-parsed object,
-# matching every sibling eval's existing assumption and every internal
-# workflow() call this script itself makes) and proves both shapes resolve
-# identically, across the topic/harnessDir/workflowsDir guard and the
-# mode-specific containerDir/delta guards.
+# research-pipeline.js is ONE vendored module invoked externally through the
+# real Workflow-tool boundary (D-9: composition exactly two levels deep) --
+# its own top-level `args` can arrive as a JSON-encoded STRING rather than an
+# already-parsed object (#617). This eval drives the real, unmodified module
+# source with args handed through BOTH ways (raw string, matching the real
+# runtime; already-parsed object, matching every sibling eval's existing
+# assumption and every internal workflow() call this script itself makes)
+# and proves both shapes resolve identically, across the
+# topic/harnessDir/workflowsDir guard and the mode-specific
+# containerDir/delta guards.
 run "research-pipeline-args-parse-check" bash evals/research-pipeline-args-parse-check.sh
+
+# research-harness-template#654: research-pipeline.js's OWN header comment
+# (right above) used to claim it was the ONLY module reachable this way --
+# "every other vendored module is only ever invoked internally via this
+# script's own workflow() calls, which pass real in-process JS objects" --
+# and #654 disproved that assumption empirically (research-goal.js's own
+# whenToUse already documents standalone use; research-falsify.js and
+# research-synthesis.js reproduced the identical instant "args.topic is
+# required" failure). This eval is the #617-pattern eval's sibling, covering
+# the remaining eleven atomic modules: each now carries the identical
+# `typeof args === 'string' ? JSON.parse(args) : (args || {})` guard.
+run "atomic-workflows-args-parse-check" bash evals/atomic-workflows-args-parse-check.sh
 
 # release.yml never uploads to an already-published (immutable) release
 # (#537): tag-push trigger, no post-publish `gh release upload`, artifact

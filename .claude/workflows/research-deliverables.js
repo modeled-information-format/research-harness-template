@@ -174,13 +174,27 @@ export const meta = {
 //         explicit [] is honored as "render zero channels", never coerced to the default — #626;
 //         may mix artifact-based (blog/book) and source-direct
 //         (pdf/jats/xbrl/ectd/notebooklm/github-discuss/github-issues) channels) }
-const H = (args && args.harnessDir) || '.'
-const TOPIC = args && args.topic
-const SYN = args && args.synthesisPath
+// research-harness-template#654: normalize a top-level standalone Workflow-tool
+// invocation. `args` arrives as a JSON-encoded STRING when this module is
+// invoked directly at the top level (confirmed empirically -- issue #617),
+// but as a real in-process object when composed as a nested child via
+// research-pipeline.js's wf() helper. research-pipeline.js already guards
+// its own external entry point for this; every atomic module is ALSO a
+// valid direct entry point and needs the identical guard -- this was #654's
+// actual root cause: `args` was a JSON string, so `args.topic` (or any
+// other args.* property) silently read `undefined` (a string property
+// access, never a thrown error) rather than the real value, and the very
+// next `if (!TOPIC) throw` line fired even though the caller's `topic`
+// argument was genuinely present in the call.
+const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
+
+const H = (A && A.harnessDir) || '.'
+const TOPIC = A && A.topic
+const SYN = A && A.synthesisPath
 if (!TOPIC) throw new Error('research-deliverables: args.topic is required')
 if (!SYN) throw new Error('research-deliverables: args.synthesisPath is required (mechanism-1 rows cross-check the synthesis-only evidence rule against it — see module header)')
 const RDIR = `${H}/reports/${TOPIC}`
-const GENRES = (args && args.genres) || []
+const GENRES = (A && A.genres) || []
 // research-harness-template#626: Array.isArray, not truthiness. The prior
 // `args.channels && args.channels.length` collapsed an explicit `channels:
 // []` ("render nothing, on purpose") into the same branch as `channels`
@@ -188,7 +202,7 @@ const GENRES = (args && args.genres) || []
 // fell through to the ['blog'] default, silently overriding an explicit
 // empty answer. An explicit array (even empty) must be honored verbatim;
 // only an actually-absent/non-array `channels` gets the ['blog'] default.
-const CHANNELS = (args && Array.isArray(args.channels)) ? args.channels : ['blog']
+const CHANNELS = (A && Array.isArray(A.channels)) ? A.channels : ['blog']
 
 // Static pack taxonomy, cross-checked by evals/deliverables-route-check.sh
 // against the real docs/reference/packs/index.md "Pack inventory" table
