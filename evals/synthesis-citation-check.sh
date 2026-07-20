@@ -337,7 +337,12 @@ fi
 # NOTE: the default is an explicit undefined-check, not `|| 2` -- `|| 2` was a
 # real bug (a caller-supplied maxRepairRounds:0, meaning "no repair loop",
 # is falsy and silently replaced by 2), fixed on review (PR #568).
-grep -qE "MAX_REPAIR = \(args && args\.maxRepairRounds\) !== undefined \? args\.maxRepairRounds : 2" "$WF" \
+# research-harness-template#654: the args-derived local was renamed from
+# `args` to `A` (every atomic module normalizes a top-level standalone
+# Workflow-tool invocation, where `args` can arrive as a JSON-encoded
+# STRING -- #617/#654) -- the undefined-vs-0 semantics this grep proves are
+# unchanged, only the local identifier is.
+grep -qE "MAX_REPAIR = \(A && A\.maxRepairRounds\) !== undefined \? A\.maxRepairRounds : 2" "$WF" \
   || { note "$WF's MAX_REPAIR default no longer distinguishes an explicit 0 from unset -- the <=2 repair-round bound this eval proves no longer matches the module's actual default"; fail=1; }
 grep -qF 'rounds < MAX_REPAIR' "$WF" \
   || { note "$WF's repair while-loop no longer bounds on MAX_REPAIR"; fail=1; }
