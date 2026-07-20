@@ -1,7 +1,7 @@
 ---
 name: publish-blog
 description: "Render surviving research findings into a publishable blog post through the typed findings-to-artifact contract. A first-class harness output (not a pack). Use this skill when the user wants to turn research into a blog post, publish findings, draft an article from the corpus, or write up what the research found. Triggers on 'publish blog', 'blog post from research', 'write up these findings', 'draft an article', 'turn this into a post'."
-version: 0.4.2
+version: 0.4.3
 argument-hint: "[--topic <id>] [--genre <genre>] [--out <path.md>]"
 allowed-tools: Read, Bash, Edit, Glob, Grep
 ---
@@ -31,11 +31,18 @@ citation-integrity and citation-leak gates run uniformly across both.
    `schemas/artifact.schema.json`. The `newsworthiness` field carries the
    engine's delta signal — the hook a publication needs.
 
-3. **Render the post.**
+3. **Render the post.** Every output lives under `reports/<topic>/`, never a
+   top-level `blog/` directory — the trailing `.blog.md` suffix (not a leading
+   `blog/` prefix) is what identifies the channel:
 
    ```bash
-   scripts/render-artifact.sh reports/<topic>/artifact.json blog blog/<topic>.md
+   scripts/render-artifact.sh reports/<topic>/artifact.json blog reports/<topic>/<topic>.blog.md
    ```
+
+   Requesting a specific genre alongside the blog channel renders to
+   `reports/<topic>/<topic>.<genre>.blog.md` instead (keeps it collision-free
+   against the report channel's own `reports/<topic>/<topic>.<genre>.md`
+   files).
 
 4. **Gate the output.** The post must read as if written from public primary
    sources alone. The bundled `check-citation-leak.sh` hook fires on write; before
@@ -52,12 +59,14 @@ citation-integrity and citation-leak gates run uniformly across both.
   primary source; do not just delete the token.
 - The post is a projection of the artifact — to change the content, change the
   findings or the synthesis, not the rendered Markdown in place.
-- **No topic-README rebuild is needed here.** The post renders to `blog/<topic>.md`,
-  *outside* `reports/<topic>/`. The navigation README projects its Reports table
-  from `reports/<topic>/*.md` and its Artifacts from `reports/<topic>/_assets|slides`
-  — neither of which a blog write touches — so publishing a blog leaves the README
-  current. (Rendering the canonical `report` channel *does* write under the topic
-  dir and therefore reconciles the README; see `publish-report`.)
+- **Rebuild the topic README after publishing.** The post renders to
+  `reports/<topic>/<topic>.blog.md`, inside `reports/<topic>/` alongside the
+  canonical report and any genre-suffixed report-channel files. The
+  navigation README's Reports table is built from every `reports/<topic>/*.md`
+  file (via `scripts/build-topic-readme.sh`), so a blog write now changes what
+  that table should show — run `bash scripts/build-topic-readme.sh <topic>`
+  (or the `readme` skill) before reporting this done, the same as
+  `publish-report` already does.
 - **`blog` is a MIF-exempt channel** (declared `mifExempt: true` in
   `harness.config.json` `outputs[]`): its public prose is orthogonal to MIF, so the
   MIF Level-3 source of truth lives in the generic `report` channel

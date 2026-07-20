@@ -30,11 +30,14 @@
 #          MECHANICAL violation, BLOCK (decision:block) so the turn cannot end
 #          with un-voiced prose. Buzzwords alone never block.
 #
-# Authored prose surface = the harness publication channels:
-#   reports/<slug>/<slug>.md          (canonical report)
-#   reports/<slug>/<slug>.blog.md     (blog channel)
-#   reports/<slug>/<slug>.book.md     (book channel)
-#   blog/**/*.md  book/*/{chapters,appendices,front-matter}/*.md
+# Authored prose surface = the harness publication channels, ALL nested under
+# reports/<slug>/ — never a top-level blog/ or book/ directory (research-
+# harness-instance decision: nothing this harness produces lives outside
+# reports/<topic>/):
+#   reports/<slug>/<slug>.md                       (canonical report)
+#   reports/<slug>/<slug>.blog.md                  (blog channel, general)
+#   reports/<slug>/<slug>.<genre>.blog.md          (blog channel, a genre)
+#   reports/<slug>/book/{chapters,appendices,front-matter}/*.md   (book channel)
 # Continuity logs (research-progress.md), findings JSON, sources, and quarantine
 # are NOT authored prose and are excluded.
 
@@ -93,8 +96,7 @@ is_authored_surface () { # echo "yes" or ""
       # canonical report only: reports/<slug>/<slug>.md (basename == dirname)
       d=$(basename "$(dirname "$1")"); b=$(basename "$1" .md)
       [ "$d" = "$b" ] && echo yes || echo "" ;;
-    blog/*.md|blog/*/*.md) echo yes ;;
-    book/*/chapters/*.md|book/*/appendices/*.md|book/*/front-matter/*.md) echo yes ;;
+    reports/*/book/chapters/*.md|reports/*/book/appendices/*.md|reports/*/book/front-matter/*.md) echo yes ;;
     *) echo "" ;;
   esac
 }
@@ -132,8 +134,8 @@ ${BUZZ}"
     cd "${CLAUDE_PROJECT_DIR:-.}" 2>/dev/null || exit 0
     command -v git >/dev/null 2>&1 || exit 0
     CHANGED=$(git status --porcelain --untracked-files=all -- \
-                'reports/*/*.md' 'blog/*.md' 'blog/*/*.md' \
-                'book/*/chapters/*.md' 'book/*/appendices/*.md' 'book/*/front-matter/*.md' 2>/dev/null | sed 's/^...//')
+                'reports/*/*.md' \
+                'reports/*/book/chapters/*.md' 'reports/*/book/appendices/*.md' 'reports/*/book/front-matter/*.md' 2>/dev/null | sed 's/^...//')
     [ -z "$CHANGED" ] && exit 0
     OFFENDERS=""
     while IFS= read -r f; do

@@ -13,8 +13,13 @@
 #   stop : Stop — scan git-dirty published-output files; on any leak emit a
 #          top-level systemMessage. Warn-only, never blocks the stop.
 #
-# Published-output surface = blog/**/*.md and book/*/{chapters,appendices,front-matter}/*.md.
-# Build-time scaffolding (OUTLINE.md, *.json, provenance/, artifacts/) is excluded.
+# Published-output surface = reports/<topic>/*.blog.md and
+# reports/<topic>/book/{chapters,appendices,front-matter}/*.md — every output
+# this harness produces lives under reports/<topic>/, never a top-level blog/
+# or book/ directory (research-harness-instance decision: the trailing
+# .blog.md suffix, and the nested book/ subdirectory, are what identify the
+# channel, not a separate top-level tree). Build-time scaffolding (OUTLINE.md,
+# *.json, provenance/, artifacts/) is excluded.
 
 MODE="${1:-post}"
 # Internal-research reference shapes: corpus finding ids, corpus report-slug
@@ -25,8 +30,8 @@ LEAK_RE='f_[a-z]+_[0-9]+|reports/[a-z0-9][a-z0-9-]+/(findings|_meta)|findings_[a
 
 is_published_surface () { # echo "yes" or ""
   case "$1" in
-    blog/*.md|blog/*/*.md) echo yes ;;
-    book/*/chapters/*.md|book/*/appendices/*.md|book/*/front-matter/*.md) echo yes ;;
+    reports/*/*.blog.md) echo yes ;;
+    reports/*/book/chapters/*.md|reports/*/book/appendices/*.md|reports/*/book/front-matter/*.md) echo yes ;;
     *) echo "" ;;
   esac
 }
@@ -41,7 +46,7 @@ case "$MODE" in
     FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // .tool_input.filePath // empty' 2>/dev/null)
     [ -z "$FILE_PATH" ] && exit 0
     REL="${FILE_PATH#"${CLAUDE_PROJECT_DIR:-}"/}"
-    case "$REL" in blog/*|book/*) : ;; *) exit 0 ;; esac
+    case "$REL" in reports/*/*.blog.md|reports/*/book/*) : ;; *) exit 0 ;; esac
     [ "$(is_published_surface "$REL")" = yes ] || exit 0
     [ -f "${CLAUDE_PROJECT_DIR:-.}/$REL" ] || exit 0
     HITS=$(grep -nE "$LEAK_RE" "${CLAUDE_PROJECT_DIR:-.}/$REL" 2>/dev/null | head -12)
@@ -57,8 +62,8 @@ ${HITS}"
     cd "${CLAUDE_PROJECT_DIR:-.}" 2>/dev/null || exit 0
     command -v git >/dev/null 2>&1 || exit 0
     CHANGED=$(git status --porcelain --untracked-files=all -- \
-                'blog/*.md' 'blog/*/*.md' \
-                'book/*/chapters/*.md' 'book/*/appendices/*.md' 'book/*/front-matter/*.md' 2>/dev/null | sed 's/^...//')
+                'reports/*/*.blog.md' \
+                'reports/*/book/chapters/*.md' 'reports/*/book/appendices/*.md' 'reports/*/book/front-matter/*.md' 2>/dev/null | sed 's/^...//')
     [ -z "$CHANGED" ] && exit 0
     LEAKY=""
     while IFS= read -r f; do

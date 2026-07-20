@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.23] - 2026-07-20
+
+### Fixed
+
+- **Every blog/book write path now lands under `reports/<topic>/`, never a
+  top-level `blog/`/`book/` directory** (research-harness-instance decision:
+  nothing this harness produces lives outside `reports/<topic>/`). `blog` and
+  `book` remain real channel concepts — the `publish-blog` skill, the `book`
+  channel pack, ADR-0007, and every schema are untouched, only where their
+  rendered output lands changes: `publish-blog` renders to
+  `reports/<topic>/<topic>.blog.md` (or `.<genre>.blog.md`), replacing
+  `blog/<topic>.md`; `book-author` renders to
+  `reports/<topic>/book/chapters/<genre>.md`, replacing
+  `book/<topic>/chapters/<n>.md`. `research-deliverables.js`'s Route-phase
+  `outputHint` prompt, `build-topic-readme.sh`'s genre classifiers, and the
+  `check-citation-leak.sh`/`check-voice.sh`/`check-output-conformance.sh`
+  hooks are all repointed to match.
+
 ## [0.16.22] - 2026-07-19
 
 ### Fixed

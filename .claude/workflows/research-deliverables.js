@@ -82,20 +82,30 @@
 // inconsistency.
 //
 // OUTPUT PATH COLLISIONS — an adaptation, not carried from the reference.
-// publish-blog's own fixed convention is the single path `blog/<topic>.md`;
-// book-author's is `book/<topic>/chapters/<n>.md` (numeric chapter index).
-// Neither supports rendering MULTIPLE genres for the same topic without
-// collision, which is this module's whole point (N genre×channel pairs in
-// one run). Genre-suffix blog output exactly the way render-artifact.sh's
-// own header comment already documents doing for the report channel
-// ("<slug>.engineering.md"): `blog/<topic>.md` for the neutral/general
-// genre (preserves the existing single-genre convention unchanged),
-// `blog/<topic>.<genre>.md` otherwise. book-author's numeric `<n>` chapter
-// slot doesn't map cleanly onto "N independent genre-shaped chapters" — this
-// module uses the genre string itself as the chapter slug instead of a
-// numeric index: `book/<topic>/chapters/<genre>.md`. The synthesize-artifact
-// intermediate is likewise genre-suffixed (`artifact.<genre>.json`) so
-// parallel rows for the same topic never race on one shared temp file.
+// Every artifact-mechanism render lands under reports/<topic>/, never a
+// top-level blog/ or book/ directory (research-harness-instance decision:
+// nothing this harness produces lives outside reports/<topic>/, full stop —
+// blog/book remain real channel CONCEPTS, just never a separate top-level
+// output tree). publish-blog's own convention is the single path
+// `reports/<topic>/<topic>.blog.md`; book-author's is
+// `reports/<topic>/book/chapters/<n>.md` (numeric chapter index, nested
+// under the topic's own reports directory rather than a parallel top-level
+// tree). Neither supports rendering MULTIPLE genres for the same topic
+// without collision, which is this module's whole point (N genre×channel
+// pairs in one run). Genre-suffix blog output exactly the way
+// render-artifact.sh's own header comment already documents doing for the
+// report channel ("<slug>.engineering.md"): `reports/<topic>/<topic>.blog.md`
+// for the neutral/general genre (preserves the existing single-genre
+// convention unchanged), `reports/<topic>/<topic>.<genre>.blog.md`
+// otherwise — the trailing `.blog.md` (not a leading `blog.` prefix) keeps
+// this collision-free against the report channel's own
+// `reports/<topic>/<topic>.<genre>.md` genre files. book-author's numeric
+// `<n>` chapter slot doesn't map cleanly onto "N independent genre-shaped
+// chapters" — this module uses the genre string itself as the chapter slug
+// instead of a numeric index: `reports/<topic>/book/chapters/<genre>.md`.
+// The synthesize-artifact intermediate is likewise genre-suffixed
+// (`artifact.<genre>.json`) so parallel rows for the same topic never race
+// on one shared temp file.
 //
 // ENGINE REQUIREMENT: synthesize-artifact.sh / render-artifact.sh hard-
 // require the mif-rh-cli engine (ADR-0016) — scripts/fetch-engine.sh,
@@ -384,10 +394,15 @@ const route = await agent(
     `NAMES the mechanism (artifact-based / source-direct / out-of-scope-third-mechanism / architectural-boundary) and exactly what is ` +
     `missing (pack disabled, wrong pack kind, wrong consuming channel, unrecognized channel) — never silently dropped. For every ` +
     `servable combination emit one plan[] row with the resolved mechanism, templateSource (the pack name that will actually render it), ` +
-    `and outputHint following these conventions: artifact-based blog -> "${H}/blog/${TOPIC}.md" for genre="general", ` +
-    `"${H}/blog/${TOPIC}.<genre>.md" otherwise; artifact-based book -> "${H}/book/${TOPIC}/chapters/<genre>.md" (genre as the chapter ` +
+    `and outputHint following these conventions — every artifact-mechanism path lives under reports/${TOPIC}/, never a top-level ` +
+    `blog/ or book/ directory (this harness's own standing rule: nothing renders outside reports/<topic>/): artifact-based blog -> ` +
+    `"${H}/reports/${TOPIC}/${TOPIC}.blog.md" for genre="general", "${H}/reports/${TOPIC}/${TOPIC}.<genre>.blog.md" otherwise (the ` +
+    `trailing .blog.md, not a leading blog/ prefix, is what keeps this collision-free against the report channel's own ` +
+    `<topic>.<genre>.md files); artifact-based book -> "${H}/reports/${TOPIC}/book/chapters/<genre>.md" (genre as the chapter ` +
     `slug, since this module renders one chapter per requested genre rather than a numeric sequence); source-direct channels -> follow ` +
-    `that pack's own SKILL.md-documented default location (do not invent a harness-wide convention for these).`,
+    `that pack's own SKILL.md-documented default location — every one of them (pdf/jats/xbrl/ectd/notebooklm) already resolves relative ` +
+    `to <findings-dir>/.., i.e. reports/${TOPIC}/ itself, so no adaptation is needed there; do not invent any harness-wide convention ` +
+    `beyond the blog/book paths named above.`,
   { label: 'deliverables:route', model: 'haiku', schema: ROUTE_SCHEMA },
 )
 if (!route) throw new Error('research-deliverables: routing failed')
