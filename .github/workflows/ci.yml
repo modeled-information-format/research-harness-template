@@ -29,6 +29,27 @@ jobs:
         with:
           fetch-depth: 0 # gate_changelog_links (#397) needs real tag history, not a shallow clone
 
+      - name: Mint a CI app token (public-artifact reads — mif-rh-cli/mif-rh-mcp from mif-rs)
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.CI_CLIENT_APP_ID }}
+          private-key: ${{ secrets.CI_CLIENT_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          # #662/#666: fetch-engine.sh reads mif-rh-cli/mif-rh-mcp releases +
+          # attestations from mif-rs, not this repo. An installation token
+          # scoped only to `research-harness-template` 404s on ANY repo
+          # outside its list, even a public one in the same org — that is an
+          # App-installation-scoping boundary, not a permission-* shortfall.
+          # List both repos explicitly rather than swap to the ambient
+          # default job token (github.token): the `mif-ci` App
+          # (repos/.github/auth/apps.json) is installed org-wide, so this
+          # keeps the identity purpose-built and read-only per ADR-011,
+          # instead of substituting the ambient token this org's whole
+          # least-privilege-Apps architecture exists to avoid.
+          repositories: research-harness-template,mif-rs
+          permission-contents: read
+
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: '24'
@@ -47,12 +68,13 @@ jobs:
 
       - name: Install yq (verified download — attestation -> checksum waterfall)
         env:
-          # Public-artifact read of a THIRD-PARTY repo (mikefarah/yq), never
-          # this repo's own content — the default job token (#662) works fine
-          # here and, unlike a GitHub App installation token whose access is
-          # hard-bound to its installed repository list, is never 404'd by an
-          # out-of-scope-repo check regardless of the target's public/private
-          # status.
+          # mikefarah/yq is a THIRD-PARTY repo outside this org — no org App
+          # can ever be installed there, so there is no least-privilege-App
+          # alternative for this specific read (unlike the mif-rs case
+          # above, which does have one). The default job token is the
+          # legitimate mechanism here, consistent with this org's own
+          # attestation/signing model (CLAUDE.md: "Artifact signing instead
+          # uses the run's ephemeral GITHUB_TOKEN+OIDC").
           GH_TOKEN: ${{ github.token }}
         run: |
           # Supply-chain policy: a raw binary download MUST be verified. Prefer a
@@ -88,16 +110,7 @@ jobs:
 
       - name: fetch the mif-rh engine (ADR-0016; attested, fail-closed)
         env:
-          # #662: mif-rh-cli/mif-rh-mcp are fetched from mif-rs, a repo this
-          # job never touches otherwise. A GitHub App installation token
-          # restricted via `repositories:` (as the now-removed CI app token
-          # was) 404s on ANY repo outside that list, even a public one — that
-          # is a hard boundary of App installation scoping, not a permissions
-          # shortfall a wider `permission-*` input could fix. The default job
-          # token has no such installation-repo-list restriction and can read
-          # mif-rs's public release + attestation data directly (same pattern
-          # already used by release.yml's changelog-links-check job).
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: bash scripts/fetch-engine.sh
 
       - name: vendor enabled domain ontologies on demand (ADR-0012; before verify)
@@ -115,10 +128,8 @@ jobs:
         # (real end users need this on every fresh instantiation); that
         # nested fetch calls `gh`, which needs GH_TOKEN in Actions (a
         # runner has no persistent gh auth the way a workstation does).
-        # #662: the default job token reads mif-rs's public release fine —
-        # see the "fetch the mif-rh engine" step's comment above.
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: bash scripts/verify.sh
 
       - name: eval suite (shipped + run in CI)
@@ -130,10 +141,8 @@ jobs:
         # own independently-reported gate — see the markdownlint job's
         # "Defect 3" comment below for why it's a separate step from
         # verify.sh's own internal check).
-        # #662: the default job token reads mif-rs's public release fine —
-        # see the "fetch the mif-rh engine" step's comment above.
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: bash evals/copier-update.sh
 
   markdownlint:
@@ -174,6 +183,18 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Mint a CI app token (public-artifact read — mif-rh-cli/mif-rh-mcp from mif-rs)
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.CI_CLIENT_APP_ID }}
+          private-key: ${{ secrets.CI_CLIENT_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          # See the "verify" job's own mint step for why both repos are
+          # listed (#662/#666).
+          repositories: research-harness-template,mif-rs
+          permission-contents: read
+
       - name: Fetch base branch
         env:
           BASE_REF: ${{ github.base_ref }}
@@ -183,16 +204,8 @@ jobs:
         # check-version-bump.sh delegates to the engine (Story #298); this
         # job runs in its own fresh checkout, so it needs its own fetch,
         # same as the "verify" job's own step.
-        # #662: mif-rh-cli/mif-rh-mcp come from mif-rs, a repo this job never
-        # otherwise touches. A GitHub App installation token restricted via
-        # `repositories:` (as the now-removed CI app token here was) 404s on
-        # any repo outside that list, even a public one — an installation-
-        # scoping boundary, not a permissions shortfall. The default job
-        # token has no such restriction and reads mif-rs's public release +
-        # attestation data directly (same pattern as release.yml's
-        # changelog-links-check job and the `verify` job's own fix above).
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: bash scripts/fetch-engine.sh
 
       - name: Versions bumped as required (change-driven, ADR-0010)

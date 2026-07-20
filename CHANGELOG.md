@@ -12,17 +12,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **`ci.yml`'s `verify`/`version-bump` jobs (and the `continuous-monitor`
-  pack's `monitor.yml`/`monitor-gate.yml`, same latent bug) no longer feed
-  `scripts/fetch-engine.sh`'s cross-repo read of `mif-rs` a GitHub App
-  installation token restricted to this repo alone** (#662). An installation
-  token scoped via `repositories:` (or with both `owner`/`repositories`
-  omitted) 404s on any repo outside its installation's repo list, even a
-  public one — an installation-scoping boundary, not a permissions gap.
-  Every `fetch-engine.sh` step, plus `ci.yml`'s `yq` install step's
-  cross-repo attestation check, now uses the default job token
-  (`${{ github.token }}`), the same pattern `release.yml`'s
-  `changelog-links-check` job already used. Adds
-  `scripts/check-fetch-engine-gh-token.sh` as a static regression gate.
+  pack's `monitor.yml`/`monitor-gate.yml`, plus a pre-existing instance of
+  the same bug in `release.yml`'s `changelog-links-check` job) no longer
+  404 on `scripts/fetch-engine.sh`'s cross-repo read of `mif-rs`** (#662).
+  The minted CI App token's `repositories:` input was restricted to the
+  current repo alone; an installation token scoped that way 404s on any
+  repo outside its list, even a public one in the same org — an
+  installation-scoping boundary, not a permissions gap. The `mif-ci` App
+  is already installed org-wide, so the fix widens each mint step's
+  `repositories:` to include `mif-rs` (or, for the portable
+  `continuous-monitor` pack workflows, mints a second, separate
+  read-only App token scoped to exactly `mif-rs`) — the same
+  purpose-built, least-privilege App identity this org's ADR-011
+  architecture requires, correctly scoped, not a substitution for it.
+  Adds `scripts/check-fetch-engine-gh-token.sh` as a static regression
+  gate proving every `fetch-engine.sh` step resolves to a minted token
+  actually scoped to `mif-rs`.
 
 ## [0.16.23] - 2026-07-20
 

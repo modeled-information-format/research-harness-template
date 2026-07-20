@@ -48,21 +48,27 @@ jobs:
           # carry no reliable event.repository payload).
           permission-contents: write
 
+      - name: Mint a CI app token (public-artifact read — mif-rh-cli/mif-rh-mcp from mif-rs)
+        id: ci-app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.CI_CLIENT_APP_ID }}
+          private-key: ${{ secrets.CI_CLIENT_APP_PRIVATE_KEY }}
+          # #662/#666: fetch-engine.sh only ever reads mif-rs (never this
+          # job's own repo, whatever its name is in a given clone), so
+          # `owner`/current-repo aren't needed here at all — scope this
+          # token to exactly mif-rs, nothing else. This is a SEPARATE,
+          # read-only identity from the `automerge` token above (which keeps
+          # its own write-only, current-repo scope for its own job) —
+          # least-privilege by role, per ADR-011, not one token doing both
+          # jobs.
+          owner: modeled-information-format
+          repositories: mif-rs
+          permission-contents: read
+
       - name: fetch the mif-rh engine (ADR-0016)
         env:
-          # #662: mif-rh-cli/mif-rh-mcp come from mif-rs, a repo this job
-          # never otherwise touches (every other step here only needs the
-          # local checkout + this job's own write identity, below). The
-          # `automerge` app token above is scoped to exactly this repo (its
-          # `owner`/`repositories` inputs are deliberately omitted here —
-          # see that step's own comment) and, like any GitHub App
-          # installation token restricted to a repository list, 404s on any
-          # repo outside that list even when it's public. The default job
-          # token carries no such installation-repo-list restriction and
-          # reads mif-rs's public release + attestation data directly (same
-          # pattern as release.yml's changelog-links-check job and
-          # ci.yml's fetch-engine steps).
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.ci-app-token.outputs.token }}
         run: bash scripts/fetch-engine.sh
 
       - name: parse topic and run-id, gate and publish
