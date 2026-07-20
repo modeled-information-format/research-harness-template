@@ -1,6 +1,6 @@
 {
   "name": "book",
-  "version": "0.4.2",
+  "version": "0.16.23",
   "kind": "channel",
   "mif": {
     "exempt": true,

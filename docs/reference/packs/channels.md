@@ -62,7 +62,7 @@ not silently skipped.
 
 ## book
 
-**Version:** 0.4.2 | **Kind:** channel | **MIF level:** exempt (output only) | **Skill:** `book:book-author`
+**Version:** 0.16.23
 
 **Source:** [`packs/channels/book/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/channels/book)
 
