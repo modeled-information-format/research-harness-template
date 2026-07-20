@@ -458,17 +458,29 @@ run "research-pipeline-pivot-check" bash evals/research-pipeline-pivot-check.sh
 run "research-pipeline-augment-check" bash evals/research-pipeline-augment-check.sh
 run "research-pipeline-deliverables-check" bash evals/research-pipeline-deliverables-check.sh
 
-# research-pipeline.js is the ONE vendored module invoked externally through
-# the real Workflow-tool boundary (D-9: composition exactly two levels
-# deep) -- so it is the only module whose top-level `args` can arrive as a
-# JSON-encoded STRING rather than an already-parsed object (#617). This eval
-# drives the real, unmodified module source with args handed through BOTH
-# ways (raw string, matching the real runtime; already-parsed object,
-# matching every sibling eval's existing assumption and every internal
-# workflow() call this script itself makes) and proves both shapes resolve
-# identically, across the topic/harnessDir/workflowsDir guard and the
-# mode-specific containerDir/delta guards.
+# research-pipeline.js is ONE vendored module invoked externally through the
+# real Workflow-tool boundary (D-9: composition exactly two levels deep) --
+# its own top-level `args` can arrive as a JSON-encoded STRING rather than an
+# already-parsed object (#617). This eval drives the real, unmodified module
+# source with args handed through BOTH ways (raw string, matching the real
+# runtime; already-parsed object, matching every sibling eval's existing
+# assumption and every internal workflow() call this script itself makes)
+# and proves both shapes resolve identically, across the
+# topic/harnessDir/workflowsDir guard and the mode-specific
+# containerDir/delta guards.
 run "research-pipeline-args-parse-check" bash evals/research-pipeline-args-parse-check.sh
+
+# research-harness-template#654: research-pipeline.js's OWN header comment
+# (right above) used to claim it was the ONLY module reachable this way --
+# "every other vendored module is only ever invoked internally via this
+# script's own workflow() calls, which pass real in-process JS objects" --
+# and #654 disproved that assumption empirically (research-goal.js's own
+# whenToUse already documents standalone use; research-falsify.js and
+# research-synthesis.js reproduced the identical instant "args.topic is
+# required" failure). This eval is the #617-pattern eval's sibling, covering
+# the remaining eleven atomic modules: each now carries the identical
+# `typeof args === 'string' ? JSON.parse(args) : (args || {})` guard.
+run "atomic-workflows-args-parse-check" bash evals/atomic-workflows-args-parse-check.sh
 
 # release.yml never uploads to an already-published (immutable) release
 # (#537): tag-push trigger, no post-publish `gh release upload`, artifact

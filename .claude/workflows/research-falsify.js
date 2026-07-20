@@ -77,20 +77,34 @@ export const meta = {
 //                  /research command supplies via a plain `date` invocation before ever calling the Workflow
 //                  tool). Required only once a finding actually needs gating — see the Gate phase below; a run
 //                  whose working set is empty never touches it. }
-const H = (args && args.harnessDir) || '.'
-const TOPIC = args && args.topic
+// research-harness-template#654: normalize a top-level standalone Workflow-tool
+// invocation. `args` arrives as a JSON-encoded STRING when this module is
+// invoked directly at the top level (confirmed empirically -- issue #617),
+// but as a real in-process object when composed as a nested child via
+// research-pipeline.js's wf() helper. research-pipeline.js already guards
+// its own external entry point for this; every atomic module is ALSO a
+// valid direct entry point and needs the identical guard -- this was #654's
+// actual root cause: `args` was a JSON string, so `args.topic` (or any
+// other args.* property) silently read `undefined` (a string property
+// access, never a thrown error) rather than the real value, and the very
+// next `if (!TOPIC) throw` line fired even though the caller's `topic`
+// argument was genuinely present in the call.
+const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
+
+const H = (A && A.harnessDir) || '.'
+const TOPIC = A && A.topic
 if (!TOPIC) throw new Error('research-falsify: args.topic is required')
-const RUN_DATE = args && args.runDate
+const RUN_DATE = A && A.runDate
 const RDIR = `${H}/reports/${TOPIC}`
-const SCOPE = (args && args.scope) || 'all'
-const CLAIM_BUDGET = (args && args.claimBudget) || 50
-const QUERY_BUDGET = (args && args.queryBudget) || 6
-const LENS_COUNT = Math.min(4, Math.max(2, (args && args.lenses) || 3))
+const SCOPE = (A && A.scope) || 'all'
+const CLAIM_BUDGET = (A && A.claimBudget) || 50
+const QUERY_BUDGET = (A && A.queryBudget) || 6
+const LENS_COUNT = Math.min(4, Math.max(2, (A && A.lenses) || 3))
 const REGATE_SCOPE_QUALIFIES = typeof SCOPE === 'object' && !!(SCOPE.paths || SCOPE.ids)
-if (args && args.regate && !REGATE_SCOPE_QUALIFIES) {
+if (A && A.regate && !REGATE_SCOPE_QUALIFIES) {
   throw new Error("research-falsify: regate=true requires an explicit scope:{paths|ids:[...]} — refusing to silently fall back to the one-round rule for a broad scope ('all' or 'dimension:*')")
 }
-const REGATE = !!(args && args.regate && REGATE_SCOPE_QUALIFIES)
+const REGATE = !!(A && A.regate && REGATE_SCOPE_QUALIFIES)
 
 // #625: workingSet and skippedAlreadyVerifiedIds are the same agent turn's
 // own classification of the findings it decided to look at — nothing here

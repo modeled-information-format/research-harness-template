@@ -459,7 +459,12 @@ PY
 # resolve to genuinely DIFFERENT CHANNELS values at runtime, not just in a
 # source-text grep.
 # ============================================================================
-grep -qF "const CHANNELS = (args && Array.isArray(args.channels)) ? args.channels : ['blog']" "$WF" \
+# research-harness-template#654: the args-derived local was renamed from
+# `args` to `A` (every atomic module normalizes a top-level standalone
+# Workflow-tool invocation, where `args` can arrive as a JSON-encoded
+# STRING -- #617/#654) -- the Array.isArray truthiness semantics this grep
+# proves are unchanged, only the local identifier is.
+grep -qF "const CHANNELS = (A && Array.isArray(A.channels)) ? A.channels : ['blog']" "$WF" \
   || { note "G1: $WF no longer computes CHANNELS via Array.isArray — the explicit-empty-vs-omitted truthiness bug (#626) may have regressed"; fail=1; }
 
 cat > "$TMP/channels-driver.cjs" <<'NODE'

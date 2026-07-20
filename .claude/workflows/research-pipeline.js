@@ -114,9 +114,17 @@ export const meta = {
 // }
 // The Workflow tool's top-level `args` parameter arrives at this external
 // entry point as a JSON-encoded STRING, not a parsed object (confirmed
-// empirically — issue #617). Every other vendored module is only ever
-// invoked internally via this script's own workflow() calls, which pass
-// real in-process JS objects, so only THIS module needs the guard.
+// empirically — issue #617). This module's own composition helper (wf(),
+// below) always passes real in-process JS objects to its children — but
+// CORRECTION (research-harness-template#654): the claim this comment used to
+// make here, that every other vendored module is therefore ONLY ever invoked
+// internally and so ONLY this module needs the guard, was disproved. Every
+// one of the eleven atomic modules is ALSO a valid direct top-level
+// scriptPath entry point (research-goal.js's own whenToUse already
+// documents standalone use), and #654 reproduced this exact
+// "args.topic is required" failure, with topic genuinely present, on three
+// of them called that way. Every atomic module now carries this identical
+// guard — see each module's own args-normalization comment.
 const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
 const H = A.harnessDir || '.'
 const TOPIC = A.topic
