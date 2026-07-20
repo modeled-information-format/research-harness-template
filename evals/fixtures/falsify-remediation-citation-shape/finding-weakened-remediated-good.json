@@ -1,0 +1,51 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@type": "Concept",
+  "@id": "urn:mif:concept:falsify-remediation-eval:weakened-good-0001",
+  "conceptType": "semantic",
+  "namespace": "harness/falsify-remediation-eval-topic",
+  "title": "A weakened finding remediated per the fixed REMEDIATION_CONTRACT",
+  "content": "A finding downgraded and annotated by the weakened-verdict remediation path, with a disconfirming citation shaped per the fixed Citation spec and every unrelated top-level field (temporal included) left untouched.",
+  "summary": "Fan-out beats single-pass RAG on organization and coverage. [Falsification note: A later ablation found the effect vanishes on short-context queries.]",
+  "created": "2026-07-17T00:00:00Z",
+  "modified": "2026-07-17T00:00:00Z",
+  "temporal": {
+    "@type": "TemporalMetadata",
+    "validFrom": "2026-07-17T00:00:00Z"
+  },
+  "tags": ["eval-fixture", "falsify-remediation-citation-shape"],
+  "provenance": {
+    "@type": "Provenance",
+    "sourceType": "agent_inferred",
+    "confidence": 0.35,
+    "trustLevel": "low_confidence"
+  },
+  "citations": [
+    {
+      "@type": "Citation",
+      "citationType": "documentation",
+      "citationRole": "supports",
+      "title": "Eval fixture placeholder citation",
+      "url": "https://example.com/falsify-remediation-eval/weakened-good",
+      "accessed": "2026-07-17"
+    },
+    {
+      "@type": "Citation",
+      "citationType": "paper",
+      "citationRole": "refutes",
+      "title": "Ablation showing the fan-out effect vanishes on short-context queries",
+      "url": "https://example.com/falsify-remediation-eval/disconfirming-source",
+      "accessed": "2026-07-17"
+    }
+  ],
+  "extensions": {
+    "harness": {
+      "dimension": "technical",
+      "verification": {
+        "verdict": "weakened",
+        "verdict_basis": "A later ablation found the effect vanishes on short-context queries.",
+        "attempted_at": "2026-07-17T00:00:00Z"
+      }
+    }
+  }
+}
