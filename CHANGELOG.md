@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.24] - 2026-07-20
+
+### Fixed
+
+- **`ci.yml`'s `verify`/`version-bump` jobs (and the `continuous-monitor`
+  pack's `monitor.yml`/`monitor-gate.yml`, same latent bug) no longer feed
+  `scripts/fetch-engine.sh`'s cross-repo read of `mif-rs` a GitHub App
+  installation token restricted to this repo alone** (#662). An installation
+  token scoped via `repositories:` (or with both `owner`/`repositories`
+  omitted) 404s on any repo outside its installation's repo list, even a
+  public one — an installation-scoping boundary, not a permissions gap.
+  Every `fetch-engine.sh` step, plus `ci.yml`'s `yq` install step's
+  cross-repo attestation check, now uses the default job token
+  (`${{ github.token }}`), the same pattern `release.yml`'s
+  `changelog-links-check` job already used. Adds
+  `scripts/check-fetch-engine-gh-token.sh` as a static regression gate.
+
 ## [0.16.23] - 2026-07-20
 
 ### Fixed

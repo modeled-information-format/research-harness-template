@@ -1,6 +1,6 @@
 {
   "$schema": "./harness.config.schema.json",
-  "version": "0.16.23",
+  "version": "0.16.24",
   "mifConformanceLevel": 3,
   "features": {
     "internalCitations": false
@@ -45,6 +45,41 @@
         "maxResultsPerSource": 20,
         "recommendationThreshold": 0.02
       }
+    },
+    {
+      "id": "import-check-src",
+      "title": "import-check eval synthetic instance",
+      "namespace": "harness/import-check-src",
+      "status": "active",
+      "ontologies": []
+    },
+    {
+      "id": "import-check-dryrun-reject",
+      "title": "import-check eval synthetic instance",
+      "namespace": "harness/import-check-dryrun-reject",
+      "status": "active",
+      "ontologies": []
+    },
+    {
+      "id": "import-check-review-nogo",
+      "title": "import-check eval synthetic instance",
+      "namespace": "harness/import-check-review-nogo",
+      "status": "active",
+      "ontologies": []
+    },
+    {
+      "id": "import-check-apply-success",
+      "title": "import-check eval synthetic instance",
+      "namespace": "harness/import-check-apply-success",
+      "status": "active",
+      "ontologies": []
+    },
+    {
+      "id": "gate-m31-roundtrip-test",
+      "title": "gate_m31 roundtrip",
+      "namespace": "harness/gate-m31-roundtrip-test",
+      "status": "active",
+      "ontologies": []
     }
   ],
   "dimensions": [
