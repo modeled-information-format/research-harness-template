@@ -137,30 +137,44 @@ grep -qF 'do not assume it passed' "$WF" \
 # ============================================================================
 check_citation_invalid() { # check_citation_invalid <fixture> <label>
   local fx="$1" label="$2"
+  if [ ! -f "$fx" ]; then
+    note "FAIL: $label ($fx) fixture file not found -- cannot prove the corruption pattern without it"
+    fail=1
+    return
+  fi
+  local out
+  out="$(mktemp)"
   if ajv validate --spec=draft2020 --strict=false -c ajv-formats \
       -s schemas/mif/citation.schema.json \
       -r schemas/mif/definitions/entity-reference.schema.json \
-      -d "$fx" >/tmp/ajv-out-$$.txt 2>&1; then
+      -d "$fx" >"$out" 2>&1; then
     note "FAIL: $label ($fx) validated cleanly against schemas/mif/citation.schema.json -- it should reproduce a #656 corruption pattern and genuinely fail"
     fail=1
   else
     note "$label ($fx) genuinely fails schema validation, as #656 reports"
   fi
-  rm -f /tmp/ajv-out-$$.txt
+  rm -f "$out"
 }
 
 check_citation_valid() { # check_citation_valid <fixture> <label>
   local fx="$1" label="$2"
+  if [ ! -f "$fx" ]; then
+    note "FAIL: $label ($fx) fixture file not found -- cannot prove the fixed shape validates without it"
+    fail=1
+    return
+  fi
+  local out
+  out="$(mktemp)"
   if ! ajv validate --spec=draft2020 --strict=false -c ajv-formats \
       -s schemas/mif/citation.schema.json \
       -r schemas/mif/definitions/entity-reference.schema.json \
-      -d "$fx" >/tmp/ajv-out-$$.txt 2>&1; then
-    note "FAIL: $label ($fx) did not validate against schemas/mif/citation.schema.json: $(cat /tmp/ajv-out-$$.txt)"
+      -d "$fx" >"$out" 2>&1; then
+    note "FAIL: $label ($fx) did not validate against schemas/mif/citation.schema.json: $(cat "$out")"
     fail=1
   else
     note "$label ($fx) validates cleanly against schemas/mif/citation.schema.json"
   fi
-  rm -f /tmp/ajv-out-$$.txt
+  rm -f "$out"
 }
 
 check_citation_invalid "$FX/citation-bad-missing-title.json"        "corruption pattern 1 (missing title)"
