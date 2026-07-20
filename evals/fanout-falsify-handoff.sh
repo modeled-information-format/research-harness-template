@@ -72,8 +72,8 @@ FILTER="del(.extensions.harness.verification.attempted_at)"
 FILTER_COUNT="$(grep -oF "$FILTER" "$WF" | wc -l | tr -d ' ')"
 [ "$FILTER_COUNT" -ge 2 ] \
   || { note "expected the strip filter embedded at least twice (validate + revalidate) in $WF, found $FILTER_COUNT"; fail=1; }
-grep -qF "jq 'del(.extensions.harness.verification.attempted_at)' <path> > <path>.tmp && mv <path>.tmp <path>" "$WF" \
-  || { note "the full mechanical-strip command shape (jq ... > .tmp && mv) is no longer embedded in $WF"; fail=1; }
+grep -qF 't=$(mktemp) && jq '"'"'del(.extensions.harness.verification.attempted_at)'"'"' "<path>" > "$t" && mv "$t" "<path>"' "$WF" \
+  || { note "the full mechanical-strip command shape (mktemp scratch file, quoted paths) is no longer embedded in $WF"; fail=1; }
 
 # ============================================================================
 # Fixture: what a freshly-authored finding looked like in #652's real
