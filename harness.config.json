@@ -380,6 +380,118 @@
       "name": "ai-spec",
       "enabled": false,
       "source": "bundled"
+    },
+    {
+      "name": "arc42-arch-doc",
+      "enabled": false,
+      "source": {
+        "type": "marketplace-ref",
+        "marketplace": "mif-docs"
+      }
+    },
+    {
+      "name": "adr",
+      "enabled": false,
+      "source": {
+        "type": "marketplace-ref",
+        "marketplace": "mif-docs"
+      }
+    },
+    {
+      "name": "c4-model-diagram",
+      "enabled": false,
+      "source": {
+        "type": "marketplace-ref",
+        "marketplace": "mif-docs"
+      }
+    },
+    {
+      "name": "changelog",
+      "enabled": false,
+      "source": {
+        "type": "marketplace-ref",
+        "marketplace": "mif-docs"
+      }
+    },
+    {
+      "name": "google-design-doc",
+      "enabled": false,
+      "source": {
+        "type": "marketplace-ref",
+        "marketplace": "mif-docs"
+      }
+    },
+    {
+      "name": "playbook",
+      "enabled": false,
+      "source": {
+        "type": "marketplace-ref",
+        "marketplace": "mif-docs"
+      }
+    },
+    {
+      "name": "prd",
+      "enabled": false,
+      "source": {
+        "type": "marketplace-ref",
+        "marketplace": "mif-docs"
+      }
+    },
+    {
+      "name": "python-pep",
+      "enabled": false,
+      "source": {
+        "type": "marketplace-ref",
+        "marketplace": "mif-docs"
+      }
+    },
+    {
+      "name": "rust-rfc",
+      "enabled": false,
+      "source": {
+        "type": "marketplace-ref",
+        "marketplace": "mif-docs"
+      }
+    },
+    {
+      "name": "sre-runbook",
+      "enabled": false,
+      "source": {
+        "type": "marketplace-ref",
+        "marketplace": "mif-docs"
+      }
+    },
+    {
+      "name": "diataxis-explanation",
+      "enabled": false,
+      "source": {
+        "type": "marketplace-ref",
+        "marketplace": "mif-docs"
+      }
+    },
+    {
+      "name": "diataxis-how-to",
+      "enabled": false,
+      "source": {
+        "type": "marketplace-ref",
+        "marketplace": "mif-docs"
+      }
+    },
+    {
+      "name": "diataxis-reference",
+      "enabled": false,
+      "source": {
+        "type": "marketplace-ref",
+        "marketplace": "mif-docs"
+      }
+    },
+    {
+      "name": "diataxis-tutorial",
+      "enabled": false,
+      "source": {
+        "type": "marketplace-ref",
+        "marketplace": "mif-docs"
+      }
     }
   ],
   "ontologies": [
