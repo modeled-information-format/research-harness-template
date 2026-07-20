@@ -307,6 +307,7 @@ report_type() {
     report-computing-paper.md)         printf '12\tComputing Paper' ;;
     *-falsification-report.md)         printf '13\tFalsification Report' ;;
     research-progress.md)              printf '14\tResearch Progress' ;;
+    *.blog.md)                         printf '20\tBlog Post' ;;
     report-*.md)                       printf '40\tReport' ;;
     *.pdf)                             printf '45\tPDF Document' ;;
     *)                                 printf '50\tDocument' ;;
@@ -333,7 +334,11 @@ file_title() {
 # (${g##*.} strips everything up to and including the last remaining dot, so a
 # "my.slug.genre.md" filename yields "genre", not a literal middle segment), or
 # (report_type()'s own "report-<genre>.md" convention) the segment between
-# "report-" and ".md". Empty when neither source has one.
+# "report-" and ".md". The blog channel's own convention is "<slug>.blog.md"
+# (no genre requested) or "<slug>.<genre>.blog.md" (genre requested) — checked
+# BEFORE the generic "*.*.md" case below, since a naive last-dot-segment split
+# would otherwise yield the literal word "blog" as the genre instead of the
+# real one. Empty when neither source has one.
 file_genre() {
   local fp="$1" base g
   g=$(sed -n '/^---$/,/^---$/p' "$fp" 2>/dev/null | grep -m1 -E '^[[:space:]]*genre:[[:space:]]*[^[:space:]]' \
@@ -341,6 +346,8 @@ file_genre() {
   if [ -z "$g" ]; then
     base=$(basename "$fp")
     case "$base" in
+      *.*.blog.md) g="${base%.blog.md}"; g="${g##*.}" ;;
+      *.blog.md) g="" ;;
       *.*.md) g="${base%.md}"; g="${g##*.}" ;;
       report-*.md) g="${base#report-}"; g="${g%.md}" ;;
     esac

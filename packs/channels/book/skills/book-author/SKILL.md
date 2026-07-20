@@ -32,15 +32,19 @@ a chapter must read as if written from public primary sources alone.
    scripts/synthesize-artifact.sh reports/<topic>/findings <genre> reports/<topic>/artifact.json
    ```
 
-3. **Render the chapter** from the same artifact the blog uses:
+3. **Render the chapter** from the same artifact the blog uses. Every output
+   lives under `reports/<topic>/`, never a top-level `book/` directory — the
+   book's own chapters/front-matter/appendices structure nests one level
+   deeper instead:
 
    ```bash
-   scripts/render-artifact.sh reports/<topic>/artifact.json book book/<topic>/chapters/<n>.md
+   scripts/render-artifact.sh reports/<topic>/artifact.json book reports/<topic>/book/chapters/<n>.md
    ```
 
 4. **Gate the manuscript.** The bundled `check-citation-leak.sh` hook guards
-   `book/*/chapters/*.md`: no finding ids, `urn:mif:` ids, or `reports/<slug>/`
-   paths may appear. Re-author any flagged passage from the primary source.
+   `reports/*/book/chapters/*.md` (and the matching `appendices/`/`front-matter/`
+   paths): no finding ids, `urn:mif:` ids, or `reports/<slug>/` paths may appear.
+   Re-author any flagged passage from the primary source.
 
 ## Non-negotiables
 

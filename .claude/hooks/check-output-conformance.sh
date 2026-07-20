@@ -7,8 +7,10 @@
 #
 # NON-BLOCKING: emits a systemMessage reminder only; never blocks Stop.
 # Deterministic signal = git-dirty reports/<topic>/<slug>.md (clears on fix/commit).
-# Exempt channels (blog/, book/, and channel-pack outputs) are intentionally NOT
-# checked here — their exemption is declared in the manifests.
+# Exempt channels (blog, book, and channel-pack outputs — all nested under
+# reports/<topic>/, never a top-level directory) are intentionally NOT checked
+# here — their exemption is declared in the manifests, matched below by the
+# trailing .blog.md suffix / nested book/ subdirectory that identifies them.
 
 cat /dev/stdin >/dev/null 2>&1   # drain the event payload; content unused
 
@@ -25,9 +27,12 @@ while IFS= read -r f; do
   # reports/_meta is scaffolding; per-topic README.md is a navigation index; reports/_corpus
   # is the cross-topic atlas (corpus-synthesis.md); *-build-spec.md is the ai-spec channel's
   # agent-consumable architecture spec (mif.exempt, MIF Level-1, a synthesis across many findings,
-  # not a single Level-3 graded finding) — all MIF-exempt projections (like blog/book), not
-  # Level-3 reports of record.
-  case "$f" in reports/_meta/*|reports/_corpus/*|reports/*/README.md|reports/*/*-build-spec.md) continue ;; esac
+  # not a single Level-3 graded finding); *.blog.md is the blog channel (MIF-exempt, nested under
+  # reports/<topic>/ per the trailing suffix, never a top-level blog/ directory) — none of these
+  # are Level-3 reports of record. (The book channel's own reports/<topic>/book/ nesting is one
+  # directory deeper than this hook's flat 'reports/*/*.md' sweep reaches, so it never needs its
+  # own exemption case here.)
+  case "$f" in reports/_meta/*|reports/_corpus/*|reports/*/README.md|reports/*/*-build-spec.md|reports/*/*.blog.md) continue ;; esac
   scripts/mif-project.sh "$f" >/dev/null 2>&1 || BAD="${BAD}${f} "
 done <<< "$CHANGED"
 [ -z "$BAD" ] && exit 0
