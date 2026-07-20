@@ -1,0 +1,8 @@
+{
+  "@type": "Citation",
+  "citationType": "web",
+  "citationRole": "refutes",
+  "title": "A disconfirming source with the pre-fix invalid citationType",
+  "url": "https://example.com/disconfirm/bad-wrong-citationtype",
+  "accessed": "2026-07-19"
+}
