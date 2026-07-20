@@ -1,0 +1,39 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@type": "Concept",
+  "@id": "urn:mif:concept:falsify-remediation-eval:nulled-temporal-0001",
+  "conceptType": "semantic",
+  "namespace": "harness/falsify-remediation-eval-topic",
+  "title": "A finding whose temporal field was nulled out by a pre-fix remediation write",
+  "content": "Reproduces research-harness-template#656's fourth corruption pattern: the write step's re-emit dropped an unrelated top-level field (temporal) it was never asked to touch.",
+  "summary": "Fixture proving a nulled top-level temporal field is genuinely schema-invalid.",
+  "created": "2026-07-17T00:00:00Z",
+  "modified": "2026-07-17T00:00:00Z",
+  "temporal": null,
+  "tags": ["eval-fixture", "falsify-remediation-citation-shape"],
+  "provenance": {
+    "@type": "Provenance",
+    "sourceType": "agent_inferred",
+    "confidence": 0.5,
+    "trustLevel": "moderate_confidence"
+  },
+  "citations": [
+    {
+      "@type": "Citation",
+      "citationType": "documentation",
+      "citationRole": "supports",
+      "title": "Eval fixture placeholder citation",
+      "url": "https://example.com/falsify-remediation-eval/nulled-temporal",
+      "accessed": "2026-07-17"
+    }
+  ],
+  "extensions": {
+    "harness": {
+      "dimension": "technical",
+      "verification": {
+        "verdict": "weakened",
+        "verdict_basis": "seeded weakened verdict for the remediation fixture"
+      }
+    }
+  }
+}

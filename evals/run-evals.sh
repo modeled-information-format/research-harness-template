@@ -113,6 +113,23 @@ run "fanout-repair-disclosure-check" bash evals/fanout-repair-disclosure-check.s
 # checked structurally.
 run "falsify-verdict-merge" bash evals/falsify-verdict-merge.sh
 
+# research-harness-template#656: the weakened-verdict remediation path in
+# REMEDIATION_CONTRACT (prompt text, not deterministic code -- there is no
+# pure function to extract and drive the way mergeVotes()/claimBudget
+# above can) previously under-specified the required MIF Citation shape,
+# which shipped 60 schema-invalid citations across 8 real findings (wrong
+# citationType/citationRole enum values, missing title) plus one finding
+# with its unrelated top-level temporal field nulled out by the same
+# write step. This eval grep-checks REMEDIATION_CONTRACT's actual text for
+# the fix's four required clauses (full citationType/citationRole enums,
+# the exact wrong values #656 observed named explicitly, the required
+# title field, strict field-scoping naming temporal, and a strengthened
+# run-the-actual-ajv-command re-validate instruction), then proves against
+# the REAL schemas (ajv, no model call) that all four of #656's named
+# corruption patterns genuinely fail validation and that a citation/finding
+# built by following the fixed contract's spec validates cleanly.
+run "falsify-remediation-citation-shape" bash evals/falsify-remediation-citation-shape.sh
+
 # The research-synthesis citation-integrity gate has deterministic teeth
 # where the module's own logic can express it (#566): Select-phase
 # structural exclusion (falsified/quarantined findings, and a verdict-clean

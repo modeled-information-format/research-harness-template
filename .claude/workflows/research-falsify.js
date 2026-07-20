@@ -244,18 +244,34 @@ const REMEDIATION_CONTRACT =
   `${RDIR}/findings/ set; downstream synthesis never sees it again.\n` +
   `- weakened: DOWNGRADE one rung down the real provenance.trustLevel ladder ${JSON.stringify(TRUST_LADDER)} ` +
   `(a finding already at 'uncertain' is quarantined instead, same as falsified). Lower provenance.confidence ` +
-  `proportionally if present. Append the fixture's disconfirming URLs to citations[]. Append a BOUNDED qualifier to ` +
+  `proportionally if present. Append the fixture's disconfirming URLs to citations[] as FULL schemas/mif/citation.schema.json ` +
+  `Citation objects — every appended entry MUST carry ALL of: "@type": "Citation" (literal); "citationType", one of ` +
+  `EXACTLY this enum: article, book, paper, website, documentation, repository, video, podcast, specification, ` +
+  `dataset, tool, other (NEVER "web", "source-code", "reference", or "verification" — none of those are in the ` +
+  `enum and each has shipped in practice; pick "website" for a bare disconfirming URL unless a more specific type ` +
+  `clearly applies); "citationRole", one of EXACTLY this enum: supports, refutes, background, methodology, ` +
+  `contradicts, extends, derived, source, example, review (a disconfirming source's role is ALWAYS "refutes" — ` +
+  `NEVER "disconfirms", "disconfirming", "counter-evidence", or "disconfirms-qualifier", none of which are in the ` +
+  `enum and each has shipped in practice); "title", a non-empty string (the schema requires it — derive one from ` +
+  `the URL or the disconfirming source's actual page title if the fixture did not already supply one; never emit ` +
+  `a citation without it); and "url". "accessed" (an ISO-8601 date) is optional but should be set to the ` +
+  `fixture's attempted_at date when present. Append a BOUNDED qualifier to ` +
   `summary: schemas/mif/mif.schema.json caps summary at maxLength:500 (a vendored MIF Level-3 constraint, never ` +
   `raised here) — cap the qualifier text itself at 160 chars first (truncate the verdict_basis text it wraps, not ` +
   `the fixed template around it, if it runs long: ' [Falsification note: {basis}]'), THEN truncate the ORIGINAL ` +
   `summary to whatever budget remains under 500, THEN append the qualifier. Do this mutation with Python ` +
   `(json.load, mutate the dict, re-emit with lib/harness_models/'s emit.write for deterministic canonical JSON) — ` +
   `not jq -n or a heredoc: composing the appended citations[]/summary text that way breaks under the Bash eval ` +
-  `wrapper's quoting on its own quotes and parentheses.\n` +
+  `wrapper's quoting on its own quotes and parentheses. SCOPE THE MUTATION STRICTLY: touch ONLY citations[], ` +
+  `summary, provenance.trustLevel, and provenance.confidence — load the full dict, mutate exactly those paths, and ` +
+  `re-emit every other top-level field (temporal, modified, created, extensions, etc.) byte-for-byte unchanged; ` +
+  `never let this step touch, drop, or null out a field it was not told to change.\n` +
   `- survived / inconclusive: ANNOTATE ONLY — no file mutation beyond the verification block falsify.sh already wrote.\n` +
   `After any falsified/weakened mutation, re-validate the finding against schemas/findings.schema.json with the ` +
-  `full mif/ ref closure (schemas/mif/mif.schema.json + schemas/mif/definitions/entity-reference.schema.json) ` +
-  `before moving on — a maxLength or structural violation must be caught here, not deferred to reconcile-session.sh.`
+  `full mif/ ref closure (schemas/mif/mif.schema.json + schemas/mif/definitions/entity-reference.schema.json) — ` +
+  `RUN THE ACTUAL ajv command yourself and read its ACTUAL exit code and output; do not assume it passed. A ` +
+  `maxLength, enum, or structural violation MUST be caught and fixed HERE, before moving on — never deferred to ` +
+  `reconcile-session.sh or left for a later pass to discover.`
 
 phase('Enumerate')
 const scopeDesc =
