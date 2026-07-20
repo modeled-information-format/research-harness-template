@@ -110,6 +110,12 @@ done
 grep -qF '"title", a non-empty string' "$WF" \
   || { note "$WF's REMEDIATION_CONTRACT no longer spells out the required non-empty title field"; fail=1; }
 
+# accessed must be a bare YYYY-MM-DD calendar date (schema format:date), NOT
+# the full attempted_at TIMESTAMP — copying attempted_at verbatim fails the
+# date-format constraint the same way #656's enum/title violations did.
+grep -qF 'DATE PORTION (the leading YYYY-MM-DD only)' "$WF" \
+  || { note "$WF's REMEDIATION_CONTRACT no longer scopes accessed to the leading YYYY-MM-DD date portion (attempted_at is a full timestamp; copying it whole fails format:date)"; fail=1; }
+
 # Strict field-scoping instruction (the nulled-temporal corruption pattern).
 grep -qF 'SCOPE THE MUTATION STRICTLY' "$WF" \
   || { note "$WF's REMEDIATION_CONTRACT lost the strict field-scoping instruction"; fail=1; }

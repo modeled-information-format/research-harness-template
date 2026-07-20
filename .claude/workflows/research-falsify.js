@@ -254,8 +254,11 @@ const REMEDIATION_CONTRACT =
   `NEVER "disconfirms", "disconfirming", "counter-evidence", or "disconfirms-qualifier", none of which are in the ` +
   `enum and each has shipped in practice); "title", a non-empty string (the schema requires it — derive one from ` +
   `the URL or the disconfirming source's actual page title if the fixture did not already supply one; never emit ` +
-  `a citation without it); and "url". "accessed" (an ISO-8601 date) is optional but should be set to the ` +
-  `fixture's attempted_at date when present. Append a BOUNDED qualifier to ` +
+  `a citation without it); and "url". "accessed" (schema format:date — a bare YYYY-MM-DD calendar date, NEVER ` +
+  `a full date-time) is optional but should be set to the DATE PORTION (the leading YYYY-MM-DD only) of the ` +
+  `fixture's attempted_at TIMESTAMP when present — never copy attempted_at's full ISO-8601 timestamp into ` +
+  `accessed, which fails the date-format constraint the same way the enum/title violations above do. ` +
+  `Append a BOUNDED qualifier to ` +
   `summary: schemas/mif/mif.schema.json caps summary at maxLength:500 (a vendored MIF Level-3 constraint, never ` +
   `raised here) — cap the qualifier text itself at 160 chars first (truncate the verdict_basis text it wraps, not ` +
   `the fixed template around it, if it runs long: ' [Falsification note: {basis}]'), THEN truncate the ORIGINAL ` +
