@@ -2,7 +2,7 @@
 id: reference-packs-channels
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-14T13:18:01.461Z'
+modified: '2026-07-20T02:32:57.362Z'
 namespace: docs/reference/packs
 tags:
   - documentation
@@ -19,10 +19,10 @@ provenance:
   sourceType: agent_inferred
   agent: claude-code/claude-sonnet-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:0cbc1511-6559-422f-9909-b895e058b431
+    '@id': urn:mif:activity:claude-code-session:cc83f20c-2193-42dd-b5b5-72fe80571327
     '@type': prov:Activity
   trustLevel: user_stated
-  agentVersion: 2.1.209
+  agentVersion: 2.1.215
 ---
 
 # Channel packs
@@ -62,7 +62,7 @@ not silently skipped.
 
 ## book
 
-**Version:** 0.16.23
+**Version:** 0.4.3 | **Kind:** channel | **MIF level:** exempt (output only) | **Skill:** `book:book-author`
 
 **Source:** [`packs/channels/book/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/channels/book)
 

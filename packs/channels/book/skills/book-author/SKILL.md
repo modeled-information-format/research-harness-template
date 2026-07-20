@@ -1,7 +1,7 @@
 ---
 name: book-author
 description: "Render surviving research findings into a book chapter through the typed findings-to-artifact contract. An OPTIONAL channel pack (enable the `book` pack to use it), supporting the full genre range. Use this skill when the user wants to author a book, write a chapter from the research, turn the corpus into long-form, or build a manuscript. Triggers on 'write a book', 'author a chapter', 'book from research', 'turn this into a chapter', 'long-form from the corpus', 'manuscript'."
-version: 0.16.23
+version: 0.4.3
 argument-hint: "[--topic <id>] [--genre <genre>] [--chapter <n>] [--out <path.md>]"
 allowed-tools: Read, Bash, Edit, Glob, Grep
 ---
@@ -40,6 +40,14 @@ a chapter must read as if written from public primary sources alone.
    ```bash
    scripts/render-artifact.sh reports/<topic>/artifact.json book reports/<topic>/book/chapters/<n>.md
    ```
+
+   `<n>` is a numeric chapter index for a single manuscript authored this way,
+   chapter by chapter. The `research-deliverables.js` multi-genre routing
+   workflow drives this same render step differently: since a numeric index
+   doesn't map onto "N independent genre-shaped chapters" rendered in one
+   run, it uses the genre string itself as the chapter slug instead
+   (`reports/<topic>/book/chapters/<genre>.md`) — a deliberate override for
+   that caller, not a different convention this skill itself follows.
 
 4. **Gate the manuscript.** The bundled `check-citation-leak.sh` hook guards
    `reports/*/book/chapters/*.md` (and the matching `appendices/`/`front-matter/`
