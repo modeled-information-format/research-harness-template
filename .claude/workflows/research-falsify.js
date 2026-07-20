@@ -59,7 +59,7 @@ export const meta = {
   phases: [
     { title: 'Enumerate', detail: 'working set = unverified findings in scope, budget-sliced in code', model: 'haiku' },
     { title: 'Gate', detail: 'per finding: decompose → parallel skeptic lenses → merged verdict → adjudicate if contested → materialize an ephemeral evidence fixture in code → write via falsify.sh <finding> <fixture> → apply remediation (quarantine/downgrade/annotate) ported from falsification-analyst.md' },
-    { title: 'Rollup' },
+    { title: 'Rollup', detail: 'tally verdicts by finding, log the rollup, return gated/rollup/verdicts/deferredIds/alreadyVerified' },
   ],
 }
 

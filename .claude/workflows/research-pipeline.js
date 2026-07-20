@@ -137,7 +137,7 @@ const MODE = A.mode || 'full'
 // before dispatch, rather than adding a terminal else to a chain that isn't
 // actually if/else-linked (each mode's `if` returns independently; 'full'
 // is the fallthrough remainder of the script, not its own `if` branch).
-const KNOWN_MODES = ['full', 'augment', 'pivot', 'import', 'audit', 'deliverables']
+const KNOWN_MODES = ['full', 'augment', 'pivot', 'import', 'audit', 'deliverables', 'falsify']
 if (!KNOWN_MODES.includes(MODE)) throw new Error(`research-pipeline: unknown mode '${MODE}' (expected one of ${KNOWN_MODES.join(', ')})`)
 const MAX_ROUNDS = A.maxRounds || 3
 const W = A.workflowsDir || '.claude/workflows'
@@ -199,6 +199,50 @@ log(`Mode: ${MODE}; harness: ${H}; topic: ${TOPIC}`)
 if (MODE === 'audit') {
   const audit = await wf('coverage-audit', {})
   return { mode: MODE, ...audit }
+}
+
+if (MODE === 'falsify') {
+  // Gate-only mode: gate whatever is already on disk, no new research. Exists because
+  // research-falsify.js (like every other atomic module) cannot be invoked standalone via
+  // the top-level Workflow tool — args never reaches a child-only module invoked that way
+  // (confirmed: research-synthesis.js and research-goal.js fail identically, the latter
+  // despite its own skill doc explicitly documenting standalone use — this is systemic
+  // across every atomic module tested, not specific to any one file's content). Every OTHER
+  // mode that reaches the gate (full/augment/pivot/import) couples it to a fanout round
+  // first, so there was no way to gate an existing topic's findings through
+  // research-pipeline.js without also triggering new research. This mode is the minimal
+  // fix: nothing but the gate, matching the existing narrow-mode precedent
+  // (audit/deliverables). Resumable for free: falsifyAll() writes each finding's verdict to
+  // disk immediately (not batched), and the one-round rule means a re-run's Enumerate step
+  // automatically excludes whatever is already gated — an interrupted run picks up exactly
+  // where it left off on re-invocation, no extra state tracking needed.
+  if (!RUN_DATE) throw new Error('falsify mode requires args.runDate (the gate needs a real timestamp — see #618)')
+  // Mirrors falsifyAll()'s own drain loop (same budget-floor/deferred-backlog
+  // logic), but this mode's whole purpose is exposing the gate's real result
+  // to the caller — unlike every other mode, which only needs a summary count
+  // — so it accumulates verdicts/alreadyVerified across rounds and reports
+  // the FINAL deferredIds (whatever is still ungated when the loop stops,
+  // whether from budget floor or genuine completion) instead of discarding
+  // them into a bare {gated, rollup} tally.
+  let total = 0
+  const rollup = {}
+  const verdicts = []
+  let alreadyVerified = 0
+  let deferredIds = []
+  for (let i = 0; i < 5; i++) {
+    const r = await wf('falsify', { scope: 'all', claimBudget: A.claimBudget, queryBudget: A.queryBudget, lenses: A.lenses })
+    if (!r) break
+    total += r.gated
+    for (const k of Object.keys(r.rollup || {})) rollup[k] = (rollup[k] || 0) + r.rollup[k]
+    verdicts.push(...(r.verdicts || []))
+    alreadyVerified += r.alreadyVerified || 0
+    deferredIds = r.deferredIds || []
+    if (!deferredIds.length) break
+    if (budgetLow()) { log(`Budget floor: ${deferredIds.length} finding(s) left ungated`); break }
+    log(`Draining falsification backlog: ${deferredIds.length} deferred`)
+  }
+  const gate = { gated: total, rollup, verdicts, alreadyVerified, deferredIds }
+  return { mode: MODE, gate }
 }
 
 if (MODE === 'import') {
