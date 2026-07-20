@@ -88,7 +88,18 @@ def extract_obj_keys(name):
         print(f"FAIL: could not find `const {name} = {{...}}` in {wf_path}")
         return None
     body = m.group(1)
-    return re.findall(r"^\s*'?([A-Za-z][A-Za-z0-9-]*)'?:", body, re.M)
+    # research-harness-template#658: a line-anchored '^...:' pattern only
+    # matched the FIRST key on each source line, silently skipping every
+    # other comma-separated entry sharing a line (GENRE_PACKS packs several
+    # keys per line for density) — this cross-check was validating a small
+    # minority of real GENRE_PACKS keys against the docs table without
+    # anyone noticing, since a key it never extracted could never fail here
+    # even if fully absent from the docs. Match every top-level key instead,
+    # identified by its value starting with '{' (an empty {} genre entry or
+    # a { consumingChannel: ... } entry) — this also correctly EXCLUDES the
+    # nested `consumingChannel` key itself, whose value starts with a quote,
+    # not a brace.
+    return re.findall(r"'?([A-Za-z][A-Za-z0-9-]*)'?:\s*\{", body)
 
 def extract_arr(name):
     m = re.search(r'const %s = \[(.*?)\]' % re.escape(name), wf)
@@ -107,48 +118,41 @@ ok = all(x is not None for x in (genre_packs, methodology_packs, source_direct, 
 if not ok:
     sys.exit(1)
 
-# Parse the real doc's "| Name | Family | Kind | ... |" table rows.
-doc_kind = {}
+# Parse the real doc's "| Name | Family | Kind | ... |" table rows. A bare
+# name is not guaranteed unique across families in this table (e.g.
+# 'trend-analysis' is BOTH a reports/genre pack AND, separately, an
+# ontologies/ontology pack of the same name) — collapsing to a single
+# name->kind dict would let the LAST matching row silently overwrite an
+# earlier one, so this must accumulate a SET of kinds seen per name, not one
+# scalar (discovered by research-harness-template#658's own regex fix above:
+# once extract_obj_keys stopped silently dropping most GENRE_PACKS keys,
+# 'trend-analysis' was checked for the first time and a single-valued dict
+# would have reported a false-positive kind mismatch against its own
+# genuine 'genre' row, purely because 'ontology' came later in the table).
+doc_kinds = {}
 for line in doc.splitlines():
     m = re.match(r'^\|\s*([a-z][a-z0-9-]*)\s*\|\s*([a-z0-9-]+)\s*\|\s*(methodology|genre|channel|ontology)\s*\|', line)
     if m:
-        doc_kind[m.group(1)] = m.group(3)
+        doc_kinds.setdefault(m.group(1), set()).add(m.group(3))
+
+def check_all(names, expected_kind, table_name):
+    global fail
+    for n in names:
+        kinds = doc_kinds.get(n)
+        if not kinds:
+            print(f"FAIL: module's {table_name} names '{n}' but docs/reference/packs/index.md has no matching row — has the pack been renamed/removed?")
+            fail = True
+        elif expected_kind not in kinds:
+            print(f"FAIL: module's {table_name} names '{n}' but the real docs classify it kind={sorted(kinds)!r}, never '{expected_kind}' — the module's static table has drifted from the real substrate")
+            fail = True
 
 fail = False
-for g in genre_packs:
-    real = doc_kind.get(g)
-    if real is None:
-        print(f"FAIL: module's GENRE_PACKS names '{g}' but docs/reference/packs/index.md has no matching row — has the pack been renamed/removed?")
-        fail = True
-    elif real != 'genre':
-        print(f"FAIL: module's GENRE_PACKS names '{g}' but the real docs classify it kind='{real}', not 'genre' — the module's static table has drifted from the real substrate")
-        fail = True
-for m_ in methodology_packs:
-    real = doc_kind.get(m_)
-    if real is None:
-        print(f"FAIL: module's METHODOLOGY_PACKS names '{m_}' but docs/reference/packs/index.md has no matching row")
-        fail = True
-    elif real != 'methodology':
-        print(f"FAIL: module's METHODOLOGY_PACKS names '{m_}' but the real docs classify it kind='{real}', not 'methodology' — this is exactly the genre/methodology confusion this module exists to avoid")
-        fail = True
-for c in source_direct:
-    real = doc_kind.get(c)
-    if real is None:
-        print(f"FAIL: module's SOURCE_DIRECT_CHANNELS names '{c}' but docs/reference/packs/index.md has no matching row")
-        fail = True
-    elif real != 'channel':
-        print(f"FAIL: module's SOURCE_DIRECT_CHANNELS names '{c}' but the real docs classify it kind='{real}', not 'channel'")
-        fail = True
-for c in out_of_scope:
-    real = doc_kind.get(c)
-    if real is None:
-        print(f"FAIL: module's OUT_OF_SCOPE_CHANNELS names '{c}' but docs/reference/packs/index.md has no matching row")
-        fail = True
-    elif real != 'channel':
-        print(f"FAIL: module's OUT_OF_SCOPE_CHANNELS names '{c}' but the real docs classify it kind='{real}', not 'channel'")
-        fail = True
+check_all(genre_packs, 'genre', 'GENRE_PACKS')
+check_all(methodology_packs, 'methodology', 'METHODOLOGY_PACKS')
+check_all(source_direct, 'channel', 'SOURCE_DIRECT_CHANNELS')
+check_all(out_of_scope, 'channel', 'OUT_OF_SCOPE_CHANNELS')
 # 'book' must be a real channel pack (it gates channel="book" on top of any genre check).
-if doc_kind.get('book') != 'channel':
+if 'channel' not in doc_kinds.get('book', set()):
     print("FAIL: 'book' is not classified kind='channel' in docs/reference/packs/index.md — the module's book-pack-gates-the-channel logic assumes this")
     fail = True
 if 'blog' not in artifact_channels or 'book' not in artifact_channels:

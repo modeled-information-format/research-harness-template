@@ -198,20 +198,34 @@ const ARTIFACT_CHANNELS = ['blog', 'book'] // channel="report" is research-proje
 const SOURCE_DIRECT_CHANNELS = ['pdf', 'jats', 'xbrl', 'ectd', 'notebooklm', 'github-discuss', 'github-issues']
 const OUT_OF_SCOPE_CHANNELS = ['diataxis', 'ai-spec'] // real third-mechanism channels, deliberately not covered — see header
 // Genre packs (kind:"genre") that render through blog/book via mechanism 1.
-// consumingChannel:'ai-spec' entries are genre packs whose SOLE real
-// consuming channel is ai-spec (docs/reference/packs/genres.md) — requesting
-// one against blog/book gets a precise reason, never a generic "unknown
-// genre" miss.
+// consumingChannel:'ai-spec'/'diataxis' entries are genre packs whose SOLE
+// real consuming channel is that OUT_OF_SCOPE_CHANNELS entry
+// (docs/reference/packs/genres.md for ai-spec; the diataxis-consuming four
+// have no dedicated blog/book rendering) — requesting one against blog/book
+// gets a precise reason, never a generic "unknown genre" miss.
+//
+// This table is a hand-maintained duplicate of the real mif-docs-plugin
+// skill catalog (37 genre skills total) and has already drifted twice
+// (research-harness-template#640 missed arc42-arch-doc; #658 found 13 more
+// missing entirely) — see #658 for the open follow-up on deriving this from
+// the plugin's own skill directory at build/sync time instead.
 const GENRE_PACKS = {
   academic: {}, briefing: {}, 'computing-paper': {}, engineering: {}, 'exec-summary': {}, 'trend-analysis': {},
   'clinical-submission': {}, 'legal-memo': {}, 'regulatory-disclosure': {}, 'sustainability-report': {},
   'humanities-chicago': {}, 'humanities-mla': {}, 'security-pentest': {}, 'market-research-report': {},
   'systematic-review': {}, 'compliance-audit': {}, 'competitive-quadrant': {}, 'nist-sp': {},
+  'arc42-arch-doc': {},
+  adr: {}, 'c4-model-diagram': {}, changelog: {}, 'google-design-doc': {}, playbook: {}, prd: {},
+  'python-pep': {}, 'rust-rfc': {}, 'sre-runbook': {},
   'ai-architecture-doc': { consumingChannel: 'ai-spec' },
   'kiro-requirements': { consumingChannel: 'ai-spec' },
   'kiro-design': { consumingChannel: 'ai-spec' },
   'kiro-tasks': { consumingChannel: 'ai-spec' },
   'feature-spec': { consumingChannel: 'ai-spec' },
+  'diataxis-explanation': { consumingChannel: 'diataxis' },
+  'diataxis-how-to': { consumingChannel: 'diataxis' },
+  'diataxis-reference': { consumingChannel: 'diataxis' },
+  'diataxis-tutorial': { consumingChannel: 'diataxis' },
 }
 // Methodology packs (kind:"methodology") — dimension/analyst skills, NEVER a
 // deliverable genre template, even though harness.config.json enables three
@@ -328,16 +342,18 @@ const route = await agent(
     `There is NO genre axis for these — a genre requested alongside one is ignored (report it, do not silently apply it and do not drop ` +
     `the channel because a genre was also asked).\n` +
     `EXPLICITLY OUT OF SCOPE (a real third mechanism, never folded into 1 or 2): channels ${JSON.stringify(OUT_OF_SCOPE_CHANNELS)} — ` +
-    `"diataxis" (per-finding page generation via its own render-diataxis.sh) and "ai-spec" (consumes an entirely different genre family: ` +
-    `ai-architecture-doc/kiro-requirements/kiro-design/kiro-tasks/feature-spec, none of which render through blog/book). Report these in ` +
-    `unavailable[] naming the third-mechanism reason explicitly.\n` +
+    `"diataxis" (per-finding page generation via its own render-diataxis.sh; ALSO the sole consuming channel for the diataxis-explanation/` +
+    `diataxis-how-to/diataxis-reference/diataxis-tutorial genre packs, none of which render through blog/book) and "ai-spec" (consumes an ` +
+    `entirely different genre family: ai-architecture-doc/kiro-requirements/kiro-design/kiro-tasks/feature-spec, none of which render ` +
+    `through blog/book). Report these in unavailable[] naming the third-mechanism reason explicitly.\n` +
     `"report" as a requested channel is an ARCHITECTURAL BOUNDARY, not unavailable-for-lack-of-a-pack: the canonical L3 report is ` +
     `research-projection.js's job (Epic #543/#569), not this module's. Report it in unavailable[] with that reason.\n\n` +
     `PACK CLASSIFICATION (do not guess — read harness.config.json packs[] AND cross-check against this reference; a pack's own ` +
     `plugin.json "kind" is authoritative when readable, this table covers marketplace-ref packs that have no local plugin.json to read):\n` +
     `- GENRE packs (mechanism 1 templateSource): ${JSON.stringify(Object.keys(GENRE_PACKS))}. Of these, ` +
-    `${JSON.stringify(Object.keys(GENRE_PACKS).filter((g) => GENRE_PACKS[g].consumingChannel))} consume ONLY the ai-spec channel — ` +
-    `requesting one of these against blog/book is unavailable with that exact reason (not "genre pack not enabled").\n` +
+    `${JSON.stringify(Object.keys(GENRE_PACKS).filter((g) => GENRE_PACKS[g].consumingChannel === 'ai-spec'))} consume ONLY the ai-spec ` +
+    `channel, and ${JSON.stringify(Object.keys(GENRE_PACKS).filter((g) => GENRE_PACKS[g].consumingChannel === 'diataxis'))} consume ONLY ` +
+    `the diataxis channel — requesting any of these against blog/book is unavailable with that exact reason (not "genre pack not enabled").\n` +
     `- METHODOLOGY packs (${JSON.stringify(METHODOLOGY_PACKS)}) are dimension/analyst skills, NEVER a deliverable genre template — ` +
     `harness.config.json currently enables three of them (competitive-analysis, market-sizing, trend-modeling) alongside real genre ` +
     `packs in the same packs[] array with no distinguishing field of their own in that file; a genre request matching one of these must ` +

@@ -2,7 +2,7 @@
 id: reference-packs-index
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-14T02:29:28.000Z'
+modified: '2026-07-20T00:41:14.474Z'
 namespace: docs/reference/packs
 tags:
   - documentation
@@ -19,10 +19,10 @@ provenance:
   sourceType: agent_inferred
   agent: claude-code/claude-sonnet-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:ae91b6b6-8d5c-4bea-963d-9e4b7907cf09
+    '@id': urn:mif:activity:claude-code-session:cc83f20c-2193-42dd-b5b5-72fe80571327
     '@type': prov:Activity
   trustLevel: user_stated
-  agentVersion: 2.1.207
+  agentVersion: 2.1.215
 ---
 
 # Packs Reference
@@ -68,6 +68,16 @@ For control-plane mechanics — enabling, disabling, and listing packs — see
 | compliance-audit | reports | genre | SOC 2 Type II-shaped controls report draft with a tests-of-controls matrix (not an attestation); disabled by default (opt-in) | none |
 | competitive-quadrant | reports | genre | Two-axis competitive quadrant (Vision x Execution, four quadrants) | @mermaid-js/mermaid-cli (optional) |
 | nist-sp | reports | genre | NIST Special Publication (SP 800-series) standards/guidance report | none |
+| arc42-arch-doc | reports | genre | arc42 architecture document (12-section industry template: intro/goals, constraints, context, solution strategy, building blocks, runtime, deployment, cross-cutting concepts, decisions, quality requirements, risks, glossary) | none |
+| adr | reports | genre | Architectural Decision Record in Structured MADR format | none |
+| c4-model-diagram | reports | genre | C4 model architecture document (System Context/Container/Component/Code, Mermaid C4 diagrams) | @mermaid-js/mermaid-cli (optional) |
+| changelog | reports | genre | CHANGELOG in Keep a Changelog format, versioned with SemVer | none |
+| google-design-doc | reports | genre | Google-style engineering design doc (trade-off-focused narrative, one proposed design) | none |
+| playbook | reports | genre | Strategic operational playbook coordinating a class of situations across roles and phases | none |
+| prd | reports | genre | Product Requirements Document (problem, success metrics, non-goals, EARS functional requirements) | none |
+| python-pep | reports | genre | Python Enhancement Proposal (RFC822 header preamble, Specification, Reference Implementation) | none |
+| rust-rfc | reports | genre | Rust-style RFC (Summary, Motivation, Guide/Reference-level explanation, Rationale and alternatives) | none |
+| sre-runbook | reports | genre | SRE operational runbook for one specific alert/failure condition | none |
 | xbrl | channels | channel | Renders surviving findings into an inline XBRL (iXBRL) regulatory disclosure | jq |
 | ectd | channels | channel | Packages findings into the FDA eCTD module tree (M1-M5) plus the XML backbone | jq |
 | ai-spec | channels | channel | Renders surviving findings into an AI-ready, agent-executable architecture spec | none |
@@ -76,6 +86,10 @@ For control-plane mechanics — enabling, disabling, and listing packs — see
 | kiro-design | genres | genre | Kiro design document, traced to its requirements, for a single feature | none |
 | kiro-tasks | genres | genre | Kiro implementation task list for a single feature | none |
 | feature-spec | genres | genre | GitHub Spec Kit single-capability feature spec for a coding agent | none |
+| diataxis-explanation | genres | genre | Diátaxis explanation — understanding-oriented discussion of the why behind a topic | none |
+| diataxis-how-to | genres | genre | Diátaxis how-to guide — task-oriented recipe for accomplishing one known goal | none |
+| diataxis-reference | genres | genre | Diátaxis reference — dry, exhaustive lookup description of one thing | none |
+| diataxis-tutorial | genres | genre | Diátaxis tutorial — learning-oriented, hands-on lesson for a beginner | none |
 | trend-modeling | trend-modeling | methodology | Three-valued logic (INC/DEC/CONST) scenario modeling | @mermaid-js/mermaid-cli (optional) |
 | continuous-monitor | monitoring | methodology | Unattended, scheduled monitoring of external sources for a topic, gated through a mandatory human Editorial Gate | jq, python3, curl, timeout, ajv-cli, git |
 | biology-research-lab | ontologies | ontology | Full research lab lifecycle entity vocabulary | none |
