@@ -516,7 +516,7 @@ const gated = await pipeline(
     // partial write (a finding with a real verdict but no attempted_at reads
     // as still-needing-gating to the one-round rule and fails the harness's
     // verification_verdicts_present completion check).
-    if (written && written.remediation !== 'skipped-one-round' && !written.attemptedAtPresent) {
+    if (written && written.written && written.remediation !== 'skipped-one-round' && !written.attemptedAtPresent) {
       const retried = await agent(
         `RETRY (research-falsify write assertion, #659): the previous write to ${g.f.path} reported written=${written.written} ` +
           `remediation=${written.remediation}, but did NOT confirm extensions.harness.verification.attempted_at is present ` +
@@ -531,11 +531,16 @@ const gated = await pipeline(
           `without having actually read it back from disk this turn.`,
         { label: `write-retry:${g.f.id.slice(-8)}`, phase: 'Gate', model: 'haiku', effort: 'low', schema: WRITE_SCHEMA },
       )
-      if (!retried || (retried.remediation !== 'skipped-one-round' && !retried.attemptedAtPresent)) {
+      if (!retried || !retried.written || (retried.remediation !== 'skipped-one-round' && !retried.attemptedAtPresent)) {
+        const retryWriteFailed = !retried || !retried.written
         throw new Error(
-          `research-falsify: #659 — finding ${g.f.id} (${g.f.path}) completed a genuine (non-one-round-rule-skipped) ` +
-            `falsify.sh write but extensions.harness.verification.attempted_at is still not confirmed present after one ` +
-            `retry. Refusing to silently accept a partial write (verdict/verdict_basis written, attempted_at dropped) — ` +
+          `research-falsify: #659 — finding ${g.f.id} (${g.f.path}) ` +
+            (retryWriteFailed
+              ? `did not complete a write on retry (written=${retried ? retried.written : 'undefined'}) — the ` +
+                `re-invoked falsify.sh write itself failed, so no attempted_at could have been confirmed.`
+              : `completed a genuine (non-one-round-rule-skipped) falsify.sh write but ` +
+                `extensions.harness.verification.attempted_at is still not confirmed present after one retry.`) +
+            ` Refusing to silently accept a partial write (verdict/verdict_basis written, attempted_at dropped) — ` +
             `this is the exact intermittent engine-level drop #659 reported. Investigate ${g.f.path} manually rather ` +
             `than proceeding: a finding with a real verdict but no attempted_at reads as still-needing-gating to the ` +
             `one-round rule (wasting the adversarial work already done on a re-run) and fails the harness's ` +

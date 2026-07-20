@@ -408,7 +408,7 @@ let write659Promise = Promise.resolve();
   try {
     const assertionText = extractBlock(
       src,
-      "if (written && written.remediation !== 'skipped-one-round' && !written.attemptedAtPresent) {",
+      "if (written && written.written && written.remediation !== 'skipped-one-round' && !written.attemptedAtPresent) {",
     );
     const harnessSrc =
       `'use strict';\n` +
@@ -501,6 +501,38 @@ let write659Promise = Promise.resolve();
         let result;
         try { result = await runAssertion(null, async () => { agentCalled = true; return null; }, G, FIXTURE_JSON, '.'); } catch (e) { threw = e; }
         check('written is null (total write failure): guard short-circuits, no retry call, no crash', !threw && !agentCalled && result === null, threw ? threw.message : JSON.stringify(result));
+      }
+      // Case 8 (PR #665 review fix): the agent returns a real object but
+      // written.written is false (e.g. { written: false, remediation:
+      // 'write-failed', attemptedAtPresent: false }) -- a non-skip
+      // remediation with attemptedAtPresent=false used to be indistinguishable
+      // from a genuine-write-missing-assertion (#659) and would wastefully
+      // retry, then throw the #659-specific message even though no write ever
+      // completed. The guard must check written.written, not just the
+      // object's truthiness, and pass a failed write straight through
+      // untouched -- no retry call, no throw.
+      {
+        let agentCalled = false;
+        const w = { written: false, remediation: 'write-failed', attemptedAtPresent: false };
+        const result = await runAssertion(w, async () => { agentCalled = true; return null; }, G, FIXTURE_JSON, '.');
+        check('written.written is false (write-failed, not a #659 assertion gap): no retry call, written passed through unchanged', !agentCalled && result === w, JSON.stringify(result));
+      }
+      // Case 9 (PR #665 review fix): a genuine write needed a retry, but the
+      // retry's OWN re-invoked write itself failed (retried.written is
+      // false) -- must still throw (never silently accept it, e.g. via a
+      // stray remediation === 'skipped-one-round' on the failed retry
+      // slipping past the attemptedAtPresent-only check), and the thrown
+      // message must not misreport it as a completed genuine write.
+      {
+        const w = { written: true, remediation: 'downgraded', attemptedAtPresent: false };
+        const retryResult = { written: false, remediation: 'skipped-one-round', attemptedAtPresent: false };
+        let threw = null;
+        try { await runAssertion(w, async () => retryResult, G, FIXTURE_JSON, '.'); } catch (e) { threw = e; }
+        check('retry itself reports written=false: throws rather than accepting a failed retry as a legitimate skip', !!threw, threw ? threw.message : '(did not throw)');
+        if (threw) {
+          check('thrown error names #659', /#659/.test(threw.message), threw.message);
+          check('thrown error does not claim a completed genuine write when the retry write failed', !/completed a genuine/.test(threw.message), threw.message);
+        }
       }
     })();
   }
@@ -695,7 +727,7 @@ grep -qF 'attemptedAtPresent' "$WF" \
   || { note "$WF lost the #659 attemptedAtPresent field -- a silently-dropped attempted_at would no longer be detected"; fail=1; }
 grep -qF "required: ['written', 'remediation', 'attemptedAtPresent']" "$WF" \
   || { note "$WF's WRITE_SCHEMA no longer requires attemptedAtPresent -- the write agent could omit it and the #659 assertion would silently pass undefined"; fail=1; }
-grep -qF "if (written && written.remediation !== 'skipped-one-round' && !written.attemptedAtPresent) {" "$WF" \
+grep -qF "if (written && written.written && written.remediation !== 'skipped-one-round' && !written.attemptedAtPresent) {" "$WF" \
   || { note "$WF lost the #659 deterministic post-write assertion guard"; fail=1; }
 grep -qF '#659' "$WF" \
   || { note "$WF lost its #659 traceability comments"; fail=1; }
