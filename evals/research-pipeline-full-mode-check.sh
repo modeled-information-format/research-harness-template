@@ -869,6 +869,127 @@ else
 fi
 
 # ============================================================================
+# B8 (research-harness-template#655, Copilot review finding): the `falsify`
+# mode's own drain loop must accumulate verdicts/alreadyVerified across
+# rounds and report the REAL final deferredIds, never collapse to
+# falsifyAll()'s bare {gated, rollup} summary the way the pre-fix code did
+# -- callers (per research.md's own "Report the result" section) need
+# verdicts/alreadyVerified/deferredIds to tell a partial run from a complete
+# one. Round 1 defers one finding (budget still fine, so the loop
+# continues); round 2 drains it to empty and the loop stops naturally.
+# ============================================================================
+printf '%s' "{\"harnessDir\":\"$TMP/h\",\"topic\":\"pipeline-eval-topic\",\"mode\":\"falsify\",\"runDate\":\"2026-07-20T00:00:00Z\"}" > "$TMP/args-b8.json"
+cat > "$TMP/stubs-b8.cjs" <<NODE
+'use strict';
+let falsifyCalls = 0;
+module.exports = {
+  wf: {
+    falsify: async () => {
+      falsifyCalls += 1;
+      if (falsifyCalls === 1) {
+        return { gated: 1, rollup: { survived: 1 }, verdicts: [{ id: 'f1', verdict: 'survived' }], deferredIds: ['f2'], alreadyVerified: 2 };
+      }
+      return { gated: 1, rollup: { weakened: 1 }, verdicts: [{ id: 'f2', verdict: 'weakened' }], deferredIds: [], alreadyVerified: 0 };
+    },
+  },
+  budget: { total: 500000, remaining: () => 400000 },
+};
+NODE
+run_case b8 "$TMP/args-b8.json" "$TMP/stubs-b8.cjs" "$TMP/out-b8.json"
+
+if [ -f "$TMP/out-b8.json" ]; then
+  python3 - "$TMP/out-b8.json" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1], encoding='utf-8'))
+ok = True
+def check(name, cond, detail=''):
+    global ok
+    if cond:
+        print(f"  ok  B8: {name}")
+    else:
+        ok = False
+        print(f"FAIL  B8: {name}{(' -- ' + detail) if detail else ''}")
+
+check('module did not throw', d['threw'] is None, str(d['threw']))
+r = d.get('result') or {}
+by_name = {}
+for c in d['wfCalls']:
+    by_name.setdefault(c['name'], []).append(c)
+check('falsify ran exactly twice (round 1 defers f2, round 2 drains it)', len(by_name.get('falsify', [])) == 2, str(len(by_name.get('falsify', []))))
+check("result.mode is 'falsify'", r.get('mode') == 'falsify', str(r.get('mode')))
+gate = r.get('gate') or {}
+check('gate.gated is the SUM across both rounds (1+1=2), not just the last round', gate.get('gated') == 2, str(gate.get('gated')))
+check('gate.rollup merges both rounds (survived:1, weakened:1), not just the last round', gate.get('rollup') == {'survived': 1, 'weakened': 1}, json.dumps(gate.get('rollup')))
+check('gate.verdicts accumulates BOTH rounds\' verdicts (2 entries) -- the #655 regression: pre-fix code discarded verdicts entirely', len(gate.get('verdicts') or []) == 2, json.dumps(gate.get('verdicts')))
+check('gate.alreadyVerified is the SUM across rounds (2+0=2)', gate.get('alreadyVerified') == 2, str(gate.get('alreadyVerified')))
+check('gate.deferredIds reflects the FINAL round only (empty -- fully drained), never the stale round-1 backlog', gate.get('deferredIds') == [], json.dumps(gate.get('deferredIds')))
+
+sys.exit(0 if ok else 1)
+PY
+  rc=$?
+  [ "$rc" -eq 0 ] || fail=1
+else
+  note "B8: no out-b8.json produced"
+  fail=1
+fi
+
+# ============================================================================
+# B9 (research-harness-template#655, Copilot review finding): the SAME
+# `falsify` mode, but the budget floor trips mid-drain -- the exact scenario
+# Copilot's finding named explicitly ("hides whether the run stopped with
+# deferred work due to claimBudget/budget floor"). The loop must stop with
+# gate.deferredIds STILL non-empty, surfacing the partial run rather than
+# reporting a false-complete {gated, rollup} the caller cannot distinguish
+# from a real drain-to-empty.
+# ============================================================================
+printf '%s' "{\"harnessDir\":\"$TMP/h\",\"topic\":\"pipeline-eval-topic\",\"mode\":\"falsify\",\"runDate\":\"2026-07-20T00:00:00Z\"}" > "$TMP/args-b9.json"
+cat > "$TMP/stubs-b9.cjs" <<NODE
+'use strict';
+module.exports = {
+  wf: {
+    falsify: async () => ({ gated: 1, rollup: { survived: 1 }, verdicts: [{ id: 'f1', verdict: 'survived' }], deferredIds: ['f2', 'f3'], alreadyVerified: 0 }),
+  },
+  // total is truthy AND remaining() is well under BUDGET_FLOOR (60000) --
+  // budgetLow() reads true right after round 1, stopping the drain early.
+  budget: { total: 500000, remaining: () => 1000 },
+};
+NODE
+run_case b9 "$TMP/args-b9.json" "$TMP/stubs-b9.cjs" "$TMP/out-b9.json"
+
+if [ -f "$TMP/out-b9.json" ]; then
+  python3 - "$TMP/out-b9.json" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1], encoding='utf-8'))
+ok = True
+def check(name, cond, detail=''):
+    global ok
+    if cond:
+        print(f"  ok  B9: {name}")
+    else:
+        ok = False
+        print(f"FAIL  B9: {name}{(' -- ' + detail) if detail else ''}")
+
+check('module did not throw', d['threw'] is None, str(d['threw']))
+r = d.get('result') or {}
+by_name = {}
+for c in d['wfCalls']:
+    by_name.setdefault(c['name'], []).append(c)
+check('falsify ran exactly once (budget floor stops the drain before a 2nd round)', len(by_name.get('falsify', [])) == 1, str(len(by_name.get('falsify', []))))
+gate = r.get('gate') or {}
+check('gate.deferredIds is STILL NON-EMPTY -- the budget-floor-interrupted state is surfaced to the caller, never silently collapsed to an empty/complete-looking result', gate.get('deferredIds') == ['f2', 'f3'], json.dumps(gate.get('deferredIds')))
+logs_text = ' '.join(str(l.get('log', '')) for l in d['logs'])
+check('the captured log states the budget floor left findings ungated', 'Budget floor' in logs_text and 'ungated' in logs_text, logs_text[:300])
+
+sys.exit(0 if ok else 1)
+PY
+  rc=$?
+  [ "$rc" -eq 0 ] || fail=1
+else
+  note "B9: no out-b9.json produced"
+  fail=1
+fi
+
+# ============================================================================
 # D. CHECK_SCHEMA captured VERBATIM from a real completionCheck() agent()
 # call (never hand-retyped) -- ajv-proven to mechanically require `evidence`
 # on met[] entries and `why` on unmet[] entries. Ties the structural claim in

@@ -77,9 +77,13 @@ backticks and angle brackets.
     returns `ok: false` and this mode returns `{ deliverables: null }`
     rather than erroring.
   - `falsify` — gates whatever findings are already on disk under
-    `reports/<topic>/`, no new research. Nothing but a call into the same
+    `reports/<topic>/`, no new research. Runs the same drain loop as the
     `falsifyAll` helper `full`/`augment`/`pivot`/`import` already use
-    internally — no fan-out, no synthesis, no projection. Exists because
+    internally, but (unlike those modes) reports the gate's real result back
+    to the caller — `gated`, `rollup`, `verdicts`, `alreadyVerified`, and any
+    `deferredIds` still ungated when the loop stops — rather than a bare
+    summary count, so a budget-floor or partial run is visible, not silently
+    hidden. No fan-out, no synthesis, no projection. Exists because
     every atomic module (`research-falsify.js` included) fails when invoked
     standalone via the top-level `Workflow` tool (confirmed systemic across
     multiple atomic modules, not specific to falsify — see

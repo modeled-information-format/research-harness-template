@@ -209,7 +209,31 @@ if (MODE === 'falsify') {
   // automatically excludes whatever is already gated — an interrupted run picks up exactly
   // where it left off on re-invocation, no extra state tracking needed.
   if (!RUN_DATE) throw new Error('falsify mode requires args.runDate (the gate needs a real timestamp — see #618)')
-  const gate = await falsifyAll({})
+  // Mirrors falsifyAll()'s own drain loop (same budget-floor/deferred-backlog
+  // logic), but this mode's whole purpose is exposing the gate's real result
+  // to the caller — unlike every other mode, which only needs a summary count
+  // — so it accumulates verdicts/alreadyVerified across rounds and reports
+  // the FINAL deferredIds (whatever is still ungated when the loop stops,
+  // whether from budget floor or genuine completion) instead of discarding
+  // them into a bare {gated, rollup} tally.
+  let total = 0
+  const rollup = {}
+  const verdicts = []
+  let alreadyVerified = 0
+  let deferredIds = []
+  for (let i = 0; i < 5; i++) {
+    const r = await wf('falsify', { scope: 'all', claimBudget: A.claimBudget, queryBudget: A.queryBudget, lenses: A.lenses })
+    if (!r) break
+    total += r.gated
+    for (const k of Object.keys(r.rollup || {})) rollup[k] = (rollup[k] || 0) + r.rollup[k]
+    verdicts.push(...(r.verdicts || []))
+    alreadyVerified += r.alreadyVerified || 0
+    deferredIds = r.deferredIds || []
+    if (!deferredIds.length) break
+    if (budgetLow()) { log(`Budget floor: ${deferredIds.length} finding(s) left ungated`); break }
+    log(`Draining falsification backlog: ${deferredIds.length} deferred`)
+  }
+  const gate = { gated: total, rollup, verdicts, alreadyVerified, deferredIds }
   return { mode: MODE, gate }
 }
 
