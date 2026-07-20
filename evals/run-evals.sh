@@ -113,6 +113,20 @@ run "fanout-repair-disclosure-check" bash evals/fanout-repair-disclosure-check.s
 # checked structurally.
 run "falsify-verdict-merge" bash evals/falsify-verdict-merge.sh
 
+# The fanout->falsify HANDOFF SEAM has deterministic teeth (#652/#653):
+# neither fanout-lane-contract.sh (structural-only: the FINDING_CONTRACT
+# constant exists/is embedded) nor falsify-verdict-merge.sh (one-round rule
+# in isolation, given a finding that ALREADY has attempted_at) proves a
+# freshly-fanned finding, run through fanout's OWN validate-step strip
+# command, actually survives into genuine grading. This eval extracts the
+# mechanical jq del(attempted_at) filter verbatim from research-fanout.js,
+# runs it for real against a fixture reproducing #652's exact incident
+# shape, proves the UN-stripped fixture is skipped by the real engine
+# (the negative control -- if this doesn't skip, the eval wouldn't have
+# caught #652), and proves the SAME finding after the strip genuinely
+# gates end to end through that same real engine.
+run "fanout-falsify-handoff" bash evals/fanout-falsify-handoff.sh
+
 # The research-synthesis citation-integrity gate has deterministic teeth
 # where the module's own logic can express it (#566): Select-phase
 # structural exclusion (falsified/quarantined findings, and a verdict-clean
