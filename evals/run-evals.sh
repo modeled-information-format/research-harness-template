@@ -200,6 +200,16 @@ run "projection-supersession-check" bash evals/projection-supersession-check.sh
 # asserted by the prompt text.
 run "deliverables-route-check" bash evals/deliverables-route-check.sh
 
+# research-harness-template#658: deliverables-route-check's part A can only
+# catch a GENRE_PACKS entry disagreeing with docs/reference/packs/index.md —
+# never a real mif-docs genre skill missing from GENRE_PACKS entirely, since
+# both hand-maintained tables can (and did: 14 genres, arc42-arch-doc
+# included) drift from the real plugin catalog together. This eval checks
+# GENRE_PACKS against the actual vendored mif-docs-plugin skill directory
+# (scripts/fetch-mif-docs-plugin.sh, ADR-0018) instead of another hand-typed
+# table, so this class of drift can't recur silently again.
+run "deliverables-genre-catalog-check" bash evals/deliverables-genre-catalog-check.sh
+
 # research-harness-template#575 (Epic #544): a SEPARATE eval from the one
 # above, scoped to what #573 actually wired — real, currently-enabled genre
 # packs (exec-summary, engineering) are driven end-to-end through the real

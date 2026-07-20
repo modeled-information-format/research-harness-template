@@ -2,7 +2,7 @@
 id: reference-coverage
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-19T12:03:08.393Z'
+modified: '2026-07-20T02:17:20.342Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -18,10 +18,10 @@ provenance:
   '@type': Provenance
   agent: claude-code/claude-sonnet-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:4e7d214e-8882-4413-9cf2-42393b0cc885
+    '@id': urn:mif:activity:claude-code-session:cc83f20c-2193-42dd-b5b5-72fe80571327
     '@type': prov:Activity
   trustLevel: user_stated
-  agentVersion: 2.1.214
+  agentVersion: 2.1.215
 ---
 
 # Reference: documentation coverage
@@ -35,17 +35,17 @@ the **discovered** set equals the **documented** set.
 
 | Category | Discovered | Documented | Source of truth |
 | --- | --- | --- | --- |
-| Packs | 63 | 63 | `harness.config.json` `packs[]` + `ontologies[]` |
+| Packs | 77 | 77 | `harness.config.json` `packs[]` + `ontologies[]` |
 | Core skills | 10 | 10 | `.claude/skills/*/SKILL.md` |
 | Commands | 12 | 12 | `.claude/commands/*.md` |
 | Agents | 7 | 7 | `.claude/agents/*.md` |
 | Scripts | 56 | 56 | `scripts/**` (excludes `__pycache__`); the 24 scripts Epic #416 added moved to `packs/monitoring/continuous-monitor/scripts/**` (research-harness-template#483) and are documented in [packs/monitoring.md](packs/monitoring.md), not counted here |
-| **Total** | **148** | **148** | — |
+| **Total** | **162** | **162** | — |
 
 Reproduce the discovered counts:
 
 ```sh
-echo $(( $(jq '.packs | length' harness.config.json) + $(jq '.ontologies | length' harness.config.json) )) # 63 packs
+echo $(( $(jq '.packs | length' harness.config.json) + $(jq '.ontologies | length' harness.config.json) )) # 77 packs
 ls .claude/skills | wc -l        # 10 core skills
 ls .claude/commands/*.md | wc -l # 12 commands
 ls .claude/agents/*.md | wc -l   # 7 agents
@@ -58,9 +58,9 @@ may be empty on a fresh clone until `scripts/fetch-ontology.sh --all-enabled`
 runs. `harness.config.json` `ontologies[]` is the enabled/declared set and the
 authoritative count either way.
 
-## Packs (63)
+## Packs (77)
 
-Plugin packs (40, registered in `harness.config.json` `packs[]`):
+Plugin packs (54, registered in `harness.config.json` `packs[]`):
 
 | Pack | Family | Documented in |
 | --- | --- | --- |
@@ -104,6 +104,20 @@ Plugin packs (40, registered in `harness.config.json` `packs[]`):
 | compliance-audit | reports | [packs/reports.md](packs/reports.md#compliance-audit) |
 | competitive-quadrant | reports | [packs/reports.md](packs/reports.md#competitive-quadrant) |
 | nist-sp | reports | [packs/reports.md](packs/reports.md#nist-sp) |
+| adr | reports | [packs/reports.md](packs/reports.md#adr) |
+| arc42-arch-doc | reports | [packs/reports.md](packs/reports.md#arc42-arch-doc) |
+| c4-model-diagram | reports | [packs/reports.md](packs/reports.md#c4-model-diagram) |
+| changelog | reports | [packs/reports.md](packs/reports.md#changelog) |
+| google-design-doc | reports | [packs/reports.md](packs/reports.md#google-design-doc) |
+| playbook | reports | [packs/reports.md](packs/reports.md#playbook) |
+| prd | reports | [packs/reports.md](packs/reports.md#prd) |
+| python-pep | reports | [packs/reports.md](packs/reports.md#python-pep) |
+| rust-rfc | reports | [packs/reports.md](packs/reports.md#rust-rfc) |
+| sre-runbook | reports | [packs/reports.md](packs/reports.md#sre-runbook) |
+| diataxis-explanation | reports | [packs/reports.md](packs/reports.md#diataxis-explanation) |
+| diataxis-how-to | reports | [packs/reports.md](packs/reports.md#diataxis-how-to) |
+| diataxis-reference | reports | [packs/reports.md](packs/reports.md#diataxis-reference) |
+| diataxis-tutorial | reports | [packs/reports.md](packs/reports.md#diataxis-tutorial) |
 
 Ontology data packs (23, enabled in `harness.config.json` `ontologies[]`,
 vendored on demand per ADR-0012 — `packs/ontologies/` isn't a bundled
@@ -184,5 +198,5 @@ rather than counted in this core-scripts inventory, the same way
 
 ## Assertion
 
-Discovered (148) equals documented (148) across all five categories. No pack,
+Discovered (162) equals documented (162) across all five categories. No pack,
 skill, command, agent, or script is omitted.

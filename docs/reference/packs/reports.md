@@ -2,7 +2,7 @@
 id: reference-packs-reports
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-01T07:01:43-04:00'
+modified: '2026-07-20T02:09:37.545Z'
 namespace: docs/reference/packs
 tags:
   - documentation
@@ -1382,4 +1382,629 @@ None beyond the core engine. Mermaid rendering is optional.
 
 ```sh
 scripts/pack-toggle.sh trend-analysis on
+```
+
+---
+
+## adr
+
+**Kind:** genre | **Disabled by default (opt-in).**
+
+**Source:** external — consumed from [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)'s
+`adr` skill (SHA-pinned via `harness.config.json` `marketplaces[]`), not a bundled
+`packs/reports/` directory.
+
+### Purpose
+
+Produces an Architectural Decision Record in the Structured MADR format — the decision,
+its drivers, the options weighed with risk, the chosen outcome, and the consequences
+accepted — from the surviving findings corpus, validated by the structured-madr Action.
+
+### When to use
+
+Use `adr` when the corpus captures a consequential, hard-to-reverse technical choice that
+needs its rationale documented for future audit. Not for a how-to (use `diataxis-how-to`)
+or requirements (use `prd`/`feature-spec`).
+
+### What it provides
+
+- One decision, its drivers, options weighed with risk, chosen outcome, consequences
+- Structured MADR format, validated by the structured-madr Action
+
+### Dependencies
+
+None beyond the core engine.
+
+### Constraints
+
+- Disabled by default (opt-in); enable with `scripts/pack-toggle.sh adr on`
+- One decision per document — do not merge multiple unrelated decisions
+
+### Goals
+
+- Produce a validated Structured MADR record capturing one decision, its drivers, weighed options, and consequences
+
+### Enable
+
+```sh
+scripts/pack-toggle.sh adr on
+```
+
+---
+
+## arc42-arch-doc
+
+**Kind:** genre | **Disabled by default (opt-in).**
+
+**Source:** external — consumed from [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)'s
+`arc42-arch-doc` skill (SHA-pinned via `harness.config.json` `marketplaces[]`), not a
+bundled `packs/reports/` directory.
+
+### Purpose
+
+Produces an arc42 architecture document — the 12-section industry template (introduction
+& goals, constraints, context, solution strategy, building blocks, runtime, deployment,
+cross-cutting concepts, decisions, quality requirements, risks & tech debt, glossary)
+capturing a system's architecture as durable declarative knowledge.
+
+### When to use
+
+Use `arc42-arch-doc` for a full system/software architecture description. Not for a
+single decision (use `adr`) or task steps (use `diataxis-how-to`/`sre-runbook`).
+
+### What it provides
+
+- The 12-section arc42 template, populated from surviving findings
+- A decisions section and a glossary, distinguishing it from a pure narrative doc
+
+### Dependencies
+
+None beyond the core engine.
+
+### Constraints
+
+- Disabled by default (opt-in); enable with `scripts/pack-toggle.sh arc42-arch-doc on`
+
+### Goals
+
+- Produce a complete 12-section arc42 architecture document from the surviving findings corpus
+
+### Enable
+
+```sh
+scripts/pack-toggle.sh arc42-arch-doc on
+```
+
+---
+
+## c4-model-diagram
+
+**Kind:** genre | **Disabled by default (opt-in).**
+
+**Source:** external — consumed from [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)'s
+`c4-model-diagram` skill (SHA-pinned via `harness.config.json` `marketplaces[]`), not a
+bundled `packs/reports/` directory.
+
+### Purpose
+
+Produces a C4 model architecture document — Simon Brown's four levels of abstraction
+(System Context, Container, Component, Code) rendered as notation-independent Mermaid C4
+diagrams, plus an element catalog of people, systems, containers, and components.
+
+### When to use
+
+Use `c4-model-diagram` to map or communicate software architecture at varying zoom levels
+for mixed technical/non-technical audiences. Not for a point-in-time decision (use `adr`)
+or a sequence/deployment-only view.
+
+### What it provides
+
+- Four C4 levels rendered as Mermaid diagrams (System Context/Container/Component/Code)
+- An element catalog cross-referencing every diagram entity
+
+### Dependencies
+
+None beyond the core engine.
+
+### Constraints
+
+- Disabled by default (opt-in); enable with `scripts/pack-toggle.sh c4-model-diagram on`
+
+### Goals
+
+- Produce all four C4 abstraction levels as Mermaid diagrams plus a matching element catalog
+
+### Enable
+
+```sh
+scripts/pack-toggle.sh c4-model-diagram on
+```
+
+---
+
+## changelog
+
+**Kind:** genre | **Disabled by default (opt-in).**
+
+**Source:** external — consumed from [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)'s
+`changelog` skill (SHA-pinned via `harness.config.json` `marketplaces[]`), not a bundled
+`packs/reports/` directory.
+
+### Purpose
+
+Writes or updates a CHANGELOG in the Keep a Changelog 1.x format — a human-curated,
+reverse-chronological record of notable changes per released version, grouped by
+Added/Changed/Deprecated/Removed/Fixed/Security and versioned with SemVer.
+
+### When to use
+
+Use `changelog` when the deliverable is release notes humans will read. Not for a
+forward-looking roadmap, a marketing announcement, or a raw git-log dump.
+
+### What it provides
+
+- Keep a Changelog 1.x structure with SemVer-versioned sections
+- Grouped Added/Changed/Deprecated/Removed/Fixed/Security subsections
+
+### Dependencies
+
+None beyond the core engine.
+
+### Constraints
+
+- Disabled by default (opt-in); enable with `scripts/pack-toggle.sh changelog on`
+- Human-curated notability, not a raw commit-log dump
+
+### Goals
+
+- Produce a Keep a Changelog 1.x compliant, SemVer-versioned changelog entry from the surviving findings corpus
+
+### Enable
+
+```sh
+scripts/pack-toggle.sh changelog on
+```
+
+---
+
+## google-design-doc
+
+**Kind:** genre | **Disabled by default (opt-in).**
+
+**Source:** external — consumed from [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)'s
+`google-design-doc` skill (SHA-pinned via `harness.config.json` `marketplaces[]`), not a
+bundled `packs/reports/` directory.
+
+### Purpose
+
+Writes a Google-style engineering design doc — an informal, trade-off-focused narrative
+that frames a problem, proposes one design, and weighs the alternatives it rejected.
+
+### When to use
+
+Use `google-design-doc` to align a team on a non-trivial technical approach before
+building, with rationale on record. Not for a single immutable decision (use `adr`),
+product requirements (use `prd`), or an operational procedure (use `sre-runbook`).
+
+### What it provides
+
+- Problem framing, one proposed design, and the alternatives considered and rejected
+- Informal, narrative trade-off discussion rather than a mandatory comparison table
+
+### Dependencies
+
+None beyond the core engine.
+
+### Constraints
+
+- Disabled by default (opt-in); enable with `scripts/pack-toggle.sh google-design-doc on`
+
+### Goals
+
+- Produce a design doc that frames the problem, proposes one design, and documents rejected alternatives with rationale
+
+### Enable
+
+```sh
+scripts/pack-toggle.sh google-design-doc on
+```
+
+---
+
+## playbook
+
+**Kind:** genre | **Disabled by default (opt-in).**
+
+**Source:** external — consumed from [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)'s
+`playbook` skill (SHA-pinned via `harness.config.json` `marketplaces[]`), not a bundled
+`packs/reports/` directory.
+
+### Purpose
+
+Writes a strategic operational playbook that coordinates a CLASS of situations (e.g. a
+Sev1 outage) across roles, decision points, and phases — higher-altitude coordination
+than a single tactical procedure.
+
+### When to use
+
+Use `playbook` for strategic, multi-incident response design. Not for fixing one specific
+alert step-by-step (use `sre-runbook`, which is tactical).
+
+### What it provides
+
+- Role-by-role, phase-by-phase coordination across a class of situations
+- Decision points, not a single linear procedure
+
+### Dependencies
+
+None beyond the core engine.
+
+### Constraints
+
+- Disabled by default (opt-in); enable with `scripts/pack-toggle.sh playbook on`
+
+### Goals
+
+- Produce a strategic playbook coordinating roles, decision points, and phases across a class of situations
+
+### Enable
+
+```sh
+scripts/pack-toggle.sh playbook on
+```
+
+---
+
+## prd
+
+**Kind:** genre | **Disabled by default (opt-in).**
+
+**Source:** external — consumed from [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)'s
+`prd` skill (SHA-pinned via `harness.config.json` `marketplaces[]`), not a bundled
+`packs/reports/` directory.
+
+### Purpose
+
+Writes a Product Requirements Document that leads with the problem, defines success
+metrics and non-goals, and expresses functional requirements as testable EARS criteria.
+
+### When to use
+
+Use `prd` when scoping what to build and why before design. Not for the technical how
+(use `feature-spec` or a design doc).
+
+### What it provides
+
+- Problem-first framing with explicit success metrics and non-goals
+- Functional requirements expressed as testable EARS acceptance criteria
+
+### Dependencies
+
+None beyond the core engine.
+
+### Constraints
+
+- Disabled by default (opt-in); enable with `scripts/pack-toggle.sh prd on`
+
+### Goals
+
+- Produce a PRD scoping the problem, success metrics, non-goals, and EARS-notation functional requirements
+
+### Enable
+
+```sh
+scripts/pack-toggle.sh prd on
+```
+
+---
+
+## python-pep
+
+**Kind:** genre | **Disabled by default (opt-in).**
+
+**Source:** external — consumed from [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)'s
+`python-pep` skill (SHA-pinned via `harness.config.json` `marketplaces[]`), not a bundled
+`packs/reports/` directory.
+
+### Purpose
+
+Writes a Python Enhancement Proposal — a formal design document proposing a change to the
+Python language, standard library, or process, with the canonical RFC822 header preamble
+plus Abstract, Motivation, Rationale, Specification, Backwards Compatibility, Security
+Implications, How to Teach This, Reference Implementation, Rejected Ideas, and Open Issues.
+
+### When to use
+
+Use `python-pep` when proposing or drafting a Python language/stdlib/process change in PEP
+form. Not for a project's own architecture decision (use `adr`) or end-user instructions
+(use a how-to).
+
+### What it provides
+
+- Canonical RFC822 header preamble
+- The full PEP section set (Abstract through Open Issues)
+
+### Dependencies
+
+None beyond the core engine.
+
+### Constraints
+
+- Disabled by default (opt-in); enable with `scripts/pack-toggle.sh python-pep on`
+
+### Goals
+
+- Produce a PEP-format proposal with the canonical header preamble and full required section set
+
+### Enable
+
+```sh
+scripts/pack-toggle.sh python-pep on
+```
+
+---
+
+## rust-rfc
+
+**Kind:** genre | **Disabled by default (opt-in).**
+
+**Source:** external — consumed from [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)'s
+`rust-rfc` skill (SHA-pinned via `harness.config.json` `marketplaces[]`), not a bundled
+`packs/reports/` directory.
+
+### Purpose
+
+Writes a Rust-style RFC — a structured design proposal with Summary, Motivation,
+Guide-level explanation, Reference-level explanation, Drawbacks, Rationale and
+alternatives, Prior art, Unresolved questions, and Future possibilities.
+
+### When to use
+
+Use `rust-rfc` when a substantial language/library/platform change needs written design
+consensus before implementation. Not for a decision already made (use `adr`) or a bug/small
+change (use a plain issue).
+
+### What it provides
+
+- The full Rust RFC section set (Summary through Future possibilities)
+- Separate guide-level and reference-level explanations
+
+### Dependencies
+
+None beyond the core engine.
+
+### Constraints
+
+- Disabled by default (opt-in); enable with `scripts/pack-toggle.sh rust-rfc on`
+
+### Goals
+
+- Produce a Rust-RFC-format design proposal with the full required section set, seeking consensus before implementation
+
+### Enable
+
+```sh
+scripts/pack-toggle.sh rust-rfc on
+```
+
+---
+
+## sre-runbook
+
+**Kind:** genre | **Disabled by default (opt-in).**
+
+**Source:** external — consumed from [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)'s
+`sre-runbook` skill (SHA-pinned via `harness.config.json` `marketplaces[]`), not a bundled
+`packs/reports/` directory.
+
+### Purpose
+
+Writes an SRE operational runbook — a tactical, step-by-step procedure an on-call
+responder follows to detect, diagnose, and remediate ONE specific alert or failure
+condition under pressure.
+
+### When to use
+
+Use `sre-runbook` for incident-response content tied to a named alert/symptom (latency
+SLO burn, queue backlog, replica lag). Not for strategic, multi-incident response design
+(use `playbook`) or a learning lesson (use `diataxis-tutorial`).
+
+### What it provides
+
+- A single, linear detect → diagnose → remediate procedure for one named alert
+- Written for execution under pressure, not exploration
+
+### Dependencies
+
+None beyond the core engine.
+
+### Constraints
+
+- Disabled by default (opt-in); enable with `scripts/pack-toggle.sh sre-runbook on`
+- Scoped to ONE alert/failure condition — a class of incidents belongs in `playbook`
+
+### Goals
+
+- Produce a tactical runbook for one named alert: detect, diagnose, remediate, written for on-call execution
+
+### Enable
+
+```sh
+scripts/pack-toggle.sh sre-runbook on
+```
+
+---
+
+## diataxis-explanation
+
+**Kind:** genre | **Disabled by default (opt-in).**
+
+**Source:** external — consumed from [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)'s
+`diataxis-explanation` skill (SHA-pinned via `harness.config.json` `marketplaces[]`), not a
+bundled `packs/reports/` directory.
+
+### Purpose
+
+Writes a Diataxis explanation — an understanding-oriented discussion that illuminates the
+why behind a topic: background, design rationale, trade-offs, history, and connections to
+other ideas.
+
+### When to use
+
+Use `diataxis-explanation` when the reader needs to grasp a concept or decision, not
+perform a task or look up a fact. Not for a known task (use `diataxis-how-to`), a beginner
+learning by doing (use `diataxis-tutorial`), or fact lookup (use `diataxis-reference`).
+
+### What it provides
+
+- Understanding-oriented prose connecting a topic to its rationale and history
+
+### Dependencies
+
+None beyond the core engine.
+
+### Constraints
+
+- Disabled by default (opt-in); enable with `scripts/pack-toggle.sh diataxis-explanation on`
+
+### Goals
+
+- Produce an understanding-oriented explanation of a topic's rationale, trade-offs, and connections
+
+### Enable
+
+```sh
+scripts/pack-toggle.sh diataxis-explanation on
+```
+
+---
+
+## diataxis-how-to
+
+**Kind:** genre | **Disabled by default (opt-in).**
+
+**Source:** external — consumed from [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)'s
+`diataxis-how-to` skill (SHA-pinned via `harness.config.json` `marketplaces[]`), not a
+bundled `packs/reports/` directory.
+
+### Purpose
+
+Writes a Diataxis how-to guide — a task-oriented recipe that walks a competent user
+through accomplishing one real, already-understood goal, start to finish.
+
+### When to use
+
+Use `diataxis-how-to` when the user knows what they want to do and needs the steps, not
+learning or background. Not for a beginner learning by doing (use `diataxis-tutorial`) or
+looking up facts (use `diataxis-reference`).
+
+### What it provides
+
+- A task-oriented, start-to-finish recipe for one concrete goal
+
+### Dependencies
+
+None beyond the core engine.
+
+### Constraints
+
+- Disabled by default (opt-in); enable with `scripts/pack-toggle.sh diataxis-how-to on`
+
+### Goals
+
+- Produce a task-oriented recipe accomplishing one concrete, already-understood goal
+
+### Enable
+
+```sh
+scripts/pack-toggle.sh diataxis-how-to on
+```
+
+---
+
+## diataxis-reference
+
+**Kind:** genre | **Disabled by default (opt-in).**
+
+**Source:** external — consumed from [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)'s
+`diataxis-reference` skill (SHA-pinned via `harness.config.json` `marketplaces[]`), not a
+bundled `packs/reports/` directory.
+
+### Purpose
+
+Writes a Diataxis reference — a dry, information-oriented, exhaustive description of ONE
+thing (a CLI command, config file, API endpoint, or schema) whose structure mirrors the
+thing itself.
+
+### When to use
+
+Use `diataxis-reference` when the user needs lookup material they consult, not read
+through. Not for learning by doing (use `diataxis-tutorial`) or accomplishing a known task
+(use `diataxis-how-to`).
+
+### What it provides
+
+- Exhaustive, information-oriented description of one thing, structured to mirror it
+
+### Dependencies
+
+None beyond the core engine.
+
+### Constraints
+
+- Disabled by default (opt-in); enable with `scripts/pack-toggle.sh diataxis-reference on`
+- Scoped to ONE thing — do not sprawl into an explanation or tutorial
+
+### Goals
+
+- Produce an exhaustive, dryly-structured reference for one CLI command, config file, API endpoint, or schema
+
+### Enable
+
+```sh
+scripts/pack-toggle.sh diataxis-reference on
+```
+
+---
+
+## diataxis-tutorial
+
+**Kind:** genre | **Disabled by default (opt-in).**
+
+**Source:** external — consumed from [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)'s
+`diataxis-tutorial` skill (SHA-pinned via `harness.config.json` `marketplaces[]`), not a
+bundled `packs/reports/` directory.
+
+### Purpose
+
+Writes a Diataxis tutorial — a learning-oriented, hands-on lesson that takes a beginner
+through a single concrete success by doing, not explaining.
+
+### When to use
+
+Use `diataxis-tutorial` for onboarding/getting-started content where the goal is the
+learner's confidence, not task completion or reference lookup. Not for accomplishing a
+known task (use `diataxis-how-to`) or facts (use `diataxis-reference`).
+
+### What it provides
+
+- A hands-on, learning-oriented lesson culminating in one concrete success
+
+### Dependencies
+
+None beyond the core engine.
+
+### Constraints
+
+- Disabled by default (opt-in); enable with `scripts/pack-toggle.sh diataxis-tutorial on`
+- Learning-oriented — optimizes for the learner's confidence, not exhaustive coverage
+
+### Goals
+
+- Produce a hands-on tutorial taking a beginner through one concrete success by doing
+
+### Enable
+
+```sh
+scripts/pack-toggle.sh diataxis-tutorial on
 ```

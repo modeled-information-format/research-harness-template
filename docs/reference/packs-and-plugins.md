@@ -2,7 +2,7 @@
 id: reference-packs-and-plugins
 type: semantic
 created: '2026-06-23T09:41:01-04:00'
-modified: '2026-07-14T02:29:28.000Z'
+modified: '2026-07-20T02:05:07.545Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -19,10 +19,10 @@ provenance:
   sourceType: agent_inferred
   agent: claude-code/claude-sonnet-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:878c53f7-09b4-4f64-bb13-e210d7c2f073
+    '@id': urn:mif:activity:claude-code-session:cc83f20c-2193-42dd-b5b5-72fe80571327
     '@type': prov:Activity
   trustLevel: user_stated
-  agentVersion: 2.1.207
+  agentVersion: 2.1.215
 ---
 
 # Reference: packs and plugins
@@ -64,7 +64,7 @@ on demand from the canonical registry (ADR-0012), materializing under
 may be absent or empty on a fresh, unvendored clone. See
 [Ontology packs](packs/ontologies.md) and `scripts/fetch-ontology.sh`.
 
-There is no `packs/reports/` directory: all 18 report genres are consumed
+There is no `packs/reports/` directory: all 32 report genres are consumed
 externally from `mif-docs-plugin` (SHA-pinned via `harness.config.json`
 `marketplaces[]`) rather than bundled, completing the genre-consolidation
 migration in
@@ -81,7 +81,7 @@ per ADR-0018 and
 The harness bundles **17 pack plugins** across four families: 10 channels,
 5 market-research methodologies, 1 trend-modeling methodology, and 1
 monitoring methodology (`continuous-monitor`, research-harness-template#483).
-Report genres (18), spec genres (5), and domain ontologies (23) are all
+Report genres (32), spec genres (5), and domain ontologies (23) are all
 consumed externally or vendored on demand rather than bundled — see each
 family's own page for its full inventory. The [Packs reference](packs/index.md) and
 the per-family pages document every one — its use, constraints, and goals.
@@ -234,12 +234,12 @@ before `harness.config.json` can reference it by name.
 
 ## Bundled inventory
 
-This inventory covers **40 pack plugins** across six families — matching
+This inventory covers **54 pack plugins** across six families — matching
 `harness.config.json` `packs[]` exactly. Each family has a dedicated reference
 page documenting every component's purpose, constraints, and goals; for
 channels, market-research, trend-modeling, and monitoring, the counts below
 also match `ls packs/<family>/` directly. Report genres and spec genres are the
-exception: all 18 report genres and all 5 spec genres are consumed externally
+exception: all 32 report genres and all 5 spec genres are consumed externally
 from `mif-docs-plugin` (no `packs/reports/` or `packs/genres/` directory
 exists to `ls`), so those two counts instead match each family's reference
 page and `harness.config.json` `packs[]`.
@@ -249,15 +249,18 @@ page and `harness.config.json` `packs[]`.
 `notebooklm`, `pdf`, `xbrl`.
 
 **Report genres** — deliverable templates ([`packs/reports.md`](packs/reports.md),
-18 plugins, all consumed externally from
+32 plugins, all consumed externally from
 [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)
 — no `packs/reports/` directory; `academic`, `briefing`, `engineering`,
 `exec-summary`, and `trend-analysis` are enabled by default, the rest are
-opt-in): `academic`, `briefing`, `clinical-submission`, `competitive-quadrant`,
-`compliance-audit`, `computing-paper`, `engineering`, `exec-summary`,
-`humanities-chicago`, `humanities-mla`, `legal-memo`, `market-research-report`,
-`nist-sp`, `regulatory-disclosure`, `security-pentest`, `sustainability-report`,
-`systematic-review`, `trend-analysis`.
+opt-in): `academic`, `adr`, `arc42-arch-doc`, `briefing`, `c4-model-diagram`,
+`changelog`, `clinical-submission`, `competitive-quadrant`,
+`compliance-audit`, `computing-paper`, `diataxis-explanation`,
+`diataxis-how-to`, `diataxis-reference`, `diataxis-tutorial`, `engineering`,
+`exec-summary`, `google-design-doc`, `humanities-chicago`, `humanities-mla`,
+`legal-memo`, `market-research-report`, `nist-sp`, `playbook`, `prd`,
+`python-pep`, `regulatory-disclosure`, `rust-rfc`, `security-pentest`,
+`sre-runbook`, `sustainability-report`, `systematic-review`, `trend-analysis`.
 
 **Spec genres** — architecture/requirements deliverable templates
 ([`packs/genres.md`](packs/genres.md), 5 plugins, all consumed externally from
