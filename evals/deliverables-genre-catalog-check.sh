@@ -55,7 +55,7 @@ import os, re, sys
 wf_path, skills_dir = sys.argv[1], sys.argv[2]
 wf = open(wf_path).read()
 
-m = re.search(r'const GENRE_PACKS = \{(.*?)\n\}', wf, re.S)
+m = re.search(r'const GENRE_PACKS\s*=\s*\{(.*?)\n\s*\}', wf, re.S)
 if not m:
     print("FAIL: could not find `const GENRE_PACKS = {...}` in", wf_path)
     sys.exit(1)
@@ -65,7 +65,7 @@ if not m:
 # brace. Same pattern evals/deliverables-route-check.sh uses (research-
 # harness-template#658 fixed both to stop under-checking via a line-
 # anchored regex that silently matched only the first key per source line).
-genre_packs = set(re.findall(r"'?([A-Za-z][A-Za-z0-9-]*)'?:\s*\{", m.group(1)))
+genre_packs = set(re.findall(r"'?([A-Za-z][A-Za-z0-9-]*)'?\s*:\s*\{", m.group(1)))
 
 UTILITY_SKILLS = {
     'doc-set-planner', 'ears-acceptance-criteria', 'mif-corpus',
@@ -73,7 +73,9 @@ UTILITY_SKILLS = {
 }
 real_genre_skills = {
     d for d in os.listdir(skills_dir)
-    if os.path.isdir(os.path.join(skills_dir, d)) and d not in UTILITY_SKILLS
+    if os.path.isdir(os.path.join(skills_dir, d))
+    and not d.startswith('.') and not d.startswith('__')
+    and d not in UTILITY_SKILLS
 }
 
 missing = sorted(real_genre_skills - genre_packs)

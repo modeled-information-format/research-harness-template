@@ -99,7 +99,7 @@ def extract_obj_keys(name):
     # a { consumingChannel: ... } entry) — this also correctly EXCLUDES the
     # nested `consumingChannel` key itself, whose value starts with a quote,
     # not a brace.
-    return re.findall(r"'?([A-Za-z][A-Za-z0-9-]*)'?:\s*\{", body)
+    return re.findall(r"'?([A-Za-z][A-Za-z0-9-]*)'?\s*:\s*\{", body)
 
 def extract_arr(name):
     m = re.search(r'const %s = \[(.*?)\]' % re.escape(name), wf)
