@@ -2,7 +2,7 @@
 id: reference-packs-monitoring
 type: semantic
 created: '2026-07-14T02:24:39.962Z'
-modified: '2026-07-20T11:48:56.292Z'
+modified: '2026-07-21T01:19:17.725Z'
 namespace: docs/reference/packs
 tags:
   - documentation
@@ -16,12 +16,12 @@ temporal:
   recordedAt: '2026-07-14T02:24:39.962Z'
 provenance:
   '@type': Provenance
-  agent: claude-code/claude-sonnet-5
+  agent: claude-code/claude-fable-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:cc83f20c-2193-42dd-b5b5-72fe80571327
+    '@id': urn:mif:activity:claude-code-session:6cffe5d9-0ff6-4850-a402-01fd4a85a0d9
     '@type': prov:Activity
   trustLevel: user_stated
-  agentVersion: 2.1.215
+  agentVersion: 2.1.216
 ---
 
 # Monitoring pack

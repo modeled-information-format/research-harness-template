@@ -291,7 +291,11 @@ gate. Skip this only if the orchestrator did not complete.
 
 If the orchestrator does not complete:
 
-1. Check for partial findings: `ls reports/<topic>/*.json 2>/dev/null`.
+1. Check for partial findings: `ls reports/<topic>/findings/*.json 2>/dev/null`
+   — the `findings/` subdirectory is where dimension-analyst output lands. Do
+   NOT glob the flat `reports/<topic>/*.json`: that only matches Phase 0
+   bookkeeping (`goal.json`, `state.json`, `ontology-map.json`) written before
+   any research happens, so it "finds progress" even on a total failure.
 2. If findings exist, the orchestrator made progress — check
    `reports/<topic>/research-progress.md` for the last phase; suggest `/resume`.
 3. If none, inform the user: "Research session did not complete. Retry with

@@ -52,6 +52,14 @@
 #         semantic.
 #      B4 (synthesis.ok === false skips projection; final result carries
 #         deepened/fanout/gate/synthesis/projection).
+#      B5 (research-harness-template#685: the budget floor guards the fanout
+#         dispatch): with a non-empty deepen plan but budget.remaining()
+#         under BUDGET_FLOOR, fanout/falsify/synthesis/projection never run
+#         -- the branch returns an honest budget-floor terminal state
+#         ({ deepened: [], planned, reasoning, budgetFloor: true }) with a
+#         log line, the same guard pivot and the full-mode loop always had.
+#         B2 carries the inverse: a real budget object comfortably above the
+#         floor, proving the guard does not misfire when tokens remain.
 #
 # What this eval CANNOT close (genuine, non-deterministic, stated plainly,
 # not faked): whether a live research-augment Decide-phase judgment actually
@@ -93,6 +101,14 @@ grep -qF "if (!plan.deepen.length) return { mode: MODE, deepened: [], reasoning:
 
 grep -qF "depth: plan.deepen.some((d) => d.depth === 'deep') ? 'deep' : 'standard'" <<<"$augment_span" \
   || { note "the fanout depth escalation is no longer an 'ANY entry requests deep' (.some) check"; fail=1; }
+
+# research-harness-template#685: the budget-floor guard must sit between the
+# deepen plan and the fanout dispatch — augment was the one fanout-triggering
+# path with no budgetLow() check (pivot and the full-mode loop both had one).
+grep -qF "if (budgetLow())" <<<"$augment_span" \
+  || { note "the budgetLow() guard before the fanout dispatch is missing — the #685 regression (augment spends on fanout/falsify/synthesis/projection below the budget floor)"; fail=1; }
+awk "/if \(budgetLow\(\)\)/{f=1} /await wf\('fanout'/{if (!f) exit 1; exit 0}" <<<"$augment_span" \
+  || { note "the budgetLow() guard no longer precedes the await wf('fanout', ...) dispatch (#685)"; fail=1; }
 
 grep -qF "const gate = await falsifyAll({})" <<<"$augment_span" \
   || { note "the falsifyAll() drain call after fanout is missing or reshaped"; fail=1; }
@@ -255,6 +271,11 @@ module.exports = {
     synthesis: async () => ({ ok: true, synthesisPath: 'reports/pipeline-eval-topic/synthesis-augment.json', sections: [], findingsUsed: [], checkCoverage: [], openIssues: [], ungatedFindings: [] }),
     projection: async (a) => ({ ok: true, reportPath: 'reports/pipeline-eval-topic/report.md', reportId: 'urn:mif:concept:pipeline-eval-topic:report', mifLevel: 3, checksAddressed: [], verificationVerdict: 'survived', readmePath: null, readmeCheckPassed: false, graphRefreshed: false, graphAssertPassed: false, problems: [], _receivedSynthesisPath: a.synthesisPath }),
   },
+  // A real, healthy budget (well above the 60k floor) — proves the #685
+  // budgetLow() guard does NOT misfire when tokens remain (the default stub
+  // budget's total: 0 makes budgetLow() vacuously false, which would mask a
+  // guard that trips on every real budget object).
+  budget: { total: 500000, remaining: () => 400000 },
 };
 NODE
 run_case b2 "$TMP/args-b2.json" "$TMP/stubs-b2.cjs" "$TMP/out-b2.json"
@@ -402,8 +423,69 @@ else
   fail=1
 fi
 
+# ============================================================================
+# B5 (research-harness-template#685). Budget below the floor with a NON-empty
+# deepen plan: the branch must stop before dispatching fanout — no fanout, no
+# falsify drain, no synthesis, no projection (the corpus is unchanged, so
+# re-synthesizing would be pure spend) — returning an honest budget-floor
+# terminal state that discloses the never-run plan. This is the guard pivot
+# (line-266 `!budgetLow()`) and the full-mode round loop already had, and
+# augment lacked.
+# ============================================================================
+printf '%s' "{\"harnessDir\":\"$TMP/h\",\"topic\":\"pipeline-eval-topic\",\"mode\":\"augment\"}" > "$TMP/args-b5.json"
+cat > "$TMP/stubs-b5.cjs" <<'NODE'
+'use strict';
+module.exports = {
+  wf: {
+    augment: async () => ({ deepen: [{ dimension: 'landscape', depth: 'deep', rationale: 'thin coverage' }, { dimension: 'technical', depth: 'standard', rationale: 'high attrition' }], rejected: [], reasoning: 'two dimensions warrant deepening', matrix: [] }),
+    fanout: async () => { throw new Error('fanout must NOT be called — the budget is below the floor (#685)'); },
+    falsify: async () => { throw new Error('falsify must NOT be called — the budget is below the floor (#685)'); },
+    synthesis: async () => { throw new Error('synthesis must NOT be called — fanout never ran, the corpus is unchanged (#685)'); },
+    projection: async () => { throw new Error('projection must NOT be called — the budget is below the floor (#685)'); },
+  },
+  // total set and remaining under the 60k BUDGET_FLOOR: budgetLow() is true.
+  budget: { total: 500000, remaining: () => 10000 },
+};
+NODE
+run_case b5 "$TMP/args-b5.json" "$TMP/stubs-b5.cjs" "$TMP/out-b5.json"
+
+if [ -f "$TMP/out-b5.json" ]; then
+  python3 - "$TMP/out-b5.json" <<PY
+import json, sys
+$by_name_py
+d = json.load(open(sys.argv[1], encoding='utf-8'))
+ok = True
+def check(name, cond, detail=''):
+    global ok
+    if cond:
+        print(f"  ok  B5: {name}")
+    else:
+        ok = False
+        print(f"FAIL  B5: {name}{(' -- ' + detail) if detail else ''}")
+
+check('module did not throw (proves the fanout/falsify/synthesis/projection stubs, which throw if called, were never invoked below the budget floor)', d['threw'] is None, str(d['threw']))
+bn = by_name(d['wfCalls'])
+check("exactly one call happened, named 'augment' -- fanout was never dispatched below the floor", list(bn.keys()) == ['augment'], json.dumps(list(bn.keys())))
+r = d.get('result') or {}
+check("result.mode is 'augment'", r.get('mode') == 'augment')
+check('result.deepened is an empty array (nothing was actually deepened)', r.get('deepened') == [], json.dumps(r.get('deepened')))
+check('result.planned discloses the never-run deepen plan', r.get('planned') == ['landscape', 'technical'], json.dumps(r.get('planned')))
+check('result.budgetFloor is true (the stop reason is machine-readable, not narrative-only)', r.get('budgetFloor') is True, str(r.get('budgetFloor')))
+check("result.reasoning carries the judge's own reasoning verbatim", r.get('reasoning') == 'two dimensions warrant deepening', str(r.get('reasoning')))
+check('a budget-floor log line was emitted', any('Budget floor' in (l.get('log') or '') for l in d['logs']), json.dumps(d['logs']))
+check('result has no fanout/gate/synthesis/projection keys from a run that never happened', not any(k in r for k in ('fanout', 'gate', 'synthesis', 'projection')), json.dumps(list(r.keys())))
+
+sys.exit(0 if ok else 1)
+PY
+  rc=$?
+  [ "$rc" -eq 0 ] || fail=1
+else
+  note "B5: no out-b5.json produced"
+  fail=1
+fi
+
 if [ "$fail" -eq 0 ]; then
-  note "the augment branch's composition is proven, structurally and behaviorally, to match the architecture doc exactly: focusHint passes through to wf('augment', ...) unchanged; an empty deepen[] is a real honest-termination code path returning { mode, deepened: [], reasoning } immediately -- fanout/falsify/synthesis/projection never run at all, mirroring research-augment's own empty-plan-is-valid precedent (#545/#580) at the orchestrator layer; when deepen is non-empty, fanout runs over EXACTLY the deepen plan's own dimensions (never the whole goal's set) at a depth that escalates to 'deep' the moment ANY ONE entry requests it (an 'any', never an 'all' or 'first-wins', semantic); and projection is genuinely conditional on synthesis.ok, receiving synthesis's own synthesisPath verbatim when it does run. The gap this eval cannot close -- whether a live research-augment Decide-phase judgment picks the right dimensions to deepen (or correctly decides nothing warrants it) -- is augment-decide-check.sh's own subject, documented here rather than re-tested."
+  note "the augment branch's composition is proven, structurally and behaviorally, to match the architecture doc exactly: focusHint passes through to wf('augment', ...) unchanged; an empty deepen[] is a real honest-termination code path returning { mode, deepened: [], reasoning } immediately -- fanout/falsify/synthesis/projection never run at all, mirroring research-augment's own empty-plan-is-valid precedent (#545/#580) at the orchestrator layer; a budget below the floor stops the branch BEFORE the fanout dispatch with an honest { deepened: [], planned, budgetFloor: true } terminal state (#685 -- the same guard pivot and the full-mode loop always had), while a healthy budget never trips it; when deepen is non-empty and budget remains, fanout runs over EXACTLY the deepen plan's own dimensions (never the whole goal's set) at a depth that escalates to 'deep' the moment ANY ONE entry requests it (an 'any', never an 'all' or 'first-wins', semantic); and projection is genuinely conditional on synthesis.ok, receiving synthesis's own synthesisPath verbatim when it does run. The gap this eval cannot close -- whether a live research-augment Decide-phase judgment picks the right dimensions to deepen (or correctly decides nothing warrants it) -- is augment-decide-check.sh's own subject, documented here rather than re-tested."
 else
   echo "research-pipeline-augment-check: FAILED (see notes above)"
 fi
