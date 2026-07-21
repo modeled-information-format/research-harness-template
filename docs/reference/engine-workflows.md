@@ -2,7 +2,7 @@
 id: reference-engine-workflows
 type: semantic
 created: '2026-07-17T20:25:00-04:00'
-modified: '2026-07-19T20:59:15.172Z'
+modified: '2026-07-21T01:08:27.808Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -16,12 +16,12 @@ temporal:
   recordedAt: '2026-07-17T20:25:00-04:00'
 provenance:
   '@type': Provenance
-  agent: claude-code/claude-sonnet-5
+  agent: claude-code/claude-fable-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:cc83f20c-2193-42dd-b5b5-72fe80571327
+    '@id': urn:mif:activity:claude-code-session:6cffe5d9-0ff6-4850-a402-01fd4a85a0d9
     '@type': prov:Activity
   trustLevel: user_stated
-  agentVersion: 2.1.215
+  agentVersion: 2.1.216
 ---
 
 # Reference: engine workflows
@@ -1534,7 +1534,7 @@ branch runs (research-harness-template#624).
 | `audit` | `research-coverage-audit` alone → returns the routed backlog report. No fan-out, falsify, synthesis, or projection follows. |
 | `import` | `research-import` → (if `needsGating` is non-empty) a falsify drain over `scope: 'all'` → `research-synthesis` → `research-projection`. An import-gate failure (`!imp.ok`) short-circuits before any gating runs. |
 | `pivot` | `research-pivot` → a regate falsify call scoped to `pivot.reverifyIds` (`regate: true`) → (if `gapDimensions` is non-empty and the budget floor hasn't been hit) `research-fanout` over just the gap dimensions plus a falsify drain → `research-synthesis` → `research-projection`. |
-| `augment` | `research-augment` → an empty `deepen[]` returns `{ deepened: [], reasoning }` immediately (an honest, non-error terminal state) → otherwise `research-fanout` over the deepen plan's dimensions plus a falsify drain → `research-synthesis` → `research-projection`. |
+| `augment` | `research-augment` → an empty `deepen[]` returns `{ deepened: [], reasoning }` immediately (an honest, non-error terminal state) → a budget below the floor returns `{ deepened: [], planned, reasoning, budgetFloor: true }` before the fanout dispatch (research-harness-template#685 — the same `budgetLow()` guard `pivot` and the full-mode round loop always had; nothing ran, so the corpus is unchanged and synthesis/projection are skipped too, unlike `pivot`'s under-floor path, whose regate pass may already have changed verdicts on disk) → otherwise `research-fanout` over the deepen plan's dimensions plus a falsify drain → `research-synthesis` → `research-projection`. |
 | `deliverables` | (research-harness-template#624) `research-synthesis` alone (no fan-out, no falsify — reuses the survivor corpus already on disk) → `research-deliverables` fed that fresh `synthesisPath` plus `genres`/`channels`. Requires at least one of `genres`/`channels`, or the script throws before either child runs. Deliberately never calls `research-projection` — the report of record is untouched by this mode. A `synthesis.ok === false` result (e.g. no surviving findings) short-circuits to `{ deliverables: null }` before `research-deliverables` is invoked. |
 | `full` | The bounded autonomous goal loop — see [The full-mode round loop](#the-full-mode-round-loop) below. |
 
