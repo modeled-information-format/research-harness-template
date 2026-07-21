@@ -112,7 +112,8 @@ for f in "${files[@]}"; do
     // code position starts a regex literal or is a division operator is
     // decided by the last significant character already emitted: after
     // something that can END an expression (an identifier/number, `)`,
-    // `]`, `}`) it is division; after anything else (`=`, `(`, `,`, `!`,
+    // `]`, `}`, or a same-line postfix `++`/`--`) it is division; after
+    // anything else (`=`, `(`, `,`, `!`,
     // a keyword like return/typeof, start of input) it opens a regex
     // frame, whose contents are stripped like a string (escapes honored,
     // `/` inside a [...] character class does not terminate it, trailing
@@ -126,15 +127,26 @@ for f in "${files[@]}"; do
     // comma, start of input, or a keyword such as `return`) it starts a
     // regex. Keywords need the word check because they end in identifier
     // characters: `return /re/` is a regex, `count /2/ x` is division.
+    // Postfix `++`/`--` also ends an expression, so `x++ / 2` is division —
+    // but only on the same line: across a newline ASI terminates the
+    // statement (`++`/`--` is a restricted production), so `x++`
+    // newline `/re/` is still a regex.
     const REGEX_PRECEDING_KEYWORDS = new Set([
       "return", "typeof", "instanceof", "in", "of", "new", "delete",
       "void", "case", "do", "else", "yield", "await", "throw",
     ]);
     function regexAllowed(prev) {
       let j = prev.length - 1;
-      while (j >= 0 && /\s/.test(prev[j])) j--;
+      let sawNewline = false;
+      while (j >= 0 && /\s/.test(prev[j])) {
+        if (prev[j] === "\n") sawNewline = true;
+        j--;
+      }
       if (j < 0) return true; // start of input
       const ch = prev[j];
+      // Postfix increment/decrement can end an expression: a `/` right
+      // after `++`/`--` on the same line is division, never a regex.
+      if (!sawNewline && (ch === "+" || ch === "-") && j > 0 && prev[j - 1] === ch) return false;
       if (/[A-Za-z0-9_$]/.test(ch)) {
         let k = j;
         while (k >= 0 && /[A-Za-z0-9_$]/.test(prev[k])) k--;

@@ -51,6 +51,14 @@
 #  12. a division operator is not misread as a regex opener: real `/`
 #      division on earlier lines must not swallow a later `Date.now()`
 #      call or shift its reported line number.
+#  13. division after a postfix `++` (`i++ / 2`) is not misread as a regex
+#      opener — a `Date.now()` later on the SAME line must still fail (a
+#      real Copilot-review finding on the #680 PR: `++`/`--` can end an
+#      expression, so `/` after one is division);
+#  14. the ASI counterpart of 13: `i++` followed by a NEWLINE then a regex
+#      literal containing `\/*` is still a regex (ASI terminates the
+#      restricted `++` production), so the literal's `/*` must not open a
+#      phantom block comment that hides a later `Date.now()`.
 #
 # Exit 0 = every case holds. Exit 1 = a case failed.
 set -uo pipefail
@@ -232,6 +240,42 @@ if bash "$CHECK" "$TMP/division.js" > "$TMP/division.out" 2>&1; then
 else
   grep -q "division.js:4: forbidden call Date.now(" "$TMP/division.out" \
     || { note "post-division Date.now() failure did not name the file at the correct line (4): $(cat "$TMP/division.out")"; fail=1; }
+fi
+
+# Case 13: division right after a postfix increment (`i++ / 2`) — the `/`
+# must be read as division, not a regex opener that strips the rest of the
+# line and hides the Date.now() after the `;`.
+cat > "$TMP/postfix-division.js" <<'EOF'
+export const meta = { name: 'postfix-division-eval-seed' }
+let i = 0
+const half = i++ / 2; const stamp = Date.now()
+return { ok: true, half, stamp }
+EOF
+if bash "$CHECK" "$TMP/postfix-division.js" > "$TMP/postfix-division.out" 2>&1; then
+  note "checker passed a module where division after a postfix ++ hid a same-line Date.now() call"
+  fail=1
+else
+  grep -q "postfix-division.js:3: forbidden call Date.now(" "$TMP/postfix-division.out" \
+    || { note "postfix-division Date.now() failure did not name the file at the correct line (3): $(cat "$TMP/postfix-division.out")"; fail=1; }
+fi
+
+# Case 14: the ASI counterpart — after `i++` and a NEWLINE, a `/` starts a
+# regex literal (ASI ends the restricted `++` production), so a `\/*` inside
+# it must not open a phantom block comment that swallows the later Date.now().
+cat > "$TMP/postfix-asi.js" <<'EOF'
+export const meta = { name: 'postfix-asi-eval-seed' }
+let i = 0
+const n = i++
+const matched = /a\/*b/.test('a//b')
+const stamp = Date.now()
+return { ok: true, n, matched, stamp }
+EOF
+if bash "$CHECK" "$TMP/postfix-asi.js" > "$TMP/postfix-asi.out" 2>&1; then
+  note "checker passed a module where a regex after i++ and a newline hid a Date.now() call (ASI case)"
+  fail=1
+else
+  grep -q "postfix-asi.js:5: forbidden call Date.now(" "$TMP/postfix-asi.out" \
+    || { note "postfix-ASI Date.now() failure did not name the file at the correct line (5): $(cat "$TMP/postfix-asi.out")"; fail=1; }
 fi
 
 [ "$fail" -eq 0 ] && note "the forbidden-globals gate is real: the shipped tree is clean, seeded new Date()/Date.now()/Math.random() calls are all caught by name and line (including inside a template literal's \${...} expression, even when comment-stripping would otherwise fuse tokens together, and even when a regex literal containing \\/* would otherwise be misread as a block comment, #680), the same strings inside comments/a template literal's static text/a regex literal never false-positive, division is never misread as a regex opener, and the verify surface covers it"
