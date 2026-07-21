@@ -118,7 +118,10 @@ run "fanout-repair-disclosure-check" bash evals/fanout-repair-disclosure-check.s
 # already-graded finding is excluded; a regate-scoped client-side reset
 # genuinely re-processes it) is proven against that same real engine; and
 # the module's fixture-write bridge / ported remediation contract are
-# checked structurally.
+# checked structurally. Lens identity is also proven to survive a failed
+# lens (#682): pairLensResults() is extracted verbatim and run against the
+# exact misattribution shape, and structural greps forbid a positional
+# LENSES[i] lookup after filter(Boolean).
 run "falsify-verdict-merge" bash evals/falsify-verdict-merge.sh
 
 # The fanout->falsify HANDOFF SEAM has deterministic teeth (#652/#653):
