@@ -352,6 +352,28 @@ gate_m3() {
   else
     bad "report-synthesizer.md (#479) regression: $rs479_fail -- render-artifact.sh's raw mv needs it there to make Step 4d's stamp reachable."
   fi
+
+  # research-harness-template#671: report-synthesizer's Step 1 survivor-selection
+  # loop and Step 4 citation-integrity call must glob the canonical
+  # $REPORTS_DIR/findings/ subdirectory that every producer (dimension-analyst,
+  # source-chunker) writes to and every other consumer (orchestrator,
+  # falsification-analyst, /status, /falsify) reads from. The shipped flat glob
+  # ("$REPORTS_DIR"/finding-*.json) matched nothing on a real session: with
+  # nullglob unset the loop iterated once over the literal unexpanded pattern,
+  # so synthesis saw an empty survivor set and the citation-integrity gate
+  # never ran over the real findings.
+  local rs671_fail=""
+  grep -qE '"\$REPORTS_DIR"/finding-\*\.json' "$RS" \
+    && rs671_fail="${rs671_fail}still globs finding-*.json flat under \$REPORTS_DIR instead of the findings/ subdirectory; "
+  grep -qE 'for f in "\$REPORTS_DIR"/findings/finding-\*\.json' "$RS" \
+    || rs671_fail="${rs671_fail}Step 1 survivor-selection loop no longer iterates \$REPORTS_DIR/findings/finding-*.json; "
+  grep -qE 'check-citation-integrity\.sh "\$REPORTS_DIR"/findings/finding-\*\.json' "$RS" \
+    || rs671_fail="${rs671_fail}Step 4 citation-integrity call no longer targets \$REPORTS_DIR/findings/finding-*.json; "
+  if [ -z "$rs671_fail" ]; then
+    ok "report-synthesizer.md (#671): Step 1/Step 4 finding globs target the canonical findings/ subdirectory"
+  else
+    bad "report-synthesizer.md (#671) regression: $rs671_fail"
+  fi
 }
 
 # ---------------------------------------------------------------------------
