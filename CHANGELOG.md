@@ -7,6 +7,104 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.26] - 2026-07-21
+
+### Added
+
+- **`research-pipeline.js` gained a gate-only `falsify` mode in its mode
+  router** (#655): drains and gates pending falsification verdicts for an
+  existing topic without re-running fanout or synthesis.
+
+### Changed
+
+- **`research-projection.js` slug/genre string-args threading is pinned by a
+  dedicated regression eval** (#709).
+
+### Fixed
+
+- **CLI `--genres` is routed into the Project phase, and Deliver is gated on
+  channels** (#650, #651): a genres-only invocation no longer silently
+  skipped projection or triggered channel delivery with nothing to deliver.
+- **Falsification remediation specifies the Citation shape and scopes its
+  mutations** (#656, #660): remediation can no longer rewrite finding fields
+  outside the remediation contract.
+- **`research-fanout.js`'s `FINDING_CONTRACT` closes the `attempted_at`
+  one-round-rule trap** (#653): a finding could previously satisfy the
+  one-round rule without a genuine falsification attempt timestamp.
+- **JSON-string args are normalized at every atomic workflow's entry point**
+  (#654, #661): a stringified array/object arriving as `args` no longer
+  breaks `args.filter`/`args.map` inside the workflow scripts.
+- **`research-deliverables.js`'s `GENRE_PACKS` covers all 37 real mif-docs
+  genre skills** (#663): previously unmapped genres fell through the pack
+  router.
+- **`start.md`'s partial-findings check globs
+  `reports/<topic>/findings/*.json`** (#693): it was still looking at the
+  pre-findings-subdirectory layout and never detected partial runs.
+- **`ai-spec`'s kiro genre outputs are exempt from the Stop-hook conformance
+  sweep** (#695): kiro `requirements.md`/`design.md`/`tasks.md` are their own
+  genre contract, not MIF-frontmatter documents.
+- **`backfill-report-slugs.sh` topic auto-discovery excludes every
+  `_`-prefixed `reports/` scaffolding directory** (#694).
+- **The engineering-base/agriculture/research ontology namespaces are re-keyed
+  under the underscore-prefixed triad roots** (#701).
+- **Voice-gate line numbers are reported from the real file, not the
+  `strip_links`-filtered stream** (#698): findings now point at the actual
+  offending line.
+- **Each falsify lens result is paired with its lens identity before failed
+  lenses are dropped** (#699): a failed lens could previously shift the
+  attribution of every lens after it.
+- **Augment mode's fanout dispatch is guarded behind the budget floor**
+  (#685, #700): augment no longer dispatches new fanout work the budget can't
+  cover.
+- **The conformance sweep pathspec is qualified with `:(glob)`** (#696): the
+  unqualified pathspec could reach nested channel files it must not sweep.
+- **The book-channel clause is ordered before the `reports/*/*.md` catch-all
+  in `is_authored_surface`** (#672, #704): book chapter files were being
+  misclassified by the catch-all.
+- **Import mode's falsify drain is scoped to `needsGating` with regate**
+  (#713): foreign verdicts imported from another container are re-gated
+  instead of trusted as-is.
+- **Blog/book channels render temp-then-move with an explicit engine
+  exit-status check** (#711): a failed render can no longer leave a partial
+  deliverable at the final path.
+- **The `--open-pr` draft copy is guarded and the concierge commit is scoped
+  to the draft + index** (#710): unrelated working-tree state can no longer
+  ride along in a concierge commit.
+- **`attempted_at` is asserted present after a genuine `falsify.sh` write**
+  (#659, #665).
+- **`report-synthesizer`'s Step 1/Step 4 finding globs point at the
+  `findings/` subdirectory** (#671, #703): synthesis was reading an empty
+  glob after the findings-layout move.
+- **`goal-writer`'s finding paths point at `reports/<topic>/findings/` where
+  findings actually live** (#676, #707): the evidence-surface table's
+  coverage row, both worked-example verify commands, and every
+  finding-location prose statement globbed `reports/<topic>/*.json`
+  directly, which only matches `goal.json`/`state.json`/`ontology-map.json`
+  — none of which carry `extensions.harness.dimension` — so any coverage
+  check authored from the manual was permanently unsatisfiable.
+- **`write-finding.sh`'s generic ln-failure branch removes the staged file
+  before `rmdir`** (#683, #705): the non-empty staging directory made the
+  cleanup itself fail, leaking staged state.
+- **`update.sh`'s pass-through guard rejects `--defaults`/`-l`/`-f`, and the
+  docs stop recommending them** (#706): those copier flags can silently
+  discard instance answers or overwrite instance files.
+- **`check-workflow-forbidden-globals.sh` recognizes regex literals** (#708):
+  a `\/*` inside a regex literal could previously open a phantom block
+  comment and blind the check to everything after it.
+- **Native `enabledPlugins` fails closed for unresolved marketplace-ref
+  packs** (#714): an unresolvable pack reference now blocks instead of
+  silently enabling nothing.
+- **Empty review-bypass allowances are enforced on `main` after removing the
+  retired org CI app** (#715).
+- **The container import lookup matches existing findings by parsed `@id`,
+  never jq-pretty-printed bytes** (#716): byte-level formatting differences
+  no longer defeat the duplicate check.
+- **`container-dir`/`output-dir` are resolved caller-relative against the
+  invoking cwd, not the repo root** (#717).
+- **Step 4's committed writes are rolled back when a later resource's import
+  fails** (#718): a failed multi-resource import no longer leaves a
+  half-imported container.
+
 ## [0.16.25] - 2026-07-21
 
 ### Fixed
@@ -1967,8 +2065,15 @@ First release of the domain-general research harness template.
 - **Distribution** as a Copier living template and a Claude Code plugin
   marketplace.
 
-[Unreleased]: https://github.com/modeled-information-format/research-harness-template/compare/v0.16.18...HEAD
+[Unreleased]: https://github.com/modeled-information-format/research-harness-template/compare/v0.16.21...HEAD
+[0.16.21]: https://github.com/modeled-information-format/research-harness-template/compare/v0.16.18...v0.16.21
 [0.16.18]: https://github.com/modeled-information-format/research-harness-template/compare/v0.16.3...v0.16.18
+[0.16.3]: https://github.com/modeled-information-format/research-harness-template/compare/v0.15.1...v0.16.3
+[0.15.1]: https://github.com/modeled-information-format/research-harness-template/compare/v0.15.0...v0.15.1
+[0.15.0]: https://github.com/modeled-information-format/research-harness-template/compare/v0.14.1...v0.15.0
+[0.14.1]: https://github.com/modeled-information-format/research-harness-template/compare/v0.14.0...v0.14.1
+[0.14.0]: https://github.com/modeled-information-format/research-harness-template/compare/v0.13.1...v0.14.0
+[0.13.1]: https://github.com/modeled-information-format/research-harness-template/compare/v0.13.0...v0.13.1
 [0.13.0]: https://github.com/modeled-information-format/research-harness-template/compare/v0.12.2...v0.13.0
 [0.12.2]: https://github.com/modeled-information-format/research-harness-template/compare/v0.12.1...v0.12.2
 [0.12.1]: https://github.com/modeled-information-format/research-harness-template/compare/v0.12.0...v0.12.1
