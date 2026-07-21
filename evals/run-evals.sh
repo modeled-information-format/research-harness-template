@@ -118,7 +118,10 @@ run "fanout-repair-disclosure-check" bash evals/fanout-repair-disclosure-check.s
 # already-graded finding is excluded; a regate-scoped client-side reset
 # genuinely re-processes it) is proven against that same real engine; and
 # the module's fixture-write bridge / ported remediation contract are
-# checked structurally.
+# checked structurally. Lens identity is also proven to survive a failed
+# lens (#682): pairLensResults() is extracted verbatim and run against the
+# exact misattribution shape, and structural greps forbid a positional
+# LENSES[i] lookup after filter(Boolean).
 run "falsify-verdict-merge" bash evals/falsify-verdict-merge.sh
 
 # The fanout->falsify HANDOFF SEAM has deterministic teeth (#652/#653):
@@ -559,6 +562,11 @@ run "report-finding-summary-cap" bash evals/report-finding-summary-cap.sh
 #     channel files (reports/<topic>/book/...) into the gate and emitting a
 #     spurious conformance systemMessage (issue #687).
 run "conformance-sweep-depth" bash evals/conformance-sweep-depth.sh
+
+# 1h2. check-voice.sh's mech_hits/buzz_hits line numbers must match the real
+#     file on disk: strip_links blanks exempt citation/URL lines instead of
+#     deleting them, so `grep -n` never renumbers the stream (issue #688).
+run "voice-gate-line-numbers" bash evals/voice-gate-line-numbers.sh
 
 # 2. Citation-integrity: a clean finding passes; a bad one is flagged.
 run     "citation-integrity-good" scripts/check-citation-integrity.sh schemas/samples/citation-good.sample.json

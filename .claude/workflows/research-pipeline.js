@@ -276,6 +276,20 @@ if (MODE === 'augment') {
   const plan = await wf('augment', { focusHint: A.focusHint })
   if (!plan.deepen.length) return { mode: MODE, deepened: [], reasoning: plan.reasoning }
   const dims = plan.deepen.map((d) => d.dimension)
+  // research-harness-template#685: augment was the ONE fanout-dispatching path
+  // with no budgetLow() guard — pivot gates its own wf('fanout', ...) on
+  // !budgetLow() and the full-mode round loop checks the floor before every
+  // round, but this branch spent on fanout + falsify + synthesis + projection
+  // unconditionally. Below the floor, stop here honestly (same
+  // honest-termination shape as the empty-deepen return above, with the
+  // never-run plan disclosed as `planned`): fanout never ran, so the corpus is
+  // unchanged and re-running synthesis/projection would be pure spend with no
+  // new content — unlike pivot, whose regate pass may have already changed
+  // verdicts on disk and therefore still synthesizes under the floor.
+  if (budgetLow()) {
+    log(`Budget floor: skipping augmentation fanout over [${dims.join(', ')}] — corpus unchanged, nothing new to synthesize`)
+    return { mode: MODE, deepened: [], planned: dims, reasoning: plan.reasoning, budgetFloor: true }
+  }
   const fan = await wf('fanout', { dimensions: dims, depth: plan.deepen.some((d) => d.depth === 'deep') ? 'deep' : 'standard', roundContext: `Augmentation round targeting: ${plan.deepen.map((d) => `${d.dimension} (${d.rationale})`).join('; ')}` })
   const gate = await falsifyAll({})
   const syn = await wf('synthesis', {})
