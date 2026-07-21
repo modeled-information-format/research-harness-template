@@ -33,14 +33,17 @@ BAD=""
 while IFS= read -r f; do
   [ -f "$f" ] || continue
   # reports/_meta is scaffolding; per-topic README.md is a navigation index; reports/_corpus
-  # is the cross-topic atlas (corpus-synthesis.md); *-build-spec.md is the ai-spec channel's
-  # agent-consumable architecture spec (mif.exempt, MIF Level-1, a synthesis across many findings,
-  # not a single Level-3 graded finding); *.blog.md is the blog channel (MIF-exempt, nested under
-  # reports/<topic>/ per the trailing suffix, never a top-level blog/ directory) — none of these
-  # are Level-3 reports of record. (The book channel's own reports/<topic>/book/ nesting is one
-  # directory deeper than the ':(glob)'-qualified sweep above reaches — ':(glob)' keeps '*' from
-  # crossing '/', #687 — so it never needs its own exemption case here.)
-  case "$f" in reports/_meta/*|reports/_corpus/*|reports/*/README.md|reports/*/*-build-spec.md|reports/*/*.blog.md) continue ;; esac
+  # is the cross-topic atlas (corpus-synthesis.md); *-build-spec.md and the three
+  # *-kiro-{requirements,design,tasks}.md suffixes are the ai-spec channel's agent-consumable
+  # spec genres (mif.exempt, MIF Level-1, a synthesis across many findings, not a single
+  # Level-3 graded finding — the same four-suffix exclusion list verify.sh's reports-binding
+  # checks carry; the kiro genres were split out in research-harness-template#409/#414);
+  # *.blog.md is the blog channel (MIF-exempt, nested under reports/<topic>/ per the trailing
+  # suffix, never a top-level blog/ directory) — none of these are Level-3 reports of record.
+  # (The book channel's own reports/<topic>/book/ nesting is one directory deeper than the
+  # ':(glob)'-qualified sweep above reaches — ':(glob)' keeps '*' from crossing '/', #687 —
+  # so it never needs its own exemption case here.)
+  case "$f" in reports/_meta/*|reports/_corpus/*|reports/*/README.md|reports/*/*-build-spec.md|reports/*/*-kiro-requirements.md|reports/*/*-kiro-design.md|reports/*/*-kiro-tasks.md|reports/*/*.blog.md) continue ;; esac
   scripts/mif-project.sh "$f" >/dev/null 2>&1 || BAD="${BAD}${f} "
 done <<< "$CHANGED"
 [ -z "$BAD" ] && exit 0
