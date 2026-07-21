@@ -75,11 +75,23 @@ for channel in blog book; do
     note "FAIL: $channel failed render printed no diagnostic on stderr"; fail=1
   fi
 
-  # 2. A failed re-render must leave a PRIOR good published file untouched.
+  # 2. A failed re-render must leave a PRIOR good published file untouched —
+  #    and, like step 1, must still exit non-zero with a stderr diagnostic
+  #    (a regression that "protects" the prior file by silently exiting 0
+  #    would otherwise pass this step).
   OUT="$TMP/$channel-existing.md"
   printf 'prior good render\n' > "$OUT"
-  MIF_RH_CLI="$FAKE_ENGINE" FAKE_ENGINE_MODE=fail \
-    bash scripts/render-artifact.sh "$ART" "$channel" "$OUT" >/dev/null 2>&1
+  if MIF_RH_CLI="$FAKE_ENGINE" FAKE_ENGINE_MODE=fail \
+       bash scripts/render-artifact.sh "$ART" "$channel" "$OUT" >/dev/null 2>"$TMP/err"; then
+    note "FAIL: $channel re-render exited 0 despite the engine failing"; fail=1
+  else
+    note "$channel: a failed re-render exits non-zero"
+  fi
+  if grep -q "composing the $channel output failed" "$TMP/err"; then
+    note "$channel: a failed re-render prints a diagnostic (never silent)"
+  else
+    note "FAIL: $channel failed re-render printed no diagnostic on stderr"; fail=1
+  fi
   if [ "$(cat "$OUT")" = "prior good render" ]; then
     note "$channel: a failed re-render leaves the prior published file byte-identical"
   else
