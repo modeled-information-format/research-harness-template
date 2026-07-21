@@ -112,7 +112,11 @@ RENDER_ARGS=(harness render-artifact "$ART" "$CHANNEL" --slug "$SLUG" --slugpath
 
 case "$CHANNEL" in
   report)
-    RTMPD="$(mktemp -d)"; RTMP="$RTMPD/report.md"; trap 'rm -rf "$RTMPD"' EXIT
+    if ! RTMPD="$(mktemp -d)"; then
+      echo "render: failed to create a temp dir for the report render (nothing written to $OUT)" >&2
+      exit 1
+    fi
+    RTMP="$RTMPD/report.md"; trap 'rm -rf "$RTMPD"' EXIT
     if ! "$ENGINE" "${RENDER_ARGS[@]+"${RENDER_ARGS[@]}"}" "$RTMP" >/dev/null; then
       echo "render: composing the report failed" >&2
       exit 1
@@ -135,12 +139,38 @@ case "$CHANNEL" in
       exit 1
     fi
     mkdir -p "$(dirname "$OUT")"
-    mv "$RTMP" "$OUT"
+    if ! mv "$RTMP" "$OUT"; then
+      echo "render: failed to move the rendered report into $OUT" >&2
+      exit 1
+    fi
     echo "render: wrote $OUT (report, $(wc -l < "$OUT" | tr -d ' ') lines) from $ART"
     ;;
   blog|book)
+    # Same temp-then-move discipline as the report channel above (#681): render
+    # to a mktemp file, check the engine's exit status explicitly (set -e is NOT
+    # in effect — a bare failing invocation would fall through silently), and
+    # only mv into $OUT on success. A crashed/interrupted engine must never
+    # leave a partially-written file at the published path a topic README links
+    # to, and a prior good render at $OUT must survive a failed re-render.
+    # mktemp/mv have their exit status checked explicitly for the same reason
+    # as the engine call below: without `set -e`, a failed temp-dir creation or
+    # a failed final move (permissions, cross-device rename, disk full) would
+    # otherwise fall through and let the script exit 0 without $OUT in place.
+    if ! BTMPD="$(mktemp -d)"; then
+      echo "render: failed to create a temp dir for the $CHANNEL render (nothing written to $OUT)" >&2
+      exit 1
+    fi
+    BTMP="$BTMPD/$CHANNEL.md"; trap 'rm -rf "$BTMPD"' EXIT
+    if ! "$ENGINE" "${RENDER_ARGS[@]+"${RENDER_ARGS[@]}"}" "$BTMP" >/dev/null; then
+      echo "render: composing the $CHANNEL output failed (nothing written to $OUT)" >&2
+      exit 1
+    fi
     mkdir -p "$(dirname "$OUT")"
-    "$ENGINE" "${RENDER_ARGS[@]+"${RENDER_ARGS[@]}"}" "$OUT"
+    if ! mv "$BTMP" "$OUT"; then
+      echo "render: failed to move the rendered $CHANNEL output into $OUT" >&2
+      exit 1
+    fi
+    echo "render: wrote $OUT ($CHANNEL, $(wc -l < "$OUT" | tr -d ' ') lines) from $ART"
     ;;
   *)
     echo "render: channel must be report|blog|book (got '$CHANNEL')" >&2
