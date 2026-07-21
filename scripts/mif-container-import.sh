@@ -125,6 +125,33 @@ jq -e --arg t "$TOPIC" '.topics[] | select(.id == $t)' harness.config.json > /de
 
 fail() { echo "mif-container-import: REJECTED -- $1" >&2; exit 1; }
 
+# Existing-finding lookup by @id (issue #668): match on the PARSED @id, never
+# on a byte pattern. An earlier version grepped for the literal substring
+# `"@id": "$rid"`, baking jq's pretty-print convention (a single space after
+# the colon) into the match. Nothing in findings.schema.json or this pipeline
+# constrains a destination finding's on-disk byte layout -- only the @id
+# VALUE -- so a compact-JSON destination file (`"@id":"urn:mif:..."`, no
+# space) carrying the same @id matched nothing, `existing` came back empty,
+# and step 4 fell through to the brand-new-@id branch: silently CREATING the
+# exact duplicate-@id corruption the existing_match_count guards exist to
+# fail closed on. jq parses each candidate, so any legal JSON serialization
+# of the same @id matches; a file jq cannot parse is skipped (it cannot
+# carry a parseable @id, and duplicate-@id detection is only meaningful over
+# parseable JSON). `find -print` piped line-by-line (not a
+# "$FINDINGS_DIR"/*.json glob) keeps the original ARG_MAX rationale: a large
+# topic's file count never lands on one command line. Emits matching paths
+# one per line -- the same shape the grep -Fl form produced -- and always
+# returns 0 (no match is an answer, not an error).
+findings_with_id() { # findings_with_id <findings-dir> <@id>
+  local findings_dir="$1" target_id="$2" candidate candidate_id
+  find "$findings_dir" -maxdepth 1 -name '*.json' -print 2>/dev/null | LC_ALL=C sort \
+    | while IFS= read -r candidate; do
+        candidate_id="$(jq -r '."@id" // empty' "$candidate" 2>/dev/null)" || candidate_id=""
+        [ "$candidate_id" = "$target_id" ] && printf '%s\n' "$candidate"
+      done
+  return 0
+}
+
 # --- Concurrency lock (feature-spec AC12): mkdir is atomic, no flock -------
 # scripts/lib/container-lock.sh is the shared primitive (issue #382), sourced
 # here and by export instead of each script carrying its own copy -- it also
@@ -248,7 +275,7 @@ while IFS=$'\t' read -r rpath rdigest rmiftype; do
 
     rid="$(jq -r '."@id" // empty' "$rfile" 2>/dev/null)"
     if [ -n "$rid" ]; then
-      existing_probe_matches="$(find "$FINDINGS_DIR" -maxdepth 1 -name '*.json' -exec grep -Fl "\"@id\": \"$rid\"" {} + 2>/dev/null || true)"
+      existing_probe_matches="$(findings_with_id "$FINDINGS_DIR" "$rid")"
       existing_probe_match_count="$(printf '%s\n' "$existing_probe_matches" | grep -c . || true)"
       # Same ambiguous-@id fail-closed check step 4 already does: a
       # multi-line $existing_probe_matches used as a single filename below
@@ -510,19 +537,15 @@ while IFS=$'\t' read -r rpath rdigest rmiftype; do
   rid="$(jq -r '."@id"' "$rfile")"
   [ -n "$rid" ] && [ "$rid" != "null" ] || fail "resource $rpath has no @id, cannot upsert"
 
-  # -F: literal substring match, not a BRE pattern -- @id is schema-
-  # constrained only to a "^urn:mif:" prefix (schemas/mif/mif.schema.json),
-  # so any later segment can legally contain regex metacharacters
-  # ('.', '*', '[', ...) that would otherwise be interpreted as a pattern
-  # and could match the wrong existing finding (or fail to match its own).
-  # `find -exec grep +` (not a bare "$FINDINGS_DIR"/*.json glob) so a large
-  # topic's file count can't hit ARG_MAX; matches are counted explicitly so
-  # a destination corpus already corrupted with a duplicate @id is rejected
-  # instead of non-deterministically picking one (this script's own writes
-  # can never create that state -- write-finding.sh and the overwrite path
-  # below never introduce a second file for the same @id -- but a corpus
-  # written before this script existed could already be corrupted).
-  existing_matches="$(find "$FINDINGS_DIR" -maxdepth 1 -name '*.json' -exec grep -Fl "\"@id\": \"$rid\"" {} + 2>/dev/null || true)"
+  # Parsed-@id lookup (findings_with_id, issue #668) -- see the helper's own
+  # comment for why this must never be a byte-pattern grep. Matches are
+  # counted explicitly so a destination corpus already corrupted with a
+  # duplicate @id is rejected instead of non-deterministically picking one
+  # (this script's own writes can never create that state -- write-finding.sh
+  # and the overwrite path below never introduce a second file for the same
+  # @id -- but a corpus written before this script existed could already be
+  # corrupted).
+  existing_matches="$(findings_with_id "$FINDINGS_DIR" "$rid")"
   existing_match_count="$(printf '%s\n' "$existing_matches" | grep -c . || true)"
   [ "$existing_match_count" -le 1 ] || fail "multiple existing findings share @id $rid in $FINDINGS_DIR -- destination corpus is already corrupted (duplicate @id), refusing to guess which one to update"
   existing="$existing_matches"

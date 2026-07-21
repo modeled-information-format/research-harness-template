@@ -35,6 +35,16 @@
 # (e.g. `new/*x*/Date(` must not collapse to `newDate(`, which would
 # silently defeat the `\bnew\s+Date\s*\(` match below).
 #
+# Regex-literal aware (#680): a regex literal like /^a\/*b$/ contains the
+# two-character sequence /* right after a backslash. Without a regex frame
+# the tokenizer would read that as a block-comment opener and silently strip
+# everything up to the next literal */ (or EOF) — hiding any forbidden call
+# after it. A `/` in code position therefore opens a regex frame (contents
+# stripped, escapes and [...] character classes honored) whenever the
+# preceding significant token can't end an expression (after `=`, `(`, `,`,
+# a keyword like return/typeof, or at start of input); otherwise it is
+# division and passes through as plain code.
+#
 # Compile-only: nothing is executed. Wired into verify.sh's gate_workflows,
 # alongside check-workflow-syntax.sh; the regression eval is
 # evals/workflow-forbidden-globals-check.sh.
@@ -93,6 +103,58 @@ for f in "${files[@]}"; do
     // template so removing the delimiters never fuses adjacent tokens
     // together (e.g. `new/*x*/Date(` must not collapse to `newDate(`,
     // which would silently defeat the `\bnew\s+Date\s*\(` match below).
+    //
+    // Regex literals are recognized too (#680): without a regex frame, a
+    // literal like /^a\/*b$/ is misread — the code frame has no escape
+    // handling, so the `\` passes through as a plain character and the
+    // following `/*` opens a phantom block comment that swallows the rest
+    // of the file (hiding any forbidden call after it). Whether a `/` in
+    // code position starts a regex literal or is a division operator is
+    // decided by the last significant character already emitted: after
+    // something that can END an expression (an identifier/number, `)`,
+    // `]`, `}`, or a same-line postfix `++`/`--`) it is division; after
+    // anything else (`=`, `(`, `,`, `!`,
+    // a keyword like return/typeof, start of input) it opens a regex
+    // frame, whose contents are stripped like a string (escapes honored,
+    // `/` inside a [...] character class does not terminate it, trailing
+    // flags consumed). An unterminated regex frame pops at the newline —
+    // real regex literals cannot span lines, so a misclassified division
+    // can never swallow more than the remainder of its own line.
+    // Can a `/` at this point start a regex literal? Looks back at the last
+    // significant (non-whitespace) character of the stripped output so far:
+    // if it can end an expression (identifier/number character, `)`, `]`,
+    // `}`) the `/` is division; otherwise (operator, opening bracket,
+    // comma, start of input, or a keyword such as `return`) it starts a
+    // regex. Keywords need the word check because they end in identifier
+    // characters: `return /re/` is a regex, `count /2/ x` is division.
+    // Postfix `++`/`--` also ends an expression, so `x++ / 2` is division —
+    // but only on the same line: across a newline ASI terminates the
+    // statement (`++`/`--` is a restricted production), so `x++`
+    // newline `/re/` is still a regex.
+    const REGEX_PRECEDING_KEYWORDS = new Set([
+      "return", "typeof", "instanceof", "in", "of", "new", "delete",
+      "void", "case", "do", "else", "yield", "await", "throw",
+    ]);
+    function regexAllowed(prev) {
+      let j = prev.length - 1;
+      let sawNewline = false;
+      while (j >= 0 && /\s/.test(prev[j])) {
+        if (prev[j] === "\n") sawNewline = true;
+        j--;
+      }
+      if (j < 0) return true; // start of input
+      const ch = prev[j];
+      // Postfix increment/decrement can end an expression: a `/` right
+      // after `++`/`--` on the same line is division, never a regex.
+      if (!sawNewline && (ch === "+" || ch === "-") && j > 0 && prev[j - 1] === ch) return false;
+      if (/[A-Za-z0-9_$]/.test(ch)) {
+        let k = j;
+        while (k >= 0 && /[A-Za-z0-9_$]/.test(prev[k])) k--;
+        return REGEX_PRECEDING_KEYWORDS.has(prev.slice(k + 1, j + 1));
+      }
+      return ch !== ")" && ch !== "]" && ch !== "}";
+    }
+
     function stripCommentsAndStrings(text) {
       let out = "";
       let i = 0;
@@ -118,6 +180,22 @@ for f in "${files[@]}"; do
           if (c === frame.quote) stack.pop();
           i++; continue;
         }
+        if (frame.type === "regex") {
+          // A regex literal cannot contain an unescaped newline; if one
+          // shows up the literal was misidentified (or malformed) — pop
+          // back to code so at most one line is ever stripped.
+          if (c === "\n") { stack.pop(); out += c; i++; continue; }
+          if (c === "\\") { i += 2; continue; } // skip escaped char (incl. \/ and \[)
+          if (c === "[") { frame.inClass = true; i++; continue; }
+          if (c === "]") { frame.inClass = false; i++; continue; }
+          if (c === "/" && !frame.inClass) {
+            stack.pop();
+            i++;
+            while (i < n && /[A-Za-z]/.test(text[i])) i++; // trailing flags
+            continue;
+          }
+          i++; continue;
+        }
         if (frame.type === "template") {
           if (c === "\n") { out += c; i++; continue; }
           if (c === "\\") { i += 2; continue; } // skip escaped char (incl. an escaped ` or $)
@@ -135,6 +213,7 @@ for f in "${files[@]}"; do
         }
         if (c === "/" && c2 === "/") { stack.push({ type: "linecomment" }); out += " "; i += 2; continue; }
         if (c === "/" && c2 === "*") { stack.push({ type: "blockcomment" }); out += " "; i += 2; continue; }
+        if (c === "/" && regexAllowed(out)) { stack.push({ type: "regex", inClass: false }); out += " "; i++; continue; }
         if (c === "\x27" || c === "\"") { stack.push({ type: "string", quote: c }); out += " "; i++; continue; }
         if (c === "`") { stack.push({ type: "template" }); out += " "; i++; continue; }
         out += c;

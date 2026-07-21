@@ -352,6 +352,28 @@ gate_m3() {
   else
     bad "report-synthesizer.md (#479) regression: $rs479_fail -- render-artifact.sh's raw mv needs it there to make Step 4d's stamp reachable."
   fi
+
+  # research-harness-template#671: report-synthesizer's Step 1 survivor-selection
+  # loop and Step 4 citation-integrity call must glob the canonical
+  # $REPORTS_DIR/findings/ subdirectory that every producer (dimension-analyst,
+  # source-chunker) writes to and every other consumer (orchestrator,
+  # falsification-analyst, /status, /falsify) reads from. The shipped flat glob
+  # ("$REPORTS_DIR"/finding-*.json) matched nothing on a real session: with
+  # nullglob unset the loop iterated once over the literal unexpanded pattern,
+  # so synthesis saw an empty survivor set and the citation-integrity gate
+  # never ran over the real findings.
+  local rs671_fail=""
+  grep -qE '"\$REPORTS_DIR"/finding-\*\.json' "$RS" \
+    && rs671_fail="${rs671_fail}still globs finding-*.json flat under \$REPORTS_DIR instead of the findings/ subdirectory; "
+  grep -qE 'for f in "\$REPORTS_DIR"/findings/finding-\*\.json' "$RS" \
+    || rs671_fail="${rs671_fail}Step 1 survivor-selection loop no longer iterates \$REPORTS_DIR/findings/finding-*.json; "
+  grep -qE 'check-citation-integrity\.sh "\$REPORTS_DIR"/findings/finding-\*\.json' "$RS" \
+    || rs671_fail="${rs671_fail}Step 4 citation-integrity call no longer targets \$REPORTS_DIR/findings/finding-*.json; "
+  if [ -z "$rs671_fail" ]; then
+    ok "report-synthesizer.md (#671): Step 1/Step 4 finding globs target the canonical findings/ subdirectory"
+  else
+    bad "report-synthesizer.md (#671) regression: $rs671_fail"
+  fi
 }
 
 # ---------------------------------------------------------------------------
@@ -549,6 +571,15 @@ gate_m5() {
      && [ "$(jq -r '.packs[]|select(.name=="typo-demo")|.error' "$T/typo.json")" != "null" ]; then
     sync_ok=true
   fi
+  # ...and the pack must ALSO be fail-closed out of the native enabledPlugins
+  # map and the sidecar's enabledPlugins list — the sidecar error alone is not
+  # a runtime signal, so an unresolved pack must never surface as enabled
+  # (regression test for research-harness-template#669).
+  enable_ok=false
+  if [ "$(jq -r '.enabledPlugins | has("typo-demo@research-harness") | not' "$T/settings-typo.json")" = "true" ] \
+     && [ "$(jq -r '.enabledPlugins | index("typo-demo") == null' "$T/typo.json")" = "true" ]; then
+    enable_ok=true
+  fi
   # check-pack-docs.py hardcodes REPO relative to its own file location (no
   # config-path argument), so exercise external_packs() directly against a
   # synthetic REPO via importlib rather than running the whole script.
@@ -570,10 +601,29 @@ ok = "typo-demo" not in ids and any("demo-mktz" in e and "typo-demo" in e for e 
 print("true" if ok else "false")
 PY
 )
-  if [ "$sync_ok" = "true" ] && [ "$check_ok" = "true" ]; then
-    ok "an unresolvable marketplace-ref name surfaces an explicit error, not a silent null"
+  if [ "$sync_ok" = "true" ] && [ "$check_ok" = "true" ] && [ "$enable_ok" = "true" ]; then
+    ok "an unresolvable marketplace-ref name surfaces an explicit error and is excluded from enabledPlugins"
   else
-    bad "unresolved marketplace-ref regression (sync_ok=$sync_ok check_ok=$check_ok)"
+    bad "unresolved marketplace-ref regression (sync_ok=$sync_ok check_ok=$check_ok enable_ok=$enable_ok)"
+  fi
+  rm -rf "$T"
+
+  # 5d4. A bundled pack whose manifest is missing/unreadable is fail-closed the
+  #      same way as an unresolved marketplace-ref (Copilot review on
+  #      research-harness-template#714): the sidecar records the error, and the
+  #      pack is excluded from both the native enabledPlugins map and the
+  #      sidecar's enabledPlugins list.
+  T=$(mktemp -d)
+  cp .claude/settings.json "$T/settings-ghost.json"
+  jq '.packs += [{"name":"ghost-bundled","enabled":true,"source":"bundled"}]' \
+     harness.config.json > "$T/ghost.cfg.json"
+  if scripts/sync-packs.sh "$T/ghost.cfg.json" "$T/ghost.json" "$T/settings-ghost.json" >/dev/null 2>&1 \
+     && [ "$(jq -r '.packs[]|select(.name=="ghost-bundled")|.error' "$T/ghost.json")" != "null" ] \
+     && [ "$(jq -r '.enabledPlugins | has("ghost-bundled@research-harness") | not' "$T/settings-ghost.json")" = "true" ] \
+     && [ "$(jq -r '.enabledPlugins | index("ghost-bundled") == null' "$T/ghost.json")" = "true" ]; then
+    ok "a bundled pack with an unreadable manifest is excluded from enabledPlugins (fail closed)"
+  else
+    bad "unreadable bundled manifest not fail-closed out of enabledPlugins"
   fi
   rm -rf "$T"
 
@@ -3642,7 +3692,45 @@ gate_m29() {
     bad "destination ontology-map pre-validation check failed (rc=$rc_badontmap, finding_written=$badontmap_written)"
   fi
 
-  # 29l. Regression test for issue #679: a RELATIVE <container-dir> must
+  # 29l. Regression (issue #668): the existing-@id lookup must match on the
+  #      PARSED @id, never on jq-pretty-printed bytes. Re-serialize the
+  #      synthetic finding written in 29f/29g as COMPACT JSON on disk (same
+  #      @id, no '": "' spacing -- schema-legal: findings.schema.json
+  #      constrains only the @id VALUE, never the byte layout), then
+  #      re-import the same @id with different content under a DIFFERENT
+  #      resource filename. The earlier byte-pattern grep found no match on
+  #      the compact file and fell through to the brand-new-@id branch,
+  #      writing a SECOND file for the same @id -- silently creating the
+  #      exact duplicate-@id corruption this script otherwise fails closed
+  #      on. The fixed lookup must find the compact file and overwrite it IN
+  #      PLACE: import succeeds, no compact-dup.json lands, and exactly one
+  #      file in the destination carries the @id.
+  jq -c . "$TOPIC_DIR/findings/finding.json" > "$T/compact.json" \
+    && cp "$T/compact.json" "$TOPIC_DIR/findings/finding.json" \
+    || bad "gate_m29 29l: failed to re-serialize finding.json as compact JSON"
+  jq '.summary = "gate_m29 compact-json lookup regression test"' "$T/new-finding-v2.json" > "$T/new-finding-v3.json"
+  local v3_digest; v3_digest="$(scripts/mif-container-digest.sh resource "$T/new-finding-v3.json")"
+  local v3_manifest_digest; v3_manifest_digest="$(printf '%s\n' "$v3_digest" | scripts/mif-container-digest.sh manifest)"
+  build_container "$T/c-compact" "$T/new-finding-v3.json" "$v3_digest" "$v3_manifest_digest" "1.0.0" "compact-dup.json"
+  got="$("$IMPORT" "$T/c-compact" "$TOPIC" 2>&1)"
+  local rc_compact=$?
+  local dup_file_count; dup_file_count="$(find "$TOPIC_DIR/findings" -maxdepth 1 -name 'compact-dup.json' | wc -l | tr -d ' ')"
+  # Count @id carriers by PARSING each file (jq), not by grepping bytes --
+  # a byte-grep count here would be blind to the same compact-JSON layout
+  # this regression test exists to cover.
+  local id_carrier_count=0 idc_file idc_id
+  while IFS= read -r idc_file; do
+    idc_id="$(jq -r '."@id" // empty' "$idc_file" 2>/dev/null)"
+    [ "$idc_id" = "$new_id" ] && id_carrier_count=$((id_carrier_count + 1))
+  done < <(find "$TOPIC_DIR/findings" -maxdepth 1 -name '*.json')
+  local compact_summary; compact_summary="$(jq -r '.summary' "$TOPIC_DIR/findings/finding.json" 2>/dev/null)"
+  if [ "$rc_compact" -eq 0 ] && [ "$dup_file_count" = "0" ] && [ "$id_carrier_count" = "1" ] && [ "$compact_summary" = "gate_m29 compact-json lookup regression test" ]; then
+    ok "a compact-JSON destination file is still found by @id -- overwritten in place, never duplicated (#668)"
+  else
+    bad "compact-JSON @id lookup regression check failed (rc=$rc_compact, dup=$dup_file_count, carriers=$id_carrier_count, summary=$compact_summary): $got"
+  fi
+
+  # 29m. Regression test for issue #679: a RELATIVE <container-dir> must
   #      resolve against the INVOKING cwd, not the repo root -- the script
   #      cd's to $ROOT before parsing argv, so before the fix a relative
   #      path passed from anywhere but the repo root resolved against $ROOT

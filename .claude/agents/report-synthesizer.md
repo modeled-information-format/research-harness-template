@@ -90,12 +90,13 @@ Read the goal so the synthesis answers the decision it was commissioned for:
 jq '.' "$REPORTS_DIR/goal.json"
 ```
 
-Collect every finding file in `$REPORTS_DIR` and select the ones that **survived**
+Collect every finding file in `$REPORTS_DIR/findings/` (the canonical findings
+directory every producer writes to) and select the ones that **survived**
 falsification. A finding ships only if its adversarial verdict is not
 `"falsified"`:
 
 ```bash
-for f in "$REPORTS_DIR"/finding-*.json; do
+for f in "$REPORTS_DIR"/findings/finding-*.json; do
   verdict=$(jq -r '.extensions.harness.verification.verdict // "inconclusive"' "$f")
   [ "$verdict" != "falsified" ] && echo "$f"
 done
@@ -186,7 +187,7 @@ Run the citation-integrity gate over the findings the synthesis cites so no
 artifact ships on dead or malformed references:
 
 ```bash
-scripts/check-citation-integrity.sh "$REPORTS_DIR"/finding-*.json
+scripts/check-citation-integrity.sh "$REPORTS_DIR"/findings/finding-*.json
 ```
 
 ## Step 4b — Render the generic MIF Level-3 report (falsification-graded)

@@ -1,6 +1,6 @@
 {
   "name": "continuous-monitor",
-  "version": "0.16.24",
+  "version": "0.16.25",
   "kind": "methodology",
   "description": "Unattended, scheduled monitoring of external sources (arXiv, OpenAlex, Crossref, Semantic Scholar, PubMed, bioRxiv/medRxiv, GDELT, Hacker News) for a topic: scores candidates via Interest-Inference against the concordance, ranks them through the Recommendation Engine, and gates every candidate through a mandatory human Editorial Gate (a review pull request) before anything is projected into a real MIF finding.",
   "license": "MIT",
