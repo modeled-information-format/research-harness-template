@@ -62,12 +62,18 @@ while [ $# -gt 0 ]; do
 done
 
 # A caller MUST NOT override the verified ref through passthrough args — that would defeat
-# the verify-then-pin guarantee and could apply unverified content. (Length-guarded,
-# fully-quoted expansion — safe under `set -u` on bash 3.2, no re-split/globbing.)
+# the verify-then-pin guarantee and could apply unverified content. Nor may they pass
+# Copier's --defaults (aliases -l/-f): on `copier update` it resolves every question to
+# its schema-declared DEFAULT instead of the answer recorded in .copier-answers.yml,
+# silently resetting this instance's customizations (topics, packs, voice profile) to
+# template stock (issue #674). Use `-- --skip-answered` for a non-interactive update
+# that keeps recorded answers. (Length-guarded, fully-quoted expansion — safe under
+# `set -u` on bash 3.2, no re-split/globbing.)
 if [ "${#COPIER_ARGS[@]}" -gt 0 ]; then
   for a in "${COPIER_ARGS[@]}"; do
     case "$a" in
       -r|--vcs-ref|--vcs-ref=*) echo "update.sh: --vcs-ref/-r cannot be passed through — it pins the verified commit" >&2; exit 2 ;;
+      -l|-f|--defaults) echo "update.sh: --defaults/-l/-f cannot be passed through — it resets your recorded answers (.copier-answers.yml) to template defaults; use '-- --skip-answered' for a non-interactive update that keeps them" >&2; exit 2 ;;
     esac
   done
 fi

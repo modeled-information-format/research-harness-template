@@ -2,7 +2,7 @@
 id: reference-coverage
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-20T02:17:20.342Z'
+modified: '2026-07-20T11:51:15.886Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -39,8 +39,8 @@ the **discovered** set equals the **documented** set.
 | Core skills | 10 | 10 | `.claude/skills/*/SKILL.md` |
 | Commands | 12 | 12 | `.claude/commands/*.md` |
 | Agents | 7 | 7 | `.claude/agents/*.md` |
-| Scripts | 56 | 56 | `scripts/**` (excludes `__pycache__`); the 24 scripts Epic #416 added moved to `packs/monitoring/continuous-monitor/scripts/**` (research-harness-template#483) and are documented in [packs/monitoring.md](packs/monitoring.md), not counted here |
-| **Total** | **162** | **162** | — |
+| Scripts | 57 | 57 | `scripts/**` (excludes `__pycache__`); the 24 scripts Epic #416 added moved to `packs/monitoring/continuous-monitor/scripts/**` (research-harness-template#483) and are documented in [packs/monitoring.md](packs/monitoring.md), not counted here |
+| **Total** | **163** | **163** | — |
 
 Reproduce the discovered counts:
 
@@ -50,7 +50,7 @@ ls .claude/skills | wc -l        # 10 core skills
 ls .claude/commands/*.md | wc -l # 12 commands
 ls .claude/agents/*.md | wc -l   # 7 agents
 find scripts -type f \( -name '*.sh' -o -name '*.py' -o -name '*.jq' \) \
-  | grep -v __pycache__ | wc -l  # 52 scripts
+  | grep -v __pycache__ | wc -l  # 57 scripts
 ```
 
 Domain ontology packs are vendored on demand (ADR-0012) — `packs/ontologies/`
@@ -168,14 +168,14 @@ All documented in [agents.md](agents.md): `orchestrator`, `dimension-analyst`,
 `falsification-analyst`, `report-synthesizer`, `corpus-synthesizer`,
 `harness-configurator`, `source-chunker`.
 
-## Scripts (56)
+## Scripts (57)
 
 All documented in [scripts.md](scripts.md):
 `assert-graph-mif`,
 `author-ontology`, `backfill-report-slugs`, `build-concordance`,
 `build-graph-viz`, `build-graph`, `build-index`, `build-topic-readme`,
 `bump-version`, `check-citation-integrity`, `check-mermaid.py`,
-`check-coverage-doc.py`, `check-ontology-lock`, `check-pack-docs.py`, `check-relationship-targets`,
+`check-coverage-doc.py`, `check-fetch-engine-gh-token`, `check-ontology-lock`, `check-pack-docs.py`, `check-relationship-targets`,
 `check-shippable-typing`, `check-version-bump`, `check-workflow-forbidden-globals`, `check-workflow-syntax`,
 `codegen/bundle_schema.py`,
 `codegen/gen-models`, `falsify`, `fetch-engine`, `fetch-mif-docs-plugin`,
@@ -198,5 +198,5 @@ rather than counted in this core-scripts inventory, the same way
 
 ## Assertion
 
-Discovered (162) equals documented (162) across all five categories. No pack,
+Discovered (163) equals documented (163) across all five categories. No pack,
 skill, command, agent, or script is omitted.

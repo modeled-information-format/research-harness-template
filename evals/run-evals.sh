@@ -73,6 +73,16 @@ run "workflow-forbidden-globals-check" bash evals/workflow-forbidden-globals-che
 # positioning + supersession note (#553).
 run "workflow-docs-check" bash evals/workflow-docs-check.sh
 
+# ci.yml's verify/version-bump jobs (and, via their pack sources, monitor.yml/
+# monitor-gate.yml) fed scripts/fetch-engine.sh's cross-repo read of mif-rs a
+# GitHub App installation token restricted to this repo alone -- installation
+# tokens 404 on any repo outside their scope, even a public one, so both jobs
+# failed on every run (#662). Static gate over every .github/workflows/*.yml:
+# every fetch-engine.sh step must use a minted App token whose mint step's
+# repositories: input includes mif-rs (ADR-011 least-privilege identity),
+# never the ambient default job token.
+run "fetch-engine-gh-token-check" bash evals/fetch-engine-gh-token-check.sh
+
 # /start's Error handling partial-findings check globs
 # reports/<topic>/findings/*.json — where dimension-analyst output actually
 # lands — never the flat reports/<topic>/*.json, which matches Phase 0
@@ -545,6 +555,11 @@ run "run-lock-mutual-exclusion" bash evals/run-lock-test.sh
 # 1b2. Finding publish is collision-safe: two dimension-analysts converging on
 #      the same slug must not silently clobber one another (issue #357).
 run "finding-publish-collision" bash evals/finding-publish-collision.sh
+
+# 1b3. write-finding.sh never leaks its .wf-staging-* directory on any exit
+#      path — including the generic ln-failure branch, which used to rmdir the
+#      staging dir without removing the staged file first (issue #683).
+run "write-finding-stage-cleanup" bash evals/write-finding-stage-cleanup.sh
 
 # 1c. Update-channel provenance gate: scripts/update.sh refuses to invoke copier on a
 #     verification miss (fail-closed), pins copier to the verified SHA on a pass, and
