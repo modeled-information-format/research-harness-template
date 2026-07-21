@@ -27,8 +27,11 @@
 #   2. Failed copy: when the cp into the clone fails (read-only target
 #      dir), the script exits nonzero, creates no branch, and never
 #      reaches `gh pr create`.
+#   3. Pre-staged clone: when the reused clone already has staged content
+#      (which scoped `git add -- <path>` would NOT clear from the index),
+#      the script fails fast — nonzero exit, no branch, no `gh pr create`.
 #
-# Exit 0 iff both hold; each failing case names itself.
+# Exit 0 iff all hold; each failing case names itself.
 set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT" || exit 2
@@ -143,5 +146,22 @@ if [ -e "$TMP/gh-called" ]; then
   note "case 2: gh pr create was reached even though the cp failed"
   fail=1
 fi
+
+# --- case 3: pre-staged content in the reused clone fails fast ---------------
+rm -f "$TMP/gh-called"
+git -C "$ONT" add README.md
+if run_script evaltmp-staged; then
+  note "case 3: script exited 0 despite pre-staged changes in the clone"
+  fail=1
+fi
+if git -C "$ONT" rev-parse --verify -q refs/heads/feat/ontology-evaltmp-staged >/dev/null; then
+  note "case 3: a branch was created despite pre-staged changes"
+  fail=1
+fi
+if [ -e "$TMP/gh-called" ]; then
+  note "case 3: gh pr create was reached despite pre-staged changes"
+  fail=1
+fi
+git -C "$ONT" reset -q README.md
 
 exit "$fail"
