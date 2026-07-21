@@ -10,7 +10,8 @@
 # Per the architecture doc's mode-routing table (docs/reference/
 # engine-workflows.md's "Mode router" section, reproduced verbatim from the
 # real module source below): `import` mode is `research-import` -> (if
-# `needsGating` is non-empty) a falsify drain over `scope: 'all'` ->
+# `needsGating` is non-empty) a falsify drain scoped to
+# `{ ids: needsGating }` with `regate: true` (#678) ->
 # `research-synthesis` -> `research-projection`. An import-gate failure
 # (`!imp.ok`) short-circuits before any gating runs.
 #
@@ -49,7 +50,17 @@
 #         projection with the synthesis's own path): the falsify drain runs,
 #         synthesis runs once, and projection receives EXACTLY the
 #         synthesisPath synthesis returned -- proving the pass-through is
-#         real, not hand-rewritten.
+#         real, not hand-rewritten. The falsify call must carry
+#         `scope: { ids: needsGating }` and `regate: true` (#678): when
+#         trustImportedVerdicts is false, needsGating includes findings that
+#         already carry a FOREIGN extensions.harness.verification.attempted_at
+#         block, and a bare scope:'all'/no-regate call would silently exclude
+#         every one of them under the one-round rule.
+#      B7 (scoped regate drain narrows to deferredIds): when the first falsify
+#         call defers ids, the second drain iteration's scope narrows to
+#         EXACTLY those deferredIds (still regate: true) -- never re-sending
+#         the full needsGating scope, which under regate would re-open
+#         verification on findings the drain just gated (#678).
 #      B5 (needsGating EMPTY skips falsify but still runs synthesis and
 #         projection): falsify is never called when there is nothing to
 #         gate, while synthesis/projection still proceed -- proving the gate
@@ -103,8 +114,8 @@ grep -qF "const imp = await wf('import', { containerDir: A.containerDir, trustIm
 grep -qF "if (!imp || !imp.ok) return { mode: MODE, imported: imp }" <<<"$import_span" \
   || { note "the import-gate-failure short-circuit ('!imp.ok') is missing or reshaped"; fail=1; }
 
-grep -qF "const gate = imp.needsGating.length ? await falsifyAll({}) : { gated: 0, rollup: {} }" <<<"$import_span" \
-  || { note "the falsify drain is no longer gated literally on imp.needsGating.length"; fail=1; }
+grep -qF "const gate = imp.needsGating.length ? await falsifyAll({ scope: { ids: imp.needsGating }, regate: true }) : { gated: 0, rollup: {} }" <<<"$import_span" \
+  || { note "the falsify drain is no longer gated literally on imp.needsGating.length with scope:{ids:needsGating}/regate:true (#678 — a bare falsifyAll({}) silently skips foreign-verdict findings under the one-round rule)"; fail=1; }
 
 grep -qF "const syn = await wf('synthesis', {})" <<<"$import_span" \
   || { note "the unconditional synthesis call after gating is missing or reshaped"; fail=1; }
@@ -319,6 +330,9 @@ check('module did not throw', d['threw'] is None, str(d['threw']))
 bn = by_name(d['wfCalls'])
 check('import ran exactly once', len(bn.get('import', [])) == 1)
 check('falsify ran (needsGating was non-empty)', len(bn.get('falsify', [])) >= 1, str(len(bn.get('falsify', []))))
+falsify_args = (bn.get('falsify') or [{}])[0].get('args') or {}
+check("falsify was scoped to EXACTLY needsGating's ids, not 'all' (#678)", falsify_args.get('scope') == {'ids': ['urn:mif:concept:x:finding-1']}, json.dumps(falsify_args.get('scope')))
+check('falsify carried regate: true (#678 -- foreign attempted_at blocks must be re-opened, not one-round-skipped)', falsify_args.get('regate') is True, json.dumps(falsify_args.get('regate')))
 check('synthesis ran exactly once', len(bn.get('synthesis', [])) == 1)
 check('projection ran exactly once', len(bn.get('projection', [])) == 1)
 proj_args = bn['projection'][0]['args']
@@ -437,8 +451,70 @@ else
   fail=1
 fi
 
+# ============================================================================
+# B7. scoped regate drain narrows to deferredIds (#678): first falsify call
+# defers two ids; the second drain iteration must be scoped to EXACTLY those
+# deferredIds (still regate: true) — never the full needsGating set, which
+# under regate would re-open verification on findings the drain just gated.
+# ============================================================================
+printf '%s' "{\"harnessDir\":\"$TMP/h\",\"topic\":\"pipeline-eval-topic\",\"mode\":\"import\",\"containerDir\":\"/tmp/some-export-dir\",\"trustImportedVerdicts\":false}" > "$TMP/args-b7.json"
+cat > "$TMP/stubs-b7.cjs" <<'NODE'
+'use strict';
+let falsifyCalls = 0;
+module.exports = {
+  wf: {
+    import: async () => ({ ok: true, imported: ['urn:mif:concept:x:finding-1', 'urn:mif:concept:x:finding-2', 'urn:mif:concept:x:finding-3'], needsGating: ['urn:mif:concept:x:finding-1', 'urn:mif:concept:x:finding-2', 'urn:mif:concept:x:finding-3'], trustedForeignVerdicts: [], collisionsChecked: 0 }),
+    falsify: async () => {
+      falsifyCalls += 1;
+      if (falsifyCalls === 1) return { gated: 1, rollup: { survived: 1 }, verdicts: [], deferredIds: ['urn:mif:concept:x:finding-2', 'urn:mif:concept:x:finding-3'], alreadyVerified: 0 };
+      return { gated: 2, rollup: { survived: 2 }, verdicts: [], deferredIds: [], alreadyVerified: 0 };
+    },
+    synthesis: async () => ({ ok: true, synthesisPath: 'reports/pipeline-eval-topic/synthesis-import-drain.json', sections: [], findingsUsed: [], checkCoverage: [], openIssues: [], ungatedFindings: [] }),
+    projection: async (a) => ({ ok: true, reportPath: 'reports/pipeline-eval-topic/report.md', reportId: 'urn:mif:concept:pipeline-eval-topic:report', mifLevel: 3, checksAddressed: [], verificationVerdict: 'survived', readmePath: null, readmeCheckPassed: false, graphRefreshed: false, graphAssertPassed: false, problems: [], _receivedSynthesisPath: a.synthesisPath }),
+  },
+};
+NODE
+run_case b7 "$TMP/args-b7.json" "$TMP/stubs-b7.cjs" "$TMP/out-b7.json"
+
+if [ -f "$TMP/out-b7.json" ]; then
+  python3 - "$TMP/out-b7.json" <<PY
+import json, sys
+$by_name_py
+d = json.load(open(sys.argv[1], encoding='utf-8'))
+ok = True
+def check(name, cond, detail=''):
+    global ok
+    if cond:
+        print(f"  ok  B7: {name}")
+    else:
+        ok = False
+        print(f"FAIL  B7: {name}{(' -- ' + detail) if detail else ''}")
+
+check('module did not throw', d['threw'] is None, str(d['threw']))
+bn = by_name(d['wfCalls'])
+falsify = bn.get('falsify', [])
+check('falsify ran exactly twice (drain stopped when deferredIds emptied)', len(falsify) == 2, str(len(falsify)))
+if len(falsify) == 2:
+    a1 = falsify[0]['args']
+    a2 = falsify[1]['args']
+    check('first call was scoped to the FULL needsGating set with regate: true', a1.get('scope') == {'ids': ['urn:mif:concept:x:finding-1', 'urn:mif:concept:x:finding-2', 'urn:mif:concept:x:finding-3']} and a1.get('regate') is True, json.dumps({'scope': a1.get('scope'), 'regate': a1.get('regate')}))
+    check("second call narrowed to EXACTLY the first call's deferredIds (never the full needsGating set)", a2.get('scope') == {'ids': ['urn:mif:concept:x:finding-2', 'urn:mif:concept:x:finding-3']}, json.dumps(a2.get('scope')))
+    check('second call still carried regate: true', a2.get('regate') is True, json.dumps(a2.get('regate')))
+
+r = d.get('result') or {}
+check('result.gate.gated sums both drain iterations', (r.get('gate') or {}).get('gated') == 3, json.dumps(r.get('gate')))
+
+sys.exit(0 if ok else 1)
+PY
+  rc=$?
+  [ "$rc" -eq 0 ] || fail=1
+else
+  note "B7: no out-b7.json produced"
+  fail=1
+fi
+
 if [ "$fail" -eq 0 ]; then
-  note "the import branch's composition is proven, structurally and behaviorally, to match the architecture doc exactly: a missing containerDir throws before any child runs; containerDir/trustImportedVerdicts pass through to wf('import', ...) unchanged; an import-gate failure (imp.ok===false) short-circuits to { mode, imported: imp } before falsify/synthesis/projection ever run; the falsify drain is genuinely conditional on needsGating.length in BOTH directions (runs when non-empty, skipped when empty, synthesis/projection still proceed either way); and projection is genuinely conditional on synthesis.ok, receiving synthesis's own synthesisPath verbatim when it does run. The gap this eval cannot close -- whether a live research-import/synthesis/projection call's own judgment behaves as these fixtures assume -- is each already covered by its own dedicated eval (import-check.sh, synthesis-citation-check.sh, projection-supersession-check.sh)."
+  note "the import branch's composition is proven, structurally and behaviorally, to match the architecture doc exactly: a missing containerDir throws before any child runs; containerDir/trustImportedVerdicts pass through to wf('import', ...) unchanged; an import-gate failure (imp.ok===false) short-circuits to { mode, imported: imp } before falsify/synthesis/projection ever run; the falsify drain is genuinely conditional on needsGating.length in BOTH directions (runs when non-empty, skipped when empty, synthesis/projection still proceed either way), is scoped to EXACTLY needsGating's ids with regate: true (#678 — never a bare scope:'all' call that would one-round-skip foreign-verdict findings), and narrows each subsequent drain iteration to the previous call's deferredIds; and projection is genuinely conditional on synthesis.ok, receiving synthesis's own synthesisPath verbatim when it does run. The gap this eval cannot close -- whether a live research-import/synthesis/projection call's own judgment behaves as these fixtures assume -- is each already covered by its own dedicated eval (import-check.sh, synthesis-citation-check.sh, projection-supersession-check.sh)."
 else
   echo "research-pipeline-import-check: FAILED (see notes above)"
 fi
