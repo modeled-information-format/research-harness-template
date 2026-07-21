@@ -98,11 +98,15 @@ is_authored_surface () { # echo "yes" or ""
     reports/*/*.blog.md|reports/*/*.book.md) echo yes ;;
     reports/*/research-progress.md) echo "" ;;
     reports/*/findings/*|reports/*/sources/*|reports/*/quarantine/*|reports/*/_meta/*) echo "" ;;
+    # Book channel MUST precede the reports/*/*.md clause: case patterns match
+    # top-down and `*` crosses `/` (fnmatch, not pathname expansion), so the
+    # broader pattern would otherwise intercept book paths and misclassify them
+    # with the canonical basename==dirname check (#672).
+    reports/*/book/chapters/*.md|reports/*/book/appendices/*.md|reports/*/book/front-matter/*.md) echo yes ;;
     reports/*/*.md)
       # canonical report only: reports/<slug>/<slug>.md (basename == dirname)
       d=$(basename "$(dirname "$1")"); b=$(basename "$1" .md)
       [ "$d" = "$b" ] && echo yes || echo "" ;;
-    reports/*/book/chapters/*.md|reports/*/book/appendices/*.md|reports/*/book/front-matter/*.md) echo yes ;;
     *) echo "" ;;
   esac
 }
