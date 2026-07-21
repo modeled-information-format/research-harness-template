@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.24] - 2026-07-21
+
+### Fixed
+
+- **`cron_match.py` step semantics in the continuous-monitor pack** (#689).
+  `parse_field()` aligned `a-b/step` offsets to the field's absolute lower
+  bound instead of the range's own start (`9-17/4` over hours returned
+  `{12, 16}` instead of the vixie-cron `{9, 13, 17}`), and a bare `N/step`
+  collapsed to the single value `{N}` — the step was silently ignored —
+  instead of expanding open-ended to the field's upper bound (`10/5` over
+  minutes now yields `{10, 15, ..., 55}`). Topics with such schedules were
+  silently gated at the wrong times by `monitor.yml`. Regression eval:
+  `evals/cron-match-step-alignment.sh`.
+
 ## [0.16.23] - 2026-07-20
 
 ### Fixed
