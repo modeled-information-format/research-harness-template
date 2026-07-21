@@ -850,6 +850,12 @@ run "monitoring-workflow-install" bash evals/monitoring-workflow-install.sh
 # recommendations across runs from identical fixture inputs (#525).
 run "monitoring-domains" bash evals/monitoring-domains.sh
 
+# Per-topic cron gate step semantics (#689): 'a-b/step' aligns offsets to the
+# range's own start (vixie-cron), never the field's absolute lower bound, and
+# a bare 'N/step' expands open-ended to the field's upper bound instead of
+# collapsing to the single value N.
+run "cron-match-step-alignment" bash evals/cron-match-step-alignment.sh
+
 # 7. Progress-log markdownlint conformance (issue #85 Defect 2): a multi-session
 #    research-progress.md built per orchestrator.md's template — one H1 (file
 #    creation only) + date-qualified per-session H2s — lints clean, while each old
