@@ -88,6 +88,12 @@
 #       writing anything to reports/ (feature-spec AC11).
 set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)" || { echo "mif-container-import: failed to resolve repo root" >&2; exit 5; }
+# Capture the INVOKING cwd before the cd to the repo root below, so a
+# caller-relative <container-dir> resolves against where the caller actually
+# stood -- the same fix scripts/mif-project.sh carries for its report path
+# (issue #679). Without this, a relative <container-dir> silently resolved
+# against $ROOT and surfaced as a misleading "manifest not found".
+INVOKED_CWD="$(pwd)" || { echo "mif-container-import: failed to resolve the invoking cwd" >&2; exit 5; }
 cd "$ROOT" || { echo "mif-container-import: failed to cd to repo root: $ROOT" >&2; exit 5; }
 
 DRY_RUN=0
@@ -104,6 +110,10 @@ done
 }
 CONTAINER_DIR="${POSITIONAL[0]}"
 TOPIC="${POSITIONAL[1]}"
+case "$CONTAINER_DIR" in
+  /*) : ;;
+  *) CONTAINER_DIR="$INVOKED_CWD/$CONTAINER_DIR" ;;
+esac
 MANIFEST="$CONTAINER_DIR/mif-package.json"
 
 [ -d "$CONTAINER_DIR" ] || { echo "mif-container-import: not a directory: $CONTAINER_DIR" >&2; exit 2; }
