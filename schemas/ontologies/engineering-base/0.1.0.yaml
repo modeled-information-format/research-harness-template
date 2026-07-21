@@ -29,8 +29,11 @@ ontology:
     - shared-traits
 
 # Custom namespaces under the cognitive triad inherited from mif-base.
+# Keys re-declare mif-base's underscore-prefixed roots (`_semantic`) so the
+# children attach under the real inherited tree — and so discovery's
+# suggest_namespace paths (`_semantic/patterns`) resolve (#686).
 namespaces:
-  semantic:
+  _semantic:
     children:
       architecture:
         description: "System architecture and component designs"
