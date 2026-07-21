@@ -52,9 +52,11 @@ VOICE_PROFILE="${VOICE_PROFILE:-$(cfg '.voice.profile // "default"')}"
 RULE_PUNCT="${VOICE_NO_AI_PUNCTUATION:-$(cfg '.voice.rules.noAiPunctuation // true')}"
 RULE_CONTRACTIONS="${VOICE_NO_CONTRACTIONS:-$(cfg '.voice.rules.noContractions // false')}"
 RULE_BUZZ="${VOICE_WARN_BUZZWORDS:-$(cfg '.voice.rules.warnBuzzwords // true')}"
-[ "$RULE_PUNCT" = "null" ] && RULE_PUNCT=true
-[ "$RULE_CONTRACTIONS" = "null" ] && RULE_CONTRACTIONS=false
-[ "$RULE_BUZZ" = "null" ] && RULE_BUZZ=true
+# Empty covers a missing harness.config.json entirely (jq emits nothing), which
+# must fall back to the same generic baseline as an absent voice block (#688).
+{ [ -z "$RULE_PUNCT" ] || [ "$RULE_PUNCT" = "null" ]; } && RULE_PUNCT=true
+{ [ -z "$RULE_CONTRACTIONS" ] || [ "$RULE_CONTRACTIONS" = "null" ]; } && RULE_CONTRACTIONS=false
+{ [ -z "$RULE_BUZZ" ] || [ "$RULE_BUZZ" = "null" ]; } && RULE_BUZZ=true
 
 # Mechanical violation patterns. Lines that are markdown link references (verbatim
 # citation titles) are stripped before scanning, so a source's own punctuation
@@ -66,12 +68,16 @@ LSQUO=$'‘'; RSQUO=$'’'; LDQUO=$'“'; RDQUO=$'”'  # smart quotes
 CONTRACTIONS="(it's|don't|can't|won't|isn't|aren't|wasn't|weren't|doesn't|didn't|hasn't|haven't|hadn't|you're|we're|they're|that's|there's|here's|what's|let's|I'm|I've|we've|you've|they've|we'll|you'll|they'll|I'll|shouldn't|wouldn't|couldn't)"
 BUZZWORDS="delve|realm|pivotal|revolutioniz|seamless|cutting-edge|game-chang|leverage|synergy|paradigm|holistic|it's worth noting|generally speaking|in order to|due to the fact|at the end of the day|to be honest|in all honesty"
 
-# strip_links: remove citation / source-metadata lines so verbatim source titles
-# (which legitimately contain em dashes and apostrophes) are not scanned. Exempts
-# markdown link references, any line carrying a URL, and structured citation
-# fields (title/url/source/citation/@id), which hold publisher-verbatim text.
+# strip_links: blank out citation / source-metadata lines so verbatim source
+# titles (which legitimately contain em dashes and apostrophes) are not scanned.
+# Exempts markdown link references, any line carrying a URL, and structured
+# citation fields (title/url/source/citation/@id), which hold publisher-verbatim
+# text. Exempt lines are REPLACED with empty lines, never deleted (#688): the
+# scanners downstream use `grep -n`, and deleting lines would renumber the
+# filtered stream so every reported line number after the first exempt line
+# pointed at the wrong line of the real file.
 strip_links () {
-  grep -vE '\]\(http|http[s]?://|^[[:space:]]*[">-]*[[:space:]]*"?(title|url|source|citation|@id|name)"?[[:space:]]*:' "$1" 2>/dev/null
+  awk '/\]\(http|http[s]?:\/\/|^[[:space:]]*[">-]*[[:space:]]*"?(title|url|source|citation|@id|name)"?[[:space:]]*:/ { print ""; next } { print }' "$1" 2>/dev/null
 }
 
 mech_hits () { # $1=file ; prints mechanical violations (empty => clean), per enabled rules
@@ -92,11 +98,15 @@ is_authored_surface () { # echo "yes" or ""
     reports/*/*.blog.md|reports/*/*.book.md) echo yes ;;
     reports/*/research-progress.md) echo "" ;;
     reports/*/findings/*|reports/*/sources/*|reports/*/quarantine/*|reports/*/_meta/*) echo "" ;;
+    # Book channel MUST precede the reports/*/*.md clause: case patterns match
+    # top-down and `*` crosses `/` (fnmatch, not pathname expansion), so the
+    # broader pattern would otherwise intercept book paths and misclassify them
+    # with the canonical basename==dirname check (#672).
+    reports/*/book/chapters/*.md|reports/*/book/appendices/*.md|reports/*/book/front-matter/*.md) echo yes ;;
     reports/*/*.md)
       # canonical report only: reports/<slug>/<slug>.md (basename == dirname)
       d=$(basename "$(dirname "$1")"); b=$(basename "$1" .md)
       [ "$d" = "$b" ] && echo yes || echo "" ;;
-    reports/*/book/chapters/*.md|reports/*/book/appendices/*.md|reports/*/book/front-matter/*.md) echo yes ;;
     *) echo "" ;;
   esac
 }

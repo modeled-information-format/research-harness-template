@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **`scripts/fetch-mif-docs-plugin.sh`'s cache-reuse check treated "checked
+  out at the pinned ref" as "provisioned"** (#677): the clone/checkout lands
+  the pinned ref before `npm ci` / `npm run hydrate-schema` ever run, so a
+  failed install left the cache at the correct ref with no `node_modules` and
+  no hydrated schema — and the next run's ref-only check then printed
+  `already at pinned ref` and exited 0, a false success the downstream
+  `verify.sh` `gate_m32` consumer failed on with an unrelated-looking
+  `Cannot find module 'ajv'` error. The script now writes a
+  `.provisioned-ref` completion sentinel into the cache only after both
+  post-checkout steps succeed; cache reuse requires the ref AND the sentinel
+  to agree, and a partially-provisioned cache at the correct ref re-runs
+  install/hydration (without re-cloning) instead of short-circuiting. New
+  eval `fetch-mif-docs-plugin-provision` pins the contract with a stubbed
+  npm: failed install writes no sentinel, the next run re-provisions, and a
+  fully-provisioned cache is reused without invoking npm.
+
+## [0.16.24] - 2026-07-21
+
+### Fixed
+
+- **`cron_match.py` step semantics in the continuous-monitor pack** (#689).
+  `parse_field()` aligned `a-b/step` offsets to the field's absolute lower
+  bound instead of the range's own start (`9-17/4` over hours returned
+  `{12, 16}` instead of the vixie-cron `{9, 13, 17}`), and a bare `N/step`
+  collapsed to the single value `{N}` — the step was silently ignored —
+  instead of expanding open-ended to the field's upper bound (`10/5` over
+  minutes now yields `{10, 15, ..., 55}`). Topics with such schedules were
+  silently gated at the wrong times by `monitor.yml`. Regression eval:
+  `evals/cron-match-step-alignment.sh`.
+
 ## [0.16.23] - 2026-07-20
 
 ### Fixed

@@ -178,17 +178,30 @@ async function completionCheck(roundNo, roundRepaired) {
 }
 
 // Falsify with drain: the claim budget makes each call bounded; drain until nothing is deferred.
+// `extra` overrides the defaults (spread last), so a caller can narrow scope and/or set
+// regate — import mode does exactly that (#678).
 async function falsifyAll(extra) {
   let total = 0
   const rollup = {}
+  const base = { scope: 'all', claimBudget: A.claimBudget, queryBudget: A.queryBudget, lenses: A.lenses, ...extra }
+  let scope = base.scope
   for (let i = 0; i < 5; i++) {
-    const r = await wf('falsify', { scope: 'all', claimBudget: A.claimBudget, queryBudget: A.queryBudget, lenses: A.lenses, ...extra })
+    // Fresh args object per call: a wf() child (or wrapper) that mutates its args must
+    // never leak that mutation into later drain iterations through a shared reference.
+    const r = await wf('falsify', { ...base, scope })
     if (!r) break
     total += r.gated
     for (const k of Object.keys(r.rollup || {})) rollup[k] = (rollup[k] || 0) + r.rollup[k]
     if (!r.deferredIds || !r.deferredIds.length) break
     if (budgetLow()) { log(`Budget floor: ${r.deferredIds.length} finding(s) left ungated`); break }
     log(`Draining falsification backlog: ${r.deferredIds.length} deferred`)
+    // research-harness-template#678: under a scoped regate drain, narrow the next iteration
+    // to what is still deferred. Regate mode ignores the one-round rule by design (that is
+    // its whole point), so re-sending the full id scope would re-open verification on the
+    // findings this very drain just gated — each extra iteration would redo them instead of
+    // working the backlog down. Non-regate drains need no narrowing: the one-round rule
+    // already excludes anything gated on a prior iteration.
+    if (base.regate) scope = { ids: r.deferredIds }
   }
   return { gated: total, rollup }
 }
@@ -249,7 +262,14 @@ if (MODE === 'import') {
   if (!A.containerDir) throw new Error('import mode requires args.containerDir')
   const imp = await wf('import', { containerDir: A.containerDir, trustImportedVerdicts: A.trustImportedVerdicts })
   if (!imp || !imp.ok) return { mode: MODE, imported: imp }
-  const gate = imp.needsGating.length ? await falsifyAll({}) : { gated: 0, rollup: {} }
+  // research-harness-template#678: needsGating must be re-gated with an explicit id scope AND
+  // regate: true — when trustImportedVerdicts is false it includes findings that already carry
+  // a FOREIGN extensions.harness.verification.attempted_at block from the source instance, and
+  // a plain falsifyAll({}) (scope 'all', no regate) would silently exclude every one of them
+  // under the one-round rule (research-falsify.js's Enumerate step lists them in
+  // skippedAlreadyVerifiedIds instead of the working set). This is the exact call-site hookup
+  // research-import.js's own header documents (#548), mirroring pivot's reverifyIds regate.
+  const gate = imp.needsGating.length ? await falsifyAll({ scope: { ids: imp.needsGating }, regate: true }) : { gated: 0, rollup: {} }
   const syn = await wf('synthesis', {})
   const proj = (syn && syn.ok) ? await wf('projection', { synthesisPath: syn.synthesisPath }) : null
   return { mode: MODE, imported: imp.imported.length, gate, synthesis: syn, projection: proj }
@@ -276,6 +296,20 @@ if (MODE === 'augment') {
   const plan = await wf('augment', { focusHint: A.focusHint })
   if (!plan.deepen.length) return { mode: MODE, deepened: [], reasoning: plan.reasoning }
   const dims = plan.deepen.map((d) => d.dimension)
+  // research-harness-template#685: augment was the ONE fanout-dispatching path
+  // with no budgetLow() guard — pivot gates its own wf('fanout', ...) on
+  // !budgetLow() and the full-mode round loop checks the floor before every
+  // round, but this branch spent on fanout + falsify + synthesis + projection
+  // unconditionally. Below the floor, stop here honestly (same
+  // honest-termination shape as the empty-deepen return above, with the
+  // never-run plan disclosed as `planned`): fanout never ran, so the corpus is
+  // unchanged and re-running synthesis/projection would be pure spend with no
+  // new content — unlike pivot, whose regate pass may have already changed
+  // verdicts on disk and therefore still synthesizes under the floor.
+  if (budgetLow()) {
+    log(`Budget floor: skipping augmentation fanout over [${dims.join(', ')}] — corpus unchanged, nothing new to synthesize`)
+    return { mode: MODE, deepened: [], planned: dims, reasoning: plan.reasoning, budgetFloor: true }
+  }
   const fan = await wf('fanout', { dimensions: dims, depth: plan.deepen.some((d) => d.depth === 'deep') ? 'deep' : 'standard', roundContext: `Augmentation round targeting: ${plan.deepen.map((d) => `${d.dimension} (${d.rationale})`).join('; ')}` })
   const gate = await falsifyAll({})
   const syn = await wf('synthesis', {})

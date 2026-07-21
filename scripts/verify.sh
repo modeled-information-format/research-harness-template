@@ -1447,6 +1447,71 @@ JSON
   fi
   rm -rf "$RT"
 
+  # 12l. Namespace-suggestion integrity (#686): every namespace path a COMMITTED
+  #      base layer's (schemas/ontologies/) discovery config suggests —
+  #      patterns[].suggest_namespace, content_patterns[].namespace/namespaces[],
+  #      file_patterns[].namespaces[] — must resolve within the namespace tree
+  #      the layer itself declares MERGED with its transitive extends chain
+  #      (among base layers). Catches the defect class where a pack declares
+  #      children under a bare `semantic:` key while its own discovery suggests
+  #      the underscore-prefixed `_semantic/...` mif-base root. Vendored packs
+  #      (packs/ontologies/) are lock-pinned; their fixes belong upstream, so
+  #      they are out of scope here.
+  ns_declared() { # ns_declared <yaml> -> declared namespace paths, one per line
+    yq -o=json '.' "$1" 2>/dev/null | jq -r '
+      def walk_ns($prefix): to_entries[]
+        | ($prefix + [.key]) as $p
+        | ($p | join("/")), ((.value.children // {}) | walk_ns($p));
+      .namespaces // {} | walk_ns([])' 2>/dev/null
+  }
+  ns_suggested() { # ns_suggested <yaml> -> discovery-suggested namespace paths
+    yq -o=json '.' "$1" 2>/dev/null | jq -r '
+      [ ((.discovery.patterns // [])[] | .suggest_namespace),
+        ((.discovery.content_patterns // [])[] | .namespace, ((.namespaces // [])[])),
+        ((.discovery.file_patterns // [])[] | ((.namespaces // [])[])) ]
+      | .[] | select(. != null)' 2>/dev/null
+  }
+  local NSD; NSD="$(mktemp -d)"
+  local base_yaml oid
+  while IFS= read -r base_yaml; do
+    [ -z "$base_yaml" ] && continue
+    oid=$(yq -r '.ontology.id // ""' "$base_yaml" 2>/dev/null)
+    [ -z "$oid" ] && continue
+    printf '%s\n' "$base_yaml" > "$NSD/file.$oid"
+    yq -r '.ontology.extends // [] | .[]' "$base_yaml" 2>/dev/null > "$NSD/ext.$oid"
+  done < <(find schemas/ontologies -mindepth 2 -maxdepth 2 -type f -name '*.yaml' | sort)
+  local ns_bad=""
+  for f in "$NSD"/file.*; do
+    oid="${f##*/file.}"
+    base_yaml="$(cat "$f")"
+    # Transitive extends closure among committed base layers (unknown ids skipped:
+    # they are not resolvable here and contribute no namespaces either way).
+    local seen=" $oid " queue="$oid" cur ext
+    : > "$NSD/declared"
+    while [ -n "$queue" ]; do
+      cur="${queue%% *}"; queue="${queue#"$cur"}"; queue="${queue# }"
+      [ -f "$NSD/file.$cur" ] && ns_declared "$(cat "$NSD/file.$cur")" >> "$NSD/declared"
+      if [ -f "$NSD/ext.$cur" ]; then
+        while IFS= read -r ext; do
+          [ -z "$ext" ] && continue
+          case "$seen" in *" $ext "*) ;; *) seen="$seen$ext "; queue="${queue:+$queue }$ext" ;; esac
+        done < "$NSD/ext.$cur"
+      fi
+    done
+    sort -u "$NSD/declared" -o "$NSD/declared"
+    local sug
+    while IFS= read -r sug; do
+      [ -z "$sug" ] && continue
+      grep -qxF "$sug" "$NSD/declared" || ns_bad="${ns_bad}${oid}:${sug} "
+    done < <(ns_suggested "$base_yaml" | sort -u)
+  done
+  rm -rf "$NSD"
+  if [ -z "$ns_bad" ]; then
+    ok "every base-layer discovery-suggested namespace resolves in its own+extends declared tree"
+  else
+    bad "discovery suggests namespaces never declared (own+extends): ${ns_bad}"
+  fi
+
   rm -rf "$T"
 }
 

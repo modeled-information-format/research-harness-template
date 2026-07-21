@@ -77,6 +77,14 @@
 #      expected one-round-rule outcome on a normal run, not a defect); and
 #      REGATE=true with it undefined does not crash.
 #
+#   I. pairLensResults() (research-harness-template#682) is extracted verbatim
+#      and proven to preserve lens identity across a failed lens: all-succeed
+#      pairs keys 1:1; #682's exact incident shape (the middle lens's agent()
+#      call fails and is dropped) keeps the survivors' ORIGINAL keys instead
+#      of misattributing by post-filter position; first-lens-failed and
+#      all-failed edges hold; and structural greps lock the module to the
+#      paired lensKey (no positional LENSES[i] lookup after filter(Boolean)).
+#
 # Hermetic: only evals/fixtures/falsify-verdict-merge/*, mktemp scratch, and
 # the vendored bin/mif-rh-cli (offline, fixture-driven — no network, no
 # model/API calls). Exit 0 = every case holds. Exit 1 = a case failed.
@@ -538,6 +546,73 @@ let write659Promise = Promise.resolve();
   }
 }
 
+// ---- J: extract pairLensResults() VERBATIM and prove lens identity survives
+// a failed lens (research-harness-template#682: LENSES[i] positional lookups
+// AFTER lensResults.filter(Boolean) misattributed every surviving result
+// after the gap -- with source-integrity's agent() failed, temporal-validity's
+// evidence got labeled source-integrity in the permanently-written
+// verification basis and in the contested-adjudication prompt).
+{
+  let pairLensResults;
+  let extractionError = null;
+  try {
+    const pairText = extractBlock(src, 'function pairLensResults(lenses, results) {');
+    const harnessSrc = `'use strict';\n${pairText}\nmodule.exports = { pairLensResults };\n`;
+    const harnessPath = path.join(tmpDir, 'pairlens-harness.cjs');
+    fs.writeFileSync(harnessPath, harnessSrc);
+    ({ pairLensResults } = require(harnessPath));
+  } catch (e) {
+    extractionError = e;
+  }
+  check('pairLensResults() extracted from the module source (#682)', !extractionError, extractionError ? extractionError.message : '');
+
+  if (pairLensResults) {
+    const lenses = [{ key: 'counter-evidence' }, { key: 'source-integrity' }, { key: 'temporal-validity' }];
+    const ce = { verdict: 'survived', basis: 'ce basis', sources: [] };
+    const si = { verdict: 'weakened', basis: 'si basis', sources: [] };
+    const tv = { verdict: 'falsified', basis: 'tv basis', sources: ['https://example.com/tv'] };
+    // All lenses succeed: keys map 1:1 in order, payload fields intact.
+    {
+      const got = pairLensResults(lenses, [ce, si, tv]);
+      check('all lenses succeed: keys pair 1:1 in order', deepEqual(got.map((r) => r.lensKey), ['counter-evidence', 'source-integrity', 'temporal-validity']), JSON.stringify(got.map((r) => r.lensKey)));
+      check('all lenses succeed: verdict/basis/sources ride along intact', got[2].verdict === 'falsified' && got[2].basis === 'tv basis' && deepEqual(got[2].sources, ['https://example.com/tv']), JSON.stringify(got[2]));
+    }
+    // #682's exact incident shape: the MIDDLE lens (source-integrity) fails
+    // and is dropped -- the survivor at index 1 must still be labeled
+    // temporal-validity, never source-integrity (which is what LENSES[1]
+    // resolved to under the old positional lookup).
+    {
+      const got = pairLensResults(lenses, [ce, null, tv]);
+      check("#682's exact shape (middle lens failed): survivors keep their ORIGINAL lens keys", deepEqual(got.map((r) => r.lensKey), ['counter-evidence', 'temporal-validity']), JSON.stringify(got.map((r) => r.lensKey)));
+      check("#682's exact shape: the post-gap survivor is NOT misattributed to the failed lens", got[1].lensKey !== 'source-integrity' && got[1].basis === 'tv basis', JSON.stringify(got[1]));
+    }
+    // First lens fails: both survivors shift position yet keep their keys.
+    {
+      const got = pairLensResults(lenses, [null, si, tv]);
+      check('first lens failed: both shifted survivors keep their keys', deepEqual(got.map((r) => r.lensKey), ['source-integrity', 'temporal-validity']), JSON.stringify(got.map((r) => r.lensKey)));
+    }
+    // All lenses fail: empty result, no crash.
+    {
+      const got = pairLensResults(lenses, [null, null, null]);
+      check('all lenses failed: empty pairing, no crash', deepEqual(got, []), JSON.stringify(got));
+    }
+    // A stray lensKey already present on a lens result must NEVER win over
+    // the paired identity -- the pairing assigns lensKey after the spread.
+    {
+      const poisoned = { verdict: 'survived', basis: 'ce basis', sources: [], lensKey: 'imposter' };
+      const got = pairLensResults(lenses, [poisoned, si, tv]);
+      check('a pre-existing lensKey on a result is overwritten by the paired identity', got[0].lensKey === 'counter-evidence', JSON.stringify(got[0]));
+    }
+    // Results longer than the lens list degrade to a labeled placeholder
+    // instead of throwing mid-Gate.
+    {
+      const extra = { verdict: 'survived', basis: 'extra basis', sources: [] };
+      const got = pairLensResults(lenses, [ce, si, tv, extra]);
+      check('a result past the end of the lens list gets a placeholder key, no throw', got[3].lensKey === 'lens-3', JSON.stringify(got[3]));
+    }
+  }
+}
+
 write659Promise
   .then(() => process.exit(failed))
   .catch((e) => {
@@ -732,5 +807,17 @@ grep -qF "if (written && written.written && written.remediation !== 'skipped-one
 grep -qF '#659' "$WF" \
   || { note "$WF lost its #659 traceability comments"; fail=1; }
 
-[ "$fail" -eq 0 ] && note "mergeVotes()/claimBudget hold against the real function, buildFixtureEntry() runs clean under a poisoned Date/Math.random and uses the caller-supplied timestamp verbatim (#618), the seeded-false fixture quarantines end-to-end through the real engine, the one-round rule + regate reset are real against that same engine, the module keeps its fixture-bridge/remediation contract, reconcileEnumeration() holds against its #625 set-difference matrix and is scope-gated to 'all', the RE-GATE skippedAlreadyVerifiedIds guard holds against its truth table, and the #659 post-write attempted_at assertion (retry-then-throw, never silently accepting a partial write) holds against its 7-case truth table"
+# #682 structural contract: lens identity is paired at collection time
+# (pairLensResults, BEFORE filter(Boolean) drops a failed lens) and the
+# basis/adjudication consumers read the paired key -- never a positional
+# LENSES[i] lookup against the filtered array, which misattributes every
+# surviving result after a gap.
+grep -qF 'lensResults: pairLensResults(LENSES, lensResults)' "$WF" \
+  || { note "$WF's Gate collection no longer pairs lens identity via pairLensResults() -- lens keys would again be reconstructed positionally after filter(Boolean) (#682)"; fail=1; }
+grep -qF '${r.lensKey}' "$WF" \
+  || { note "$WF's basis/adjudication construction no longer reads the paired lensKey (#682)"; fail=1; }
+! grep -qF 'LENSES[i]' "$WF" \
+  || { note "$WF reintroduced a positional LENSES[i] lookup -- after filter(Boolean) this misattributes lens identity once any lens fails (#682)"; fail=1; }
+
+[ "$fail" -eq 0 ] && note "mergeVotes()/claimBudget hold against the real function, buildFixtureEntry() runs clean under a poisoned Date/Math.random and uses the caller-supplied timestamp verbatim (#618), the seeded-false fixture quarantines end-to-end through the real engine, the one-round rule + regate reset are real against that same engine, the module keeps its fixture-bridge/remediation contract, reconcileEnumeration() holds against its #625 set-difference matrix and is scope-gated to 'all', the RE-GATE skippedAlreadyVerifiedIds guard holds against its truth table, and the #659 post-write attempted_at assertion (retry-then-throw, never silently accepting a partial write) holds against its 7-case truth table, and pairLensResults() preserves lens identity across a failed lens (#682)"
 exit "$fail"
