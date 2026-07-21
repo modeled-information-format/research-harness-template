@@ -514,6 +514,12 @@ run "release-workflow-immutable-safe" bash evals/release-workflow-immutable-safe
 # that mixes branch and tag refs -- still runs it exactly as before.
 run "pre-push-tag-skip" bash evals/pre-push-tag-skip.sh
 
+# scripts/fetch-mif-docs-plugin.sh's cache-reuse check must require the
+# post-checkout provisioning (npm ci + hydrate-schema) to have completed, not
+# just the pinned ref to match (#677): a run whose install fails must not be
+# reported as a reusable cache by the next run.
+run "fetch-mif-docs-plugin-provision" bash evals/fetch-mif-docs-plugin-provision-check.sh
+
 # 1b. Topic run lock: two concurrent runs on one topic are mutually exclusive
 #     (prevents the shared-findings/ corruption vector).
 run "run-lock-mutual-exclusion" bash evals/run-lock-test.sh

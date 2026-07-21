@@ -2,7 +2,7 @@
 id: reference-scripts
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-19T13:27:28.557Z'
+modified: '2026-07-21T02:00:16.391Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -17,12 +17,12 @@ temporal:
 provenance:
   '@type': Provenance
   sourceType: agent_inferred
-  agent: claude-code/claude-sonnet-5
+  agent: claude-code/claude-fable-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:cc83f20c-2193-42dd-b5b5-72fe80571327
+    '@id': urn:mif:activity:claude-code-session:6cffe5d9-0ff6-4850-a402-01fd4a85a0d9
     '@type': prov:Activity
   trustLevel: user_stated
-  agentVersion: 2.1.215
+  agentVersion: 2.1.216
 ---
 
 # Reference: scripts
@@ -81,7 +81,7 @@ floor, [engine-cli.md](engine-cli.md) for its subcommand surface, and
 | --- | --- | --- |
 | `scripts/fetch-engine.sh` | Downloads the pinned `mif-rh-cli` and `mif-rh-mcp` release binaries for the current platform from the `mif-rs` repository, verifies each one's build provenance with `gh attestation verify` (fail-closed), and installs both to `bin/`. | `gh` |
 | `scripts/lib/engine.sh` | Sourced library, not a standalone script. Provides `engine_bin()`: resolves the `mif-rh-cli` binary (`$MIF_RH_CLI` override, then `PATH`, then `bin/mif-rh-cli`), checks its reported version against the pinned floor, and fails loudly naming `fetch-engine.sh` as the fix. Sourced by `resolve-ontology.sh` and `ontology-review.sh`. | `grep`, `head`, `awk` |
-| `scripts/fetch-mif-docs-plugin.sh` | Clones `mif-docs-plugin` at the SHA pinned in `harness.config.json` `marketplaces[]` (ADR-0018) into `.mif-docs-plugin-cache/` (gitignored — an intentional vendored-tool cache exception to the "ephemeral artifacts go to `mktemp`" convention above, same category as `bin/`: a fetched dependency, not derived research output), fails closed if the checked-out HEAD doesn't match the pin exactly, `npm ci`s its dependencies, and hydrates its MIF schema cache. Destination honors `$MIF_DOCS_PLUGIN_ROOT` if set (same variable `gate_m32` reads), else `--dest`, else the default path. Required before `verify.sh`'s `gate_m32` (research-harness-template#413) can run `mif-validate`. | `git`, `npm`, `jq` |
+| `scripts/fetch-mif-docs-plugin.sh` | Clones `mif-docs-plugin` at the SHA pinned in `harness.config.json` `marketplaces[]` (ADR-0018) into `.mif-docs-plugin-cache/` (gitignored — an intentional vendored-tool cache exception to the "ephemeral artifacts go to `mktemp`" convention above, same category as `bin/`: a fetched dependency, not derived research output), fails closed if the checked-out HEAD doesn't match the pin exactly, `npm ci`s its dependencies, and hydrates its MIF schema cache. Completion is recorded in a `.provisioned-ref` sentinel written only after install + hydration both succeed (#677): cache reuse requires the checked-out ref AND the sentinel to agree, so a run that checked out the pin but died before/during `npm ci` re-runs install/hydration on the next invocation instead of reporting a false cache hit. Destination honors `$MIF_DOCS_PLUGIN_ROOT` if set (same variable `gate_m32` reads), else `--dest`, else the default path. Required before `verify.sh`'s `gate_m32` (research-harness-template#413) can run `mif-validate`. | `git`, `npm`, `jq` |
 
 ---
 
