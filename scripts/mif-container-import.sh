@@ -133,10 +133,11 @@ fail() { echo "mif-container-import: REJECTED -- $1" >&2; exit 1; }
 # one per line -- the same shape the grep -Fl form produced -- and always
 # returns 0 (no match is an answer, not an error).
 findings_with_id() { # findings_with_id <findings-dir> <@id>
-  find "$1" -maxdepth 1 -name '*.json' -print 2>/dev/null | LC_ALL=C sort \
+  local findings_dir="$1" target_id="$2" candidate candidate_id
+  find "$findings_dir" -maxdepth 1 -name '*.json' -print 2>/dev/null | LC_ALL=C sort \
     | while IFS= read -r candidate; do
         candidate_id="$(jq -r '."@id" // empty' "$candidate" 2>/dev/null)" || candidate_id=""
-        [ "$candidate_id" = "$2" ] && printf '%s\n' "$candidate"
+        [ "$candidate_id" = "$target_id" ] && printf '%s\n' "$candidate"
       done
   return 0
 }
