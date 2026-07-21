@@ -69,6 +69,10 @@ for p in enabled:
         except (OSError, ValueError) as e:
             entry["skills"] = []
             entry["error"] = f"unreadable manifest {mf}: {e}"
+            # Fail closed, same policy as an unresolved marketplace-ref below:
+            # a bundled pack whose manifest cannot be read has no resolvable
+            # skills, so it must not be marked enabled in the native map.
+            resolved = False
         packs.append(entry)
     elif isinstance(src, dict) and src.get("type") == "marketplace-ref":
         # Resolve against the declared marketplaces[] entry by name; a pack-local
