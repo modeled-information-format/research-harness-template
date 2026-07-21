@@ -1,7 +1,7 @@
 ---
 name: continuous-monitor
 description: "Unattended, scheduled monitoring of external sources (arXiv, OpenAlex, Crossref, Semantic Scholar, PubMed, bioRxiv/medRxiv, GDELT, Hacker News) for operator-selected current-events DOMAINS (monitoringDomains[], weighted, momentum-ranked, digest output) or for a research topic (the topic-bound special case), gated end to end through a mandatory human Editorial Gate before anything publishes. An OPTIONAL methodology pack (enable the `continuous-monitor` pack AND configure a domain or a topic's continuousMonitoring block). Use this skill when the user wants to enable, inspect, or manually run continuous monitoring for a domain or topic, review a run's digest or candidate recommendations, or check the Continuity Log for a skipped/failed source. Triggers on 'continuous monitoring', 'monitor this domain', 'monitor this topic', 'monitoring digest', 'schedule research monitoring', 'check for new sources', 'run the monitoring pipeline', 'review monitoring recommendations'."
-version: 0.16.24
+version: 0.16.25
 argument-hint: "<domain-or-topic-id> [<run-id>]"
 allowed-tools: Read, Bash, Glob, Grep
 ---
