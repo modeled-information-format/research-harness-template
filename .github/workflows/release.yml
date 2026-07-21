@@ -139,9 +139,24 @@ jobs:
         with:
           fetch-depth: 0 # needs full tag history, not a shallow clone
 
+      - name: Mint a CI app token (public-artifact read — mif-rh-cli/mif-rh-mcp from mif-rs)
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.CI_CLIENT_APP_ID }}
+          private-key: ${{ secrets.CI_CLIENT_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          # This job predates #662/#666 and carried the identical latent
+          # bug: fetch-engine.sh reads mif-rh-cli/mif-rh-mcp from mif-rs, not
+          # this repo, so it needs a token actually scoped to mif-rs rather
+          # than the ambient default job token — see ci.yml's "verify" job
+          # mint step for the full rationale.
+          repositories: research-harness-template,mif-rs
+          permission-contents: read
+
       - name: Fetch the mif-rh-cli engine
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: bash scripts/fetch-engine.sh
 
       - name: Check CHANGELOG footer-link reconciliation

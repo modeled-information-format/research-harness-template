@@ -74,9 +74,27 @@ jobs:
           permission-contents: write
           permission-pull-requests: write
 
+      - name: Mint a CI app token (public-artifact read — mif-rh-cli/mif-rh-mcp from mif-rs)
+        id: ci-app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.CI_CLIENT_APP_ID }}
+          private-key: ${{ secrets.CI_CLIENT_APP_PRIVATE_KEY }}
+          # #662/#666: fetch-engine.sh only ever reads mif-rs (never this
+          # job's own repo, whatever its name is in a given clone), so
+          # `owner`/current-repo aren't needed here at all — scope this
+          # token to exactly mif-rs, nothing else. This is a SEPARATE,
+          # read-only identity from the `automerge` token above (which keeps
+          # its own write-only, current-repo scope for git push/PR create) —
+          # least-privilege by role, per ADR-011, not one token doing both
+          # jobs.
+          owner: modeled-information-format
+          repositories: mif-rs
+          permission-contents: read
+
       - name: fetch the mif-rh engine (ADR-0016)
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ steps.ci-app-token.outputs.token }}
         run: bash scripts/fetch-engine.sh
 
       - name: vendor enabled domain ontologies (ADR-0012)
