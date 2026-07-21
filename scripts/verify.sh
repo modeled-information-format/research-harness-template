@@ -4332,18 +4332,23 @@ gate_m31() {
   #      output dir passed from anywhere else silently landed under the
   #      repo root instead of the caller's cwd, with no error at all.
   local export_abs="$PWD/$EXPORT"
+  # Uniquely named per run so the repo-root stray check can't false-positive
+  # on (or the cleanup delete) an unrelated pre-existing path of the same name.
+  local relout_name="rel-679-out.$$.$RANDOM"
   mkdir -p "$T/callercwd"
-  (cd "$T/callercwd" && "$export_abs" "$TOPIC" "rel-679-out") >/dev/null 2>&1
+  (cd "$T/callercwd" && "$export_abs" "$TOPIC" "$relout_name") >/dev/null 2>&1
   local rc_relout=$?
   local relout_strayed=0
-  [ -e "rel-679-out" ] && relout_strayed=1
+  [ -e "$relout_name" ] && relout_strayed=1
   # Defensive cleanup: the PRE-fix behavior this test exists to catch would
-  # have created rel-679-out at the repo root -- never leave that behind.
-  rm -rf "rel-679-out"
-  if [ "$rc_relout" -eq 0 ] && [ -f "$T/callercwd/rel-679-out/mif-package.json" ] && [ "$relout_strayed" -eq 0 ]; then
+  # have created $relout_name at the repo root -- never leave that behind.
+  # Safe because the name is unique to this run, so only this test's own
+  # artifact can match.
+  rm -rf "$relout_name"
+  if [ "$rc_relout" -eq 0 ] && [ -f "$T/callercwd/$relout_name/mif-package.json" ] && [ "$relout_strayed" -eq 0 ]; then
     ok "a caller-relative <output-dir> resolves against the invoking cwd, not the repo root (#679)"
   else
-    bad "caller-relative <output-dir> resolution check failed (rc=$rc_relout, at-caller: $([ -f "$T/callercwd/rel-679-out/mif-package.json" ] && echo yes || echo no), strayed-to-root: $relout_strayed, #679)"
+    bad "caller-relative <output-dir> resolution check failed (rc=$rc_relout, at-caller: $([ -f "$T/callercwd/$relout_name/mif-package.json" ] && echo yes || echo no), strayed-to-root: $relout_strayed, #679)"
   fi
 }
 
