@@ -139,8 +139,20 @@ case "$CHANNEL" in
     echo "render: wrote $OUT (report, $(wc -l < "$OUT" | tr -d ' ') lines) from $ART"
     ;;
   blog|book)
+    # Same temp-then-move discipline as the report channel above (#681): render
+    # to a mktemp file, check the engine's exit status explicitly (set -e is NOT
+    # in effect — a bare failing invocation would fall through silently), and
+    # only mv into $OUT on success. A crashed/interrupted engine must never
+    # leave a partially-written file at the published path a topic README links
+    # to, and a prior good render at $OUT must survive a failed re-render.
+    BTMPD="$(mktemp -d)"; BTMP="$BTMPD/$CHANNEL.md"; trap 'rm -rf "$BTMPD"' EXIT
+    if ! "$ENGINE" "${RENDER_ARGS[@]+"${RENDER_ARGS[@]}"}" "$BTMP" >/dev/null; then
+      echo "render: composing the $CHANNEL output failed (nothing written to $OUT)" >&2
+      exit 1
+    fi
     mkdir -p "$(dirname "$OUT")"
-    "$ENGINE" "${RENDER_ARGS[@]+"${RENDER_ARGS[@]}"}" "$OUT"
+    mv "$BTMP" "$OUT"
+    echo "render: wrote $OUT ($CHANNEL, $(wc -l < "$OUT" | tr -d ' ') lines) from $ART"
     ;;
   *)
     echo "render: channel must be report|blog|book (got '$CHANNEL')" >&2
