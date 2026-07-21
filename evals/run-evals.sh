@@ -557,7 +557,13 @@ run "bounded-summary-qualifier" bash evals/bounded-summary-qualifier.sh
 #     summary that is already under the cap.
 run "report-finding-summary-cap" bash evals/report-finding-summary-cap.sh
 
-# 1h. check-voice.sh's mech_hits/buzz_hits line numbers must match the real
+# 1h. check-output-conformance.sh's sweep pathspec must keep its :(glob)
+#     qualifier: a bare git pathspec `*` crosses `/`, sweeping exempt nested
+#     channel files (reports/<topic>/book/...) into the gate and emitting a
+#     spurious conformance systemMessage (issue #687).
+run "conformance-sweep-depth" bash evals/conformance-sweep-depth.sh
+
+# 1h2. check-voice.sh's mech_hits/buzz_hits line numbers must match the real
 #     file on disk: strip_links blanks exempt citation/URL lines instead of
 #     deleting them, so `grep -n` never renumbers the stream (issue #688).
 run "voice-gate-line-numbers" bash evals/voice-gate-line-numbers.sh
