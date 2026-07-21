@@ -81,6 +81,13 @@ run "workflow-docs-check" bash evals/workflow-docs-check.sh
 # live-progress signal so the two surfaces cannot silently diverge.
 run "start-error-handling-glob-check" bash evals/start-error-handling-glob-check.sh
 
+# /goal-writer's evidence-surface table and worked example model coverage
+# verify commands over reports/<topic>/findings/*.json — where findings
+# actually live — never the flat reports/<topic>/*.json glob, which only
+# matches goal.json/state.json/ontology-map.json and made any authored
+# coverage_per_dimension check permanently unsatisfiable (#676).
+run "goal-writer-findings-path" bash evals/goal-writer-findings-path.sh
+
 # The research-goal draft→lint→repair contract has deterministic teeth
 # (#554): scripts/lint-goal.sh FAILS the seeded-invalid fixture (step-shaped
 # check assertion + off-config dimension) that ajv alone accepts, fails
@@ -503,6 +510,17 @@ run "research-pipeline-args-parse-check" bash evals/research-pipeline-args-parse
 # `typeof args === 'string' ? JSON.parse(args) : (args || {})` guard.
 run "atomic-workflows-args-parse-check" bash evals/atomic-workflows-args-parse-check.sh
 
+# research-harness-template#675: the #654 eval above proves only `topic`
+# threads through JSON-string args — research-projection.js's OPTIONAL
+# slug/genre fields briefly kept reading from the raw `args` after the guard
+# landed, silently falling back to TOPIC/'general' on every string-args
+# invocation (a property access on a string primitive is `undefined`, never
+# an error) and defeating the #633 genre-resolution mechanism. This eval
+# pins that defect class: slug AND genre must demonstrably thread from
+# string args into the module's real calls, and an invalid genre arriving
+# via string args must still hit the fail-closed pack-name-pattern throw.
+run "projection-slug-genre-args-check" bash evals/projection-slug-genre-args-check.sh
+
 # release.yml never uploads to an already-published (immutable) release
 # (#537): tag-push trigger, no post-publish `gh release upload`, artifact
 # attached in the same `gh release create` call.
@@ -513,6 +531,12 @@ run "release-workflow-immutable-safe" bash evals/release-workflow-immutable-safe
 # standard pre-push stdin protocol, while a branch push -- including one
 # that mixes branch and tag refs -- still runs it exactly as before.
 run "pre-push-tag-skip" bash evals/pre-push-tag-skip.sh
+
+# scripts/fetch-mif-docs-plugin.sh's cache-reuse check must require the
+# post-checkout provisioning (npm ci + hydrate-schema) to have completed, not
+# just the pinned ref to match (#677): a run whose install fails must not be
+# reported as a reusable cache by the next run.
+run "fetch-mif-docs-plugin-provision" bash evals/fetch-mif-docs-plugin-provision-check.sh
 
 # 1b. Topic run lock: two concurrent runs on one topic are mutually exclusive
 #     (prevents the shared-findings/ corruption vector).
@@ -567,6 +591,13 @@ run "conformance-sweep-depth" bash evals/conformance-sweep-depth.sh
 #     file on disk: strip_links blanks exempt citation/URL lines instead of
 #     deleting them, so `grep -n` never renumbers the stream (issue #688).
 run "voice-gate-line-numbers" bash evals/voice-gate-line-numbers.sh
+
+# 1h3. check-voice.sh's is_authored_surface must classify book-channel prose
+#     (reports/<slug>/book/{chapters,appendices,front-matter}/*.md) as an
+#     authored surface: the dedicated book clause must precede the generic
+#     reports/*/*.md clause, which otherwise shadows it because case `*`
+#     crosses `/` (issue #672).
+run "voice-gate-book-surfaces" bash evals/voice-gate-book-surfaces.sh
 
 # 2. Citation-integrity: a clean finding passes; a bad one is flagged.
 run     "citation-integrity-good" scripts/check-citation-integrity.sh schemas/samples/citation-good.sample.json
@@ -674,6 +705,13 @@ run "render-artifact-version-increments" bash -c '
   scripts/render-artifact.sh "'"$TMP"'/v.json" report "'"$TMP"'/vtest.md" evals/fixtures/report-verification.json &&
   grep -qx "version: 2" "'"$TMP"'/vtest.md"'
 
+# 5b-6b. The blog/book published channels are atomic-to-valid like the report
+#        channel (issue #681): a failing engine must exit the script non-zero,
+#        never leave a partial file at $OUT, never corrupt a prior good render
+#        at $OUT, and always print a diagnostic — temp-then-move, exit-status
+#        checked (set -e is not in effect in render-artifact.sh).
+run "render-artifact-atomic-write" bash evals/render-artifact-atomic-write.sh
+
 # 5b-7. backfill-report-slugs.sh only stamps the key actually missing (a file
 #       with slug but no version gets ONLY version added, never a duplicate
 #       slug line), --dry-run reports ONLY the missing key (not both,
@@ -772,6 +810,12 @@ run     "author-ontology-from-clusters" bash -c "
   grep -q 'Spaced-repetition scheduling policies' \"$TMP/cluster1-block.txt\" &&
   grep -q 'Member findings: f-delta, f-gamma' \"$TMP/cluster2-block.txt\" &&
   bash .claude/skills/ontology-manager/scripts/validate_ontology.sh \"$TMP/clusters-draft.yaml\""
+
+# 5d-iv. author-ontology.sh --open-pr concierge (#670): the copy into the
+#        reused sibling ontologies clone is exit-checked (a failed cp aborts
+#        before branch/commit/push/PR), and the commit stages only the new
+#        draft + regenerated index — never the rest of the clone's tree.
+run     "author-ontology-open-pr-scoped" bash evals/author-ontology-open-pr-scoped.sh
 
 # 5e. Ontological spine (concordance, SPEC §8d): build over a topic corpus and validate
 #     ontology conformance; an undeclared entityType or a from/to domain violation fails.

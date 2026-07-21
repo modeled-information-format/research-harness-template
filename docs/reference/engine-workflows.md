@@ -2,7 +2,7 @@
 id: reference-engine-workflows
 type: semantic
 created: '2026-07-17T20:25:00-04:00'
-modified: '2026-07-21T01:08:27.808Z'
+modified: '2026-07-21T01:57:59.610Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -1532,7 +1532,7 @@ branch runs (research-harness-template#624).
 | Mode | Composition |
 | --- | --- |
 | `audit` | `research-coverage-audit` alone → returns the routed backlog report. No fan-out, falsify, synthesis, or projection follows. |
-| `import` | `research-import` → (if `needsGating` is non-empty) a falsify drain over `scope: 'all'` → `research-synthesis` → `research-projection`. An import-gate failure (`!imp.ok`) short-circuits before any gating runs. |
+| `import` | `research-import` → (if `needsGating` is non-empty) a falsify drain scoped to `{ ids: needsGating }` with `regate: true` ([research-harness-template#678](https://github.com/modeled-information-format/research-harness-template/issues/678) — when `trustImportedVerdicts` is false, `needsGating` includes findings already carrying a foreign `extensions.harness.verification.attempted_at` block; a plain `scope: 'all'` drain would silently exclude them under the one-round rule, exactly what `research-import`'s header contract forbids) → `research-synthesis` → `research-projection`. An import-gate failure (`!imp.ok`) short-circuits before any gating runs. |
 | `pivot` | `research-pivot` → a regate falsify call scoped to `pivot.reverifyIds` (`regate: true`) → (if `gapDimensions` is non-empty and the budget floor hasn't been hit) `research-fanout` over just the gap dimensions plus a falsify drain → `research-synthesis` → `research-projection`. |
 | `augment` | `research-augment` → an empty `deepen[]` returns `{ deepened: [], reasoning }` immediately (an honest, non-error terminal state) → a budget below the floor returns `{ deepened: [], planned, reasoning, budgetFloor: true }` before the fanout dispatch (research-harness-template#685 — the same `budgetLow()` guard `pivot` and the full-mode round loop always had; nothing ran, so the corpus is unchanged and synthesis/projection are skipped too, unlike `pivot`'s under-floor path, whose regate pass may already have changed verdicts on disk) → otherwise `research-fanout` over the deepen plan's dimensions plus a falsify drain → `research-synthesis` → `research-projection`. |
 | `deliverables` | (research-harness-template#624) `research-synthesis` alone (no fan-out, no falsify — reuses the survivor corpus already on disk) → `research-deliverables` fed that fresh `synthesisPath` plus `genres`/`channels`. Requires at least one of `genres`/`channels`, or the script throws before either child runs. Deliberately never calls `research-projection` — the report of record is untouched by this mode. A `synthesis.ok === false` result (e.g. no surviving findings) short-circuits to `{ deliverables: null }` before `research-deliverables` is invoked. |
@@ -1557,7 +1557,13 @@ loops `r = 1..maxRounds`, breaking early the moment `done` is set:
    — the same bounded-drain shape [research-falsify](#research-falsify)'s
    own `claimBudget` deferral already documents, plus the iteration cap as
    a belt-and-suspenders bound against a pathological non-terminating
-   backlog.
+   backlog. A caller may override the defaults (`import` mode passes
+   `scope: { ids: needsGating }, regate: true` —
+   [research-harness-template#678](https://github.com/modeled-information-format/research-harness-template/issues/678));
+   under a scoped regate drain, each subsequent iteration narrows its scope
+   to the previous call's `deferredIds`, because regate deliberately ignores
+   the one-round rule and re-sending the full id scope would re-open
+   verification on findings the drain just gated.
 4. **Synthesis.** `research-synthesis` over the surviving corpus.
 5. **Independent completion check.** A dedicated sonnet evaluator — never the
    agent that did the round's work — reads `goal.json`, runs each
