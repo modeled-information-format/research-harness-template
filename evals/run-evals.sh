@@ -522,6 +522,11 @@ run "run-lock-mutual-exclusion" bash evals/run-lock-test.sh
 #      the same slug must not silently clobber one another (issue #357).
 run "finding-publish-collision" bash evals/finding-publish-collision.sh
 
+# 1b3. write-finding.sh never leaks its .wf-staging-* directory on any exit
+#      path — including the generic ln-failure branch, which used to rmdir the
+#      staging dir without removing the staged file first (issue #683).
+run "write-finding-stage-cleanup" bash evals/write-finding-stage-cleanup.sh
+
 # 1c. Update-channel provenance gate: scripts/update.sh refuses to invoke copier on a
 #     verification miss (fail-closed), pins copier to the verified SHA on a pass, and
 #     refuses a dirty tree (issue #94).
