@@ -66,6 +66,14 @@
 #      also written here: a verbatim overwrite-if-digest-differs (same
 #      mktemp+mv pattern, no per-field reconciliation, since there is
 #      nothing to merge field-by-field in a whole rendered report/goal).
+#      Step 4 is TRANSACTIONAL across the resources of one manifest
+#      (issue #673): every write it commits is recorded in a rollback
+#      ledger (created paths + pre-overwrite backups), and a failure on
+#      any later resource replays the ledger on exit -- so "reject the
+#      entire import" holds even for a failure that only manifests at
+#      write time (e.g. a brand-new resource's target basename colliding
+#      with an unrelated pre-existing file, which per-@id pre-validation
+#      cannot see), never leaving earlier resources' writes on disk.
 #   5. Trigger the existing deterministic rebuilders (Task #323):
 #      build-graph.sh, build-topic-readme.sh, build-concordance.sh, THEN
 #      scan the rebuilt concordance for candidate cross-@id sameAs matches
@@ -136,11 +144,77 @@ elif [ "$lock_rc" -ne 0 ]; then
 fi
 # One EXIT trap for the whole script (not per-loop-iteration RETURN traps,
 # which never fire in top-level script code -- only in functions/sourced
-# scripts): releases the lock and, if step 4's overwrite-in-place path left
-# CURRENT_STAGE_DIR set when `fail` aborted mid-write, cleans that up too.
+# scripts): releases the lock; if step 4's overwrite-in-place path left
+# CURRENT_STAGE_DIR set when `fail` aborted mid-write, cleans that up too;
+# and, when the script is exiting non-zero while step 4's write loop is
+# still in flight, ROLLS BACK every write earlier iterations of that loop
+# already committed (issue #673).
 CURRENT_STAGE_DIR=""
+
+# --- Step-4 rollback ledger (issue #673) ------------------------------------
+# Step 4's loop durably publishes each resource as it goes (write-finding.sh
+# for a brand-new @id, an atomic mv for an overwrite), so a LATER resource's
+# failure used to abort the script with every EARLIER resource's write
+# already committed: the import printed REJECTED and exited non-zero, but
+# partial writes survived on disk -- contradicting this script's own "a
+# failure at any step rejects the entire import, never a partial write"
+# guarantee. Step 4 now records every mutation in this ledger as it happens
+# (paths it CREATED, to delete again; pre-overwrite BACKUPS, to restore),
+# and cleanup() replays the ledger whenever the script exits non-zero while
+# STEP4_IN_FLIGHT=1. The flag is armed only for the duration of step 4's
+# loop: steps 1-3 have written nothing to roll back, and a failure in step
+# 5's rebuilders deliberately KEEPS the upserted resources (its fail
+# messages say "after a successful upsert -- re-run manually": the corpus
+# data itself is consistent, only derived artifacts are stale).
+STEP4_IN_FLIGHT=0
+ROLLBACK_DIR=""
+ROLLBACK_CREATED=""
+ROLLBACK_BACKUP_COUNT=0
+
+# rollback_track_created <dest>: record a path that did NOT exist before
+# this run and is about to be created by it (deleted again on rollback).
+rollback_track_created() {
+  ROLLBACK_CREATED="${ROLLBACK_CREATED}${1}
+"
+}
+
+# rollback_backup <dest>: snapshot an existing file's bytes BEFORE this run
+# overwrites it (restored verbatim on rollback). Fails closed: if the
+# backup cannot be taken, the overwrite must not happen either -- called
+# before any staging so a refusal here leaks nothing. $ROLLBACK_DIR lives
+# under reports/$TOPIC, the same filesystem as every destination it backs
+# up, so each restore is a plain same-device rename.
+rollback_backup() {
+  ROLLBACK_BACKUP_COUNT=$((ROLLBACK_BACKUP_COUNT + 1))
+  cp -p "$1" "$ROLLBACK_DIR/$ROLLBACK_BACKUP_COUNT" \
+    || fail "failed to back up $1 before overwriting it -- refusing to overwrite without a rollback path (issue #673)"
+  printf '%s' "$1" > "$ROLLBACK_DIR/$ROLLBACK_BACKUP_COUNT.path" \
+    || fail "failed to record the rollback destination for $1 (issue #673)"
+}
+
 cleanup() {
+  rc=$?
   [ -n "$CURRENT_STAGE_DIR" ] && rm -rf "$CURRENT_STAGE_DIR" 2>/dev/null
+  if [ "$STEP4_IN_FLIGHT" -eq 1 ] && [ "$rc" -ne 0 ]; then
+    # Replay the ledger: delete every path this run created, then restore
+    # every pre-overwrite backup. Best-effort by design -- one failed
+    # restore must not skip the rest (same rationale as verify.sh's
+    # gate-level restore_snapshot helpers).
+    if [ -n "$ROLLBACK_CREATED" ]; then
+      printf '%s' "$ROLLBACK_CREATED" | while IFS= read -r created_path; do
+        [ -n "$created_path" ] && rm -f "$created_path" 2>/dev/null
+      done
+    fi
+    if [ -n "$ROLLBACK_DIR" ] && [ -d "$ROLLBACK_DIR" ]; then
+      for rollback_meta in "$ROLLBACK_DIR"/*.path; do
+        [ -f "$rollback_meta" ] || continue
+        rollback_dest="$(cat "$rollback_meta")"
+        [ -n "$rollback_dest" ] && mv -f "${rollback_meta%.path}" "$rollback_dest" 2>/dev/null
+      done
+    fi
+    echo "mif-container-import: rolled back this run's step-4 writes -- destination corpus restored to its pre-import state (issue #673)" >&2
+  fi
+  [ -n "$ROLLBACK_DIR" ] && rm -rf "$ROLLBACK_DIR" 2>/dev/null
   container_lock_release "$LOCK_DIR"
 }
 trap cleanup EXIT
@@ -389,6 +463,13 @@ fi
 # built here -- for now, a subset import leaves the destination's own
 # ontology-map.json untouched.
 EXPORT_SCOPE_TYPE="$(jq -r '.exportScope.type // empty' "$MANIFEST")"
+# Arm the rollback ledger (issue #673, see cleanup() above) for exactly the
+# duration of this write loop. The ledger dir lives under reports/$TOPIC --
+# the same filesystem as every path step 4 writes -- so a rollback restore
+# is a plain same-device rename, never a cross-device copy.
+ROLLBACK_DIR="$(mktemp -d "reports/$TOPIC/.import-rollback-XXXXXX")" \
+  || fail "failed to create the step-4 rollback ledger directory under reports/$TOPIC"
+STEP4_IN_FLIGHT=1
 UPSERTED=0
 SKIPPED=0
 ONTMAP_WRITTEN=0
@@ -405,6 +486,9 @@ while IFS=$'\t' read -r rpath rdigest rmiftype; do
       if [ -f "$dest" ]; then
         dest_digest="$(scripts/mif-container-digest.sh resource "$dest" 2>/dev/null)" || dest_digest=""
         [ "$dest_digest" = "$rdigest" ] && continue
+        rollback_backup "$dest"
+      else
+        rollback_track_created "$dest"
       fi
       ontmap_stage="$(mktemp "reports/$TOPIC/.ontology-map-import.XXXXXX")" \
         || fail "failed to create a staging file for ontology-map.json"
@@ -424,6 +508,11 @@ while IFS=$'\t' read -r rpath rdigest rmiftype; do
     # destination) is appended. This matters because gate_m31's own regression test
     # compares the destination array before/after a same-content subset re-import and
     # expects it byte-identical, not merely set-equal.
+    # Ledger before staging (issue #673): a same-content merge below may
+    # still skip via cmp -s, which makes this backup unnecessary but
+    # harmless -- restoring identical bytes is a no-op, and taking it
+    # before mktemp means a backup refusal leaks no staging file.
+    if [ -f "$dest" ]; then rollback_backup "$dest"; else rollback_track_created "$dest"; fi
     ontmap_stage="$(mktemp "reports/$TOPIC/.ontology-map-import.XXXXXX")" \
       || fail "failed to create a staging file for ontology-map.json"
     if [ -f "$dest" ]; then
@@ -482,6 +571,11 @@ while IFS=$'\t' read -r rpath rdigest rmiftype; do
       || fail "failed to re-verify the digest of $rpath immediately before writing"
     [ "$doc_recheck" = "$rdigest" ] \
       || fail "$rpath's digest changed between verification and write (expected $rdigest, got $doc_recheck) -- refusing to write unverified content"
+    # Ledger before staging (issue #673): the digest-match no-op already
+    # `continue`d above, so reaching here means this deliverable WILL be
+    # written -- an overwrite backs up the existing copy, a first write
+    # records the path for deletion on rollback.
+    if [ -f "$doc_dest" ]; then rollback_backup "$doc_dest"; else rollback_track_created "$doc_dest"; fi
     doc_stage="$(mktemp "reports/$TOPIC/.doc-import.XXXXXX")" \
       || fail "failed to create a staging file for $rpath"
     cp "$rfile" "$doc_stage" || { rm -f "$doc_stage"; fail "failed to stage $rpath for $TOPIC"; }
@@ -559,6 +653,9 @@ while IFS=$'\t' read -r rpath rdigest rmiftype; do
     # bulk pre-check (before ANY resource in this manifest is written),
     # so it is not re-validated here -- see step 2's comment for why.
     # ============================================================
+    # Ledger before staging (issue #673): back up the destination finding's
+    # current bytes so a LATER resource's failure restores this overwrite.
+    rollback_backup "$existing"
     CURRENT_STAGE_DIR="$(mktemp -d "$FINDINGS_DIR/.import-staging-XXXXXX")" \
       || fail "failed to create staging directory under $FINDINGS_DIR"
     STAGE="$CURRENT_STAGE_DIR/$(basename "$existing")"
@@ -587,8 +684,17 @@ while IFS=$'\t' read -r rpath rdigest rmiftype; do
   # instead of a check-then-act mv that a concurrent writer could race).
   scripts/write-finding.sh "$rfile" "$FINDINGS_DIR" "$(basename "$rpath")" \
     || fail "failed to write new finding $rpath via write-finding.sh"
+  # Ledger after a successful publish (issue #673): the file now durably
+  # exists at the destination; a LATER resource's failure deletes it again.
+  rollback_track_created "$FINDINGS_DIR/$(basename "$rpath")"
   UPSERTED=$((UPSERTED + 1))
 done < <(jq -r '.resources[] | [.path, .digest, .mifType] | @tsv' "$MANIFEST")
+# Step 4 completed: disarm the rollback ledger. From here on a failure
+# (step 5's rebuilders) deliberately keeps the upserted resources -- the
+# corpus data is consistent, only derived artifacts are stale (issue #673).
+STEP4_IN_FLIGHT=0
+rm -rf "$ROLLBACK_DIR" 2>/dev/null
+ROLLBACK_DIR=""
 echo "mif-container-import: step 4/5 idempotent upsert OK ($UPSERTED written, $SKIPPED already up to date, ontology-map.json $([ "$ONTMAP_WRITTEN" -eq 1 ] && echo written || echo unchanged), $DOCS_WRITTEN topic deliverable(s) written)"
 
 # --- Step 5: trigger the existing deterministic rebuilders (Task #323) ------

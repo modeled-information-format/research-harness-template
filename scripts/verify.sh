@@ -3641,6 +3641,66 @@ gate_m29() {
   else
     bad "destination ontology-map pre-validation check failed (rc=$rc_badontmap, finding_written=$badontmap_written)"
   fi
+
+  # 29l. Regression test for issue #673: step 4's upsert loop must ROLL BACK
+  #      earlier resources' committed writes when a LATER resource's write
+  #      fails. Fixture: three schema-valid finding resources, in manifest
+  #      order -- (1) a brand-new @id (lands via write-finding.sh), (2) an
+  #      overwrite-in-place of an existing @id (modified content), (3) a
+  #      brand-new @id whose target BASENAME collides with an unrelated
+  #      pre-existing file at the destination. Step 2's pre-validation
+  #      checks resources by @id only, so resource 3 passes every pre-write
+  #      check and fails only inside step 4 (write-finding.sh refuses the
+  #      EEXIST collision fail-closed). Before the fix: the import printed
+  #      REJECTED but resource 1's file stayed on disk and resource 2's
+  #      overwrite survived. After: REJECTED and the corpus is byte-identical
+  #      to its pre-import state.
+  local collide_file="$TOPIC_DIR/findings/gate-m29-673-collide.json"
+  jq --arg id "urn:mif:concept:harness/example-okf-mif-knowledge-spine:gate-m29-673-collide-existing" '."@id" = $id' \
+    "$seed_finding" > "$collide_file" \
+    || bad "gate_m29 29l: failed to seed the pre-existing collision file"
+  mkdir -p "$T/c-rollback"
+  jq --arg id "urn:mif:concept:harness/example-okf-mif-knowledge-spine:gate-m29-673-a" '."@id" = $id' \
+    "$seed_finding" > "$T/c-rollback/gate-m29-673-a.json"
+  jq '.summary = "gate_m29 issue-673 overwrite probe"' "$seed_finding" > "$T/c-rollback/gate-m29-673-seed-overwrite.json"
+  jq --arg id "urn:mif:concept:harness/example-okf-mif-knowledge-spine:gate-m29-673-b" '."@id" = $id' \
+    "$seed_finding" > "$T/c-rollback/gate-m29-673-collide.json"
+  local rb_a_digest rb_ow_digest rb_b_digest rb_manifest_digest
+  rb_a_digest="$(scripts/mif-container-digest.sh resource "$T/c-rollback/gate-m29-673-a.json")"
+  rb_ow_digest="$(scripts/mif-container-digest.sh resource "$T/c-rollback/gate-m29-673-seed-overwrite.json")"
+  rb_b_digest="$(scripts/mif-container-digest.sh resource "$T/c-rollback/gate-m29-673-collide.json")"
+  rb_manifest_digest="$(printf '%s\n%s\n%s\n' "$rb_a_digest" "$rb_ow_digest" "$rb_b_digest" | scripts/mif-container-digest.sh manifest)"
+  jq -n --arg ad "$rb_a_digest" --arg od "$rb_ow_digest" --arg bd "$rb_b_digest" --arg md "$rb_manifest_digest" --arg topic "$TOPIC" '{
+    profile: "https://research-harness.dev/schema/mif-container/v1",
+    sourceInstance: {namespace: "gate-m29-test", corpusUrl: null},
+    exportScope: {type: "full", topic: $topic, selector: null, generatedAt: "2026-07-10T00:00:00Z"},
+    ontologyBindings: [{packId: "mif-generic", version: "1.0.0"}],
+    resources: [
+      {mifType: "finding", path: "gate-m29-673-a.json", ontologyType: "technology", digest: $ad},
+      {mifType: "finding", path: "gate-m29-673-seed-overwrite.json", ontologyType: "technology", digest: $od},
+      {mifType: "finding", path: "gate-m29-673-collide.json", ontologyType: "technology", digest: $bd}
+    ],
+    boundaryReferences: [],
+    manifestDigest: $md,
+    createdAt: "2026-07-10T00:00:00Z"
+  }' > "$T/c-rollback/mif-package.json"
+  local rb_seed_before rb_collide_before
+  rb_seed_before="$(scripts/mif-container-digest.sh resource "$seed_finding")"
+  rb_collide_before="$(scripts/mif-container-digest.sh resource "$collide_file")"
+  got="$("$IMPORT" "$T/c-rollback" "$TOPIC" 2>&1)"
+  local rc_rollback=$?
+  local rb_a_present=0
+  [ -f "$TOPIC_DIR/findings/gate-m29-673-a.json" ] && rb_a_present=1
+  local rb_seed_after rb_collide_after
+  rb_seed_after="$(scripts/mif-container-digest.sh resource "$seed_finding")"
+  rb_collide_after="$(scripts/mif-container-digest.sh resource "$collide_file")"
+  if [ "$rc_rollback" -ne 0 ] && [ "$rb_a_present" = "0" ] \
+     && [ "$rb_seed_after" = "$rb_seed_before" ] && [ "$rb_collide_after" = "$rb_collide_before" ] \
+     && printf '%s' "$got" | grep -q "rolled back"; then
+    ok "a later resource's write failure rolls back earlier resources' step-4 writes -- new file deleted, overwrite restored (#673)"
+  else
+    bad "step-4 rollback regression check failed (rc=$rc_rollback, a_present=$rb_a_present, seed_restored=$([ "$rb_seed_after" = "$rb_seed_before" ] && echo yes || echo no), collide_intact=$([ "$rb_collide_after" = "$rb_collide_before" ] && echo yes || echo no)): $got"
+  fi
 }
 
 # ---------------------------------------------------------------------------
