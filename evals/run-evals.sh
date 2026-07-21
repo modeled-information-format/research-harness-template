@@ -539,6 +539,11 @@ run "bounded-summary-qualifier" bash evals/bounded-summary-qualifier.sh
 #     summary that is already under the cap.
 run "report-finding-summary-cap" bash evals/report-finding-summary-cap.sh
 
+# 1h. check-voice.sh's mech_hits/buzz_hits line numbers must match the real
+#     file on disk: strip_links blanks exempt citation/URL lines instead of
+#     deleting them, so `grep -n` never renumbers the stream (issue #688).
+run "voice-gate-line-numbers" bash evals/voice-gate-line-numbers.sh
+
 # 2. Citation-integrity: a clean finding passes; a bad one is flagged.
 run     "citation-integrity-good" scripts/check-citation-integrity.sh schemas/samples/citation-good.sample.json
 run_neg "citation-integrity-bad"  scripts/check-citation-integrity.sh schemas/samples/citation-bad.sample.json
