@@ -223,7 +223,13 @@ function mergeVotes(votes) {
 // prompt). Same idiom as mergeVotes(): identity arithmetic lives in code,
 // never reconstructed downstream.
 function pairLensResults(lenses, results) {
-  return results.map((r, i) => (r ? { lensKey: lenses[i].key, ...r } : null)).filter(Boolean)
+  // lensKey is assigned AFTER the spread so no stray lensKey field on a lens
+  // result can ever overwrite the paired identity, and the lenses[i] lookup is
+  // guarded so a diverged results array degrades to a labeled placeholder
+  // instead of throwing mid-Gate.
+  return results
+    .map((r, i) => (r ? { ...r, lensKey: (lenses[i] && lenses[i].key) || `lens-${i}` } : null))
+    .filter(Boolean)
 }
 
 // Gap 1 (see module header): materialize the evidence-fixture entry in code,

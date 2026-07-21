@@ -445,6 +445,20 @@ function mkWorkingSet(n) {
       const got = pairLensResults(lenses, [null, null, null]);
       check('all lenses failed: empty pairing, no crash', deepEqual(got, []), JSON.stringify(got));
     }
+    // A stray lensKey already present on a lens result must NEVER win over
+    // the paired identity -- the pairing assigns lensKey after the spread.
+    {
+      const poisoned = { verdict: 'survived', basis: 'ce basis', sources: [], lensKey: 'imposter' };
+      const got = pairLensResults(lenses, [poisoned, si, tv]);
+      check('a pre-existing lensKey on a result is overwritten by the paired identity', got[0].lensKey === 'counter-evidence', JSON.stringify(got[0]));
+    }
+    // Results longer than the lens list degrade to a labeled placeholder
+    // instead of throwing mid-Gate.
+    {
+      const extra = { verdict: 'survived', basis: 'extra basis', sources: [] };
+      const got = pairLensResults(lenses, [ce, si, tv, extra]);
+      check('a result past the end of the lens list gets a placeholder key, no throw', got[3].lensKey === 'lens-3', JSON.stringify(got[3]));
+    }
   }
 }
 
