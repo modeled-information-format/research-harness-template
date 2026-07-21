@@ -549,6 +549,15 @@ gate_m5() {
      && [ "$(jq -r '.packs[]|select(.name=="typo-demo")|.error' "$T/typo.json")" != "null" ]; then
     sync_ok=true
   fi
+  # ...and the pack must ALSO be fail-closed out of the native enabledPlugins
+  # map and the sidecar's enabledPlugins list — the sidecar error alone is not
+  # a runtime signal, so an unresolved pack must never surface as enabled
+  # (regression test for research-harness-template#669).
+  enable_ok=false
+  if [ "$(jq -r '.enabledPlugins | has("typo-demo@research-harness") | not' "$T/settings-typo.json")" = "true" ] \
+     && [ "$(jq -r '.enabledPlugins | index("typo-demo") == null' "$T/typo.json")" = "true" ]; then
+    enable_ok=true
+  fi
   # check-pack-docs.py hardcodes REPO relative to its own file location (no
   # config-path argument), so exercise external_packs() directly against a
   # synthetic REPO via importlib rather than running the whole script.
@@ -570,10 +579,10 @@ ok = "typo-demo" not in ids and any("demo-mktz" in e and "typo-demo" in e for e 
 print("true" if ok else "false")
 PY
 )
-  if [ "$sync_ok" = "true" ] && [ "$check_ok" = "true" ]; then
-    ok "an unresolvable marketplace-ref name surfaces an explicit error, not a silent null"
+  if [ "$sync_ok" = "true" ] && [ "$check_ok" = "true" ] && [ "$enable_ok" = "true" ]; then
+    ok "an unresolvable marketplace-ref name surfaces an explicit error and is excluded from enabledPlugins"
   else
-    bad "unresolved marketplace-ref regression (sync_ok=$sync_ok check_ok=$check_ok)"
+    bad "unresolved marketplace-ref regression (sync_ok=$sync_ok check_ok=$check_ok enable_ok=$enable_ok)"
   fi
   rm -rf "$T"
 
