@@ -3641,6 +3641,44 @@ gate_m29() {
   else
     bad "destination ontology-map pre-validation check failed (rc=$rc_badontmap, finding_written=$badontmap_written)"
   fi
+
+  # 29l. Regression (issue #668): the existing-@id lookup must match on the
+  #      PARSED @id, never on jq-pretty-printed bytes. Re-serialize the
+  #      synthetic finding written in 29f/29g as COMPACT JSON on disk (same
+  #      @id, no '": "' spacing -- schema-legal: findings.schema.json
+  #      constrains only the @id VALUE, never the byte layout), then
+  #      re-import the same @id with different content under a DIFFERENT
+  #      resource filename. The earlier byte-pattern grep found no match on
+  #      the compact file and fell through to the brand-new-@id branch,
+  #      writing a SECOND file for the same @id -- silently creating the
+  #      exact duplicate-@id corruption this script otherwise fails closed
+  #      on. The fixed lookup must find the compact file and overwrite it IN
+  #      PLACE: import succeeds, no compact-dup.json lands, and exactly one
+  #      file in the destination carries the @id.
+  jq -c . "$TOPIC_DIR/findings/finding.json" > "$T/compact.json" \
+    && cp "$T/compact.json" "$TOPIC_DIR/findings/finding.json" \
+    || bad "gate_m29 29l: failed to re-serialize finding.json as compact JSON"
+  jq '.summary = "gate_m29 compact-json lookup regression test"' "$T/new-finding-v2.json" > "$T/new-finding-v3.json"
+  local v3_digest; v3_digest="$(scripts/mif-container-digest.sh resource "$T/new-finding-v3.json")"
+  local v3_manifest_digest; v3_manifest_digest="$(printf '%s\n' "$v3_digest" | scripts/mif-container-digest.sh manifest)"
+  build_container "$T/c-compact" "$T/new-finding-v3.json" "$v3_digest" "$v3_manifest_digest" "1.0.0" "compact-dup.json"
+  got="$("$IMPORT" "$T/c-compact" "$TOPIC" 2>&1)"
+  local rc_compact=$?
+  local dup_file_count; dup_file_count="$(find "$TOPIC_DIR/findings" -maxdepth 1 -name 'compact-dup.json' | wc -l | tr -d ' ')"
+  # Count @id carriers by PARSING each file (jq), not by grepping bytes --
+  # a byte-grep count here would be blind to the same compact-JSON layout
+  # this regression test exists to cover.
+  local id_carrier_count=0 idc_file idc_id
+  while IFS= read -r idc_file; do
+    idc_id="$(jq -r '."@id" // empty' "$idc_file" 2>/dev/null)"
+    [ "$idc_id" = "$new_id" ] && id_carrier_count=$((id_carrier_count + 1))
+  done < <(find "$TOPIC_DIR/findings" -maxdepth 1 -name '*.json')
+  local compact_summary; compact_summary="$(jq -r '.summary' "$TOPIC_DIR/findings/finding.json" 2>/dev/null)"
+  if [ "$rc_compact" -eq 0 ] && [ "$dup_file_count" = "0" ] && [ "$id_carrier_count" = "1" ] && [ "$compact_summary" = "gate_m29 compact-json lookup regression test" ]; then
+    ok "a compact-JSON destination file is still found by @id -- overwritten in place, never duplicated (#668)"
+  else
+    bad "compact-JSON @id lookup regression check failed (rc=$rc_compact, dup=$dup_file_count, carriers=$id_carrier_count, summary=$compact_summary): $got"
+  fi
 }
 
 # ---------------------------------------------------------------------------
