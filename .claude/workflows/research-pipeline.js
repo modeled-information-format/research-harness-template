@@ -183,9 +183,12 @@ async function completionCheck(roundNo, roundRepaired) {
 async function falsifyAll(extra) {
   let total = 0
   const rollup = {}
-  let callArgs = { scope: 'all', claimBudget: A.claimBudget, queryBudget: A.queryBudget, lenses: A.lenses, ...extra }
+  const base = { scope: 'all', claimBudget: A.claimBudget, queryBudget: A.queryBudget, lenses: A.lenses, ...extra }
+  let scope = base.scope
   for (let i = 0; i < 5; i++) {
-    const r = await wf('falsify', callArgs)
+    // Fresh args object per call: a wf() child (or wrapper) that mutates its args must
+    // never leak that mutation into later drain iterations through a shared reference.
+    const r = await wf('falsify', { ...base, scope })
     if (!r) break
     total += r.gated
     for (const k of Object.keys(r.rollup || {})) rollup[k] = (rollup[k] || 0) + r.rollup[k]
@@ -198,7 +201,7 @@ async function falsifyAll(extra) {
     // findings this very drain just gated — each extra iteration would redo them instead of
     // working the backlog down. Non-regate drains need no narrowing: the one-round rule
     // already excludes anything gated on a prior iteration.
-    if (callArgs.regate) callArgs = { ...callArgs, scope: { ids: r.deferredIds } }
+    if (base.regate) scope = { ids: r.deferredIds }
   }
   return { gated: total, rollup }
 }
