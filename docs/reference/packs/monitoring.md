@@ -2,7 +2,7 @@
 id: reference-packs-monitoring
 type: semantic
 created: '2026-07-14T02:24:39.962Z'
-modified: '2026-07-16T18:25:30.099Z'
+modified: '2026-07-21T01:19:17.725Z'
 namespace: docs/reference/packs
 tags:
   - documentation
@@ -18,10 +18,10 @@ provenance:
   '@type': Provenance
   agent: claude-code/claude-fable-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:ea77f44f-898f-452b-97c5-a752ed5af5a0
+    '@id': urn:mif:activity:claude-code-session:6cffe5d9-0ff6-4850-a402-01fd4a85a0d9
     '@type': prov:Activity
   trustLevel: user_stated
-  agentVersion: 2.1.211
+  agentVersion: 2.1.216
 ---
 
 # Monitoring pack
@@ -64,7 +64,7 @@ For control-plane mechanics see [Packs and Plugins](../packs-and-plugins.md).
 
 ## continuous-monitor
 
-**Version:** 0.16.24
+**Version:** 0.16.24 | **Kind:** methodology
 
 **Source:** [`packs/monitoring/continuous-monitor/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/monitoring/continuous-monitor)
 

@@ -29,12 +29,13 @@ note() { printf '  cron-match-step-alignment: %s\n' "$1"; }
 expect() {
   local label="$1" field="$2" lo="$3" hi="$4" want="$5"
   if python3 - "$field" "$lo" "$hi" "$want" <<PY
+import ast
 import sys
 sys.path.insert(0, "$LIB")
 from cron_match import parse_field
 field, lo, hi, want = sys.argv[1], int(sys.argv[2]), int(sys.argv[3]), sys.argv[4]
 got = parse_field(field, lo, hi)
-expected = eval(want)  # trusted literal from this eval script itself
+expected = ast.literal_eval(want)
 if got != expected:
     print(f"parse_field({field!r}, {lo}, {hi}) = {sorted(got)}, want {sorted(expected)}", file=sys.stderr)
     sys.exit(1)
