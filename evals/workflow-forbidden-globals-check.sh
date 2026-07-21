@@ -40,6 +40,25 @@
 #      second real Copilot-review finding: naive delimiter stripping can
 #      turn `new/*x*/Date(` into `newDate(`, which never matches
 #      `\bnew\s+Date\s*\(`).
+#  10. a regex literal containing `\/*` (e.g. `/^a\/*b$/`) followed by a
+#      real `Date.now()` call still fails at the right line — the #680
+#      regression: a tokenizer with no regex-literal state misreads the
+#      `/*` inside the literal as a block-comment opener and silently
+#      strips the rest of the file, hiding the forbidden call;
+#  11. forbidden-call TEXT inside a regex literal (`/Date.now()/`) never
+#      false-positives — proving regex contents are stripped like string
+#      contents, not scanned as code;
+#  12. a division operator is not misread as a regex opener: real `/`
+#      division on earlier lines must not swallow a later `Date.now()`
+#      call or shift its reported line number.
+#  13. division after a postfix `++` (`i++ / 2`) is not misread as a regex
+#      opener — a `Date.now()` later on the SAME line must still fail (a
+#      real Copilot-review finding on the #680 PR: `++`/`--` can end an
+#      expression, so `/` after one is division);
+#  14. the ASI counterpart of 13: `i++` followed by a NEWLINE then a regex
+#      literal containing `\/*` is still a regex (ASI terminates the
+#      restricted `++` production), so the literal's `/*` must not open a
+#      phantom block comment that hides a later `Date.now()`.
 #
 # Exit 0 = every case holds. Exit 1 = a case failed.
 set -uo pipefail
@@ -174,5 +193,90 @@ else
     || { note "comment-split new Date() failure did not name the file at the correct line (2): $(cat "$TMP/split-call.out")"; fail=1; }
 fi
 
-[ "$fail" -eq 0 ] && note "the forbidden-globals gate is real: the shipped tree is clean, seeded new Date()/Date.now()/Math.random() calls are all caught by name and line (including inside a template literal's \${...} expression, and even when comment-stripping would otherwise fuse tokens together), the same strings inside comments/a template literal's static text never false-positive, and the verify surface covers it"
+# Case 10 (#680): a regex literal whose source contains `\/*` must not be
+# misread as a block-comment opener that swallows the rest of the file — a
+# real Date.now() after it must still fail, at the right line.
+cat > "$TMP/regex-escape.js" <<'EOF'
+export const meta = { name: 'regex-escape-eval-seed' }
+const re = /^a\/*b$/
+const stamp = Date.now()
+return { ok: true, stamp, re }
+EOF
+if bash "$CHECK" "$TMP/regex-escape.js" > "$TMP/regex-escape.out" 2>&1; then
+  note "checker passed a module where a regex literal containing \\/* hid a Date.now() call (#680)"
+  fail=1
+else
+  grep -q "regex-escape.js:3: forbidden call Date.now(" "$TMP/regex-escape.out" \
+    || { note "regex-literal-hidden Date.now() failure did not name the file at the correct line (3): $(cat "$TMP/regex-escape.out")"; fail=1; }
+fi
+
+# Case 11 (#680): forbidden-call text appearing only inside a regex
+# literal's source is not code — must PASS, proving regex contents are
+# stripped rather than scanned.
+cat > "$TMP/regex-text.js" <<'EOF'
+export const meta = { name: 'regex-text-eval-seed' }
+const dateRe = /Date.now()/
+const randRe = /Math.random()/g
+return { ok: true, dateRe, randRe }
+EOF
+if ! bash "$CHECK" "$TMP/regex-text.js" > "$TMP/regex-text.out" 2>&1; then
+  note "checker false-positived on forbidden-call text inside a regex literal: $(cat "$TMP/regex-text.out")"
+  fail=1
+fi
+
+# Case 12 (#680): division is not misread as a regex opener — a later real
+# Date.now() call must still be caught at its own line, not swallowed or
+# shifted by the `/` operators before it.
+cat > "$TMP/division.js" <<'EOF'
+export const meta = { name: 'division-eval-seed' }
+const half = total / 2
+const ratio = a / b / c
+const stamp = Date.now()
+return { ok: true, half, ratio, stamp }
+EOF
+if bash "$CHECK" "$TMP/division.js" > "$TMP/division.out" 2>&1; then
+  note "checker passed a module where division operators preceded a Date.now() call"
+  fail=1
+else
+  grep -q "division.js:4: forbidden call Date.now(" "$TMP/division.out" \
+    || { note "post-division Date.now() failure did not name the file at the correct line (4): $(cat "$TMP/division.out")"; fail=1; }
+fi
+
+# Case 13: division right after a postfix increment (`i++ / 2`) — the `/`
+# must be read as division, not a regex opener that strips the rest of the
+# line and hides the Date.now() after the `;`.
+cat > "$TMP/postfix-division.js" <<'EOF'
+export const meta = { name: 'postfix-division-eval-seed' }
+let i = 0
+const half = i++ / 2; const stamp = Date.now()
+return { ok: true, half, stamp }
+EOF
+if bash "$CHECK" "$TMP/postfix-division.js" > "$TMP/postfix-division.out" 2>&1; then
+  note "checker passed a module where division after a postfix ++ hid a same-line Date.now() call"
+  fail=1
+else
+  grep -q "postfix-division.js:3: forbidden call Date.now(" "$TMP/postfix-division.out" \
+    || { note "postfix-division Date.now() failure did not name the file at the correct line (3): $(cat "$TMP/postfix-division.out")"; fail=1; }
+fi
+
+# Case 14: the ASI counterpart — after `i++` and a NEWLINE, a `/` starts a
+# regex literal (ASI ends the restricted `++` production), so a `\/*` inside
+# it must not open a phantom block comment that swallows the later Date.now().
+cat > "$TMP/postfix-asi.js" <<'EOF'
+export const meta = { name: 'postfix-asi-eval-seed' }
+let i = 0
+const n = i++
+const matched = /a\/*b/.test('a//b')
+const stamp = Date.now()
+return { ok: true, n, matched, stamp }
+EOF
+if bash "$CHECK" "$TMP/postfix-asi.js" > "$TMP/postfix-asi.out" 2>&1; then
+  note "checker passed a module where a regex after i++ and a newline hid a Date.now() call (ASI case)"
+  fail=1
+else
+  grep -q "postfix-asi.js:5: forbidden call Date.now(" "$TMP/postfix-asi.out" \
+    || { note "postfix-ASI Date.now() failure did not name the file at the correct line (5): $(cat "$TMP/postfix-asi.out")"; fail=1; }
+fi
+
+[ "$fail" -eq 0 ] && note "the forbidden-globals gate is real: the shipped tree is clean, seeded new Date()/Date.now()/Math.random() calls are all caught by name and line (including inside a template literal's \${...} expression, even when comment-stripping would otherwise fuse tokens together, and even when a regex literal containing \\/* would otherwise be misread as a block comment, #680), the same strings inside comments/a template literal's static text/a regex literal never false-positive, division is never misread as a regex opener, and the verify surface covers it"
 exit "$fail"
