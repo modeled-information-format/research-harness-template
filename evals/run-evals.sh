@@ -81,6 +81,13 @@ run "workflow-docs-check" bash evals/workflow-docs-check.sh
 # live-progress signal so the two surfaces cannot silently diverge.
 run "start-error-handling-glob-check" bash evals/start-error-handling-glob-check.sh
 
+# /goal-writer's evidence-surface table and worked example model coverage
+# verify commands over reports/<topic>/findings/*.json — where findings
+# actually live — never the flat reports/<topic>/*.json glob, which only
+# matches goal.json/state.json/ontology-map.json and made any authored
+# coverage_per_dimension check permanently unsatisfiable (#676).
+run "goal-writer-findings-path" bash evals/goal-writer-findings-path.sh
+
 # The research-goal draft→lint→repair contract has deterministic teeth
 # (#554): scripts/lint-goal.sh FAILS the seeded-invalid fixture (step-shaped
 # check assertion + off-config dimension) that ajv alone accepts, fails
