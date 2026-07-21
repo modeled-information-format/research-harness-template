@@ -158,7 +158,7 @@ invent others):
 ## The evidence surface (what a check can be proven against)
 
 Findings are **individual MIF memory units** — one JSON file per finding under
-`reports/<topic>/`, validated against `schemas/findings.schema.json` (which
+`reports/<topic>/findings/`, validated against `schemas/findings.schema.json` (which
 extends the vendored `schemas/mif/` closure). There is **no aggregated corpus
 findings file** and no per-dimension findings file. A finding carries
 `extensions.harness.dimension` (the config dimension) and, after the gate,
@@ -171,7 +171,7 @@ actually runs:
 | Assertion shape | `verify` command (prints its own evidence) |
 | --- | --- |
 | A finding exists and validates | `ajv validate --spec=draft2020 --strict=false -c ajv-formats -s schemas/findings.schema.json -r schemas/mif/mif.schema.json -r schemas/mif/definitions/entity-reference.schema.json -d <finding file>` exits 0 |
-| Coverage for a dimension | a `jq`/`ls` count over the per-finding files in `reports/<topic>/` whose `extensions.harness.dimension == "<dim>"` meets a threshold (count individual files — never an aggregate) |
+| Coverage for a dimension | a `jq`/`ls` count over the per-finding files in `reports/<topic>/findings/` whose `extensions.harness.dimension == "<dim>"` meets a threshold (count individual files — never an aggregate) |
 | A named sub-question with an **externally-falsifiable** answer is answered | ≥1 finding tagged for that sub-question carries `extensions.harness.verification.verdict` ∈ {survived, weakened} (never falsified) — use this shape ONLY when the finding's load-bearing claim is a web-checkable fact |
 | An **internal-design / corpus-structure** requirement holds (a discovery-pattern spec, a reuse-vs-mint mapping, internal counts, a versioning plan) | a `jq`/`ls` assertion over the finding's **structure/content** — existence + the required fields/shape are present — NOT a gate verdict. The web-only gate can only return `inconclusive` on an internally-decided claim, so a `verdict ∈ {survived,weakened}` check is **unsatisfiable** for it; assert the disk fact instead |
 | Citation integrity | `scripts/check-citation-integrity.sh` over the active findings exits 0 |
@@ -286,7 +286,7 @@ genre-neutral blog post — never having been asked what they actually wanted.
      flaw in the goal, not a research gap, exactly as `inventory_no_dup` /
      `finding_valid` / `deliverables_exist` are disk checks, not verdict checks.
 3. **Carry the invariants.** Findings are individual MIF units under
-   `reports/<topic>/`; every finding carries ≥1 citation; no fabricated URLs;
+   `reports/<topic>/findings/`; every finding carries ≥1 citation; no fabricated URLs;
    surviving findings only feed synthesis; do not delete or overwrite prior
    findings.
 4. **A real bound.** Set `max_rounds` and `min_dimensions_complete`. On an unmet
@@ -358,8 +358,8 @@ distributing the harness."
   "completion_condition": {
     "summary": "Each selected dimension carries at least one surviving, citation-backed finding establishing whether update propagation is achievable, with the adversarial gate having run exactly once over the finding set and citation integrity holding.",
     "checks": [
-      { "id": "coverage_per_dimension", "assertion": "Each of technical, landscape, trajectory has >=1 active (non-falsified) finding.", "verify": "for d in technical landscape trajectory; do ls reports/template-distribution/*.json | xargs -I{} jq -r --arg d \"$d\" 'select(.extensions.harness.dimension==$d) | .[\"@id\"]' {}; done | sort -u prints >=1 id per dimension" },
-      { "id": "finding_valid", "assertion": "Active findings validate against the MIF-backed findings schema.", "verify": "ajv validate --spec=draft2020 --strict=false -c ajv-formats -s schemas/findings.schema.json -r schemas/mif/mif.schema.json -r schemas/mif/definitions/entity-reference.schema.json -d 'reports/template-distribution/<finding>.json' exits 0" },
+      { "id": "coverage_per_dimension", "assertion": "Each of technical, landscape, trajectory has >=1 active (non-falsified) finding.", "verify": "for d in technical landscape trajectory; do ls reports/template-distribution/findings/*.json | xargs -I{} jq -r --arg d \"$d\" 'select(.extensions.harness.dimension==$d) | .[\"@id\"]' {}; done | sort -u prints >=1 id per dimension" },
+      { "id": "finding_valid", "assertion": "Active findings validate against the MIF-backed findings schema.", "verify": "ajv validate --spec=draft2020 --strict=false -c ajv-formats -s schemas/findings.schema.json -r schemas/mif/mif.schema.json -r schemas/mif/definitions/entity-reference.schema.json -d 'reports/template-distribution/findings/<finding>.json' exits 0" },
       { "id": "gate_ran_once", "assertion": "The adversarial falsification gate ran exactly once over the finding set.", "verify": "the transcript shows one 'falsification-gate: run' line per finding this round" },
       { "id": "citation_integrity", "assertion": "Every active finding passes the citation-integrity gate.", "verify": "scripts/check-citation-integrity.sh exits 0" }
     ]
@@ -375,7 +375,7 @@ template. Done when, with each command's output printed: every config dimension
 (technical, landscape, trajectory) carries >=1 surviving citation-backed finding;
 active findings validate against the MIF-backed schema; the falsification gate ran
 exactly once over the set; and `scripts/check-citation-integrity.sh` exits 0.
-Constraints: findings are individual MIF units under reports/template-distribution/;
+Constraints: findings are individual MIF units under reports/template-distribution/findings/;
 no fabricated URLs; surviving findings only feed synthesis. Bound: stop after 3
 rounds and report unmet checks; remedy a thin dimension with `/start --augment <dimension>`.
 
@@ -395,8 +395,8 @@ Author/clarify the goal, then STOP and wait for `/start`.
   `kind`.
 - Dimensions are read from `harness.config.json` `dimensions[]` — never a fixed
   domain taxonomy.
-- Findings are individual MIF units under `reports/<topic>/`. Never reference an
-  aggregated or per-dimension findings file.
+- Findings are individual MIF units under `reports/<topic>/findings/`. Never reference
+  an aggregated or per-dimension findings file.
 - The goal MUST print its own evidence (the `ajv`/`jq`/`ls`/gate-log output) — the
   evaluator runs nothing and reads only the transcript.
 - Write the validated `goal.json` to `reports/<topic>/` (the orchestrator loads a
