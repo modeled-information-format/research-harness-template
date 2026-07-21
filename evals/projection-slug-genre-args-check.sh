@@ -39,7 +39,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT" || exit 2
 
 MODULE="${PROJECTION_MODULE:-.claude/workflows/research-projection.js}"
-TMP="$(mktemp -d)"
+TMP="$(mktemp -d "${TMPDIR:-/tmp}/projection-args-eval.XXXXXX")"
 trap 'rm -rf "$TMP"' EXIT
 fail=0
 note() { printf '  projection-slug-genre-args-check: %s\n' "$1"; }
