@@ -213,6 +213,19 @@ function mergeVotes(votes) {
   return { verdict: worst, contested: false }
 }
 
+// #682: pair each lens result with the lens that PRODUCED it, in code, before
+// any failed lens is dropped. parallel() preserves LENSES order, so index i is
+// only trustworthy at this moment — once filter(Boolean) removes a failed
+// lens's null, positional lookups back into LENSES misattribute every
+// surviving result after the gap (e.g. with source-integrity failed,
+// temporal-validity's evidence gets labeled source-integrity in the
+// permanently-written verification basis AND in the contested-adjudication
+// prompt). Same idiom as mergeVotes(): identity arithmetic lives in code,
+// never reconstructed downstream.
+function pairLensResults(lenses, results) {
+  return results.map((r, i) => (r ? { lensKey: lenses[i].key, ...r } : null)).filter(Boolean)
+}
+
 // Gap 1 (see module header): materialize the evidence-fixture entry in code,
 // from the already-computed verdict/basis and the lenses' own retrieved
 // URLs — deterministic, so the write agent has nothing to improvise about
@@ -419,17 +432,17 @@ const gated = await pipeline(
               { label: `lens:${lens.key}:${f.id.slice(-8)}`, phase: 'Gate', model: 'sonnet', schema: LENS_SCHEMA },
             ),
           ),
-        ).then((lensResults) => ({ f, dec, lensResults: lensResults.filter(Boolean) }))
+        ).then((lensResults) => ({ f, dec, lensResults: pairLensResults(LENSES, lensResults) }))
       : null,
   async (g) => {
     if (!g || !g.lensResults.length) return null
     const votes = g.lensResults.map((r) => r.verdict)
     let { verdict, contested } = mergeVotes(votes)
-    let basis = g.lensResults.map((r, i) => `[${LENSES[i] ? LENSES[i].key : 'lens'}:${r.verdict}] ${r.basis}`).join(' | ')
+    let basis = g.lensResults.map((r) => `[${r.lensKey}:${r.verdict}] ${r.basis}`).join(' | ')
     if (contested) {
       const adj = await agent(
         `Adjudicate a CONTESTED falsification verdict. Finding: ${g.f.path} (read it). Lens votes disagree:\n` +
-          g.lensResults.map((r, i) => `- ${LENSES[i] ? LENSES[i].key : 'lens'}: ${r.verdict} — ${r.basis}`).join('\n') +
+          g.lensResults.map((r) => `- ${r.lensKey}: ${r.verdict} — ${r.basis}`).join('\n') +
           `\nWeigh the evidence quality (not the vote count): a single well-sourced disconfirmation outweighs two absent-evidence survivals. Return the final ordinal verdict and a one-paragraph basis.`,
         { label: `adjudicate:${g.f.id.slice(-8)}`, phase: 'Gate', model: 'opus', effort: 'high', schema: { type: 'object', properties: { verdict: { type: 'string', enum: ['falsified', 'weakened', 'survived', 'inconclusive'] }, basis: { type: 'string' } }, required: ['verdict', 'basis'] } },
       )
