@@ -2,13 +2,18 @@
 id: reference-org-governance
 type: semantic
 created: '2026-06-29T13:48:43-04:00'
-modified: '2026-07-21T11:17:09.293Z'
+modified: '2026-07-21T11:25:19.747Z'
 namespace: docs/reference
 tags:
   - documentation
   - reference
 title: "Reference: org governance & release runbooks"
 diataxis_type: reference
+temporal:
+  '@type': TemporalMetadata
+  validFrom: '2026-06-29T13:48:43-04:00'
+  ttl: P6M
+  recordedAt: '2026-06-29T13:48:43-04:00'
 provenance:
   '@type': Provenance
   agent: claude-code/claude-fable-5
@@ -34,7 +39,7 @@ authoritative, governing process; this page makes them reachable from here.
 | --- | --- |
 | [Release runbook](https://github.com/modeled-information-format/.github/blob/main/docs/runbooks/release-runbook.md) | The required, audit-gated **attested release process**: punch-list audit, epics + sub-issues, a decision log, a release workplan issue, one PR per epic under GitHub Flow, and the attested cutover. |
 | [Branch-protection runbook](https://github.com/modeled-information-format/.github/blob/main/docs/runbooks/branch-protection-runbook.md) | The required-checks, single-review, and linear-history rules applied to protected branches. |
-| [Dependabot auto-merge runbook](https://github.com/modeled-information-format/.github/blob/main/docs/runbooks/dependabot-automerge-runbook.md) | The policy and rollout for auto-merging **patch** Dependabot updates via the org CI app — minor/major and non-semver bumps stay manual for review. |
+| [Dependabot auto-merge runbook](https://github.com/modeled-information-format/.github/blob/main/docs/runbooks/dependabot-automerge-runbook.md) | The policy and rollout for auto-merging **patch** Dependabot updates, approved by the org `automerge` App — minor/major and non-semver bumps stay manual for review. |
 | [Labels runbook](https://github.com/modeled-information-format/.github/blob/main/docs/runbooks/labels-runbook.md) | The org-wide label taxonomy and the reusable label-sync that keeps every repo consistent. |
 
 ## Branch-protection review-bypass policy
