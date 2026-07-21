@@ -28,13 +28,17 @@ ontology:
   extends:
     - mif-base
     - shared-traits
+# Custom namespaces under the cognitive triad inherited from mif-base.
+# Keys re-declare mif-base's underscore-prefixed roots (`_semantic`/`_episodic`)
+# so the children attach under the real inherited tree — and so discovery's
+# suggest_namespace paths (`_semantic/farm`) resolve (#686).
 namespaces:
-  semantic:
+  _semantic:
     children:
       farm:
         description: "Farm operations, land, and resources"
         type_hint: semantic
-  episodic:
+  _episodic:
     children:
       records:
         description: "Farm episodic records — harvest and climate events"
