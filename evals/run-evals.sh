@@ -679,6 +679,21 @@ run "backfill-slugs-partial-state-and-idempotent" bash -c '
   out=$(scripts/backfill-report-slugs.sh _evaltmp_backfill) &&
   printf "%s" "$out" | grep -q "0 fixed, 1 already OK"'
 
+# 5b-8. backfill-report-slugs.sh topic auto-discovery (no <topic> args) must
+#       exclude EVERY "_"-prefixed non-topic scaffolding dir under reports/
+#       (_meta, _corpus, _monitoring, ...), not just the literal _meta (#692)
+#       -- a frontmatter-bearing file in such a dir must never be enumerated
+#       for stamping. Naming an "_" dir explicitly still processes it (5b-7
+#       relies on exactly that).
+run "backfill-slugs-autodiscovery-skips-underscore-dirs" bash -c '
+  trap "rm -rf reports/_evaltmp_scaffold" EXIT &&
+  mkdir -p reports/_evaltmp_scaffold &&
+  printf -- "---\ntitle: t\n---\nbody\n" > reports/_evaltmp_scaffold/nav.md &&
+  out=$(scripts/backfill-report-slugs.sh --dry-run) &&
+  ! printf "%s" "$out" | grep -q "_evaltmp_scaffold" &&
+  expout=$(scripts/backfill-report-slugs.sh --dry-run _evaltmp_scaffold) &&
+  printf "%s" "$expout" | grep -q "_evaltmp_scaffold/nav.md"'
+
 # 5c. Inbound source-envelope: a valid envelope passes; an invalid one is refused.
 run     "source-envelope-good" ajv validate --spec=draft2020 --strict=false -c ajv-formats \
           -s schemas/mif/source-envelope.schema.json -r schemas/mif/mif.schema.json \
