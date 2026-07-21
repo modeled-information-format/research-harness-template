@@ -2,13 +2,18 @@
 id: how-to-update-your-harness
 type: semantic
 created: '2026-06-25T07:30:10-04:00'
-modified: '2026-07-21T01:57:00.413Z'
+modified: '2026-07-21T11:12:43.391Z'
 namespace: docs/how-to
 tags:
   - documentation
   - how-to
 title: "How to update your harness safely"
 diataxis_type: how-to
+temporal:
+  '@type': TemporalMetadata
+  validFrom: '2026-06-25T00:00:00Z'
+  recordedAt: '2026-07-21T00:00:00Z'
+  ttl: P6M
 provenance:
   '@type': Provenance
   agent: claude-code/claude-fable-5
