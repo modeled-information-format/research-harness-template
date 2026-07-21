@@ -73,6 +73,14 @@ run "workflow-forbidden-globals-check" bash evals/workflow-forbidden-globals-che
 # positioning + supersession note (#553).
 run "workflow-docs-check" bash evals/workflow-docs-check.sh
 
+# /start's Error handling partial-findings check globs
+# reports/<topic>/findings/*.json — where dimension-analyst output actually
+# lands — never the flat reports/<topic>/*.json, which matches Phase 0
+# bookkeeping (goal.json etc.) and misreported total failures as partial
+# progress (#684). Also pins the path against the orchestrator's own
+# live-progress signal so the two surfaces cannot silently diverge.
+run "start-error-handling-glob-check" bash evals/start-error-handling-glob-check.sh
+
 # The research-goal draft→lint→repair contract has deterministic teeth
 # (#554): scripts/lint-goal.sh FAILS the seeded-invalid fixture (step-shaped
 # check assertion + off-config dimension) that ajv alone accepts, fails
