@@ -510,6 +510,17 @@ run "research-pipeline-args-parse-check" bash evals/research-pipeline-args-parse
 # `typeof args === 'string' ? JSON.parse(args) : (args || {})` guard.
 run "atomic-workflows-args-parse-check" bash evals/atomic-workflows-args-parse-check.sh
 
+# research-harness-template#675: the #654 eval above proves only `topic`
+# threads through JSON-string args — research-projection.js's OPTIONAL
+# slug/genre fields briefly kept reading from the raw `args` after the guard
+# landed, silently falling back to TOPIC/'general' on every string-args
+# invocation (a property access on a string primitive is `undefined`, never
+# an error) and defeating the #633 genre-resolution mechanism. This eval
+# pins that defect class: slug AND genre must demonstrably thread from
+# string args into the module's real calls, and an invalid genre arriving
+# via string args must still hit the fail-closed pack-name-pattern throw.
+run "projection-slug-genre-args-check" bash evals/projection-slug-genre-args-check.sh
+
 # release.yml never uploads to an already-published (immutable) release
 # (#537): tag-push trigger, no post-publish `gh release upload`, artifact
 # attached in the same `gh release create` call.
