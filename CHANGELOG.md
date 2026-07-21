@@ -75,6 +75,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`report-synthesizer`'s Step 1/Step 4 finding globs point at the
   `findings/` subdirectory** (#671, #703): synthesis was reading an empty
   glob after the findings-layout move.
+- **`goal-writer`'s finding paths point at `reports/<topic>/findings/` where
+  findings actually live** (#676, #707): the evidence-surface table's
+  coverage row, both worked-example verify commands, and every
+  finding-location prose statement globbed `reports/<topic>/*.json`
+  directly, which only matches `goal.json`/`state.json`/`ontology-map.json`
+  — none of which carry `extensions.harness.dimension` — so any coverage
+  check authored from the manual was permanently unsatisfiable.
 - **`write-finding.sh`'s generic ln-failure branch removes the staged file
   before `rmdir`** (#683, #705): the non-empty staging directory made the
   cleanup itself fail, leaking staged state.
