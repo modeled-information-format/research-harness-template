@@ -18,7 +18,9 @@
 # reports) have no frontmatter and are skipped automatically.
 #
 # Usage: backfill-report-slugs.sh [--dry-run] [<topic> ...]
-#        no <topic> args = every reports/<topic> directory (excluding _meta).
+#        no <topic> args = every reports/<topic> directory, excluding ALL
+#        "_"-prefixed non-topic scaffolding dirs (_meta, _corpus, _monitoring,
+#        ...) -- naming one explicitly as a <topic> arg still processes it.
 
 set -euo pipefail
 cd "$(dirname "$0")/.." || exit 2
@@ -38,7 +40,11 @@ done
 if [ "${#TOPICS[@]}" -eq 0 ]; then
   while IFS= read -r t; do
     TOPICS+=("$t")
-  done < <(find reports -maxdepth 1 -mindepth 1 -type d ! -name '_meta' -exec basename {} \; | sort)
+  # "_"-prefixed top-level dirs under reports/ are non-topic scaffolding
+  # (_meta, _corpus from synthesize-corpus, _monitoring, ...), never topics --
+  # exclude the whole class, not just the literal _meta (#692). An explicit
+  # <topic> arg bypasses this filter on purpose.
+  done < <(find reports -maxdepth 1 -mindepth 1 -type d ! -name '_*' -exec basename {} \; | sort)
 fi
 
 FIXED=0

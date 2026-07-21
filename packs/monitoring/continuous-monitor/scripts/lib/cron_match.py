@@ -23,7 +23,8 @@ def parse_field(field, lo, hi):
             values.update(range(lo, hi + 1))
             continue
         step = 1
-        if "/" in part:
+        has_step = "/" in part
+        if has_step:
             part, step_s = part.split("/", 1)
             step = int(step_s)
         if part == "*":
@@ -31,9 +32,15 @@ def parse_field(field, lo, hi):
         elif "-" in part:
             a, b = part.split("-", 1)
             rng = range(int(a), int(b) + 1)
+        elif has_step:
+            # Bare 'N/step' (vixie-cron shorthand for 'N-hi/step'): open-ended
+            # from N to the field's upper bound, not the single value N.
+            rng = range(int(part), hi + 1)
         else:
             rng = range(int(part), int(part) + 1)
-        values.update(v for v in rng if (v - lo) % step == 0)
+        # Step offsets align to the range's own start (vixie-cron 'a-b/step'
+        # fires at a, a+step, ...), never to the field's absolute lower bound.
+        values.update(v for v in rng if (v - rng.start) % step == 0)
     return values
 
 
