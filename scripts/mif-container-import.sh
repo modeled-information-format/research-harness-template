@@ -169,11 +169,23 @@ CURRENT_STAGE_DIR=""
 STEP4_IN_FLIGHT=0
 ROLLBACK_DIR=""
 ROLLBACK_CREATED=""
+ROLLBACK_BACKED_UP=""
 ROLLBACK_BACKUP_COUNT=0
+
+# rollback_ledger_has <newline-delimited-list> <path>: exact-line membership
+# check (bash 3.2 -- no associative arrays; -F/-x so a path containing
+# regex metacharacters can neither false-match nor be missed).
+rollback_ledger_has() {
+  printf '%s' "$1" | grep -Fxq -- "$2"
+}
 
 # rollback_track_created <dest>: record a path that did NOT exist before
 # this run and is about to be created by it (deleted again on rollback).
+# Deduped: a manifest that (invalidly) names the same destination more than
+# once must not double-track it -- each destination appears in the ledger
+# at most once, under exactly one disposition (Copilot review, PR #718).
 rollback_track_created() {
+  rollback_ledger_has "$ROLLBACK_CREATED" "$1" && return 0
   ROLLBACK_CREATED="${ROLLBACK_CREATED}${1}
 "
 }
@@ -184,12 +196,23 @@ rollback_track_created() {
 # before any staging so a refusal here leaks nothing. $ROLLBACK_DIR lives
 # under reports/$TOPIC, the same filesystem as every destination it backs
 # up, so each restore is a plain same-device rename.
+# At most ONE backup per destination, and never for a path this run itself
+# created (Copilot review, PR #718): under a manifest that touches the same
+# destination twice, a SECOND snapshot would capture this run's own
+# intermediate write, and cleanup()'s restore loop could replay it over the
+# first (true pre-import) backup -- and a backup of a created-then-
+# overwritten path would resurrect a file whose correct pre-import state is
+# "absent". The FIRST disposition recorded for a destination is the truth.
 rollback_backup() {
+  rollback_ledger_has "$ROLLBACK_CREATED" "$1" && return 0
+  rollback_ledger_has "$ROLLBACK_BACKED_UP" "$1" && return 0
   ROLLBACK_BACKUP_COUNT=$((ROLLBACK_BACKUP_COUNT + 1))
   cp -p "$1" "$ROLLBACK_DIR/$ROLLBACK_BACKUP_COUNT" \
     || fail "failed to back up $1 before overwriting it -- refusing to overwrite without a rollback path (issue #673)"
   printf '%s' "$1" > "$ROLLBACK_DIR/$ROLLBACK_BACKUP_COUNT.path" \
     || fail "failed to record the rollback destination for $1 (issue #673)"
+  ROLLBACK_BACKED_UP="${ROLLBACK_BACKED_UP}${1}
+"
 }
 
 cleanup() {

@@ -3701,6 +3701,59 @@ gate_m29() {
   else
     bad "step-4 rollback regression check failed (rc=$rc_rollback, a_present=$rb_a_present, seed_restored=$([ "$rb_seed_after" = "$rb_seed_before" ] && echo yes || echo no), collide_intact=$([ "$rb_collide_after" = "$rb_collide_before" ] && echo yes || echo no)): $got"
   fi
+
+  # 29m. Regression test for the rollback-ledger dedupe (Copilot review,
+  #      PR #718 on issue #673): a manifest that overwrites the SAME
+  #      destination @id twice, then fails on a later resource, must roll
+  #      the destination back to its true PRE-IMPORT bytes -- not to this
+  #      run's own first intermediate write. Before the dedupe: the second
+  #      overwrite took a second backup (of the first overwrite's output),
+  #      and cleanup()'s glob-ordered restore replayed it over the first
+  #      (true pre-import) backup, leaving the corpus in an intermediate
+  #      state while still printing "rolled back".
+  local collide718="$TOPIC_DIR/findings/gate-m29-718-collide.json"
+  jq --arg id "urn:mif:concept:harness/example-okf-mif-knowledge-spine:gate-m29-718-collide-existing" '."@id" = $id' \
+    "$seed_finding" > "$collide718" \
+    || bad "gate_m29 29m: failed to seed the pre-existing collision file"
+  mkdir -p "$T/c-dup-rollback"
+  jq '.summary = "gate_m29 pr-718 duplicate overwrite probe A"' "$seed_finding" > "$T/c-dup-rollback/gate-m29-718-ow-a.json"
+  jq '.summary = "gate_m29 pr-718 duplicate overwrite probe B"' "$seed_finding" > "$T/c-dup-rollback/gate-m29-718-ow-b.json"
+  jq --arg id "urn:mif:concept:harness/example-okf-mif-knowledge-spine:gate-m29-718-b" '."@id" = $id' \
+    "$seed_finding" > "$T/c-dup-rollback/gate-m29-718-collide.json"
+  local dup_a_digest dup_b_digest dup_c_digest dup_manifest_digest
+  dup_a_digest="$(scripts/mif-container-digest.sh resource "$T/c-dup-rollback/gate-m29-718-ow-a.json")"
+  dup_b_digest="$(scripts/mif-container-digest.sh resource "$T/c-dup-rollback/gate-m29-718-ow-b.json")"
+  dup_c_digest="$(scripts/mif-container-digest.sh resource "$T/c-dup-rollback/gate-m29-718-collide.json")"
+  dup_manifest_digest="$(printf '%s\n%s\n%s\n' "$dup_a_digest" "$dup_b_digest" "$dup_c_digest" | scripts/mif-container-digest.sh manifest)"
+  jq -n --arg ad "$dup_a_digest" --arg bd "$dup_b_digest" --arg cd "$dup_c_digest" --arg md "$dup_manifest_digest" --arg topic "$TOPIC" '{
+    profile: "https://research-harness.dev/schema/mif-container/v1",
+    sourceInstance: {namespace: "gate-m29-test", corpusUrl: null},
+    exportScope: {type: "full", topic: $topic, selector: null, generatedAt: "2026-07-10T00:00:00Z"},
+    ontologyBindings: [{packId: "mif-generic", version: "1.0.0"}],
+    resources: [
+      {mifType: "finding", path: "gate-m29-718-ow-a.json", ontologyType: "technology", digest: $ad},
+      {mifType: "finding", path: "gate-m29-718-ow-b.json", ontologyType: "technology", digest: $bd},
+      {mifType: "finding", path: "gate-m29-718-collide.json", ontologyType: "technology", digest: $cd}
+    ],
+    boundaryReferences: [],
+    manifestDigest: $md,
+    createdAt: "2026-07-10T00:00:00Z"
+  }' > "$T/c-dup-rollback/mif-package.json"
+  local dup_seed_before dup_collide_before
+  dup_seed_before="$(scripts/mif-container-digest.sh resource "$seed_finding")"
+  dup_collide_before="$(scripts/mif-container-digest.sh resource "$collide718")"
+  got="$("$IMPORT" "$T/c-dup-rollback" "$TOPIC" 2>&1)"
+  local rc_dup=$?
+  local dup_seed_after dup_collide_after
+  dup_seed_after="$(scripts/mif-container-digest.sh resource "$seed_finding")"
+  dup_collide_after="$(scripts/mif-container-digest.sh resource "$collide718")"
+  if [ "$rc_dup" -ne 0 ] \
+     && [ "$dup_seed_after" = "$dup_seed_before" ] && [ "$dup_collide_after" = "$dup_collide_before" ] \
+     && printf '%s' "$got" | grep -q "rolled back"; then
+    ok "a manifest overwriting the same destination twice still rolls back to the true pre-import bytes (PR #718 review, #673)"
+  else
+    bad "duplicate-destination rollback regression check failed (rc=$rc_dup, seed_restored=$([ "$dup_seed_after" = "$dup_seed_before" ] && echo yes || echo no), collide_intact=$([ "$dup_collide_after" = "$dup_collide_before" ] && echo yes || echo no)): $got"
+  fi
 }
 
 # ---------------------------------------------------------------------------
