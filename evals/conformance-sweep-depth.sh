@@ -23,7 +23,7 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT" || exit 2
 
-TMP="$(mktemp -d)"
+TMP="$(mktemp -d "${TMPDIR:-/tmp}/conformance-sweep-depth.XXXXXX")"
 trap 'rm -rf "$TMP"' EXIT
 fail=0
 note() { printf '  conformance-sweep-depth: %s\n' "$1"; }

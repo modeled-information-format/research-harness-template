@@ -9,8 +9,10 @@
 # Deterministic signal = git-dirty reports/<topic>/<slug>.md (clears on fix/commit).
 # Exempt channels (blog, book, and channel-pack outputs — all nested under
 # reports/<topic>/, never a top-level directory) are intentionally NOT checked
-# here — their exemption is declared in the manifests, matched below by the
-# trailing .blog.md suffix / nested book/ subdirectory that identifies them.
+# here. Blog and ai-spec outputs are skipped by the `case` exemptions below
+# (trailing .blog.md / *-build-spec.md suffixes); book files have no `case`
+# entry — they sit one directory deeper (reports/<topic>/book/...) than the
+# `:(glob)`-qualified sweep reaches, so they never enter the sweep at all (#687).
 #
 # The sweep pathspec MUST keep its `:(glob)` qualifier (#687): a bare `*` in a
 # git pathspec is fnmatch() without FNM_PATHNAME, so it crosses `/` and would
