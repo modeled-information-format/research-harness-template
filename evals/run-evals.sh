@@ -528,6 +528,13 @@ run "update-provenance-gate" bash evals/update-provenance.sh
 #     a shell-assignment prefix on the same line (issue #356).
 run "guard-falsify-gate" bash evals/guard-falsify-gate.sh
 
+# 1d2. check-output-conformance.sh's Stop-hook exemption case must exempt the
+#      ai-spec channel's three kiro genre outputs (*-kiro-requirements.md,
+#      *-kiro-design.md, *-kiro-tasks.md) exactly like verify.sh's own
+#      four-suffix exclusion list, without defeating the backstop for
+#      generic reports (issue #691).
+run "output-conformance-exemptions" bash evals/output-conformance-exemptions.sh
+
 # 1e. md_guard.py's PostToolUse `--fix` must be serialized per file (mkdir
 #     lock, bounded wait, stale-steal) and must restore + exit non-zero when a
 #     fix pass destroys a file's YAML frontmatter (issue #510).
