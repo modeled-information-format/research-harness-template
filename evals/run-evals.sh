@@ -811,6 +811,12 @@ run     "author-ontology-from-clusters" bash -c "
   grep -q 'Member findings: f-delta, f-gamma' \"$TMP/cluster2-block.txt\" &&
   bash .claude/skills/ontology-manager/scripts/validate_ontology.sh \"$TMP/clusters-draft.yaml\""
 
+# 5d-iv. author-ontology.sh --open-pr concierge (#670): the copy into the
+#        reused sibling ontologies clone is exit-checked (a failed cp aborts
+#        before branch/commit/push/PR), and the commit stages only the new
+#        draft + regenerated index — never the rest of the clone's tree.
+run     "author-ontology-open-pr-scoped" bash evals/author-ontology-open-pr-scoped.sh
+
 # 5e. Ontological spine (concordance, SPEC §8d): build over a topic corpus and validate
 #     ontology conformance; an undeclared entityType or a from/to domain violation fails.
 WC="--config evals/fixtures/concordance/config.json --catalog evals/fixtures/concordance/catalog.json"

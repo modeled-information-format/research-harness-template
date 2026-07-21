@@ -101,7 +101,9 @@ Next — contribute it upstream (concierge):
      the index, and open a draft PR — or do it by hand:
        cp "$OUT" <ontologies-repo>/ontologies/${NEWID}.ontology.yaml
        (cd <ontologies-repo> && scripts/gen-ontology-index.sh && \\
-        git checkout -b feat/ontology-${NEWID} && git add -A && \\
+        git checkout -b feat/ontology-${NEWID} && \\
+        git add -- ontologies/${NEWID}.ontology.yaml && \\
+        { [ ! -f ontologies/index.json ] || git add -- ontologies/index.json; } && \\
         git commit -m "feat(ontology): add ${NEWID} (drafted from harness ${ORIGIN})" && \\
         gh pr create --draft --title "feat(ontology): ${NEWID}" --body "Drafted from harness ${ORIGIN}.")
 EOF
@@ -115,11 +117,25 @@ ONT_REPO="${MIF_ONTOLOGIES_REPO:-}"
 command -v gh >/dev/null || { echo "author-ontology: gh CLI required for --open-pr" >&2; exit 1; }
 
 branch="feat/ontology-${NEWID}"
-cp "$OUT" "$ONT_REPO/ontologies/${NEWID}.ontology.yaml"
+# The copy must be exit-checked: under `set -uo pipefail` (no -e) a failed cp
+# would otherwise fall straight through into branch/commit/push/PR with the
+# draft never actually present in the clone (#670).
+cp "$OUT" "$ONT_REPO/ontologies/${NEWID}.ontology.yaml" \
+  || { echo "author-ontology: failed to copy the draft into $ONT_REPO/ontologies" >&2; exit 1; }
 ( cd "$ONT_REPO" || exit 1
+  # Fail fast if the reused clone already has staged content — `git add --
+  # <path>` scopes what THIS run stages but does not clear the index, so
+  # anything pre-staged would still ride into the automated commit (#670).
+  git diff --cached --quiet \
+    || { echo "author-ontology: $ONT_REPO has pre-staged changes — commit or unstage them before --open-pr" >&2; exit 1; }
   if [ -x scripts/gen-ontology-index.sh ]; then bash scripts/gen-ontology-index.sh || exit 1; fi
+  # Stage ONLY what this run produced: the new draft and the regenerated
+  # index. $ONT_REPO is a long-lived sibling clone reused across sessions —
+  # a tree-wide `git add -A` would sweep any leftover/stray file in it into
+  # an automated commit pushed upstream as a draft PR (#670).
   git checkout -b "$branch" \
-  && git add -A \
+  && git add -- "ontologies/${NEWID}.ontology.yaml" \
+  && { [ ! -f ontologies/index.json ] || git add -- ontologies/index.json; } \
   && git commit -q -m "feat(ontology): add ${NEWID} (drafted from harness ${ORIGIN})
 
 Scaffolded by the research harness from ${ORIGIN}.
