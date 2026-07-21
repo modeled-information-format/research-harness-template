@@ -510,6 +510,17 @@ run "research-pipeline-args-parse-check" bash evals/research-pipeline-args-parse
 # `typeof args === 'string' ? JSON.parse(args) : (args || {})` guard.
 run "atomic-workflows-args-parse-check" bash evals/atomic-workflows-args-parse-check.sh
 
+# research-harness-template#675: the #654 eval above proves only `topic`
+# threads through JSON-string args — research-projection.js's OPTIONAL
+# slug/genre fields briefly kept reading from the raw `args` after the guard
+# landed, silently falling back to TOPIC/'general' on every string-args
+# invocation (a property access on a string primitive is `undefined`, never
+# an error) and defeating the #633 genre-resolution mechanism. This eval
+# pins that defect class: slug AND genre must demonstrably thread from
+# string args into the module's real calls, and an invalid genre arriving
+# via string args must still hit the fail-closed pack-name-pattern throw.
+run "projection-slug-genre-args-check" bash evals/projection-slug-genre-args-check.sh
+
 # release.yml never uploads to an already-published (immutable) release
 # (#537): tag-push trigger, no post-publish `gh release upload`, artifact
 # attached in the same `gh release create` call.
@@ -694,6 +705,13 @@ run "render-artifact-version-increments" bash -c '
   scripts/render-artifact.sh "'"$TMP"'/v.json" report "'"$TMP"'/vtest.md" evals/fixtures/report-verification.json &&
   grep -qx "version: 2" "'"$TMP"'/vtest.md"'
 
+# 5b-6b. The blog/book published channels are atomic-to-valid like the report
+#        channel (issue #681): a failing engine must exit the script non-zero,
+#        never leave a partial file at $OUT, never corrupt a prior good render
+#        at $OUT, and always print a diagnostic — temp-then-move, exit-status
+#        checked (set -e is not in effect in render-artifact.sh).
+run "render-artifact-atomic-write" bash evals/render-artifact-atomic-write.sh
+
 # 5b-7. backfill-report-slugs.sh only stamps the key actually missing (a file
 #       with slug but no version gets ONLY version added, never a duplicate
 #       slug line), --dry-run reports ONLY the missing key (not both,
@@ -792,6 +810,12 @@ run     "author-ontology-from-clusters" bash -c "
   grep -q 'Spaced-repetition scheduling policies' \"$TMP/cluster1-block.txt\" &&
   grep -q 'Member findings: f-delta, f-gamma' \"$TMP/cluster2-block.txt\" &&
   bash .claude/skills/ontology-manager/scripts/validate_ontology.sh \"$TMP/clusters-draft.yaml\""
+
+# 5d-iv. author-ontology.sh --open-pr concierge (#670): the copy into the
+#        reused sibling ontologies clone is exit-checked (a failed cp aborts
+#        before branch/commit/push/PR), and the commit stages only the new
+#        draft + regenerated index — never the rest of the clone's tree.
+run     "author-ontology-open-pr-scoped" bash evals/author-ontology-open-pr-scoped.sh
 
 # 5e. Ontological spine (concordance, SPEC §8d): build over a topic corpus and validate
 #     ontology conformance; an undeclared entityType or a from/to domain violation fails.
