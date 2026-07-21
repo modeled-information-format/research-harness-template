@@ -10,6 +10,9 @@
 #   4. local MISS + release PASS + metadata mismatch -> fallback refused.
 #   5. local MISS + release PASS + content mismatch -> fallback refused.
 #   6. a dirty work tree -> refused before any verification.
+#   7. guarded passthrough flags (-r/--vcs-ref/--vcs-ref=*, --defaults/-l/-f, #674)
+#      -> refused before any verification, copier never invoked.
+#   8. a benign passthrough flag (--skip-answered) is forwarded to copier unchanged.
 # And every attestation/download call remains pinned to the expected repo/workflow/asset.
 #
 # Run: bash evals/update-provenance.sh   (exit 0 = all assertions hold)
@@ -140,7 +143,7 @@ run() {
   (
     cd "$ROOT" && PATH="$BIN:$PATH" \
     GH_LOCAL_VERIFY="$2" GH_RELEASE_VERIFY="$3" \
-    bash "$1/scripts/update.sh"
+    bash "$1/scripts/update.sh" "${@:4}"
   )
 }
 
@@ -211,6 +214,31 @@ run "$C" pass fail >/dev/null 2>"$ERR"; rc=$?
 { [ "$rc" != 0 ] && [ ! -f "$ROOT/copier_invoked" ] && grep -q "working tree has uncommitted changes" "$ERR"; } \
   && ok "dirty work tree refused (exit $rc, copier NOT invoked)" \
   || no "dirty work tree not refused (rc=$rc, err='$(cat "$ERR" 2>/dev/null)')"
+
+# 7. guarded passthrough flags -> refused up front, copier never invoked (#674).
+# --vcs-ref/-r would defeat verify-then-pin; --defaults/-l/-f would reset the
+# instance's recorded answers to template defaults.
+for flag in -r --vcs-ref --vcs-ref=deadbeef --defaults -l -f; do
+  case "$flag" in
+    -r|--vcs-ref*) want="cannot be passed through — it pins the verified commit" ;;
+    *)             want="resets your recorded answers" ;;
+  esac
+  C=$(mk_clone); rm -f "$ROOT/copier_invoked"
+  ERR="$ROOT/test7.err"
+  run "$C" pass fail -- "$flag" >/dev/null 2>"$ERR"; rc=$?
+  { [ "$rc" = 2 ] && [ ! -f "$ROOT/copier_invoked" ] && grep -q -- "$want" "$ERR"; } \
+    && ok "passthrough '$flag' refused (exit $rc, copier NOT invoked)" \
+    || no "passthrough '$flag' not refused (rc=$rc, copier_invoked=$( [ -f "$ROOT/copier_invoked" ] && echo yes || echo no ), err='$(cat "$ERR" 2>/dev/null)')"
+done
+
+# 8. a benign passthrough flag is forwarded unchanged (the guard is a denylist,
+# not a gate on all passthrough — --skip-answered is the documented safe flag).
+C=$(mk_clone); rm -f "$ROOT/copier_invoked"
+run "$C" pass fail -- --skip-answered >/dev/null 2>"$ROOT/test8.err"; rc=$?
+{ [ "$rc" = 0 ] && grep -q -- "--vcs-ref $SHA" "$ROOT/copier_invoked" 2>/dev/null \
+  && grep -q -- "--skip-answered" "$ROOT/copier_invoked" 2>/dev/null; } \
+  && ok "benign passthrough --skip-answered forwarded to copier" \
+  || no "benign passthrough not forwarded (rc=$rc, invoked='$(cat "$ROOT/copier_invoked" 2>/dev/null)')"
 
 echo "update-provenance: $pass passed, $fail failed"
 [ "$fail" = 0 ]

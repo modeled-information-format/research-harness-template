@@ -2,13 +2,21 @@
 id: how-to-update-your-harness
 type: semantic
 created: '2026-06-25T07:30:10-04:00'
-modified: '2026-07-05T10:10:09-04:00'
+modified: '2026-07-21T01:57:00.413Z'
 namespace: docs/how-to
 tags:
   - documentation
   - how-to
 title: "How to update your harness safely"
 diataxis_type: how-to
+provenance:
+  '@type': Provenance
+  agent: claude-code/claude-fable-5
+  wasGeneratedBy:
+    '@id': urn:mif:activity:claude-code-session:6cffe5d9-0ff6-4850-a402-01fd4a85a0d9
+    '@type': prov:Activity
+  trustLevel: user_stated
+  agentVersion: 2.1.216
 ---
 
 # How to update your harness safely
@@ -63,8 +71,19 @@ It will:
 To update to a specific tag, or to pass extra Copier flags:
 
 ```bash
-bash scripts/update.sh --target v1.2.3 -- --defaults
+bash scripts/update.sh --target v1.2.3 -- --skip-answered
 ```
+
+`--skip-answered` (`-A`) makes the update non-interactive while keeping the
+answers recorded in `.copier-answers.yml`; Copier only prompts for questions
+that are new in the target version. Two flag families are rejected by
+`update.sh` rather than forwarded:
+
+- `--vcs-ref`/`-r` — would defeat the verify-then-pin guarantee above.
+- `--defaults` (`-l`/`-f`) — on `copier update` it resolves every question to
+  its schema-declared default instead of your recorded answer, silently
+  resetting the instance's customizations (topics, packs, voice profile) to
+  template stock.
 
 ## After updating
 
