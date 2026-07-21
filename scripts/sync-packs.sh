@@ -53,11 +53,11 @@ except (OSError, ValueError):
     market = "research-harness"
     src_by_name = {}
 
-packs, enabled_plugins = [], {}
+packs, enabled_plugins, unresolved = [], {}, []
 for p in enabled:
     name = p["name"]
     src = p.get("source")
-    enabled_plugins[f"{name}@{market}"] = True
+    resolved = True
     if src == "bundled":
         base = src_by_name.get(name, f"packs/{name}").lstrip("./")
         mf = f"{base}/.claude-plugin/plugin.json"
@@ -69,6 +69,10 @@ for p in enabled:
         except (OSError, ValueError) as e:
             entry["skills"] = []
             entry["error"] = f"unreadable manifest {mf}: {e}"
+            # Fail closed, same policy as an unresolved marketplace-ref below:
+            # a bundled pack whose manifest cannot be read has no resolvable
+            # skills, so it must not be marked enabled in the native map.
+            resolved = False
         packs.append(entry)
     elif isinstance(src, dict) and src.get("type") == "marketplace-ref":
         # Resolve against the declared marketplaces[] entry by name; a pack-local
@@ -81,6 +85,10 @@ for p in enabled:
             entry["url"] = None
             entry["ref"] = None
             entry["error"] = f"unresolved marketplace {mkt_name!r}: not declared in marketplaces[]"
+            # Fail closed: a pack with no fetchable source must NOT be marked
+            # enabled in the native map, or the runtime treats it as active
+            # with silently-unavailable skills (research-harness-template#669).
+            resolved = False
         else:
             entry["url"] = mkt.get("url")
             entry["ref"] = src.get("ref", mkt.get("ref"))
@@ -89,10 +97,20 @@ for p in enabled:
         packs.append({"name": name, "source": "external",
                       "type": (src or {}).get("type"), "url": (src or {}).get("url"),
                       "skills": []})
+    if resolved:
+        enabled_plugins[f"{name}@{market}"] = True
+    else:
+        unresolved.append(name)
+        print(f"sync-packs: WARNING: pack {name!r} has an unresolved source; "
+              f"excluded from native enabledPlugins (see {sys.argv[2]} .packs[].error)",
+              file=sys.stderr)
 
-# 1. sidecar
+# 1. sidecar — enabledPlugins mirrors what was actually written to the native
+#    map: an unresolved pack still appears in packs[] (with its error) for
+#    tooling/diagnosis, but never in enabledPlugins.
 sidecar = {"@type": "EnabledPacks", "generator": "sync-packs.sh (SPEC §7b)",
-           "enabledPlugins": [p["name"] for p in packs], "packs": packs}
+           "enabledPlugins": [p["name"] for p in packs if p["name"] not in unresolved],
+           "packs": packs}
 json.dump(sidecar, open(out_path, "w"), indent=2); open(out_path, "a").write("\n")
 
 # 2. native enablement — merge into the (instance-local) settings file without
@@ -105,7 +123,8 @@ except (OSError, ValueError):
     settings = {}
 settings["enabledPlugins"] = enabled_plugins
 json.dump(settings, open(settings_path, "w"), indent=2); open(settings_path, "a").write("\n")
-print(f"sync-packs: {len(enabled)} pack(s) enabled -> {settings_path} enabledPlugins + {out_path}")
+note = f" ({len(unresolved)} unresolved, excluded)" if unresolved else ""
+print(f"sync-packs: {len(enabled_plugins)} pack(s) enabled{note} -> {settings_path} enabledPlugins + {out_path}")
 PY
 
 # --- Ontology catalog (SPEC §8c) ---

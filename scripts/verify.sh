@@ -571,6 +571,15 @@ gate_m5() {
      && [ "$(jq -r '.packs[]|select(.name=="typo-demo")|.error' "$T/typo.json")" != "null" ]; then
     sync_ok=true
   fi
+  # ...and the pack must ALSO be fail-closed out of the native enabledPlugins
+  # map and the sidecar's enabledPlugins list — the sidecar error alone is not
+  # a runtime signal, so an unresolved pack must never surface as enabled
+  # (regression test for research-harness-template#669).
+  enable_ok=false
+  if [ "$(jq -r '.enabledPlugins | has("typo-demo@research-harness") | not' "$T/settings-typo.json")" = "true" ] \
+     && [ "$(jq -r '.enabledPlugins | index("typo-demo") == null' "$T/typo.json")" = "true" ]; then
+    enable_ok=true
+  fi
   # check-pack-docs.py hardcodes REPO relative to its own file location (no
   # config-path argument), so exercise external_packs() directly against a
   # synthetic REPO via importlib rather than running the whole script.
@@ -592,10 +601,29 @@ ok = "typo-demo" not in ids and any("demo-mktz" in e and "typo-demo" in e for e 
 print("true" if ok else "false")
 PY
 )
-  if [ "$sync_ok" = "true" ] && [ "$check_ok" = "true" ]; then
-    ok "an unresolvable marketplace-ref name surfaces an explicit error, not a silent null"
+  if [ "$sync_ok" = "true" ] && [ "$check_ok" = "true" ] && [ "$enable_ok" = "true" ]; then
+    ok "an unresolvable marketplace-ref name surfaces an explicit error and is excluded from enabledPlugins"
   else
-    bad "unresolved marketplace-ref regression (sync_ok=$sync_ok check_ok=$check_ok)"
+    bad "unresolved marketplace-ref regression (sync_ok=$sync_ok check_ok=$check_ok enable_ok=$enable_ok)"
+  fi
+  rm -rf "$T"
+
+  # 5d4. A bundled pack whose manifest is missing/unreadable is fail-closed the
+  #      same way as an unresolved marketplace-ref (Copilot review on
+  #      research-harness-template#714): the sidecar records the error, and the
+  #      pack is excluded from both the native enabledPlugins map and the
+  #      sidecar's enabledPlugins list.
+  T=$(mktemp -d)
+  cp .claude/settings.json "$T/settings-ghost.json"
+  jq '.packs += [{"name":"ghost-bundled","enabled":true,"source":"bundled"}]' \
+     harness.config.json > "$T/ghost.cfg.json"
+  if scripts/sync-packs.sh "$T/ghost.cfg.json" "$T/ghost.json" "$T/settings-ghost.json" >/dev/null 2>&1 \
+     && [ "$(jq -r '.packs[]|select(.name=="ghost-bundled")|.error' "$T/ghost.json")" != "null" ] \
+     && [ "$(jq -r '.enabledPlugins | has("ghost-bundled@research-harness") | not' "$T/settings-ghost.json")" = "true" ] \
+     && [ "$(jq -r '.enabledPlugins | index("ghost-bundled") == null' "$T/ghost.json")" = "true" ]; then
+    ok "a bundled pack with an unreadable manifest is excluded from enabledPlugins (fail closed)"
+  else
+    bad "unreadable bundled manifest not fail-closed out of enabledPlugins"
   fi
   rm -rf "$T"
 
