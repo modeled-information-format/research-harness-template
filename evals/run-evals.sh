@@ -694,6 +694,13 @@ run "render-artifact-version-increments" bash -c '
   scripts/render-artifact.sh "'"$TMP"'/v.json" report "'"$TMP"'/vtest.md" evals/fixtures/report-verification.json &&
   grep -qx "version: 2" "'"$TMP"'/vtest.md"'
 
+# 5b-6b. The blog/book published channels are atomic-to-valid like the report
+#        channel (issue #681): a failing engine must exit the script non-zero,
+#        never leave a partial file at $OUT, never corrupt a prior good render
+#        at $OUT, and always print a diagnostic — temp-then-move, exit-status
+#        checked (set -e is not in effect in render-artifact.sh).
+run "render-artifact-atomic-write" bash evals/render-artifact-atomic-write.sh
+
 # 5b-7. backfill-report-slugs.sh only stamps the key actually missing (a file
 #       with slug but no version gets ONLY version added, never a duplicate
 #       slug line), --dry-run reports ONLY the missing key (not both,
