@@ -568,6 +568,13 @@ run "conformance-sweep-depth" bash evals/conformance-sweep-depth.sh
 #     deleting them, so `grep -n` never renumbers the stream (issue #688).
 run "voice-gate-line-numbers" bash evals/voice-gate-line-numbers.sh
 
+# 1h3. check-voice.sh's is_authored_surface must classify book-channel prose
+#     (reports/<slug>/book/{chapters,appendices,front-matter}/*.md) as an
+#     authored surface: the dedicated book clause must precede the generic
+#     reports/*/*.md clause, which otherwise shadows it because case `*`
+#     crosses `/` (issue #672).
+run "voice-gate-book-surfaces" bash evals/voice-gate-book-surfaces.sh
+
 # 2. Citation-integrity: a clean finding passes; a bad one is flagged.
 run     "citation-integrity-good" scripts/check-citation-integrity.sh schemas/samples/citation-good.sample.json
 run_neg "citation-integrity-bad"  scripts/check-citation-integrity.sh schemas/samples/citation-bad.sample.json
