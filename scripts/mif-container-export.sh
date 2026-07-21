@@ -56,6 +56,12 @@
 #       explicit, stable value instead of relying on this default.
 set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)" || { echo "mif-container-export: failed to resolve repo root" >&2; exit 5; }
+# Capture the INVOKING cwd before the cd to the repo root below, so the
+# caller-relative <output-dir> and --subset paths resolve against where the
+# caller actually stood -- the same fix scripts/mif-project.sh carries for
+# its report path (issue #679). Without this, a relative <output-dir>
+# silently landed under $ROOT instead of the caller's cwd.
+INVOKED_CWD="$(pwd)" || { echo "mif-container-export: failed to resolve the invoking cwd" >&2; exit 5; }
 cd "$ROOT" || { echo "mif-container-export: failed to cd to repo root: $ROOT" >&2; exit 5; }
 
 fail() { echo "mif-container-export: REJECTED -- $1" >&2; exit 1; }
@@ -82,6 +88,19 @@ done
 }
 TOPIC="${POSITIONAL[0]}"
 OUTPUT_DIR="${POSITIONAL[1]}"
+# Resolve the caller-relative paths captured from argv against the INVOKING
+# cwd (issue #679) -- by this point the script has already cd'd to $ROOT, so
+# leaving them relative would resolve them against the repo root instead.
+case "$OUTPUT_DIR" in
+  /*) : ;;
+  *) OUTPUT_DIR="$INVOKED_CWD/$OUTPUT_DIR" ;;
+esac
+if [ -n "$SUBSET_IDS" ]; then
+  case "$SUBSET_IDS" in
+    /*) : ;;
+    *) SUBSET_IDS="$INVOKED_CWD/$SUBSET_IDS" ;;
+  esac
+fi
 [ "$CLOSURE" -eq 0 ] || [ -n "$SUBSET_IDS" ] || fail "--closure only applies with --subset"
 
 TOPIC_JSON="$(jq -e --arg t "$TOPIC" '.topics[] | select(.id == $t)' harness.config.json 2>/dev/null)" \
