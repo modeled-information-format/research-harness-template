@@ -40,6 +40,17 @@
 #      second real Copilot-review finding: naive delimiter stripping can
 #      turn `new/*x*/Date(` into `newDate(`, which never matches
 #      `\bnew\s+Date\s*\(`).
+#  10. a regex literal containing `\/*` (e.g. `/^a\/*b$/`) followed by a
+#      real `Date.now()` call still fails at the right line — the #680
+#      regression: a tokenizer with no regex-literal state misreads the
+#      `/*` inside the literal as a block-comment opener and silently
+#      strips the rest of the file, hiding the forbidden call;
+#  11. forbidden-call TEXT inside a regex literal (`/Date.now()/`) never
+#      false-positives — proving regex contents are stripped like string
+#      contents, not scanned as code;
+#  12. a division operator is not misread as a regex opener: real `/`
+#      division on earlier lines must not swallow a later `Date.now()`
+#      call or shift its reported line number.
 #
 # Exit 0 = every case holds. Exit 1 = a case failed.
 set -uo pipefail
@@ -174,5 +185,54 @@ else
     || { note "comment-split new Date() failure did not name the file at the correct line (2): $(cat "$TMP/split-call.out")"; fail=1; }
 fi
 
-[ "$fail" -eq 0 ] && note "the forbidden-globals gate is real: the shipped tree is clean, seeded new Date()/Date.now()/Math.random() calls are all caught by name and line (including inside a template literal's \${...} expression, and even when comment-stripping would otherwise fuse tokens together), the same strings inside comments/a template literal's static text never false-positive, and the verify surface covers it"
+# Case 10 (#680): a regex literal whose source contains `\/*` must not be
+# misread as a block-comment opener that swallows the rest of the file — a
+# real Date.now() after it must still fail, at the right line.
+cat > "$TMP/regex-escape.js" <<'EOF'
+export const meta = { name: 'regex-escape-eval-seed' }
+const re = /^a\/*b$/
+const stamp = Date.now()
+return { ok: true, stamp, re }
+EOF
+if bash "$CHECK" "$TMP/regex-escape.js" > "$TMP/regex-escape.out" 2>&1; then
+  note "checker passed a module where a regex literal containing \\/* hid a Date.now() call (#680)"
+  fail=1
+else
+  grep -q "regex-escape.js:3: forbidden call Date.now(" "$TMP/regex-escape.out" \
+    || { note "regex-literal-hidden Date.now() failure did not name the file at the correct line (3): $(cat "$TMP/regex-escape.out")"; fail=1; }
+fi
+
+# Case 11 (#680): forbidden-call text appearing only inside a regex
+# literal's source is not code — must PASS, proving regex contents are
+# stripped rather than scanned.
+cat > "$TMP/regex-text.js" <<'EOF'
+export const meta = { name: 'regex-text-eval-seed' }
+const dateRe = /Date.now()/
+const randRe = /Math.random()/g
+return { ok: true, dateRe, randRe }
+EOF
+if ! bash "$CHECK" "$TMP/regex-text.js" > "$TMP/regex-text.out" 2>&1; then
+  note "checker false-positived on forbidden-call text inside a regex literal: $(cat "$TMP/regex-text.out")"
+  fail=1
+fi
+
+# Case 12 (#680): division is not misread as a regex opener — a later real
+# Date.now() call must still be caught at its own line, not swallowed or
+# shifted by the `/` operators before it.
+cat > "$TMP/division.js" <<'EOF'
+export const meta = { name: 'division-eval-seed' }
+const half = total / 2
+const ratio = a / b / c
+const stamp = Date.now()
+return { ok: true, half, ratio, stamp }
+EOF
+if bash "$CHECK" "$TMP/division.js" > "$TMP/division.out" 2>&1; then
+  note "checker passed a module where division operators preceded a Date.now() call"
+  fail=1
+else
+  grep -q "division.js:4: forbidden call Date.now(" "$TMP/division.out" \
+    || { note "post-division Date.now() failure did not name the file at the correct line (4): $(cat "$TMP/division.out")"; fail=1; }
+fi
+
+[ "$fail" -eq 0 ] && note "the forbidden-globals gate is real: the shipped tree is clean, seeded new Date()/Date.now()/Math.random() calls are all caught by name and line (including inside a template literal's \${...} expression, even when comment-stripping would otherwise fuse tokens together, and even when a regex literal containing \\/* would otherwise be misread as a block comment, #680), the same strings inside comments/a template literal's static text/a regex literal never false-positive, division is never misread as a regex opener, and the verify surface covers it"
 exit "$fail"
