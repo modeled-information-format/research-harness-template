@@ -3730,7 +3730,24 @@ gate_m29() {
     bad "compact-JSON @id lookup regression check failed (rc=$rc_compact, dup=$dup_file_count, carriers=$id_carrier_count, summary=$compact_summary): $got"
   fi
 
-  # 29m. Regression test for issue #673: step 4's upsert loop must ROLL BACK
+  # 29m. Regression test for issue #679: a RELATIVE <container-dir> must
+  #      resolve against the INVOKING cwd, not the repo root -- the script
+  #      cd's to $ROOT before parsing argv, so before the fix a relative
+  #      path passed from anywhere but the repo root resolved against $ROOT
+  #      and failed with a misleading "not a directory"/"manifest not
+  #      found". Re-run 29a's known-good no-op container as --dry-run
+  #      (writes nothing) from inside $T, addressing it by its RELATIVE
+  #      basename.
+  local import_abs="$PWD/$IMPORT"
+  (cd "$T" && "$import_abs" "c-noop" "$TOPIC" --dry-run) >/dev/null 2>&1
+  local rc_relative=$?
+  if [ "$rc_relative" -eq 0 ]; then
+    ok "a caller-relative <container-dir> resolves against the invoking cwd, not the repo root (#679)"
+  else
+    bad "caller-relative <container-dir> did not resolve against the invoking cwd (rc=$rc_relative, #679)"
+  fi
+
+  # 29n. Regression test for issue #673: step 4's upsert loop must ROLL BACK
   #      earlier resources' committed writes when a LATER resource's write
   #      fails. Fixture: three schema-valid finding resources, in manifest
   #      order -- (1) a brand-new @id (lands via write-finding.sh), (2) an
@@ -3746,7 +3763,7 @@ gate_m29() {
   local collide_file="$TOPIC_DIR/findings/gate-m29-673-collide.json"
   jq --arg id "urn:mif:concept:harness/example-okf-mif-knowledge-spine:gate-m29-673-collide-existing" '."@id" = $id' \
     "$seed_finding" > "$collide_file" \
-    || bad "gate_m29 29l: failed to seed the pre-existing collision file"
+    || bad "gate_m29 29n: failed to seed the pre-existing collision file"
   mkdir -p "$T/c-rollback"
   jq --arg id "urn:mif:concept:harness/example-okf-mif-knowledge-spine:gate-m29-673-a" '."@id" = $id' \
     "$seed_finding" > "$T/c-rollback/gate-m29-673-a.json"
@@ -3790,7 +3807,7 @@ gate_m29() {
     bad "step-4 rollback regression check failed (rc=$rc_rollback, a_present=$rb_a_present, seed_restored=$([ "$rb_seed_after" = "$rb_seed_before" ] && echo yes || echo no), collide_intact=$([ "$rb_collide_after" = "$rb_collide_before" ] && echo yes || echo no)): $got"
   fi
 
-  # 29n. Regression test for the rollback-ledger dedupe (Copilot review,
+  # 29o. Regression test for the rollback-ledger dedupe (Copilot review,
   #      PR #718 on issue #673): a manifest that overwrites the SAME
   #      destination @id twice, then fails on a later resource, must roll
   #      the destination back to its true PRE-IMPORT bytes -- not to this
@@ -3802,7 +3819,7 @@ gate_m29() {
   local collide718="$TOPIC_DIR/findings/gate-m29-718-collide.json"
   jq --arg id "urn:mif:concept:harness/example-okf-mif-knowledge-spine:gate-m29-718-collide-existing" '."@id" = $id' \
     "$seed_finding" > "$collide718" \
-    || bad "gate_m29 29m: failed to seed the pre-existing collision file"
+    || bad "gate_m29 29o: failed to seed the pre-existing collision file"
   mkdir -p "$T/c-dup-rollback"
   jq '.summary = "gate_m29 pr-718 duplicate overwrite probe A"' "$seed_finding" > "$T/c-dup-rollback/gate-m29-718-ow-a.json"
   jq '.summary = "gate_m29 pr-718 duplicate overwrite probe B"' "$seed_finding" > "$T/c-dup-rollback/gate-m29-718-ow-b.json"
@@ -4508,6 +4525,31 @@ gate_m31() {
     ok "export fails closed on a malformed (invalid-JSON) finding file, not a silent undercount"
   else
     bad "malformed-finding export check failed (rc=$rc_malformed, output dir created: $([ -d "$T/malformed-export" ] && echo yes || echo no))"
+  fi
+
+  # 31j. Regression test for issue #679: a RELATIVE <output-dir> must
+  #      resolve against the INVOKING cwd, not the repo root -- the script
+  #      cd's to $ROOT before parsing argv, so before the fix a relative
+  #      output dir passed from anywhere else silently landed under the
+  #      repo root instead of the caller's cwd, with no error at all.
+  local export_abs="$PWD/$EXPORT"
+  # Uniquely named per run so the repo-root stray check can't false-positive
+  # on (or the cleanup delete) an unrelated pre-existing path of the same name.
+  local relout_name="rel-679-out.$$.$RANDOM"
+  mkdir -p "$T/callercwd"
+  (cd "$T/callercwd" && "$export_abs" "$TOPIC" "$relout_name") >/dev/null 2>&1
+  local rc_relout=$?
+  local relout_strayed=0
+  [ -e "$relout_name" ] && relout_strayed=1
+  # Defensive cleanup: the PRE-fix behavior this test exists to catch would
+  # have created $relout_name at the repo root -- never leave that behind.
+  # Safe because the name is unique to this run, so only this test's own
+  # artifact can match.
+  rm -rf "$relout_name"
+  if [ "$rc_relout" -eq 0 ] && [ -f "$T/callercwd/$relout_name/mif-package.json" ] && [ "$relout_strayed" -eq 0 ]; then
+    ok "a caller-relative <output-dir> resolves against the invoking cwd, not the repo root (#679)"
+  else
+    bad "caller-relative <output-dir> resolution check failed (rc=$rc_relout, at-caller: $([ -f "$T/callercwd/$relout_name/mif-package.json" ] && echo yes || echo no), strayed-to-root: $relout_strayed, #679)"
   fi
 }
 
