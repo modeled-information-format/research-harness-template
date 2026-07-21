@@ -108,6 +108,13 @@ elif [ -e "$DEST" ]; then
   echo "write-finding: $NAME already exists at $DEST — refused (no silent overwrite); nothing written" >&2
   exit 1
 else
+  # Remove the staged file BEFORE the rmdir, same as every other exit path:
+  # rmdir only succeeds on an empty directory, and its failure is swallowed by
+  # the 2>/dev/null, so skipping this rm left the staging dir (plus the copied
+  # finding inside it) behind permanently on every generic ln failure —
+  # disk-full, a permissions/ACL denial, a filesystem that disallows hard
+  # links — accumulating one orphaned .wf-staging-* dir per failure (#683).
+  rm -f "$STAGE"
   rmdir "$STAGE_DIR" 2>/dev/null
   echo "write-finding: validated but failed to publish: $DEST (ln failed for a reason other than an existing destination)" >&2
   exit 1
