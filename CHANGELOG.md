@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.28] - 2026-07-22
+
+### Fixed
+
+- **`.githooks/pre-push` now also exempts branch-deletion pushes from the
+  ADR-0010 version-bump check**, not just tag pushes/deletions: a plain
+  `git push origin --delete <branch>` on an already-merged branch pushes no
+  new commits, so Rule B has nothing to validate — but the prior condition
+  only exempted a ref whose local-or-remote side was a tag, so a branch
+  deletion (remote side `refs/heads/...`) fell through to a real
+  `check-version-bump.sh` run and failed on the repo's normal
+  just-released resting state. Extends `evals/pre-push-tag-skip.sh` with a
+  regression case.
+
 ## [0.16.27] - 2026-07-22
 
 ### Fixed
