@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.32] - 2026-07-22
+
 ## [0.16.31] - 2026-07-22
 
 ### Fixed
@@ -193,7 +195,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   fails** (#718): a failed multi-resource import no longer leaves a
   half-imported container.
 
-## [0.16.25] - 2026-07-21
+## 0.16.25 - 2026-07-21
 
 ### Fixed
 
@@ -231,7 +233,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   npm: failed install writes no sentinel, the next run re-provisions, and a
   fully-provisioned cache is reused without invoking npm.
 
-## [0.16.24] - 2026-07-21
+## 0.16.24 - 2026-07-21
 
 ### Fixed
 
@@ -245,7 +247,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   silently gated at the wrong times by `monitor.yml`. Regression eval:
   `evals/cron-match-step-alignment.sh`.
 
-## [0.16.23] - 2026-07-20
+## 0.16.23 - 2026-07-20
 
 ### Fixed
 
@@ -263,7 +265,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `check-citation-leak.sh`/`check-voice.sh`/`check-output-conformance.sh`
   hooks are all repointed to match.
 
-## [0.16.22] - 2026-07-19
+## 0.16.22 - 2026-07-19
 
 ### Fixed
 
@@ -2153,7 +2155,8 @@ First release of the domain-general research harness template.
 - **Distribution** as a Copier living template and a Claude Code plugin
   marketplace.
 
-[Unreleased]: https://github.com/modeled-information-format/research-harness-template/compare/v0.16.21...HEAD
+[Unreleased]: https://github.com/modeled-information-format/research-harness-template/compare/v0.16.26...HEAD
+[0.16.26]: https://github.com/modeled-information-format/research-harness-template/compare/v0.16.21...v0.16.26
 [0.16.21]: https://github.com/modeled-information-format/research-harness-template/compare/v0.16.18...v0.16.21
 [0.16.18]: https://github.com/modeled-information-format/research-harness-template/compare/v0.16.3...v0.16.18
 [0.16.3]: https://github.com/modeled-information-format/research-harness-template/compare/v0.15.1...v0.16.3
