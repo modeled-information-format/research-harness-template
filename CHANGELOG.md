@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.31] - 2026-07-22
+
+### Fixed
+
+- **`research-projection.js`'s Report and Verify phases now guard the same
+  `agent()`-throw exposure #720 fixed for Index
+  (research-harness-template#727).** `agent({schema})` surfaces a subagent
+  that completes its real work but never calls `StructuredOutput` as a
+  thrown error, not the documented "returns null on death" contract — and
+  neither the Report nor the Verify phase had a try/catch around its one
+  `agent()` call. Report's fix is guard-and-**rethrow**: every downstream
+  field (`reportPath`/`reportId`/`frontmatterLevel`/`genreApplied`/
+  `provenanceOutcome`) is read unconditionally by this phase's own
+  pre-existing null-guard and by Index/Verify below, so a throw is logged
+  with a named warning and re-thrown as a clearer, `#727`-tagged error
+  rather than degraded to an invented report shape. Verify's fix is
+  guard-and-**degrade**, mirroring Index exactly: a throw degrades to a
+  null `verify`, which the final return already treats as a safe,
+  non-fatal `ok: false` — the model stays `haiku` deliberately, since
+  Verify's task (targeted markdownlint/`ajv` checks, report problems
+  verbatim) is a single-shot mechanical check-and-report, not the
+  authored-prose shape that drove Index's failure. New evals:
+  `evals/projection-report-resilience-check.sh`,
+  `evals/projection-verify-resilience-check.sh`.
+
 ## [0.16.30] - 2026-07-22
 
 ### Fixed
