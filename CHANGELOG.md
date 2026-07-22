@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.27] - 2026-07-22
+
+### Fixed
+
+- **`dimension-analyst.md` stages findings with a `.json` extension before
+  running `ajv validate`**: `ajv-cli` picks its parser by file extension and
+  falls through to Node's `require()` for anything unrecognized, which parsed
+  the previous `.staging`-suffixed staged file as JavaScript instead of JSON —
+  every ajv invocation on a staged finding failed with a spurious "Unexpected
+  token ':'" that read like a schema-`$ref` problem even though the content
+  was valid JSON.
+
 ## [0.16.26] - 2026-07-21
 
 ### Added
