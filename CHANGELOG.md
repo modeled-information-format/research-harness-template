@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.29] - 2026-07-22
+
+### Changed
+
+- **`research-fanout.js`'s `'standard'`-depth research brief now gives the
+  per-dimension analyst a concrete calibration reference and a 3-point
+  self-check** (novelty trend in the last few searches, scope-coverage
+  against every named sub-area, a domain-scale signal from sources found)
+  before it stops, instead of one vague, unanchored stop condition ("stop
+  when marginal searches stop adding germane evidence"). `saturationNote`
+  (already a required return field) now carries real content — which check,
+  if any, justified continuing past the reference point, or confirmation
+  none did — feeding `research-augment.js`'s existing cross-round deepening
+  judge with a more useful signal. `'deep'`-depth and the deepening-decision
+  logic itself are unchanged.
+
 ## [0.16.28] - 2026-07-22
 
 ### Fixed
