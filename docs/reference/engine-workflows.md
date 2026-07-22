@@ -2,7 +2,7 @@
 id: reference-engine-workflows
 type: semantic
 created: '2026-07-17T20:25:00-04:00'
-modified: '2026-07-21T01:57:59.610Z'
+modified: '2026-07-22T21:09:48.996Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -16,12 +16,12 @@ temporal:
   recordedAt: '2026-07-17T20:25:00-04:00'
 provenance:
   '@type': Provenance
-  agent: claude-code/claude-fable-5
+  agent: claude-code/claude-sonnet-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:6cffe5d9-0ff6-4850-a402-01fd4a85a0d9
+    '@id': urn:mif:activity:claude-code-session:1e9e8582-e390-4cc6-bda1-cfe768289fae
     '@type': prov:Activity
   trustLevel: user_stated
-  agentVersion: 2.1.216
+  agentVersion: 2.1.217
 ---
 
 # Reference: engine workflows
@@ -532,7 +532,7 @@ Source: `.claude/workflows/research-projection.js`.
 | Phase | Model | What it does |
 | --- | --- | --- |
 | Report | sonnet | A same-process existence/non-empty/valid-JSON preflight check on `synthesisPath` (folded into the top of this phase, not a separate stage), then genre resolution against `harness.config.json` `packs[]` enablement (#633), then the `publish-report` skill's script pipeline: `synthesize-artifact.sh` → a REAL falsification pass over the report's own central claims via `falsify.sh` (never a hand-authored verdict) → `render-artifact.sh` → `mif-project.sh` → `Skill(<genre>:<genre>)` applied + re-confirmed only when that genre's pack is enabled. A `falsified` verdict quarantines the report — it is not shipped, and the module returns `ok: false` without proceeding to Index. |
-| Index | haiku | The `readme` skill's `build-topic-readme.sh` for the computed structural backbone (counts, dates, verdict breakdown, source total, dimension rollup, report/artifact tables — never guessed), with only the Key Findings/Purpose prose hand-authored on top; then the `graph` skill's `build-graph.sh` + `assert-graph-mif.sh` to refresh and re-verify the knowledge graph. |
+| Index | sonnet | The `readme` skill's `build-topic-readme.sh` for the computed structural backbone (counts, dates, verdict breakdown, source total, dimension rollup, report/artifact tables — never guessed), with only the Key Findings/Purpose prose hand-authored on top; then the `graph` skill's `build-graph.sh` + `assert-graph-mif.sh` to refresh and re-verify the knowledge graph. Wrapped in try/catch (research-harness-template#720): degrades to a null index with a named warning on any throw, never fails the pipeline. |
 | Verify | haiku | Targeted gates (markdownlint + `ajv`) on only the files this run actually changed — never the full `verify.sh` suite. See [Decision D-10](#verify-phase-decision-d-10-targeted-gates-only) below. |
 
 ### synthesisPath consumption contract (same-process only)
@@ -574,9 +574,25 @@ underlying scripts and never re-derives or supersedes their logic:
   the structural backbone and the `graph` skill's `build-graph.sh` +
   `assert-graph-mif.sh` for the knowledge-graph refresh. The one thing
   `build-topic-readme.sh` cannot compute — synthesis-grade Key
-  Findings/Purpose prose — is hand-authored by the haiku phase on top of the
-  script's output, per the `readme` skill's own documented division of
-  labor; every count, date, and table stays script-computed.
+  Findings/Purpose prose — is hand-authored by the sonnet phase on top of
+  the script's output, per the `readme` skill's own documented division of
+  labor; every count, date, and table stays script-computed. **Non-fatal
+  degrade (research-harness-template#720):** this phase's own `agent()` call
+  runs on `sonnet` rather than `haiku` — matching the Report phase's
+  precedent for the identical mixed judgment-plus-script-pipeline task
+  shape — and is wrapped in try/catch. A production run observed the
+  subagent complete every real step (README rewritten, both gates re-run and
+  passing, graph rebuilt) and then never call `StructuredOutput`, then
+  falsely assert in prose that it already had when the harness's
+  structured-output-enforce nudge fired — `agent({schema})` surfaces that
+  specific non-compliance class as a thrown error, not the documented
+  "returns null on death" contract. If the call still throws after the model
+  change, the phase degrades to a null `index` and logs a warning naming the
+  underlying error, rather than hard-failing the entire pipeline one phase
+  from completion. A caller can distinguish "Index degraded entirely"
+  (`readmePath: null`) from "Index ran but a validation gate failed"
+  (`readmePath` set, `readmeCheckPassed`/`graphAssertPassed` false) via the
+  existing return shape.
 
 This module composes those three skills' scripts programmatically instead of
 reimplementing an approximation of their logic in free-form prompts — the
