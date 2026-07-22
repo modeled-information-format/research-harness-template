@@ -207,6 +207,24 @@ run "synthesis-citation-check" bash evals/synthesis-citation-check.sh
 # acceptance criterion, made a real regression trap).
 run "projection-supersession-check" bash evals/projection-supersession-check.sh
 
+# research-harness-template#720: the Index phase completed its real
+# README/graph work in production, then never called StructuredOutput —
+# and, when the harness's structured-output-enforce nudge fired, asserted
+# in prose that it HAD already called the tool, which it never did.
+# agent({schema}) surfaces that specific non-compliance class as a THROW,
+# not the documented "returns null on death" contract, and the Index phase
+# had no try/catch around its one agent() call, so the throw hard-failed a
+# 304-agent-call, ~3.4-hour pipeline run one phase from the finish line.
+# Structural proof that the call now runs on model: 'sonnet' (matching the
+# Report phase's existing precedent for the identical mixed
+# judgment-plus-script-pipeline task shape) rather than haiku, plus a
+# behavioral proof that the module's own try/catch block (extracted
+# VERBATIM, brace-matched, never re-typed) does not re-throw and degrades
+# to a null index with a named warning when driven with a stubbed agent()
+# that throws the exact observed failure signature, while leaving the
+# documented null-return contract path and the happy path unaffected.
+run "projection-index-resilience-check" bash evals/projection-index-resilience-check.sh
+
 # The research-deliverables module has deterministic teeth where its own
 # logic can express it (#573, Epic #544): the module's static pack-taxonomy
 # tables (which genres/methodology packs/source-direct channels/out-of-scope

@@ -70,8 +70,10 @@
 //   from the REFERENCE's prompt-only shape, not from the architecture doc):
 //   the Report phase below invokes the publish-report script pipeline
 //   directly; the Index phase invokes build-topic-readme.sh for the
-//   structural backbone (haiku authors ONLY Key Findings/Purpose on top) and
-//   build-graph.sh + assert-graph-mif.sh for the knowledge-graph refresh.
+//   structural backbone (sonnet authors ONLY Key Findings/Purpose on top —
+//   moved off haiku by research-harness-template#720, see that phase's own
+//   note below) and build-graph.sh + assert-graph-mif.sh for the
+//   knowledge-graph refresh.
 //
 // @id SUPERSESSION IS STRUCTURAL, VERIFIED EMPIRICALLY (not asserted from
 // reading render-artifact.sh alone). A fixture run of the actual pipeline —
@@ -220,7 +222,7 @@ export const meta = {
   whenToUse: 'After a clean synthesis — materializes the tracked, in-repo projections (the report channel is the source of truth; deliverable genres are a separate workflow)',
   phases: [
     { title: 'Report', detail: 'existence-checked synthesisPath (same-process contract) -> genre resolved against harness.config.json packs[] enablement (#633) -> publish-report pipeline: synthesize-artifact.sh -> REAL falsify.sh gate over the report\'s own central claims (never hand-authored) -> render-artifact.sh -> mif-project.sh -> Skill(<genre>:<genre>) applied + re-confirmed when that genre\'s pack is enabled, else an honest genre="general" (#633, never a claimed-but-unapplied genre) -> Skill(mif-docs:mif-provenance) witnessed-provenance stamp (ADR-0018, #632; declines gracefully when capture is off, never hand-authored as a workaround)', model: 'sonnet' },
-    { title: 'Index', detail: 'readme skill\'s build-topic-readme.sh backbone + synthesis-grade Key Findings/Purpose authored on top -> graph skill\'s build-graph.sh + assert-graph-mif.sh', model: 'haiku' },
+    { title: 'Index', detail: 'readme skill\'s build-topic-readme.sh backbone + synthesis-grade Key Findings/Purpose authored on top -> graph skill\'s build-graph.sh + assert-graph-mif.sh; wrapped in try/catch (research-harness-template#720) -> degrades to a null index with a named warning on any throw, never fails the pipeline', model: 'sonnet' },
     { title: 'Verify', detail: 'targeted gates on changed files only (D-10) — never the full verify.sh suite', model: 'haiku' },
   ],
 }
@@ -474,28 +476,56 @@ if (report.verificationVerdict === 'falsified') {
 }
 
 phase('Index')
-const index = await agent(
-  `Reconcile the derived corpus surfaces for topic ${TOPIC}, harness ${H} — via the readme/graph skills' SCRIPT PIPELINES, ` +
-    `never a from-scratch recompute:\n` +
-    `1. README structural backbone (readme skill): bash ${H}/scripts/build-topic-readme.sh ${TOPIC} — computes every count, ` +
-    `date, verdict breakdown, source total, dimension rollup, and the report/artifact tables from ${RDIR}/findings/*.json + ` +
-    `${RDIR}/goal.json (never hand-guessed; stale numbers are defects). Then Read ${RDIR}/README.md (the file this command ` +
-    `just wrote — required before editing it) and author ONLY the two sections the script cannot compute: rewrite ` +
-    `'## Key Findings' as 4-10 bullets that SYNTHESIZE ACROSS findings — an insight, tension, or converging consensus per ` +
-    `bullet, never a one-finding-per-bullet restatement; carry named specifics (standards/tools/products/numbers/dates) drawn ` +
-    `from the findings' actual content; respect verdict nuance (weakened findings carry caveats, inconclusive ones are ` +
-    `reported open, falsified ones excluded) — then tighten '## Purpose' to 1-2 sentences. Edit ONLY those two sections. ` +
-    `Then VALIDATE (the gate, must pass before reporting done): bash ${H}/scripts/build-topic-readme.sh ${TOPIC} --check — a ` +
-    `non-zero exit means the README is wrong; fix it, do not ship it.\n` +
-    `2. Knowledge graph refresh (graph skill): bash ${H}/scripts/build-graph.sh ${RDIR}/findings ${RDIR}/knowledge-graph.json ` +
-    `then bash ${H}/scripts/assert-graph-mif.sh ${RDIR}/knowledge-graph.json — must pass (proves every node/edge traces to a ` +
-    `urn:mif: id, MIF-native, never tag-derived).\n` +
-    `Return the README path, whether its --check passed, whether the graph rebuilt, whether assert-graph-mif passed, and the ` +
-    `full changed-file list.`,
-  { label: 'projection:index', model: 'haiku', schema: INDEX_SCHEMA },
-)
+// research-harness-template#720: the Index phase's own task shape is NOT a
+// single-shot mechanical extraction — it wraps authored prose (synthesis-grade
+// Key Findings/Purpose) around two script-driven validation gates, the same
+// mixed judgment-plus-pipeline shape the Report phase above already runs on
+// `sonnet`. Observed in production: a `haiku` run completed every real step
+// (README rewritten, both gates re-run and passing, graph rebuilt) and then
+// never called StructuredOutput — and when the harness's structured-output-
+// enforce nudge fired, it asserted in prose that it HAD already called the
+// tool, which it never did. `agent({schema})` surfaces that specific
+// non-compliance class as a THROW, not a null return (contrast the
+// documented "returns null on death" contract for timeout/exhausted-retry/
+// user-skip) — so this call, alone among this file's three agent() calls,
+// is wrapped in try/catch: give it the stronger model this task shape
+// structurally needs (matching the Report-phase precedent), and if it still
+// throws, degrade to a null index rather than let one late-pipeline phase
+// discard an entire multi-hour, multi-round run one step from the finish
+// line. A caller can still tell "Index degraded entirely" (readmePath null,
+// below) apart from "Index ran but one validation gate failed" (readmePath
+// set, readmeCheckPassed/graphAssertPassed false) via the existing return
+// shape — no new field needed.
+let index = null
+try {
+  index = await agent(
+    `Reconcile the derived corpus surfaces for topic ${TOPIC}, harness ${H} — via the readme/graph skills' SCRIPT PIPELINES, ` +
+      `never a from-scratch recompute:\n` +
+      `1. README structural backbone (readme skill): bash ${H}/scripts/build-topic-readme.sh ${TOPIC} — computes every count, ` +
+      `date, verdict breakdown, source total, dimension rollup, and the report/artifact tables from ${RDIR}/findings/*.json + ` +
+      `${RDIR}/goal.json (never hand-guessed; stale numbers are defects). Then Read ${RDIR}/README.md (the file this command ` +
+      `just wrote — required before editing it) and author ONLY the two sections the script cannot compute: rewrite ` +
+      `'## Key Findings' as 4-10 bullets that SYNTHESIZE ACROSS findings — an insight, tension, or converging consensus per ` +
+      `bullet, never a one-finding-per-bullet restatement; carry named specifics (standards/tools/products/numbers/dates) drawn ` +
+      `from the findings' actual content; respect verdict nuance (weakened findings carry caveats, inconclusive ones are ` +
+      `reported open, falsified ones excluded) — then tighten '## Purpose' to 1-2 sentences. Edit ONLY those two sections. ` +
+      `Then VALIDATE (the gate, must pass before reporting done): bash ${H}/scripts/build-topic-readme.sh ${TOPIC} --check — a ` +
+      `non-zero exit means the README is wrong; fix it, do not ship it.\n` +
+      `2. Knowledge graph refresh (graph skill): bash ${H}/scripts/build-graph.sh ${RDIR}/findings ${RDIR}/knowledge-graph.json ` +
+      `then bash ${H}/scripts/assert-graph-mif.sh ${RDIR}/knowledge-graph.json — must pass (proves every node/edge traces to a ` +
+      `urn:mif: id, MIF-native, never tag-derived).\n` +
+      `Return the README path, whether its --check passed, whether the graph rebuilt, whether assert-graph-mif passed, and the ` +
+      `full changed-file list.`,
+    { label: 'projection:index', model: 'sonnet', schema: INDEX_SCHEMA },
+  )
+} catch (err) {
+  log(`WARNING: Index phase agent() threw instead of returning (research-harness-template#720 — the subagent likely completed its README/graph work but failed to call StructuredOutput, possibly after falsely claiming it already had) — degrading to a null index rather than failing the whole pipeline. Underlying error: ${err && err.message ? err.message : err}`)
+  index = null
+}
 if (index && (!index.readmeCheckPassed || !index.graphAssertPassed)) {
   log(`WARNING: Index phase did not fully validate (readmeCheckPassed=${index.readmeCheckPassed}, graphAssertPassed=${index.graphAssertPassed}) — surfacing rather than silently proceeding`)
+} else if (!index) {
+  log(`WARNING: Index phase produced no result at all (readmePath=null) — README/graph refresh may not have happened this run; see the research-harness-template#720 note above`)
 }
 
 phase('Verify')

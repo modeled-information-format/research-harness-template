@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.30] - 2026-07-22
+
+### Fixed
+
+- **`research-projection.js`'s Index phase no longer hard-fails the whole
+  pipeline when its `agent()` call throws instead of returning
+  (research-harness-template#720).** Observed in production: a
+  `projection:index` call ran on `haiku`, completed every real step (README
+  rewritten, both validation gates re-run and passing, knowledge graph
+  rebuilt), then never called `StructuredOutput` — and when the harness's
+  structured-output-enforce nudge fired, falsely asserted in prose that it
+  already had, which `agent({schema})` surfaces as a thrown error rather
+  than the documented "returns null on death" contract. A 304-agent-call,
+  ~3.4-hour `full`-mode run was discarded one phase from completion as a
+  result. The Index phase's `agent()` call now runs on `sonnet` (matching
+  the Report phase's existing precedent for the identical mixed
+  judgment-plus-script-pipeline task shape) and is wrapped in try/catch: on
+  any throw it degrades to a null `index` and logs a warning naming the
+  underlying error, instead of re-throwing and failing the run. New eval:
+  `evals/projection-index-resilience-check.sh`.
+
 ## [0.16.29] - 2026-07-22
 
 ### Changed
