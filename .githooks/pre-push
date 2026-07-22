@@ -17,8 +17,20 @@
 # standard protocol: `<local ref> SP <local sha1> SP <remote ref> SP
 # <remote sha1>` (a deleted ref's local side reads literally "(delete)").
 # Skip the check entirely when every ref being pushed is a tag ref
-# (refs/tags/*); run it as before for any branch push, including a push that
-# mixes branch and tag refs in one invocation.
+# (refs/tags/*) or a ref DELETION (any ref kind); run it as before for any
+# branch push that adds content, including a push that mixes branch and tag
+# refs in one invocation.
+#
+# research-harness-template#722-adjacent (surfaced live pruning a merged
+# branch, not filed separately — same root class as #648): a plain
+# `git push origin --delete <branch>` pushes no new commits at all, so Rule B
+# has just as little to validate as it does for a tag push — the check was
+# still failing this case because the old condition only exempted a ref
+# whose LOCAL OR REMOTE side was a tag; a branch deletion's remote side is
+# `refs/heads/...`, never a tag, so it fell through to a real
+# check-version-bump.sh run and failed on the repo's completely normal
+# just-released resting state (release pointer == last tag). A deletion push
+# is exempt regardless of ref kind, since nothing is being introduced.
 set -uo pipefail
 
 is_tag_ref() {
@@ -28,30 +40,34 @@ is_tag_ref() {
   esac
 }
 
-all_tags=1
+is_delete_push() {
+  [ "$1" = "(delete)" ]
+}
+
+all_exempt=1
 saw_ref=0
 if [ ! -t 0 ]; then
-  # Fully drain stdin — do not `break` out early on the first non-tag ref.
+  # Fully drain stdin — do not `break` out early on the first non-exempt ref.
   # git writes one line per ref being pushed and this hook runs `git fetch`
   # + the version check afterward; if the loop stops reading before git has
   # finished writing, the pipe buffer can fill and the push can hang. Once
-  # any ref proves the push isn't tag-only, keep reading (cheaply) to EOF
+  # any ref proves the push isn't fully exempt, keep reading (cheaply) to EOF
   # instead of stopping.
   while read -r local_ref _local_sha remote_ref _remote_sha; do
     [ -n "${local_ref:-}" ] || continue
     saw_ref=1
-    if ! is_tag_ref "$local_ref" && ! is_tag_ref "${remote_ref:-}"; then
-      all_tags=0
+    if ! is_tag_ref "$local_ref" && ! is_tag_ref "${remote_ref:-}" && ! is_delete_push "$local_ref"; then
+      all_exempt=0
     fi
   done
 fi
 # A TTY on stdin means a manual invocation with no piped refs (e.g. running
 # the hook directly to test it) — there is nothing to scan and reading would
 # just block, so skip the loop entirely and fall through to running the
-# check as a normal (non-tag) push.
+# check as a normal (non-exempt) push.
 
-if [ "$saw_ref" -eq 1 ] && [ "$all_tags" -eq 1 ]; then
-  echo "pre-push: only tag ref(s) being pushed — skipping the version-bump check (ADR-0010's Rule B has nothing meaningful to validate about pushing the release tag itself, #648)" >&2
+if [ "$saw_ref" -eq 1 ] && [ "$all_exempt" -eq 1 ]; then
+  echo "pre-push: only tag ref(s) and/or ref deletion(s) being pushed — skipping the version-bump check (ADR-0010's Rule B has nothing meaningful to validate here, #648)" >&2
   exit 0
 fi
 

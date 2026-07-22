@@ -26,8 +26,15 @@
 #      by this fix.
 #   4. A push that mixes a branch ref and a tag ref in one invocation still
 #      invokes the check (not "every ref is a tag").
+#   5. A BRANCH deletion (local ref literally "(delete)", remote ref
+#      refs/heads/...) is also exempt — pushes no new commits, so Rule B has
+#      nothing to validate, same as a tag deletion. This is the fix this eval
+#      was extended for: `git push origin --delete <branch>` on a merged PR
+#      branch failed the check live (the old condition only exempted a ref
+#      whose local-or-remote side was a TAG; a branch deletion's remote side
+#      is refs/heads/..., never a tag).
 #
-# Exit 0 iff all four hold; each failing case names itself.
+# Exit 0 iff all five hold; each failing case names itself.
 set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT" || exit 2
@@ -148,5 +155,17 @@ elif [ ! -s "$STUB_LOG" ]; then
   fail=1
 fi
 
-[ "$fail" -eq 0 ] && note "tag-only/tag-deletion pushes skip the check; branch and mixed pushes still run it"
+# --- Case 5: branch-deletion push never invokes the check ------------------
+write_stub 1   # stub would FAIL if invoked — proves it is never called
+rc=$(cd "$REPO" && run_hook_with_stdin "(delete) 0000000000000000000000000000000000000000 refs/heads/fix/some-merged-branch $sha
+")
+if [ "$rc" -ne 0 ]; then
+  note "case 5 (branch deletion): hook exited $rc, expected 0"
+  fail=1
+elif [ -s "$STUB_LOG" ]; then
+  note "case 5 (branch deletion): check-version-bump.sh was invoked, expected skip"
+  fail=1
+fi
+
+[ "$fail" -eq 0 ] && note "tag-only/tag-deletion/branch-deletion pushes skip the check; branch and mixed pushes still run it"
 exit "$fail"
