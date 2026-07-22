@@ -2,7 +2,7 @@
 id: reference-engine-workflows
 type: semantic
 created: '2026-07-17T20:25:00-04:00'
-modified: '2026-07-22T21:09:48.996Z'
+modified: '2026-07-22T22:14:09.851Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -531,9 +531,9 @@ Source: `.claude/workflows/research-projection.js`.
 
 | Phase | Model | What it does |
 | --- | --- | --- |
-| Report | sonnet | A same-process existence/non-empty/valid-JSON preflight check on `synthesisPath` (folded into the top of this phase, not a separate stage), then genre resolution against `harness.config.json` `packs[]` enablement (#633), then the `publish-report` skill's script pipeline: `synthesize-artifact.sh` → a REAL falsification pass over the report's own central claims via `falsify.sh` (never a hand-authored verdict) → `render-artifact.sh` → `mif-project.sh` → `Skill(<genre>:<genre>)` applied + re-confirmed only when that genre's pack is enabled. A `falsified` verdict quarantines the report — it is not shipped, and the module returns `ok: false` without proceeding to Index. |
+| Report | sonnet | A same-process existence/non-empty/valid-JSON preflight check on `synthesisPath` (folded into the top of this phase, not a separate stage), then genre resolution against `harness.config.json` `packs[]` enablement (#633), then the `publish-report` skill's script pipeline: `synthesize-artifact.sh` → a REAL falsification pass over the report's own central claims via `falsify.sh` (never a hand-authored verdict) → `render-artifact.sh` → `mif-project.sh` → `Skill(<genre>:<genre>)` applied + re-confirmed only when that genre's pack is enabled. A `falsified` verdict quarantines the report — it is not shipped, and the module returns `ok: false` without proceeding to Index. Wrapped in try/catch (research-harness-template#727): a thrown `agent()` failure is logged and re-thrown as a clearer, `#727`-tagged error — never degraded to a null report, since every downstream field is read unconditionally by this phase's own null-guard and by Index/Verify below. |
 | Index | sonnet | The `readme` skill's `build-topic-readme.sh` for the computed structural backbone (counts, dates, verdict breakdown, source total, dimension rollup, report/artifact tables — never guessed), with only the Key Findings/Purpose prose hand-authored on top; then the `graph` skill's `build-graph.sh` + `assert-graph-mif.sh` to refresh and re-verify the knowledge graph. Wrapped in try/catch (research-harness-template#720): degrades to a null index with a named warning on any throw, never fails the pipeline. |
-| Verify | haiku | Targeted gates (markdownlint + `ajv`) on only the files this run actually changed — never the full `verify.sh` suite. See [Decision D-10](#verify-phase-decision-d-10-targeted-gates-only) below. |
+| Verify | haiku | Targeted gates (markdownlint + `ajv`) on only the files this run actually changed — never the full `verify.sh` suite. See [Decision D-10](#verify-phase-decision-d-10-targeted-gates-only) below. Wrapped in try/catch (research-harness-template#727, mirroring Index's #720 shape): degrades to a null verify with a named warning on any throw — the final return already treats a null verify as a safe, non-fatal `ok: false`. The model deliberately stays `haiku`: Verify's task is a single-shot mechanical check-and-report with no authored-prose sub-step, unlike Index's synthesis-bullet authoring. |
 
 ### synthesisPath consumption contract (same-process only)
 
@@ -570,6 +570,30 @@ underlying scripts and never re-derives or supersedes their logic:
   verdict directly — `publish-report`'s own non-negotiable is that the
   verdict must come from a real falsification pass, never be hand-authored,
   and this module does not weaken that rule to save an agent call.
+  **Guard-and-rethrow (research-harness-template#727):** this phase's
+  `agent()` call is wrapped in try/catch, the same #720-class exposure Index
+  already had — but UNLIKE Index, a throw here is not degraded to a null
+  report. Every downstream field (`reportPath`/`reportId`/
+  `frontmatterLevel`/`genreApplied`/`genreSkillInvoked`/`provenanceOutcome`/
+  `provenanceReason`) is read unconditionally by this phase's own
+  pre-existing `if (!report) throw` (unchanged — that guard covers a
+  clean-but-falsy return, a different case than `agent()` itself throwing)
+  and by the Index/Verify phases and final return below, so inventing a
+  degraded report shape would be a caller-visible-contract decision this fix
+  deliberately declines to make. On a throw, a WARNING naming
+  `research-harness-template#727` and the underlying error is logged, then a
+  NEW, clearer `#727`-tagged error is re-thrown — never silently swallowed.
+  The Report phase's prompt also acquires/releases a per-topic
+  `reports/<topic>/.projection-lock` (see the CONCURRENCY GUARD note in the
+  prompt itself) with its own release-on-every-exit-path instruction; if the
+  throw fires after the subagent's own release step, the lock is already
+  clear (the observed #720/#727 failure shape — all real work done, only
+  the final `StructuredOutput` call missing). If it fires mid-task before
+  that release, the lock could be left held — a pre-existing risk the
+  unguarded throw already carried before this fix, not introduced by it, and
+  `scripts/lib/container-lock.sh`'s `CONTAINER_LOCK_STALE_MIN` (240-minute
+  default) self-heals it without new JS-side cleanup logic. This is a known,
+  examined, unchanged limitation, not a gap left unremarked.
 - **Index phase** invokes the `readme` skill's `build-topic-readme.sh` for
   the structural backbone and the `graph` skill's `build-graph.sh` +
   `assert-graph-mif.sh` for the knowledge-graph refresh. The one thing
@@ -593,6 +617,23 @@ underlying scripts and never re-derives or supersedes their logic:
   (`readmePath: null`) from "Index ran but a validation gate failed"
   (`readmePath` set, `readmeCheckPassed`/`graphAssertPassed` false) via the
   existing return shape.
+- **Verify phase** runs targeted `markdownlint-cli2`/`ajv` gates on only the
+  files this run actually changed (see [Decision
+  D-10](#verify-phase-decision-d-10-targeted-gates-only)). **Guard-and-degrade
+  (research-harness-template#727):** wrapped in try/catch, mirroring Index's
+  #720 shape exactly — a throw is logged with a named warning and degrades
+  to a null `verify`, which the final return already treats as a safe,
+  non-fatal `ok: false` (`problems: ['verify agent failed']`). Unlike
+  Index's model escalation, this phase deliberately STAYS on `haiku`:
+  Verify's task (run the two gates, report problems verbatim, never fix
+  anything) is a single-shot mechanical check-and-report with no
+  authored-prose sub-step — the same shape as this module's own Preflight
+  and Genre-resolution haiku calls, neither of which has shown this failure
+  class — not the "author 4-10 synthesis bullets" authored-prose shape
+  #720's own analysis pinned as Index's actual failure driver. The try/catch
+  catches the class either way regardless of this reasoning, so keeping
+  `haiku` is a latency/cost-vs-robustness call to revisit only if production
+  data later shows otherwise, not a correctness gap today.
 
 This module composes those three skills' scripts programmatically instead of
 reimplementing an approximation of their logic in free-form prompts — the

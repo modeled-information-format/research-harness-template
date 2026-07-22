@@ -225,6 +225,17 @@ run "projection-supersession-check" bash evals/projection-supersession-check.sh
 # documented null-return contract path and the happy path unaffected.
 run "projection-index-resilience-check" bash evals/projection-index-resilience-check.sh
 
+# research-harness-template#727: the Report and Verify phases of the same
+# research-projection.js module share the identical unguarded agent()-throw
+# exposure that #720 (above) fixed for Index. Report's fix is guard-and-
+# RETHROW (its return shape isn't degradable — every downstream field is
+# read unconditionally); Verify's fix is guard-and-DEGRADE (mirroring
+# Index) while deliberately staying on `haiku` (an anti-regression trap in
+# the opposite direction of Index's own model-escalation guard above). Both
+# evals use the same brace-matched verbatim-extraction technique.
+run "projection-report-resilience-check" bash evals/projection-report-resilience-check.sh
+run "projection-verify-resilience-check" bash evals/projection-verify-resilience-check.sh
+
 # The research-deliverables module has deterministic teeth where its own
 # logic can express it (#573, Epic #544): the module's static pack-taxonomy
 # tables (which genres/methodology packs/source-direct channels/out-of-scope

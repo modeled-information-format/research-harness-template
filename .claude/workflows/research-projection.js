@@ -379,7 +379,34 @@ const genreStepText = genreResolution.genrePackEnabled
     `neutral render. This report's genre metadata must read "general", NOT "${GENRE}" — never let the output claim a genre whose ` +
     `template was never applied (mirrors report-synthesizer.md's own rule). Set genreApplied=false, genreSkillInvoked="".\n`
 
-const report = await agent(
+// research-harness-template#727 (mirrors #720's Index-phase fix): agent()
+// surfaces the "completed all real work but never called StructuredOutput"
+// non-compliance class as a THROW, not a null return — this is the same
+// mixed judgment-plus-pipeline task shape (render/falsify/provenance-stamp,
+// not a single-shot mechanical extraction) that made Index vulnerable, and
+// this phase runs on the same `sonnet` model. UNLIKE Index, this throw is
+// re-thrown rather than degraded to a null report: every downstream field
+// (reportPath/reportId/frontmatterLevel/genreApplied/genreSkillInvoked/
+// provenanceOutcome/provenanceReason) is read unconditionally both by this
+// phase's own `if (!report) throw` a few lines below and by the Index/Verify
+// phases and final return further down — inventing a degraded report shape
+// here would be a caller-visible-contract decision this issue explicitly
+// declines to prescribe, not a safe no-op the way Index's null-index is.
+//
+// CONCURRENCY GUARD note: the prompt above acquires/releases a per-topic
+// `.projection-lock` (see CONCURRENCY GUARD, step 7's release-on-every-exit-
+// path instruction). If this throw fires AFTER the subagent's own step 7
+// release — the observed #720/#727 failure shape, all real work done, only
+// the final StructuredOutput call missing — the lock is already clear. If it
+// fires mid-task BEFORE that release, the lock could be left held; this is a
+// PRE-EXISTING risk the unguarded throw already carried before this fix, not
+// something introduced by it, and scripts/lib/container-lock.sh's
+// CONTAINER_LOCK_STALE_MIN (240 min default) self-heals a stuck lock without
+// new JS-side cleanup logic. Left as a known, examined, unchanged limitation
+// rather than scope-creeping into a rewrite of the lock-acquisition contract.
+let report
+try {
+  report = await agent(
   `Render the CANONICAL MIF Level-3 report of record for topic ${TOPIC} in harness ${H} — the harness's source of truth, held ` +
     `to the same bar as a finding (never exempt from the gate). Follow the publish-report skill's SCRIPT PIPELINE exactly — ` +
     `never hand-author the frontmatter, citations, or verification verdict directly; the verdict in particular must come from ` +
@@ -460,7 +487,11 @@ const report = await agent(
     `is "falsified" and step 3 already stopped you before step 7, in which case provenanceOutcome="not-applicable" and ` +
     `provenanceReason="report quarantined at step 3 (falsified) — step 7 never reached", per step 3's own instruction).`,
   { label: 'projection:report', model: 'sonnet', schema: REPORT_SCHEMA },
-)
+  )
+} catch (err) {
+  log(`WARNING: Report phase agent() threw instead of returning (research-harness-template#727 — mirrors the #720 Index-phase failure class: the subagent likely completed its render/falsify/provenance work but failed to call StructuredOutput, possibly after falsely claiming it already had). Report's return shape is NOT degradable the way Index's is (see the comment above this try block) — re-throwing a clearer, #727-tagged error instead of letting the original bubble up unexplained. Underlying error: ${err && err.message ? err.message : err}`)
+  throw new Error(`research-projection: Report phase failed (research-harness-template#727 — agent() threw instead of returning; see the WARNING log above for the underlying error and the .projection-lock note on lock state): ${err && err.message ? err.message : err}`)
+}
 if (!report) throw new Error('research-projection: report rendering failed')
 if (report.verificationVerdict === 'falsified') {
   log(`Report quarantined: the falsification gate returned "falsified" over the report's own claims — NOT shipping ${report.reportPath}`)
@@ -530,18 +561,44 @@ if (index && (!index.readmeCheckPassed || !index.graphAssertPassed)) {
 
 phase('Verify')
 const changed = [report.reportPath].concat(index ? index.changedFiles : [])
-const verify = await agent(
-  `Targeted verification of ONLY these changed files in harness ${H} (never the full verify.sh suite here — D-10): ` +
-    `${JSON.stringify(changed)}. Run markdownlint-cli2 (repo config) on the markdown; ajv-validate any touched JSON against ` +
-    `its schema under ${H}/schemas/ (knowledge-graph, findings). If reports/<topic>/ontology-map.json is among the ` +
-    `changed/touched files, its established, correct shape is a JSON ARRAY of {finding_id, entity_type, resolved_ontology, ` +
-    `basis, valid} rows (see scripts/mif-container-import.sh, scripts/build-concordance.sh, scripts/ontology-review.sh, and ` +
-    `every existing topic's on-disk ontology-map.json) — there is no schemas/ontology-map.schema.json to ajv-validate it ` +
-    `against, so do not flag its array root as wrong or assume it should be an object; only confirm it parses as valid JSON ` +
-    `and its root is an array. Report problems verbatim; do not fix anything, and never run this concurrently with ` +
-    `scripts/ontology-review.sh (shared temp/catalog state races).`,
-  { label: 'projection:verify', model: 'haiku', effort: 'low', schema: VERIFY_SCHEMA },
-)
+// research-harness-template#727 (mirrors #720's Index-phase fix): agent()
+// can throw instead of returning here too — guard it the same way, but
+// DEGRADE to a null verify (matching Index) rather than re-throw (matching
+// Report): the final return below already treats a null verify as
+// ok:false + problems:['verify agent failed'], the same non-fatal shape
+// Index's null-index degradation uses, so this is a safe no-op path, not a
+// caller-visible-contract change.
+//
+// Model stays `haiku` deliberately — this is a DEFAULT-NO-OP decision, not
+// an oversight. Verify's task (run markdownlint-cli2/ajv-validate, report
+// problems verbatim, do not fix) is a single-shot mechanical check-and-
+// report with no authored-prose sub-step, the same shape as this file's own
+// `projection:preflight` and `projection:genre-resolve` haiku calls above —
+// neither of which has ever shown this failure class in production — and
+// NOT the "author 4-10 synthesis bullets" authored-prose shape that #720's
+// own analysis pinned as Index's actual failure driver. If production data
+// later shows Verify hitting this class at a nontrivial rate despite that
+// reasoning, the try/catch below still catches it safely either way — this
+// is a latency/cost-vs-robustness tradeoff to revisit then, not a
+// correctness gap now.
+let verify = null
+try {
+  verify = await agent(
+    `Targeted verification of ONLY these changed files in harness ${H} (never the full verify.sh suite here — D-10): ` +
+      `${JSON.stringify(changed)}. Run markdownlint-cli2 (repo config) on the markdown; ajv-validate any touched JSON against ` +
+      `its schema under ${H}/schemas/ (knowledge-graph, findings). If reports/<topic>/ontology-map.json is among the ` +
+      `changed/touched files, its established, correct shape is a JSON ARRAY of {finding_id, entity_type, resolved_ontology, ` +
+      `basis, valid} rows (see scripts/mif-container-import.sh, scripts/build-concordance.sh, scripts/ontology-review.sh, and ` +
+      `every existing topic's on-disk ontology-map.json) — there is no schemas/ontology-map.schema.json to ajv-validate it ` +
+      `against, so do not flag its array root as wrong or assume it should be an object; only confirm it parses as valid JSON ` +
+      `and its root is an array. Report problems verbatim; do not fix anything, and never run this concurrently with ` +
+      `scripts/ontology-review.sh (shared temp/catalog state races).`,
+    { label: 'projection:verify', model: 'haiku', effort: 'low', schema: VERIFY_SCHEMA },
+  )
+} catch (err) {
+  log(`WARNING: Verify phase agent() threw instead of returning (research-harness-template#727 — mirrors the #720 Index-phase failure class) — degrading to a null verify rather than failing the whole pipeline one step from the finish line. Underlying error: ${err && err.message ? err.message : err}`)
+  verify = null
+}
 
 return {
   ok: !!(verify && verify.lintClean && verify.schemaClean),
