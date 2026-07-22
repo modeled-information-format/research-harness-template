@@ -287,9 +287,15 @@ mkdir -p "$REPORTS_DIR/findings"
 # coreutils' mktemp handles a trailing suffix. A directory-template call is
 # portable across both. This lives under findings/ (not the usual mktemp-
 # outside-the-tree convention) because ln (below) requires the staging file
-# and its destination to share a filesystem; .staging-*/ is gitignored.
+# and its destination to share a filesystem; .staging-*/ is gitignored. The
+# staged file itself MUST end in .json (never a bare .staging suffix): the
+# ajv-cli validate step below picks its parser by file extension and falls
+# through to Node's require() -- which parses an unrecognized extension as
+# JavaScript, not JSON -- for anything else, so a non-.json staged file fails
+# every ajv invocation with a spurious "Unexpected token ':'" (misread as a
+# schema-$ref problem) even though the JSON content itself is perfectly valid.
 STAGE_DIR="$(mktemp -d "$REPORTS_DIR/findings/.staging-XXXXXX")"
-S="$STAGE_DIR/finding-<slug>.staging"
+S="$STAGE_DIR/finding-<slug>.json"
 A="$(mktemp -t author-finding.XXXXXX.py)"   # unique per analyst — no shared-cwd race
 # (write the Python above to "$A" with the Write tool, then:)
 python3 "$A" "$S"; rm -f "$A"
