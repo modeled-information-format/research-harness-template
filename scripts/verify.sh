@@ -4266,20 +4266,24 @@ gate_m31() {
   #      practical to simulate end-to-end here) by backdating the lock past
   #      the window, refreshing it, then confirming it reads as fresh again
   #      -- and that refresh never resurrects an already-released lock
-  #      (mirrors run-lock.sh's own refresh contract).
+  #      (mirrors run-lock.sh's own refresh contract). Uses a real
+  #      container_lock_acquire to obtain a genuine ownership token
+  #      (issue #763's refresh now requires one -- see 31a6 below for the
+  #      ownership-mismatch case this signature change exists to catch).
   (
     # shellcheck source=scripts/lib/container-lock.sh
     . scripts/lib/container-lock.sh
     RL_LOCK="$TOPIC_DIR/.refresh-test.lock"
     rm -rf "$RL_LOCK"
-    mkdir -p "$RL_LOCK"
+    container_lock_acquire "$RL_LOCK" "refresh-test" || exit 1
+    RL_TOKEN="$CONTAINER_LOCK_TOKEN"
     touch -t 200001010000 "$RL_LOCK"
-    container_lock_fresh "$RL_LOCK" && exit 1   # sanity: backdated lock reads stale first
-    container_lock_refresh "$RL_LOCK"
-    container_lock_fresh "$RL_LOCK" || exit 1   # after refresh, reads fresh again
+    container_lock_fresh "$RL_LOCK" && exit 1          # sanity: backdated lock reads stale first
+    container_lock_refresh "$RL_LOCK" "$RL_TOKEN" || exit 1
+    container_lock_fresh "$RL_LOCK" || exit 1          # after refresh, reads fresh again
     rm -rf "$RL_LOCK"
-    container_lock_refresh "$RL_LOCK"           # no-op on a lock that was never created
-    [ ! -e "$RL_LOCK" ] || exit 1               # must not resurrect it
+    container_lock_refresh "$RL_LOCK" "$RL_TOKEN" 2>/dev/null && exit 1   # must fail, not silently no-op, on a lock that's gone
+    [ ! -e "$RL_LOCK" ] || exit 1                      # must not resurrect it
     exit 0
   )
   if [ "$?" -eq 0 ]; then
@@ -4287,7 +4291,56 @@ gate_m31() {
   else
     bad "container-lock (#382 review follow-up) container_lock_refresh regression"
   fi
-  rm -rf "$TOPIC_DIR/.refresh-test.lock"
+
+  # 31a6. Regression test for research-harness-template#763: container_lock_refresh
+  #      (and container_lock_release) must detect a lock this run no longer
+  #      actually owns -- e.g. a different run stole it via the staleness path,
+  #      or reacquired it after this run's own release -- instead of silently
+  #      acting on whatever currently occupies $lock_dir. Simulated directly
+  #      against the sourced library: "run-a" acquires, is stolen out from
+  #      under it by "run-b" (a fresh acquire at the same path, giving it a
+  #      DIFFERENT ownership token), and run-a's own stale token must then be
+  #      refused by both refresh and release -- leaving run-b's lock intact.
+  (
+    # shellcheck source=scripts/lib/container-lock.sh
+    . scripts/lib/container-lock.sh
+    OWN_LOCK="$TOPIC_DIR/.ownership-test.lock"
+    rm -rf "$OWN_LOCK"
+    container_lock_acquire "$OWN_LOCK" "run-a" || exit 1
+    TOK_A="$CONTAINER_LOCK_TOKEN"
+    # Simulate run-a losing the lock to a second run (a steal, or a
+    # release-then-reacquire by someone else) -- a fresh acquire at the same
+    # path stamps a brand-new token.
+    rm -rf "$OWN_LOCK"
+    container_lock_acquire "$OWN_LOCK" "run-b" || exit 1
+    TOK_B="$CONTAINER_LOCK_TOKEN"
+    [ "$TOK_A" != "$TOK_B" ] || exit 1   # sanity: the two acquisitions really differ
+    # run-a's next refresh, using its now-stale token, must be REFUSED --
+    # never silently extend run-b's lock. This is the exact bug #763 reports.
+    container_lock_refresh "$OWN_LOCK" "$TOK_A" 2>/dev/null && exit 1
+    [ -d "$OWN_LOCK" ] || exit 1
+    # A refresh call with NO token at all must also be refused, not treated
+    # as "touch whatever is there".
+    container_lock_refresh "$OWN_LOCK" "" 2>/dev/null && exit 1
+    # run-a's release, using its stale token, must NOT delete run-b's live
+    # lock -- destroying another run's mutual exclusion would be worse than
+    # the original refresh bug, not better.
+    container_lock_release "$OWN_LOCK" "$TOK_A" 2>/dev/null
+    [ -d "$OWN_LOCK" ] || exit 1
+    current_token="$(cat "$OWN_LOCK/.owner-token" 2>/dev/null)"
+    [ "$current_token" = "$TOK_B" ] || exit 1   # still stamped as run-b's, untouched
+    # run-b, using its OWN correct token, refreshes and releases normally.
+    container_lock_refresh "$OWN_LOCK" "$TOK_B" || exit 1
+    container_lock_release "$OWN_LOCK" "$TOK_B"
+    [ ! -e "$OWN_LOCK" ] || exit 1
+    exit 0
+  )
+  if [ "$?" -eq 0 ]; then
+    ok "container-lock (research-harness-template#763): container_lock_refresh/release refuse to act on a lock this run no longer owns, leaving the real (new) owner's lock intact"
+  else
+    bad "container-lock (research-harness-template#763) ownership-check regression"
+  fi
+  rm -rf "$TOPIC_DIR/.refresh-test.lock" "$TOPIC_DIR/.ownership-test.lock"
 
   # 31b. The exported manifest validates against schemas/mif-container.schema.json.
   ajv validate --spec=draft2020 --strict=false -c ajv-formats \

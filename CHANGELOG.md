@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **`container_lock_refresh` (and `container_lock_release`) now verify
+  ownership before acting on `reports/<topic>/.container.lock`.**
+  `container_lock_acquire` previously stamped only a human-readable `owner`
+  label, so a refresh call had no way to tell "the lock I originally
+  acquired" from "a different run's lock that has since replaced mine at the
+  same path" (a stale-lock steal race, or a phase boundary far enough apart
+  for `CONTAINER_LOCK_STALE_MIN` to elapse between refreshes) — it silently
+  extended whichever lock currently occupied the path. `container_lock_acquire`
+  now also stamps a unique per-acquisition token (`CONTAINER_LOCK_TOKEN` /
+  `$lock_dir/.owner-token`); `mif-container-export.sh`/`mif-container-import.sh`
+  capture it and pass it to every later refresh/release call, and a mismatch
+  now aborts the export/import instead of continuing under a false assumption
+  of exclusive access (research-harness-template#763).
+
 ## [0.16.38] - 2026-07-23
 
 ### Fixed

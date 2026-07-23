@@ -134,6 +134,11 @@ if [ "$lock_rc" -eq 3 ]; then
 elif [ "$lock_rc" -ne 0 ]; then
   fail "failed to create export lock at $LOCK_DIR: ${CONTAINER_LOCK_LAST_ERROR:-mkdir failed for an unknown reason}"
 fi
+# Captured immediately after a successful acquire (research-harness-template#763):
+# every later container_lock_refresh/container_lock_release call for this lock
+# passes LOCK_TOKEN so refresh can detect (and release can avoid stomping on) a
+# lock this run no longer actually owns -- see container-lock.sh's own header.
+LOCK_TOKEN="$CONTAINER_LOCK_TOKEN"
 # Release-only trap for the window between lock acquisition and the OUTPUT_DIR
 # pre-check below -- deliberately NOT the fuller cleanup() (which also does
 # `rm -rf "$OUTPUT_DIR"` on failure): arming that wider trap this early would
@@ -142,7 +147,7 @@ fi
 # and is not empty" rejection below -- exactly the guarantee this script's
 # own header comment on that `rm -rf "$OUTPUT_DIR"` line depends on. Upgraded
 # to the full cleanup() once that precondition is actually confirmed.
-trap 'container_lock_release "$LOCK_DIR"' EXIT
+trap 'container_lock_release "$LOCK_DIR" "$LOCK_TOKEN"' EXIT
 
 if [ -e "$OUTPUT_DIR" ]; then
   [ -d "$OUTPUT_DIR" ] || fail "$OUTPUT_DIR exists and is not a directory"
@@ -169,7 +174,7 @@ EXPORT_OK=0
 cleanup() {
   rm -rf "$T"
   [ "$EXPORT_OK" -eq 1 ] || rm -rf "$OUTPUT_DIR"
-  container_lock_release "$LOCK_DIR"
+  container_lock_release "$LOCK_DIR" "$LOCK_TOKEN"
 }
 trap cleanup EXIT
 mkdir -p "$OUTPUT_DIR/findings" || fail "failed to create $OUTPUT_DIR/findings"
@@ -305,8 +310,11 @@ while IFS=$'\t' read -r rid existing _rid2 ontology_type; do
   [ "$rid" = "$_rid2" ] || fail "internal error: id/type lookup misalignment ($rid != $_rid2) -- this should be unreachable"
   # Refresh the lock every iteration (issue #382 review): a topic large
   # enough to genuinely run past CONTAINER_LOCK_STALE_MIN must not have its
-  # own still-live lock misjudged as stale and stolen mid-export.
-  container_lock_refresh "$LOCK_DIR"
+  # own still-live lock misjudged as stale and stolen mid-export. Fatal on
+  # mismatch (issue #763): a mismatched token means another run has already
+  # taken over this lock, so continuing to write here would race it.
+  container_lock_refresh "$LOCK_DIR" "$LOCK_TOKEN" \
+    || fail "lost exclusive access to $LOCK_DIR mid-export -- another run has taken over this topic's lock"
   base="$(basename "$existing")"
   cp "$existing" "$OUTPUT_DIR/findings/$base" || fail "failed to copy $existing"
   digest="$(scripts/mif-container-digest.sh resource "$OUTPUT_DIR/findings/$base")" \
@@ -365,7 +373,8 @@ if [ -n "$DOC_FILES" ]; then
   mkdir -p "$OUTPUT_DIR/reports" || fail "failed to create $OUTPUT_DIR/reports"
   while IFS= read -r docf; do
     [ -n "$docf" ] || continue
-    container_lock_refresh "$LOCK_DIR"
+    container_lock_refresh "$LOCK_DIR" "$LOCK_TOKEN" \
+      || fail "lost exclusive access to $LOCK_DIR mid-export -- another run has taken over this topic's lock"
     docbase="$(basename "$docf")"
     case "$docbase" in
       *-falsification-report.md) doc_type="falsification-report" ;;
@@ -385,7 +394,8 @@ for wellknown in README.md:readme goal.json:goal artifact.json:artifact; do
   wk_type="${wellknown##*:}"
   wk_src="$TOPIC_DIR/$wk_name"
   [ -f "$wk_src" ] || continue
-  container_lock_refresh "$LOCK_DIR"
+  container_lock_refresh "$LOCK_DIR" "$LOCK_TOKEN" \
+    || fail "lost exclusive access to $LOCK_DIR mid-export -- another run has taken over this topic's lock"
   cp "$wk_src" "$OUTPUT_DIR/$wk_name" || fail "failed to copy $wk_src"
   wk_digest="$(scripts/mif-container-digest.sh resource "$OUTPUT_DIR/$wk_name")" \
     || fail "failed to compute the digest of $wk_name"
