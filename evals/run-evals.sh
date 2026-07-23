@@ -52,6 +52,12 @@ run "stdin-detach" bash evals/stdin-detach.sh
 # marked, per-gate timings are built in, unmatched patterns fail fast.
 run "verify-selector" bash evals/verify-selector.sh
 
+# gate_m1's corpus-contamination scrub swallowed ANY git-grep failure (not
+# just its "no match" exit-1 case) as a clean pass via `2>/dev/null || true`
+# (#770): stubs git-grep to fail with a real error status and asserts the
+# gate fails loudly instead of reporting a false-clean scan.
+run "gate-m1-git-grep-failure-check" bash evals/gate-m1-git-grep-failure-check.sh
+
 # Workflow-runtime modules (.claude/workflows/*.js) use the runtime's
 # async-function-body shape, so the CI parse-check must wrap before
 # checking (#552): passes on the vendored research-goal.js, fails on a
