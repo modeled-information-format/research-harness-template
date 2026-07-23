@@ -277,10 +277,10 @@ const REPORT_SCHEMA = {
   type: 'object',
   properties: {
     reportPath: { type: 'string' },
-    frontmatterLevel: { type: 'integer' },
+    frontmatterLevel: { type: ['integer', 'null'], description: 'the report\'s achieved MIF level, read back from the rendered file\'s frontmatter after step 5/6 — null ONLY when verificationVerdict is "falsified" and step 3 stopped the pipeline before render-artifact.sh/mif-project.sh ever ran (research-harness-template#773: never fabricate a level for an artifact that was never rendered)' },
     checksAddressed: { type: 'array', items: { type: 'string' } },
     verificationVerdict: { type: 'string', enum: ['falsified', 'weakened', 'survived', 'inconclusive'] },
-    reportId: { type: 'string', description: 'the report\'s own @id — same across a supersession re-run, by construction of render-artifact.sh (see header note)' },
+    reportId: { type: 'string', description: 'the report\'s own @id, read back from the rendered file\'s frontmatter after step 5/6 — same across a supersession re-run, by construction of render-artifact.sh (see header note); "" ONLY when verificationVerdict is "falsified" and step 3 stopped the pipeline before that render ever happened (research-harness-template#773: never invent an @id for an artifact that was never created)' },
     genreApplied: { type: 'boolean', description: '(#633) true only if step 6b actually invoked Skill(<genre>:<genre>) and restructured the body per that genre\'s template; false when genre="general" was requested or the requested genre\'s pack was disabled/absent, in which case the report\'s own genre metadata must read "general", never the originally-requested genre' },
     genreSkillInvoked: { type: 'string', description: '(#633) the "<genre>:<genre>" Skill reference actually invoked at step 6b, or "" when genreApplied is false' },
     provenanceOutcome: { type: 'string', enum: ['stamped', 'declined', 'error', 'not-applicable'], description: 'result of the Skill(mif-docs:mif-provenance) stamp attempt (#632) — "declined" is expected/healthy when capture is off or the session ledger never witnessed this file, never a projection failure; "not-applicable" is the ONLY correct value when step 3\'s verificationVerdict="falsified" stopped the pipeline before step 7 ever ran — never fabricate "stamped"/"declined"/"error" for a report that was quarantined before the stamp attempt' },
@@ -451,10 +451,13 @@ try {
     `(mktemp OUTSIDE the repo tree) and write the verdict through: bash ${H}/scripts/falsify.sh ${RDIR}/report-finding.json ` +
     `<fixture-path> > ${RDIR}/report-finding.falsified.json. A falsified verdict means the report is QUARANTINED and NOT ` +
     `shipped — release the projection lock (see CONCURRENCY GUARD above) FIRST, then report verificationVerdict="falsified" ` +
-    `and STOP here, do not proceed to render. In this case neither step 6b (genre skill application) nor step 7 (provenance ` +
-    `stamping) ever runs: set genreApplied=false, genreSkillInvoked="", provenanceOutcome="not-applicable", and ` +
-    `provenanceReason="report quarantined at step 3 (falsified) — step 7 never reached" — do NOT fabricate a stamped/declined/` +
-    `error outcome, or a genreApplied=true, for a report quarantined before those steps ever ran.\n` +
+    `and STOP here, do not proceed to render. In this case neither step 5 (render-artifact.sh) nor step 6 (mif-project.sh) nor ` +
+    `step 6b (genre skill application) nor step 7 (provenance stamping) ever runs, so frontmatterLevel and reportId can never ` +
+    `be genuinely known (research-harness-template#773) — set frontmatterLevel=null and reportId="" (never fabricate a MIF ` +
+    `level or @id for an artifact that was never rendered), genreApplied=false, genreSkillInvoked="", ` +
+    `provenanceOutcome="not-applicable", and provenanceReason="report quarantined at step 3 (falsified) — step 7 never ` +
+    `reached" — do NOT fabricate a stamped/declined/error outcome, or a genreApplied=true, for a report quarantined before ` +
+    `those steps ever ran.\n` +
     `4. jq '.extensions.harness.verification' ${RDIR}/report-finding.falsified.json > ${RDIR}/report.verification.json\n` +
     `5. bash ${H}/scripts/render-artifact.sh ${RDIR}/artifact.json report ${RDIR}/${SLUG}.md ${RDIR}/report.verification.json ` +
     `— write-then-validated; fails closed if it does not project to a valid L3 finding. If a report of record already exists ` +
@@ -478,9 +481,12 @@ try {
     `MIF level step 6 confirmed, it declines and leaves the file untouched — if it succeeds, re-run step 6's mif-project.sh once ` +
     `more, since a successful stamp mutates the exact frontmatter step 6 already checked. ` +
     `Then release the projection lock (see CONCURRENCY GUARD above) — this phase is done, success or not.\n` +
-    `Return the report path, the achieved MIF level, which goal check ids the report addresses, the verification verdict ` +
-    `ACTUALLY WRITTEN by falsify.sh (never hand-authored), the report's own @id (read it back from the rendered file's ` +
-    `frontmatter after step 5/6, not invented), the genre outcome from step 6b (genreApplied/genreSkillInvoked, per step 6b's ` +
+    `Return the report path, the achieved MIF level (frontmatterLevel — read back from the rendered file's frontmatter after ` +
+    `step 5/6, never invented; null ONLY when verificationVerdict="falsified" stopped you at step 3 before any file was ` +
+    `rendered, research-harness-template#773), which goal check ids the report addresses, the verification verdict ` +
+    `ACTUALLY WRITTEN by falsify.sh (never hand-authored), the report's own @id (reportId — read it back from the rendered ` +
+    `file's frontmatter after step 5/6, not invented; "" ONLY when verificationVerdict="falsified" stopped you at step 3 ` +
+    `before that render ever happened, research-harness-template#773), the genre outcome from step 6b (genreApplied/genreSkillInvoked, per step 6b's ` +
     `own instruction above — false/"" when quarantined at step 3 or when no template applied, true/"<genre>:<genre>" only when ` +
     `Skill(<genre>:<genre>) was actually invoked), and the provenance stamp outcome from step 7 (provenanceOutcome: ` +
     `"stamped"/"declined"/"error", plus provenanceReason naming why, or "witnessed" when stamped — UNLESS verificationVerdict ` +
