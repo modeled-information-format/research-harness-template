@@ -52,16 +52,57 @@
 //   no genre parameter) — a genre requested alongside one of these channels
 //   does not apply and is reported as ignored, never silently honored.
 //
-// A THIRD (and arguably fourth) mechanism shape exists and is EXPLICITLY OUT
-// OF SCOPE for this Task, not silently folded into either of the two named
-// above: `diataxis` (per-finding Diátaxis page generation via its own
-// `render-diataxis.sh`, an entirely different fan-out-per-finding shape) and
-// `ai-spec` (a channel that itself consumes a DIFFERENT genre family —
-// `ai-architecture-doc`/`kiro-requirements`/`kiro-design`/`kiro-tasks`/
-// `feature-spec`, per `docs/reference/packs/genres.md`, none of which render
-// through blog/book/report at all). Requesting either lands in
-// `unavailable[]` naming this explicitly as a third mechanism this module
-// does not cover — never silently mapped onto mechanism 1 or 2.
+// CORRECTED (research-harness-template#734): `diataxis` and `ai-spec` were
+// previously treated as an out-of-scope third mechanism this module does not
+// cover at all. That was wrong — both are real, already-shipped channel
+// packs (`packs/channels/diataxis/`, `packs/channels/ai-spec/`) whose own
+// SKILL.md files document a complete, working pipeline. Confirmed against
+// each pack's actual source, not re-guessed from prose:
+//
+//   - `ai-spec` (real skill `ai-spec:ai-spec`) internally runs
+//     `synthesize-artifact.sh` -> `render-artifact.sh ... report ...` itself
+//     (render-artifact.sh's own CHANNEL validation is `report|blog|book`
+//     only — "ai-spec" is never passed to it as a channel argument), applies
+//     the requested spec genre's shape via its own `--genre` argument, and
+//     writes to a genre-named path (`<topic>-build-spec.md`, etc.) — see its
+//     SKILL.md's own Procedure. It is MECHANISM 2 shaped (a self-contained
+//     Skill invocation owning its own pipeline), with one wrinkle no other
+//     mechanism-2 pack has: it DOES have a genre axis
+//     (`ai-architecture-doc`/`feature-spec`/`kiro-requirements`/
+//     `kiro-design`/`kiro-tasks`, matching its own argument-hint exactly),
+//     passed straight through as `--genre`, so `genreApplied` can be `true`
+//     for this channel alone among mechanism-2 rows.
+//   - `diataxis` (real skill `diataxis:diataxis-docs` — NOT `diataxis:
+//     diataxis`, a naming assumption the prior version of this module never
+//     verified) is genuinely the different fan-out-per-finding shape the
+//     old comment described: `packs/channels/diataxis/scripts/
+//     render-diataxis.sh <findings-dir> <out-dir> [<topic-name>]` reads the
+//     findings corpus directly (no synthesis, no artifact.json) and emits a
+//     whole Diátaxis documentation TREE. It has NO genre axis at all — like
+//     every other mechanism-2 row, `genreApplied` stays `false` for it.
+//     Its own SKILL.md documents `docs/<topic>` (repository-TOP-LEVEL, not
+//     nested under `reports/<topic>/`) as its default output convention —
+//     a real, pre-existing deviation from this module's own "nothing
+//     renders outside reports/<topic>/" rule for mechanism-1 paths. Rather
+//     than silently overriding an already-shipped pack's own documented
+//     default, this module honors it as-is and flags the tension here for
+//     reviewer visibility, per this file's own established practice of
+//     naming genuine design tensions instead of picking a side unstated.
+//
+// A GENUINELY UNRESOLVED GAP, surfaced rather than silently patched over:
+// `docs/reference/packs/genres.md` also lists `diataxis-explanation`/
+// `diataxis-how-to`/`diataxis-reference`/`diataxis-tutorial` as genre packs
+// "consumed by the `ai-spec` channel" — wait, actually consumed by NEITHER
+// real channel. These four are standalone single-document mif-docs-plugin
+// genre skills (write one document in one Diátaxis mode), completely
+// separate from this harness's own bundled `diataxis` CHANNEL pack, whose
+// own skill (`diataxis-docs`) takes no genre selector at all and always
+// renders the full four-quadrant set from the WHOLE findings corpus.
+// Requesting one of these four genres therefore has NO real backing
+// mechanism in this harness today — GENRE_PACKS below marks them
+// `noBackingMechanism: true` and Route reports them `unavailable[]` with
+// that reason verbatim, never silently routed through the `diataxis`
+// channel pack as if genre selection applied there.
 //
 // SYNTHESIS-ONLY EVIDENCE RULE APPLIES TO MECHANISM 1 ONLY. The Task's own
 // acceptance criteria state "rendered artifact carries only claims present
@@ -122,17 +163,16 @@
 // plugin's mif-provenance skill can stamp them exactly like the report
 // channel — added as a step in the artifact-mechanism Render prompt below.
 // Mechanism 2 (source-direct channel packs: pdf, jats, xbrl, ectd,
-// notebooklm, github-discuss, github-issues) is explicitly OUT OF SCOPE for
-// this stamp: each pack owns its own output format and invocation
-// (Skill(<pack>:<pack>)) with no dedicated backing script this module
-// controls, several formats aren't even MIF-frontmatter-bearing markdown
-// (PDF, XBRL), and stamping an output this module didn't itself render
-// would be presumptuous about a contract only the pack's own SKILL.md can
-// state. Every mechanism-2 render therefore reports
-// provenanceOutcome="not-applicable" with that reason, matching this
+// notebooklm, github-discuss, github-issues, diataxis, ai-spec) is
+// explicitly OUT OF SCOPE for this stamp: each pack owns its own output
+// format and invocation (Skill(<pack>:<skillName>)) with no dedicated
+// backing script this module controls, several formats aren't even
+// MIF-frontmatter-bearing markdown (PDF, XBRL), and stamping an output this
+// module didn't itself render would be presumptuous about a contract only
+// the pack's own SKILL.md can state. Every mechanism-2 render therefore
+// reports provenanceOutcome="not-applicable" with that reason, matching this
 // module's own established convention of naming scope explicitly rather
-// than silently doing something inconsistent (see OUT_OF_SCOPE_CHANNELS
-// above).
+// than silently doing something inconsistent.
 //
 // GENRE SKILL INVOCATION GAP — closed, not carried forward
 // (research-harness-template#640, same class as research-projection.js's
@@ -170,20 +210,21 @@
 // in either position.
 export const meta = {
   name: 'research-deliverables',
-  description: 'Atomic step 6 (deliverable genres): routing workflow covering BOTH real rendering mechanisms — artifact-based (synthesize-artifact.sh -> render-artifact.sh for blog/book, delegated never free-form-authored) and source-direct channel packs (pdf/jats/xbrl/ectd/notebooklm/github-discuss/github-issues, each invoked as its own Skill directly against findings, never through a rendered artifact); a requested pair whose backing pack/script is not enabled or whose mechanism this module does not cover reports via unavailable[] with a reason naming which mechanism and what is missing, never silently dropped',
+  description: 'Atomic step 6 (deliverable genres): routing workflow covering BOTH real rendering mechanisms — artifact-based (synthesize-artifact.sh -> render-artifact.sh for blog/book, delegated never free-form-authored) and source-direct channel packs (pdf/jats/xbrl/ectd/notebooklm/github-discuss/github-issues/diataxis/ai-spec, each invoked as its own Skill directly against findings, never through a rendered artifact; ai-spec uniquely passes a requested genre through as an argument); a requested pair whose backing pack is not enabled, or a genre with no real backing mechanism at all (the four standalone diataxis-* mif-docs genre skills), reports via unavailable[] with a reason naming what is missing, never silently dropped',
   whenToUse: 'After projection — produces the optional deliverables (blog post, book chapter, exec-summary, engineering report, academic, briefing, PDF, JATS, …) from the same synthesis the report of record used',
   phases: [
     { title: 'Route', detail: 'requested genre×channel pairs vs harness.config.json packs[] + .claude/settings.local.json enabledPlugins ("<pack>@research-harness" key shape) → mechanism-tagged render plan; unavailable pairs get a reason naming the mechanism and what is missing', model: 'haiku' },
-    { title: 'Render', detail: 'mechanism 1: synthesize-artifact.sh -> render-artifact.sh per genre×channel row, synthesis cross-checked, then Skill(<genre>:<genre>) applied to the body when genre!=="general" (#640; no separate re-check needed, Route already confirmed pack enablement), then Skill(mif-docs:mif-provenance) witnessed-provenance stamp (ADR-0018, #632; declines gracefully when capture is off); mechanism 2: Skill(<pack>:<pack>) invoked directly against findings, synthesis never consulted, no genre axis (genreApplied always false), provenance stamp explicitly not-applicable (each pack owns its own output/format)', model: 'sonnet' },
+    { title: 'Render', detail: 'mechanism 1: synthesize-artifact.sh -> render-artifact.sh per genre×channel row, synthesis cross-checked, then Skill(<genre>:<genre>) applied to the body when genre!=="general" (#640; no separate re-check needed, Route already confirmed pack enablement), then Skill(mif-docs:mif-provenance) witnessed-provenance stamp (ADR-0018, #632; declines gracefully when capture is off); mechanism 2: Skill(<channel>:<skillName>) invoked directly against findings (skillName differs from the channel name for diataxis -> diataxis-docs), synthesis never consulted, no genre axis EXCEPT ai-spec (#734, --genre passed through), provenance stamp explicitly not-applicable (each pack owns its own output/format)', model: 'sonnet' },
     { title: 'Check', detail: 'per-artifact lint (where markdown) + frontmatter/citation-leak conformance + ≥1 citation', model: 'haiku' },
   ],
 }
 
 // args: { harnessDir, topic, synthesisPath, genres?: string[] (e.g. ['exec-summary','engineering']),
-//         channels?: string[] (default ['blog'] ONLY when the arg is absent/not an array; an
-//         explicit [] is honored as "render zero channels", never coerced to the default — #626;
-//         may mix artifact-based (blog/book) and source-direct
-//         (pdf/jats/xbrl/ectd/notebooklm/github-discuss/github-issues) channels) }
+//         channels?: string[] (an explicit array, even [], is honored verbatim — #626; when
+//         OMITTED, defaults to ['blog'] UNLESS every requested genre declares a consumingChannel
+//         (e.g. ['ai-architecture-doc'] -> ['ai-spec']), in which case that channel set is used
+//         instead — #734; may mix artifact-based (blog/book) and source-direct
+//         (pdf/jats/xbrl/ectd/notebooklm/github-discuss/github-issues/diataxis/ai-spec) channels) }
 // research-harness-template#654: normalize a top-level standalone Workflow-tool
 // invocation. `args` arrives as a JSON-encoded STRING when this module is
 // invoked directly at the top level (confirmed empirically -- issue #617),
@@ -204,7 +245,13 @@ const SYN = A && A.synthesisPath
 if (!TOPIC) throw new Error('research-deliverables: args.topic is required')
 if (!SYN) throw new Error('research-deliverables: args.synthesisPath is required (mechanism-1 rows cross-check the synthesis-only evidence rule against it — see module header)')
 const RDIR = `${H}/reports/${TOPIC}`
-const GENRES = (A && A.genres) || []
+// research-harness-template#734 review follow-up: a truthy non-array `genres`
+// (a caller passing a bare string, say) previously survived as GENRES itself
+// (`(A && A.genres) || []` only falls back to [] when genres is falsy) — the
+// impliedChannels computation below then calls .every()/.map() on it and
+// throws at runtime (strings have no .every). Normalize to Array.isArray so
+// a malformed genres value fails closed to [] instead of crashing.
+const GENRES = Array.isArray(A && A.genres) ? A.genres : []
 // research-harness-template#626: Array.isArray, not truthiness. The prior
 // `args.channels && args.channels.length` collapsed an explicit `channels:
 // []` ("render nothing, on purpose") into the same branch as `channels`
@@ -212,21 +259,60 @@ const GENRES = (A && A.genres) || []
 // fell through to the ['blog'] default, silently overriding an explicit
 // empty answer. An explicit array (even empty) must be honored verbatim;
 // only an actually-absent/non-array `channels` gets the ['blog'] default.
-const CHANNELS = (A && Array.isArray(A.channels)) ? A.channels : ['blog']
+// CHANNELS itself is computed further below (after GENRE_PACKS is declared —
+// research-harness-template#734's genre-implied default needs that table).
 
 // Static pack taxonomy, cross-checked by evals/deliverables-route-check.sh
 // against the real docs/reference/packs/index.md "Pack inventory" table
 // (kind column) so a drift between this table and the real docs is a caught
 // regression, never a silent guess.
 const ARTIFACT_CHANNELS = ['blog', 'book'] // channel="report" is research-projection's job, not this module's — see header
-const SOURCE_DIRECT_CHANNELS = ['pdf', 'jats', 'xbrl', 'ectd', 'notebooklm', 'github-discuss', 'github-issues']
-const OUT_OF_SCOPE_CHANNELS = ['diataxis', 'ai-spec'] // real third-mechanism channels, deliberately not covered — see header
-// Genre packs (kind:"genre") that render through blog/book via mechanism 1.
-// consumingChannel:'ai-spec'/'diataxis' entries are genre packs whose SOLE
-// real consuming channel is that OUT_OF_SCOPE_CHANNELS entry
-// (docs/reference/packs/genres.md for ai-spec; the diataxis-consuming four
-// have no dedicated blog/book rendering) — requesting one against blog/book
-// gets a precise reason, never a generic "unknown genre" miss.
+// research-harness-template#734: `diataxis` moved here from the old
+// OUT_OF_SCOPE_CHANNELS bucket — it is a real, already-shipped mechanism-2
+// channel pack (packs/channels/diataxis/), just with no genre axis, same as
+// every other entry in this list. Its real Skill name is `diataxis-docs`,
+// not `diataxis` — see CHANNEL_SKILL_NAME below.
+const SOURCE_DIRECT_CHANNELS = ['pdf', 'jats', 'xbrl', 'ectd', 'notebooklm', 'github-discuss', 'github-issues', 'diataxis']
+// research-harness-template#734: `ai-spec` is ALSO mechanism 2 (a
+// self-contained Skill invocation owning its own pipeline) — moved out of
+// the old OUT_OF_SCOPE_CHANNELS bucket — but tracked separately from
+// SOURCE_DIRECT_CHANNELS because it is the one channel pack with a real
+// genre axis: its own SKILL.md argument-hint takes `--genre
+// ai-architecture-doc|feature-spec|kiro-requirements|kiro-design|kiro-tasks`,
+// passed straight through rather than ignored the way every other
+// mechanism-2 row ignores a requested genre.
+const SOURCE_DIRECT_GENRE_CHANNELS = ['ai-spec']
+// Real Skill() name, where it differs from the channel/pack name itself —
+// confirmed against each pack's own SKILL.md `name:` frontmatter field, not
+// guessed from the pack directory name (research-harness-template#734: the
+// prior version of this module assumed `diataxis:diataxis`, which does not
+// exist — the pack's actual skill is named `diataxis-docs`).
+const CHANNEL_SKILL_NAME = { diataxis: 'diataxis-docs' }
+// research-harness-template#734 review follow-up: every source-direct
+// channel's own SKILL.md argument-hint takes <findings-dir> as its first
+// positional argument (pdf/jats/xbrl/ectd/notebooklm/github-discuss/
+// github-issues/diataxis all confirmed) EXCEPT "ai-spec", whose own
+// argument-hint is "<topic> [--genre ...] [-o <out.md>]" — it resolves
+// findings/goal.json/ontology-map.json itself FROM the topic name, it does
+// not take a findings-dir path at all. A blanket "invoke against
+// ${RDIR}/findings" instruction would tell the model to pass the wrong
+// first argument to ai-spec.
+const CHANNEL_FIRST_ARG = { 'ai-spec': 'topic' } // default: 'findings-dir'
+// Genre packs (kind:"genre"). Most render through blog/book via mechanism 1
+// (empty `{}`); consumingChannel entries render through a mechanism-2
+// channel pack with a real genre axis instead (currently only `ai-spec`'s
+// five spec genres — see SOURCE_DIRECT_GENRE_CHANNELS above).
+// noBackingMechanism entries (research-harness-template#734) are a
+// genuinely unresolved gap, surfaced rather than silently patched over: the
+// four diataxis-* genre packs are standalone single-document mif-docs-
+// plugin skills, completely separate from this harness's own bundled
+// `diataxis` CHANNEL pack — whose own skill (diataxis-docs) takes no genre
+// selector at all and always renders the full four-quadrant set from the
+// WHOLE findings corpus. There is no real mechanism in this harness today
+// that applies one of these four genres to a single rendered document —
+// Route reports them unavailable with that reason verbatim, never silently
+// routed through the `diataxis` channel pack as if genre selection applied
+// there.
 //
 // This table is a hand-maintained duplicate of the real mif-docs-plugin
 // skill catalog (37 genre skills total) and has already drifted twice
@@ -246,11 +332,35 @@ const GENRE_PACKS = {
   'kiro-design': { consumingChannel: 'ai-spec' },
   'kiro-tasks': { consumingChannel: 'ai-spec' },
   'feature-spec': { consumingChannel: 'ai-spec' },
-  'diataxis-explanation': { consumingChannel: 'diataxis' },
-  'diataxis-how-to': { consumingChannel: 'diataxis' },
-  'diataxis-reference': { consumingChannel: 'diataxis' },
-  'diataxis-tutorial': { consumingChannel: 'diataxis' },
+  'diataxis-explanation': { noBackingMechanism: true },
+  'diataxis-how-to': { noBackingMechanism: true },
+  'diataxis-reference': { noBackingMechanism: true },
+  'diataxis-tutorial': { noBackingMechanism: true },
 }
+
+// research-harness-template#734: genre-implied default channel. Defaulting
+// blindly to ['blog'] whenever the caller omitted `channels` silently forced
+// EVERY genre through the artifact/blog pipeline even when that genre's own
+// GENRE_PACKS entry names a different real consuming channel (ai-spec) — the
+// caller had no way to get a correct default render without ALSO guessing
+// the right --channels value (research-harness-template#734's own repro: a
+// bare `--genres ai-architecture-doc` call defaulted to channels:['blog'],
+// which Route then correctly rejected as unavailable for that genre). Fixed:
+// an explicit `channels` array (even empty, #626) is still honored verbatim
+// — this only changes the OMITTED case. When omitted AND every requested
+// genre declares a consumingChannel, default to the set of those declared
+// channels instead of ['blog']; a genre with no consumingChannel (the
+// blog/book-consuming majority) still falls through to ['blog'] exactly as
+// before, and a mix of genres-with and genres-without a consumingChannel
+// falls through to ['blog'] too (there is no single correct implied default
+// for a mixed request — the caller must disambiguate with an explicit
+// `channels`).
+const explicitChannels = A && Array.isArray(A.channels)
+const impliedChannels = GENRES.length && GENRES.every((g) => GENRE_PACKS[g] && GENRE_PACKS[g].consumingChannel)
+  ? Array.from(new Set(GENRES.map((g) => GENRE_PACKS[g].consumingChannel)))
+  : []
+const CHANNELS = explicitChannels ? A.channels : (impliedChannels.length ? impliedChannels : ['blog'])
+
 // Methodology packs (kind:"methodology") — dimension/analyst skills, NEVER a
 // deliverable genre template, even though harness.config.json enables three
 // of them (competitive-analysis, market-sizing, trend-modeling) alongside
@@ -266,7 +376,7 @@ const ROUTE_SCHEMA = {
       items: {
         type: 'object',
         properties: {
-          genre: { type: 'string', description: "'general' for a neutral artifact-based render, '-' for a source-direct channel (no genre axis applies)" },
+          genre: { type: 'string', description: "'general' for a neutral artifact-based render, '-' for a genre-less source-direct channel, or the real requested genre string for the \"ai-spec\" channel (research-harness-template#734 — the one source-direct channel with a genre axis)" },
           channel: { type: 'string' },
           mechanism: { type: 'string', enum: ['artifact', 'source-direct'] },
           templateSource: { type: 'string', description: 'the enabled pack providing the genre template (mechanism 1) or the channel pack skill (mechanism 2)' },
@@ -281,7 +391,7 @@ const ROUTE_SCHEMA = {
         type: 'object',
         properties: {
           requested: { type: 'string' },
-          reason: { type: 'string', description: 'must name which mechanism (artifact-based / source-direct / out-of-scope third-mechanism / architectural-boundary) and exactly what is missing or unsupported' },
+          reason: { type: 'string', description: 'must name which mechanism (artifact-based / source-direct / no-backing-mechanism / architectural-boundary) and exactly what is missing or unsupported' },
         },
         required: ['requested', 'reason'],
       },
@@ -297,7 +407,7 @@ const RENDER_SCHEMA = {
     channel: { type: 'string' },
     mechanism: { type: 'string', enum: ['artifact', 'source-direct'] },
     citationsCount: { type: 'integer', description: 'distinct citations the rendered output carries (finding-traced for mechanism 1, primary-source for mechanism 2)' },
-    genreApplied: { type: 'boolean', description: '(#640) true only if the Render step actually invoked Skill(<genre>:<genre>) and restructured the body per that genre\'s template; false when genre="general" (mechanism 1) or for every mechanism-2 row (no genre axis) — never true for a genre whose template was not actually applied' },
+    genreApplied: { type: 'boolean', description: '(#640, #734) true only if the Render step actually applied a genre — either mechanism 1\'s Skill(<genre>:<genre>) body restructuring, or mechanism 2\'s "ai-spec" channel passing --genre through to its own skill; false when genre="general" (mechanism 1) or for every other mechanism-2 row (no genre axis) — never true for a genre whose template was not actually applied' },
     genreSkillInvoked: { type: 'string', description: '(#640) the "<genre>:<genre>" Skill reference actually invoked, or "" when genreApplied is false' },
     provenanceOutcome: { type: 'string', enum: ['stamped', 'declined', 'error', 'not-applicable'], description: 'result of the Skill(mif-docs:mif-provenance) stamp attempt (#632) for mechanism 1 rows; "not-applicable" for mechanism 2 rows (each pack owns its own output/format, see module header) — "declined" is expected/healthy when capture is off or the session ledger never witnessed this file, never a render failure' },
     provenanceReason: { type: 'string', description: 'why declined/error/not-applicable, or "witnessed" when stamped' },
@@ -354,30 +464,38 @@ if (!preflight || !preflight.exists) {
 
 const route = await agent(
   `Build the deliverables render plan for topic ${TOPIC}, harness ${H}. Requested channels: ${JSON.stringify(CHANNELS)}; requested genres: ${JSON.stringify(GENRES)} (empty = neutral artifact-based renders only, genre="general").\n\n` +
-    `THIS MODULE COVERS EXACTLY TWO REAL RENDER MECHANISMS — classify every requested channel into one before considering genre:\n` +
+    `THIS MODULE COVERS TWO REAL RENDER MECHANISMS — classify every requested channel into one before considering genre:\n` +
     `1. ARTIFACT-BASED (channels ${JSON.stringify(ARTIFACT_CHANNELS)} only — "report" is EXCLUDED, see below): a genre pack feeds ` +
     `scripts/synthesize-artifact.sh -> scripts/render-artifact.sh. "blog" is core/always-on (no pack gates the CHANNEL itself, only ` +
     `an explicitly requested genre needs its own pack enabled). "book" is itself an optional CHANNEL PACK — check that the "book" pack ` +
     `is enabled (harness.config.json packs[] + .claude/settings.local.json) exactly like a genre pack, in addition to any genre pack ` +
     `check.\n` +
     `2. SOURCE-DIRECT CHANNEL PACKS (channels ${JSON.stringify(SOURCE_DIRECT_CHANNELS)}): each is its own Claude Code Skill invoked ` +
-    `directly against the findings dir (Skill(<pack>:<pack>)) — built "directly FROM THE SOURCES... NEVER from a rendered report" per ` +
-    `their own SKILL.md/plugin.json (docs/reference/packs/channels.md's provenance audit confirms this for every one of the seven). ` +
-    `There is NO genre axis for these — a genre requested alongside one is ignored (report it, do not silently apply it and do not drop ` +
-    `the channel because a genre was also asked).\n` +
-    `EXPLICITLY OUT OF SCOPE (a real third mechanism, never folded into 1 or 2): channels ${JSON.stringify(OUT_OF_SCOPE_CHANNELS)} — ` +
-    `"diataxis" (per-finding page generation via its own render-diataxis.sh; ALSO the sole consuming channel for the diataxis-explanation/` +
-    `diataxis-how-to/diataxis-reference/diataxis-tutorial genre packs, none of which render through blog/book) and "ai-spec" (consumes an ` +
-    `entirely different genre family: ai-architecture-doc/kiro-requirements/kiro-design/kiro-tasks/feature-spec, none of which render ` +
-    `through blog/book). Report these in unavailable[] naming the third-mechanism reason explicitly.\n` +
+    `directly against the findings dir — built "directly FROM THE SOURCES... NEVER from a rendered report" per each pack's own ` +
+    `SKILL.md/plugin.json. The Skill reference to invoke is "<channel>:<skillName>" where skillName is usually the same as the channel ` +
+    `name (e.g. "pdf:pdf"), EXCEPT ${JSON.stringify(CHANNEL_SKILL_NAME)} names the channels whose real skill name differs from the pack ` +
+    `name (e.g. "diataxis:diataxis-docs", confirmed against its own SKILL.md \`name:\` field — never assume pack name == skill name). ` +
+    `NO genre axis applies to ` +
+    `any of these EXCEPT "ai-spec" (${JSON.stringify(SOURCE_DIRECT_GENRE_CHANNELS)}): every other source-direct channel ignores a ` +
+    `genre requested alongside it (report it, do not silently apply it, do not drop the channel because a genre was also asked); ` +
+    `"ai-spec" uniquely DOES have a genre axis — its own SKILL.md argument-hint takes ` +
+    `"--genre ai-architecture-doc|feature-spec|kiro-requirements|kiro-design|kiro-tasks", passed straight through as an argument to ` +
+    `Skill(ai-spec:ai-spec), not ignored. Only genres carrying consumingChannel:"ai-spec" in the GENRE_PACKS table below may pair with ` +
+    `the "ai-spec" channel; a genre with no consumingChannel (or a different one) requested against "ai-spec" is unavailable with that ` +
+    `reason.\n` +
     `"report" as a requested channel is an ARCHITECTURAL BOUNDARY, not unavailable-for-lack-of-a-pack: the canonical L3 report is ` +
     `research-projection.js's job (Epic #543/#569), not this module's. Report it in unavailable[] with that reason.\n\n` +
     `PACK CLASSIFICATION (do not guess — read harness.config.json packs[] AND cross-check against this reference; a pack's own ` +
     `plugin.json "kind" is authoritative when readable, this table covers marketplace-ref packs that have no local plugin.json to read):\n` +
-    `- GENRE packs (mechanism 1 templateSource): ${JSON.stringify(Object.keys(GENRE_PACKS))}. Of these, ` +
-    `${JSON.stringify(Object.keys(GENRE_PACKS).filter((g) => GENRE_PACKS[g].consumingChannel === 'ai-spec'))} consume ONLY the ai-spec ` +
-    `channel, and ${JSON.stringify(Object.keys(GENRE_PACKS).filter((g) => GENRE_PACKS[g].consumingChannel === 'diataxis'))} consume ONLY ` +
-    `the diataxis channel — requesting any of these against blog/book is unavailable with that exact reason (not "genre pack not enabled").\n` +
+    `- GENRE packs (mechanism 1 templateSource unless consumingChannel says otherwise): ${JSON.stringify(Object.keys(GENRE_PACKS))}. Of ` +
+    `these, ${JSON.stringify(Object.keys(GENRE_PACKS).filter((g) => GENRE_PACKS[g].consumingChannel === 'ai-spec'))} consume ONLY the ` +
+    `ai-spec channel (mechanism 2, genre passthrough — see above), and ` +
+    `${JSON.stringify(Object.keys(GENRE_PACKS).filter((g) => GENRE_PACKS[g].noBackingMechanism))} have NO real backing mechanism in this ` +
+    `harness at all — these are standalone single-document mif-docs-plugin genre skills, entirely separate from this harness's own ` +
+    `bundled "diataxis" CHANNEL pack (which takes no genre selector and always renders the full four-quadrant set from the whole findings ` +
+    `corpus, not a single selected genre) — report a request for any of these unavailable with the reason "no backing mechanism: this is ` +
+    `a standalone mif-docs genre skill unrelated to the diataxis channel pack", never routed through "diataxis" as if genre selection ` +
+    `applied there, and never confused with "genre pack not enabled".\n` +
     `- METHODOLOGY packs (${JSON.stringify(METHODOLOGY_PACKS)}) are dimension/analyst skills, NEVER a deliverable genre template — ` +
     `harness.config.json currently enables three of them (competitive-analysis, market-sizing, trend-modeling) alongside real genre ` +
     `packs in the same packs[] array with no distinguishing field of their own in that file; a genre request matching one of these must ` +
@@ -391,7 +509,7 @@ const route = await agent(
     `should agree — if it's stale or absent, harness.config.json's own enabled:true is still authoritative for THIS module's routing ` +
     `decision, since a clone may not have run sync-packs.sh yet).\n\n` +
     `For every requested (genre × channel) or bare-channel combination that cannot be served, emit unavailable[] with a reason that ` +
-    `NAMES the mechanism (artifact-based / source-direct / out-of-scope-third-mechanism / architectural-boundary) and exactly what is ` +
+    `NAMES the mechanism (artifact-based / source-direct / no-backing-mechanism / architectural-boundary) and exactly what is ` +
     `missing (pack disabled, wrong pack kind, wrong consuming channel, unrecognized channel) — never silently dropped. For every ` +
     `servable combination emit one plan[] row with the resolved mechanism, templateSource (the pack name that will actually render it), ` +
     `and outputHint following these conventions — every artifact-mechanism path lives under reports/${TOPIC}/, never a top-level ` +
@@ -400,9 +518,12 @@ const route = await agent(
     `trailing .blog.md, not a leading blog/ prefix, is what keeps this collision-free against the report channel's own ` +
     `<topic>.<genre>.md files); artifact-based book -> "${H}/reports/${TOPIC}/book/chapters/<genre>.md" (genre as the chapter ` +
     `slug, since this module renders one chapter per requested genre rather than a numeric sequence); source-direct channels -> follow ` +
-    `that pack's own SKILL.md-documented default location — every one of them (pdf/jats/xbrl/ectd/notebooklm) already resolves relative ` +
-    `to <findings-dir>/.., i.e. reports/${TOPIC}/ itself, so no adaptation is needed there; do not invent any harness-wide convention ` +
-    `beyond the blog/book paths named above.`,
+    `that pack's own SKILL.md-documented default location — pdf/jats/xbrl/ectd/notebooklm/github-discuss/github-issues and "ai-spec" ` +
+    `all resolve relative to <findings-dir>/.., i.e. reports/${TOPIC}/ itself (ai-spec's own default: "${TOPIC}-build-spec.md" for ` +
+    `genre="ai-architecture-doc", a genre-qualified filename for the other four spec genres — see its SKILL.md); "diataxis" is the ONE ` +
+    `documented exception — its own SKILL.md convention is "docs/${TOPIC}" at the REPOSITORY TOP LEVEL, not nested under ` +
+    `reports/${TOPIC}/. Honor that pack's own documented default as-is rather than silently overriding an already-shipped convention; ` +
+    `do not invent any harness-wide convention beyond what is named above.`,
   { label: 'deliverables:route', model: 'haiku', schema: ROUTE_SCHEMA },
 )
 if (!route) throw new Error('research-deliverables: routing failed')
@@ -488,26 +609,38 @@ const rendered = await pipeline(
             `plus provenanceReason naming why, or "witnessed" when stamped).`,
           { label: `render:${p.genre}x${p.channel}`, phase: 'Render', model: 'sonnet', schema: RENDER_SCHEMA },
         )
-      : agent(
-          `Render ONE source-direct deliverable for topic ${TOPIC}, harness ${H}: channel="${p.channel}" (mechanism 2 — built DIRECTLY ` +
-            `from findings/citations, NEVER from a rendered artifact or report). Invoke Skill(${p.channel}:${p.channel}) directly ` +
-            `against ${RDIR}/findings, following that skill's own documented pipeline and default output location (see its own ` +
-            `SKILL.md argument-hint) — do NOT run synthesize-artifact.sh or render-artifact.sh for this row; that pipeline belongs to ` +
-            `mechanism 1 only, and using it here would violate this channel's own "never a rendered report" non-negotiable. Do NOT ` +
-            `read or reference the synthesis at ${SYN} for this row — the synthesis-only evidence rule does not apply to source-direct ` +
-            `channels by design.${p.genre !== '-' ? ` A genre ("${p.genre}") was requested alongside this channel but does not apply — ` +
-            `there is no genre axis here; ignore it.` : ''}\n` +
-            `There is no genre axis for this mechanism (#640) — always return genreApplied=false, genreSkillInvoked="" regardless of ` +
-            `whether a genre was requested alongside this channel.\n` +
-            `Do NOT attempt a Skill(mif-docs:mif-provenance) stamp for this row — mechanism 2 is explicitly out of scope for it (each ` +
-            `pack owns its own output format/invocation with no dedicated backing script this module controls, and several formats ` +
-            `aren't even MIF-frontmatter-bearing markdown; see module header). Return provenanceOutcome="not-applicable" with that ` +
-            `reason verbatim.\n` +
-            `Return the output path, genre="-", channel, mechanism="source-direct", how many distinct primary-source citations the ` +
-            `output carries, genreApplied=false/genreSkillInvoked="", and the provenance fields (provenanceOutcome="not-applicable", ` +
-            `provenanceReason naming why).`,
-          { label: `render:${p.channel}`, phase: 'Render', model: 'sonnet', schema: RENDER_SCHEMA },
-        )
+      : (() => {
+          const skillName = CHANNEL_SKILL_NAME[p.channel] || p.channel
+          const isGenreChannel = SOURCE_DIRECT_GENRE_CHANNELS.includes(p.channel) && p.genre !== '-'
+          const firstArgKind = CHANNEL_FIRST_ARG[p.channel] || 'findings-dir'
+          const firstArgText = firstArgKind === 'topic'
+            ? `the topic name "${TOPIC}" as its first argument (its own SKILL.md argument-hint: "<topic> [--genre ...] [-o <out.md>]" — it resolves findings/goal.json/ontology-map.json itself FROM that topic name, it does NOT take a findings-dir path)`
+            : `${RDIR}/findings as its first argument (its own SKILL.md argument-hint takes <findings-dir> first)`
+          return agent(
+            `Render ONE source-direct deliverable for topic ${TOPIC}, harness ${H}: channel="${p.channel}" (mechanism 2 — built DIRECTLY ` +
+              `from findings/citations, NEVER from a rendered artifact or report). Invoke Skill(${p.channel}:${skillName}) directly, ` +
+              `passing it ${firstArgText}, following that skill's own documented pipeline and default output location — do NOT run synthesize-artifact.sh or render-artifact.sh for this row; that pipeline belongs to ` +
+              `mechanism 1 only, and using it here would violate this channel's own "never a rendered report" non-negotiable (research-` +
+              `harness-template#734: "ai-spec" is the one exception to "never run those scripts" — its own SKILL.md documents running ` +
+              `synthesize-artifact.sh -> render-artifact.sh itself, internally, as part of ITS OWN pipeline; this module still never ` +
+              `calls those scripts directly for this row, it delegates the whole thing to the skill). Do NOT read or reference the synthesis at ${SYN} for this row — the synthesis-only evidence rule does not apply to source-direct channels by design. ` +
+              `There is no genre axis for this mechanism (research-harness-template#734), EXCEPT for "ai-spec" — see below.` +
+              (isGenreChannel
+                ? ` GENRE PASSTHROUGH (research-harness-template#734): pass "--genre ${p.genre}" to the skill invocation — "${p.channel}" ` +
+                  `is the one source-direct channel with a real genre axis (its own SKILL.md argument-hint documents exactly this flag). ` +
+                  `Set genreApplied=true, genreSkillInvoked="${p.channel}:${skillName} --genre ${p.genre}".\n`
+                : `${p.genre !== '-' ? ` A genre ("${p.genre}") was requested alongside this channel but does not apply — there is no ` +
+                  `genre axis here; ignore it.` : ''} Set genreApplied=false, genreSkillInvoked="".\n`) +
+              `Do NOT attempt a Skill(mif-docs:mif-provenance) stamp for this row — mechanism 2 is explicitly out of scope for it (each ` +
+              `pack owns its own output format/invocation with no dedicated backing script this module controls, and several formats ` +
+              `aren't even MIF-frontmatter-bearing markdown; see module header). Return provenanceOutcome="not-applicable" with that ` +
+              `reason verbatim.\n` +
+              `Return the output path, genre="${p.genre}", channel, mechanism="source-direct", how many distinct primary-source ` +
+              `citations the output carries, the genre outcome per the instruction above, and the provenance fields ` +
+              `(provenanceOutcome="not-applicable", provenanceReason naming why).`,
+            { label: `render:${p.channel}${isGenreChannel ? `(${p.genre})` : ''}`, phase: 'Render', model: 'sonnet', schema: RENDER_SCHEMA },
+          )
+        })()
   },
   (r, p) =>
     r
