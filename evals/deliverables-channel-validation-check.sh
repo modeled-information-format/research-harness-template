@@ -9,7 +9,9 @@
 # 2's `Skill(${p.channel}:${skillName})` reference) — had NO equivalent
 # validation. Since Route is a model call (`{label: 'deliverables:route',
 # model: 'haiku', schema: ROUTE_SCHEMA}`), a malformed/hallucinated channel
-# string could reach those interpolation points unchecked.
+# string could reach those interpolation points unchecked. This eval covers
+# the new CHANNEL STRING validation guard added by this fix, not the
+# pre-existing genre guard it mirrors.
 #
 # This eval drives the REAL, unmodified module source via the Workflow-
 # runtime's own async-function-body framing (the same technique

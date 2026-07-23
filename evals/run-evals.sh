@@ -284,11 +284,12 @@ run "deliverables-genre-catalog-check" bash evals/deliverables-genre-catalog-che
 # cross-check instruction, verified structurally.
 run "deliverables-genre-channel-route" bash evals/deliverables-genre-channel-route.sh
 
-# research-harness-template#764: the module's GENRE STRING VALIDATION guard
-# (#640) validated route.plan's genre field against the pack-name pattern
+# research-harness-template#764: the module's existing GENRE STRING VALIDATION
+# guard (#640) validated route.plan's genre field against the pack-name pattern
 # before interpolating it into a shell-command argument / Skill() reference,
 # but the identical channel field — interpolated into the same two positions
-# — had no equivalent validation. Drives the real module (stubbed agent(),
+# — had no equivalent validation. This eval covers the new CHANNEL STRING
+# validation guard this fix adds. Drives the real module (stubbed agent(),
 # same technique as projection-slug-genre-args-check.sh) with a caller-
 # controlled route.plan to prove an unknown channel and a mechanism/channel
 # mismatch both fail closed before Render, while a genuinely valid channel
