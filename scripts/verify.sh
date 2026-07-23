@@ -3924,8 +3924,16 @@ gate_m29() {
   echo '[{"finding_id":"urn:mif:concept:harness/'"$ontlock_topic_subset"':pre-existing","entity_type":"technology","resolved_ontology":"mif-generic@1.0.0","basis":"declared","valid":true}]' \
     > "reports/$ontlock_topic_subset/ontology-map.json"
 
+  # Both steps below are fail-fast (Copilot review, PR #788), unlike the
+  # soft bad-and-continue pattern elsewhere in gate_m29: a failure here means
+  # the REAL scripts/lib/container-lock.sh is about to be overwritten with no
+  # guaranteed way back (restore_snapshot only restores it from
+  # $T/container-lock.sh.orig, which won't exist if the backup below never
+  # succeeded) -- returning immediately leaves $CONTAINER_LOCK_LIB untouched
+  # instead of risking it getting replaced by a broken/incomplete
+  # instrumented copy, and still runs restore_snapshot via the RETURN trap.
   cp "$CONTAINER_LOCK_LIB" "$T/container-lock.sh.orig" \
-    || bad "gate_m29 29p: failed to back up $CONTAINER_LOCK_LIB before instrumenting it"
+    || { bad "gate_m29 29p: failed to back up $CONTAINER_LOCK_LIB before instrumenting it"; return 1; }
   cp "$T/container-lock.sh.orig" "$T/container-lock.sh.instrumented"
   cat >> "$T/container-lock.sh.instrumented" <<'LOCKEOF'
 
@@ -3934,12 +3942,17 @@ gate_m29() {
 # when a file is sourced), recording every call this run makes without
 # depending on matching the primitive's own implementation text.
 container_lock_refresh() {
-  [ -d "$1" ] && touch "$1" 2>/dev/null || true
-  [ -n "${REFRESH_MARKER:-}" ] && printf 'refresh\n' >> "$REFRESH_MARKER" 2>/dev/null || true
+  # Marker is only written when $1 is a real lock dir (Copilot review, PR
+  # #788) -- otherwise a call with a bogus/missing dir would still count as
+  # "refreshed", masking the exact bug #771 regression-tests for.
+  if [ -d "$1" ]; then
+    touch "$1" 2>/dev/null || true
+    [ -n "${REFRESH_MARKER:-}" ] && printf 'refresh\n' >> "$REFRESH_MARKER" 2>/dev/null || true
+  fi
 }
 LOCKEOF
   cp "$T/container-lock.sh.instrumented" "$CONTAINER_LOCK_LIB" \
-    || bad "gate_m29 29p: failed to install the instrumented $CONTAINER_LOCK_LIB"
+    || { bad "gate_m29 29p: failed to install the instrumented $CONTAINER_LOCK_LIB"; return 1; }
 
   mkdir -p "$T/c-ontlock-full"
   echo '[]' > "$T/c-ontlock-full/ontology-map.json"
