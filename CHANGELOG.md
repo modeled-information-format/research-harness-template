@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.35] - 2026-07-23
+
+### Fixed
+
+- **`copier.yml`'s `_tasks` now runs `bash scripts/fetch-engine.sh` first**
+  (research-harness-template#733): `site-toggle.sh` has hard-required the
+  `mif-rh-cli` engine since #276, but it ran as the *first* `_tasks` entry,
+  before `fetch-engine.sh` (fourth) — so any instance without an already-cached
+  `bin/mif-rh-cli` failed the very first task of every `copier copy`/`copier
+  update` with exit 5. CI never caught this because `verify.sh` already
+  fetches the engine before any `_tasks`-equivalent step runs, masking the
+  ordering bug entirely in CI while it reproduced on every real, uncached
+  instance. New static-analysis regression eval:
+  `evals/copier-tasks-engine-order-check.sh` (proves `fetch-engine.sh`
+  precedes every task whose script sources `scripts/lib/engine.sh`,
+  regardless of whether the engine happens to be cached in the environment
+  the eval runs in). Also fixes `evals/site-toggle.sh`'s own `_tasks` check,
+  which searched a fixed 3-line window after `_tasks:` instead of the whole
+  block — too brittle to survive this fix's necessarily longer ordering
+  comment.
+
 ## [0.16.34] - 2026-07-23
 
 Release cut with no new code changes of its own — consolidates the fix

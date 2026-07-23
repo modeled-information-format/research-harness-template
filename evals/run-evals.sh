@@ -1036,6 +1036,13 @@ fi
 run "anti-narration-guard-start"  bash -c 'grep -q "Issue #490" .claude/commands/start.md && grep -q "output ONLY a bare factual" .claude/commands/start.md'
 run "anti-narration-guard-resume" bash -c 'grep -q "Issue #490" .claude/commands/resume.md && grep -q "output ONLY a bare factual" .claude/commands/resume.md'
 
+# research-harness-template#733: copier.yml's _tasks ran site-toggle.sh (hard-
+# requires the mif-rh-cli engine since #276) BEFORE fetch-engine.sh, so a
+# fresh instance with no cached engine failed the very first _tasks entry on
+# every copier copy/update. Static analysis so it can't be masked by CI
+# already having the engine cached before any real _tasks run.
+run "copier-tasks-engine-order-check" bash evals/copier-tasks-engine-order-check.sh
+
 echo
 if [ "$FAIL" -gt 0 ]; then
   printf '%srun-evals: %d passed, %d FAILED%s\n' "$RED" "$PASS" "$FAIL" "$RST"

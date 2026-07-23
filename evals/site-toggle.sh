@@ -57,8 +57,17 @@ done
 
 # 5. copier activates reports-primary in a clone (template-only check: copier.yml
 #    ships only in the template, so skip it in an instantiated clone).
+#    Search the WHOLE _tasks: block, not a fixed line window after it
+#    (research-harness-template#733) -- a hardcoded `-A3` broke the instant a
+#    task-ordering comment grew past 3 lines, even though the task itself was
+#    still present and correctly configured; the block's real end is the next
+#    top-level `_message_after_copy:` key, not an arbitrary line count.
 if [ -f copier.yml ]; then
-  grep -A3 '_tasks:' copier.yml | grep -qF "site-toggle.sh primary reports" \
+  awk '
+    /^_tasks:/ { in_block = 1; next }
+    in_block && /^_message_after_copy:/ { in_block = 0 }
+    in_block { print }
+  ' copier.yml | grep -qF "site-toggle.sh primary reports" \
     || fail "copier.yml _tasks does not run 'site-toggle.sh primary reports'"
 fi
 
