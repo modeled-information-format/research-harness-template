@@ -2898,7 +2898,7 @@ JSON
   body24n="$(declare -f gate_m24)"
   missing24n=""
   for v24n in m3 rc3 mj rcj rck; do
-    if ! printf '%s\n' "$body24n" | grep -E '^[[:space:]]*local ' | grep -wq "$v24n"; then
+    if ! printf '%s\n' "$body24n" | grep -E '\blocal\b' | grep -wq "$v24n"; then
       missing24n="$missing24n $v24n"
     fi
   done
