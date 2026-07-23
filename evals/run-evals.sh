@@ -284,6 +284,17 @@ run "deliverables-genre-catalog-check" bash evals/deliverables-genre-catalog-che
 # cross-check instruction, verified structurally.
 run "deliverables-genre-channel-route" bash evals/deliverables-genre-channel-route.sh
 
+# research-harness-template#764: the module's GENRE STRING VALIDATION guard
+# (#640) validated route.plan's genre field against the pack-name pattern
+# before interpolating it into a shell-command argument / Skill() reference,
+# but the identical channel field — interpolated into the same two positions
+# — had no equivalent validation. Drives the real module (stubbed agent(),
+# same technique as projection-slug-genre-args-check.sh) with a caller-
+# controlled route.plan to prove an unknown channel and a mechanism/channel
+# mismatch both fail closed before Render, while a genuinely valid channel
+# still renders.
+run "deliverables-channel-validation-check" bash evals/deliverables-channel-validation-check.sh
+
 # The research-augment module's Decide phase has deterministic teeth where its
 # own logic can express it (#580, Epic #545, following #578's vendoring and
 # #579's discover-delegation fix): the Assess phase's discover-skill

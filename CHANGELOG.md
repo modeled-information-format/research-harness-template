@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **`research-deliverables.js`'s `channel` field now gets the same
+  injection-validation guard `genre` already had (#764).** The Route phase's
+  GENRE STRING VALIDATION guard (#640) checked a caller-controlled
+  `route.plan[].genre` against the pack-name pattern before interpolating it
+  into a shell-command argument / `Skill()` reference, but the identical
+  `channel` field — interpolated into the same two positions
+  (`render-artifact.sh`'s `${p.channel}` argument, and mechanism 2's
+  `Skill(${p.channel}:${skillName})` reference) — had no equivalent check.
+  Since Route is a haiku model call whose `plan[]` cannot be trusted to have
+  enforced this itself, a malformed/hallucinated channel could previously
+  reach those interpolation points unvalidated, caught only downstream by
+  `render-artifact.sh`'s own exact-string `case` exit or a non-existent
+  `Skill()` invocation. Added a CHANNEL STRING VALIDATION guard that checks
+  `channel` against the module's own closed channel set
+  (`ARTIFACT_CHANNELS`/`SOURCE_DIRECT_CHANNELS`/`SOURCE_DIRECT_GENRE_CHANNELS`)
+  and cross-checks mechanism/channel agreement, failing closed before Render.
+
 ## [0.16.38] - 2026-07-23
 
 ### Fixed
