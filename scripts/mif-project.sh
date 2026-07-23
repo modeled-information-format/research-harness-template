@@ -37,7 +37,8 @@ if [ "${2:-}" = "--json-out" ]; then
   case "$JSON_OUT" in /*) : ;; *) JSON_OUT="$(pwd)/$JSON_OUT" ;; esac
 fi
 
-TMPD="$(mktemp -d)"; TMP="$TMPD/projection.json"; trap 'rm -rf "$TMPD"' EXIT
+TMPD="$(mktemp -d)" || { echo "mif-project: mktemp failed" >&2; exit 3; }
+TMP="$TMPD/projection.json"; trap 'rm -rf "$TMPD"' EXIT
 
 if ! "$ENGINE" harness project-report "$MD" \
       --schema "$ROOT/schemas/findings.schema.json" \

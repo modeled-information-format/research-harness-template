@@ -236,6 +236,11 @@ run "projection-index-resilience-check" bash evals/projection-index-resilience-c
 run "projection-report-resilience-check" bash evals/projection-report-resilience-check.sh
 run "projection-verify-resilience-check" bash evals/projection-verify-resilience-check.sh
 
+# research-harness-template#775: scripts/mif-project.sh's `TMPD="$(mktemp -d)"`
+# was unchecked, so a failing mktemp -d silently fell back to the root path
+# /projection.json instead of failing closed with a named diagnostic.
+run "mif-project-mktemp-check" bash evals/mif-project-mktemp-check.sh
+
 # The research-deliverables module has deterministic teeth where its own
 # logic can express it (#573, Epic #544): the module's static pack-taxonomy
 # tables (which genres/methodology packs/source-direct channels/out-of-scope
