@@ -1847,7 +1847,7 @@ gate_m14() {
     'env bash scripts/falsify.sh reports/tA/findings/f.json fx'
     'zsh scripts/falsify.sh reports/tA/findings/f.json fx'
   )
-  local bypass_fail="" cmd_json d_bypass
+  local bypass_fail="" cmd_json d_bypass c
   for c in "${bypass_cmds[@]+"${bypass_cmds[@]}"}"; do
     cmd_json="$(jq -cn --arg c "$c" '{tool_input:{command:$c}}')"
     d_bypass="$(hd "$cmd_json")"

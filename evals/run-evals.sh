@@ -52,6 +52,11 @@ run "stdin-detach" bash evals/stdin-detach.sh
 # marked, per-gate timings are built in, unmatched patterns fail fast.
 run "verify-selector" bash evals/verify-selector.sh
 
+# gate_m14's bypass_cmds loop variable must stay function-scoped (#780): a
+# missing `local` here leaks into the caller once gate_m14 returns, since
+# verify.sh calls every gate in-process ("$gate", never a subshell).
+run "gate-m14-no-var-leak" bash evals/gate-m14-no-var-leak.sh
+
 # Workflow-runtime modules (.claude/workflows/*.js) use the runtime's
 # async-function-body shape, so the CI parse-check must wrap before
 # checking (#552): passes on the vendored research-goal.js, fails on a
