@@ -16,7 +16,7 @@ ordering fix that unblocks every `copier copy`/`copier update` on an
 instance without an already-cached `mif-rh-cli` engine) into this tagged,
 attested release.
 
-## [0.16.35] - 2026-07-23
+## 0.16.35 - 2026-07-23
 
 ### Fixed
 
