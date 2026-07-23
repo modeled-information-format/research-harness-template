@@ -36,6 +36,7 @@ fail=0
 note() { printf '  goal-context-summary-required: %s\n' "$1"; }
 
 command -v node >/dev/null 2>&1 || { note "node is required but not on PATH"; exit 2; }
+command -v python3 >/dev/null 2>&1 || { note "python3 is required but not on PATH"; exit 2; }
 [ -f "$MODULE" ] || { note "$MODULE not found"; exit 2; }
 
 TMP="$(mktemp -d)"
