@@ -38,11 +38,14 @@
 #       behavior (URL-only Sources list, leak-clean body), not a literal
 #       "finding @id in the text" reading of that field name.
 #
-#   (c) a genuinely-disabled real pack (sustainability-report,
+#   (c) a genuinely-disabled real pack (preferably sustainability-report,
 #       `enabled:false` in the CURRENT harness.config.json — a live
-#       fact-check) and a genuinely-nonexistent one (a genre string in NEITHER
-#       harness.config.json packs[] NOR the module's own GENRE_PACKS table)
-#       are proven, structurally, to land in DIFFERENT reason buckets than
+#       fact-check; but selected dynamically from whatever IS disabled, since
+#       an instance that enables every genre pack has no fixed pack name to
+#       rely on — see case C1 below) and a genuinely-nonexistent one (a genre
+#       string in NEITHER harness.config.json packs[] NOR the module's own
+#       GENRE_PACKS table) are proven, structurally, to land in DIFFERENT
+#       reason buckets than
 #       the "no backing mechanism" case (research-harness-template#734) —
 #       the four standalone diataxis-* genre packs, which the module's own
 #       GENRE_PACKS table marks noBackingMechanism:true because they have no
