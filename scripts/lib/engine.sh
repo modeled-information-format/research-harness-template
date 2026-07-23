@@ -27,19 +27,34 @@ engine_bin() {
     return 5
   fi
   local version
-  version="$("$candidate" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)"
+  # Capture the full semver, including any pre-release suffix (e.g. -rc1,
+  # -alpha.2) — a bare X.Y.Z-only capture silently discards it, which makes
+  # a pre-release binary compare as == to the release of the same X.Y.Z
+  # instead of correctly ranking below it (issue #779).
+  version="$("$candidate" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?' | head -1)"
   if [ -z "$version" ]; then
     echo "engine: ${candidate} did not report a semver version" >&2
     return 5
   fi
+  local release="${version%%-*}" prerelease="" need_release="${ENGINE_MIN_VERSION%%-*}" need_prerelease=""
+  case "$version" in *-*) prerelease="${version#*-}" ;; esac
+  case "$ENGINE_MIN_VERSION" in *-*) need_prerelease="${ENGINE_MIN_VERSION#*-}" ;; esac
   # POSIX per-component compare; sort -V is unavailable on some BSD sorts.
-  if ! awk -v have="$version" -v need="$ENGINE_MIN_VERSION" 'BEGIN {
+  # Semver precedence (https://semver.org/#spec-item-11): compare the X.Y.Z
+  # release triplet first; if it's tied, a version WITH a pre-release suffix
+  # always ranks below one without, since a pre-release is by definition not
+  # yet the finalized release it names.
+  if ! awk -v have="$release" -v need="$need_release" \
+         -v have_pre="$prerelease" -v need_pre="$need_prerelease" 'BEGIN {
         n1 = split(have, h, "."); n2 = split(need, n, ".");
         for (i = 1; i <= 3; i++) {
           if (h[i] + 0 > n[i] + 0) exit 0;
           if (h[i] + 0 < n[i] + 0) exit 1;
         }
-        exit 0;
+        if (have_pre == "" ) exit 0;             # release (or equal-or-later) beats any pre-release requirement
+        if (need_pre == "") exit 1;              # have is a pre-release of the exact required release -> too low
+        if (have_pre >= need_pre) exit 0;
+        exit 1;
       }'; then
     echo "engine: mif-rh-cli v${version} is older than the required v${ENGINE_MIN_VERSION}; re-run scripts/fetch-engine.sh" >&2
     return 5
