@@ -52,6 +52,12 @@ run "stdin-detach" bash evals/stdin-detach.sh
 # marked, per-gate timings are built in, unmatched patterns fail fast.
 run "verify-selector" bash evals/verify-selector.sh
 
+# gate_m23's 23d loop variable `d` must stay function-scoped (#781): it
+# used to leak into the global scope once gate_m23 returned, which would
+# silently corrupt any later gate reusing an unscoped `for d in ...`/
+# `while read d` loop instead of starting from an unset variable.
+run "gate-m23-loop-var-scope-check" bash evals/gate-m23-loop-var-scope-check.sh
+
 # Workflow-runtime modules (.claude/workflows/*.js) use the runtime's
 # async-function-body shape, so the CI parse-check must wrap before
 # checking (#552): passes on the vendored research-goal.js, fails on a

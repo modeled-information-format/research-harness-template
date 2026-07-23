@@ -2630,7 +2630,7 @@ gate_m23() {
     # The full deliverable tree renders: synthesis, falsification report, and research-progress
     # each exist and start with an H1, so the derived-title loader gives them a Starlight title
     # (they are no longer excluded). This is the positive counterpart to the 23a negation removal.
-    local edir=reports/example-okf-mif-knowledge-spine all_titled=1
+    local edir=reports/example-okf-mif-knowledge-spine all_titled=1 d
     for d in "$edir"/synthesis-*.md "$edir"/*-falsification-report.md "$edir"/research-progress.md; do
       { [ -f "$d" ] && grep -qE '^#[[:space:]]+' "$d"; } || all_titled=0
     done
