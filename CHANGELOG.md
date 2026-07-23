@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **`gate_m27`'s 27f "unreadable file fails closed" check no longer breaks
+  when `verify.sh` runs as root.** The check used `chmod 000` to simulate a
+  permission-denied read, but root (or any process with DAC-override
+  capability, e.g. a root-uid Docker/devcontainer run) can still read a
+  000-mode file — silently invalidating the check's premise: a working,
+  unmodified `mif-container-digest.sh` gets a real digest (rc=0) instead of
+  failing, so the assertion falsely reports a broken digest script and fails
+  the whole gate suite. The check now probes whether `chmod 000` actually
+  denied read access first (via the new pure, unit-tested
+  `scripts/lib/unreadable-probe.sh`) and explicitly SKIPs the assertion when
+  it didn't, instead of asserting on a premise that doesn't hold — the
+  original swallow-bug defect class (rc=0, malformed `sha256:` digest) is
+  still caught whenever the file is genuinely unreadable. `verify.sh` gained
+  a `SKIP` counter/`skip()` helper alongside `ok`/`bad`, surfaced in the
+  final summary line. (#777)
+
 ## [0.16.38] - 2026-07-23
 
 ### Fixed
