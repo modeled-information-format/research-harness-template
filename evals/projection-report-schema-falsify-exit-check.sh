@@ -189,7 +189,15 @@ JSON
 }
 JSON
 
-  if ajv test -s "$TMP/report-schema.current.json" -d "$TMP/falsify-exit-payload.json" --valid >"$TMP/ajv-a.out" 2>&1; then
+  # Matches the repo's standard `ajv validate` convention (see e.g.
+  # evals/smoke-test.sh, evals/goal-lint-repair.sh) rather than ajv-cli's
+  # test/--valid/--invalid subcommand, whose availability across installed
+  # ajv-cli versions is not otherwise relied on anywhere else in this suite
+  # (Copilot review, PR #793). `ajv validate` exits 0 when the data is valid
+  # against the schema and non-zero when it is not -- the success condition
+  # for the (b) case is explicitly inverted below rather than relying on an
+  # `--invalid` flag.
+  if ajv validate -s "$TMP/report-schema.current.json" -d "$TMP/falsify-exit-payload.json" >"$TMP/ajv-a.out" 2>&1; then
     note "(a) OK -- the falsify-quarantine payload (frontmatterLevel=null, reportId=\"\") validates under the CURRENT (fixed) REPORT_SCHEMA"
   else
     note "(a) FAIL -- the falsify-quarantine payload no longer validates under the current REPORT_SCHEMA; the #773 fix has regressed:"
@@ -197,15 +205,15 @@ JSON
     fail=1
   fi
 
-  if ajv test -s "$TMP/report-schema.pre-fix-baseline.json" -d "$TMP/falsify-exit-payload.json" --invalid >"$TMP/ajv-b.out" 2>&1; then
-    note "(b) OK -- the SAME falsify-quarantine payload is correctly rejected by the historical PRE-FIX schema baseline, proving this eval would have caught research-harness-template#773 before the fix (fails before, passes after)"
-  else
+  if ajv validate -s "$TMP/report-schema.pre-fix-baseline.json" -d "$TMP/falsify-exit-payload.json" >"$TMP/ajv-b.out" 2>&1; then
     note "(b) FAIL -- the pre-fix baseline schema unexpectedly accepted the falsify-quarantine payload; the baseline itself no longer reproduces the original bug, so this eval is not a real regression trap:"
     sed 's/^/    /' "$TMP/ajv-b.out"
     fail=1
+  else
+    note "(b) OK -- the SAME falsify-quarantine payload is correctly rejected by the historical PRE-FIX schema baseline, proving this eval would have caught research-harness-template#773 before the fix (fails before, passes after)"
   fi
 
-  if ajv test -s "$TMP/report-schema.current.json" -d "$TMP/survived-payload.json" --valid >"$TMP/ajv-c.out" 2>&1; then
+  if ajv validate -s "$TMP/report-schema.current.json" -d "$TMP/survived-payload.json" >"$TMP/ajv-c.out" 2>&1; then
     note "(c) OK -- a normal non-falsified payload (frontmatterLevel=3, a real reportId) still validates under the current REPORT_SCHEMA -- the fix does not loosen the happy path"
   else
     note "(c) FAIL -- a normal non-falsified payload no longer validates under the current REPORT_SCHEMA:"
