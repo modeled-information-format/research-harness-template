@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.37] - 2026-07-23
+
+### Fixed
+
+- **`evals/copier-tasks-engine-order-check.sh` now actually SKIPs in an
+  instantiated clone instead of failing.** The eval's own comment said
+  "this eval is template-only (#401) -- skip in an instance" when
+  `copier.yml` is absent, but the missing-file branch called `fail()`
+  (exit 1) rather than skipping (exit 0), and `run-evals.sh` invokes it
+  unconditionally with no `[ -f copier.yml ]` guard at the call site
+  (unlike `evals/site-toggle.sh`'s equivalent check #5) — so every real,
+  instantiated clone got a permanent, unexplained `FAIL` from
+  `bash evals/run-evals.sh` the moment this eval (added in #733/#734)
+  shipped. Discovered while updating a live instance to v0.16.36.
+
 ## [0.16.36] - 2026-07-23
 
 Release cut with no new code changes of its own — consolidates the fixes

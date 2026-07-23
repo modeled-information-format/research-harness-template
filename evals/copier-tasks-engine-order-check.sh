@@ -26,7 +26,14 @@ cd "$(dirname "$0")/.." || exit 2
 
 fail() { echo "copier-tasks-engine-order-check: $1" >&2; exit 1; }
 
-[ -f copier.yml ] || fail "copier.yml not found (this eval is template-only, #401 -- skip in an instance)"
+# Template-only (#401): an instantiated clone never carries copier.yml, so this
+# must SKIP (exit 0), not fail -- run-evals.sh invokes this eval unconditionally
+# (no `[ -f copier.yml ]` guard at the call site, unlike evals/site-toggle.sh's
+# check #5), so a `fail` here turned into a permanent FAIL on every real clone.
+if [ ! -f copier.yml ]; then
+  echo "copier-tasks-engine-order-check: SKIP (copier.yml not found -- template-only check, #401)"
+  exit 0
+fi
 
 # Extract the ordered list of quoted `_tasks:` entries (one per line, as
 # authored: `  - "bash scripts/foo.sh ..."`). Restrict to the block between
