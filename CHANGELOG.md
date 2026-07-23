@@ -7,7 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.16.35] - 2026-07-23
+## [0.16.36] - 2026-07-23
+
+Release cut with no new code changes of its own — consolidates the fixes
+already documented in 0.16.33-0.16.35 below (the `research-deliverables.js`
+ai-spec/diataxis channel fix, and the `copier.yml`/`_tasks` fetch-engine
+ordering fix that unblocks every `copier copy`/`copier update` on an
+instance without an already-cached `mif-rh-cli` engine) into this tagged,
+attested release.
+
+## 0.16.35 - 2026-07-23
 
 ### Fixed
 
@@ -34,7 +43,7 @@ Release cut with no new code changes of its own — consolidates the fix
 already documented in 0.16.33 below (`research-deliverables.js`'s
 ai-spec/diataxis channel routing fix) into this tagged, attested release.
 
-## [0.16.33] - 2026-07-23
+## 0.16.33 - 2026-07-23
 
 ### Fixed
 
@@ -2214,7 +2223,8 @@ First release of the domain-general research harness template.
 - **Distribution** as a Copier living template and a Claude Code plugin
   marketplace.
 
-[Unreleased]: https://github.com/modeled-information-format/research-harness-template/compare/v0.16.32...HEAD
+[Unreleased]: https://github.com/modeled-information-format/research-harness-template/compare/v0.16.34...HEAD
+[0.16.34]: https://github.com/modeled-information-format/research-harness-template/compare/v0.16.32...v0.16.34
 [0.16.32]: https://github.com/modeled-information-format/research-harness-template/compare/v0.16.26...v0.16.32
 [0.16.26]: https://github.com/modeled-information-format/research-harness-template/compare/v0.16.21...v0.16.26
 [0.16.21]: https://github.com/modeled-information-format/research-harness-template/compare/v0.16.18...v0.16.21
