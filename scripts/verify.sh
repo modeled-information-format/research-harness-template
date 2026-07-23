@@ -499,7 +499,7 @@ gate_m5() {
   #     native enabledPlugins (materialized into settings.local.json; here proven on
   #     a temp settings path); disabling removes it. Proven on a currently-disabled
   #     plugin (competitive-analysis), on temp copies.
-  local T; T=$(mktemp -d)
+  local T; T="$(mktemp -d)" || { bad "gate_m5: failed to create a scratch directory (5c)"; return 1; }
   cp .claude/settings.json "$T/settings-on.json"
   cp .claude/settings.json "$T/settings-off.json"
   jq '(.packs[] | select(.name=="competitive-analysis") | .enabled) |= true' harness.config.json > "$T/on.cfg.json"
@@ -534,7 +534,7 @@ gate_m5() {
   # 5d2. A declared marketplaces[] entry lets two+ packs share one external
   #      source (type/url/ref) instead of repeating it per pack; a pack-local
   #      ref overrides the marketplace's ref for that pack only.
-  T=$(mktemp -d)
+  T="$(mktemp -d)" || { bad "gate_m5: failed to create a scratch directory (5d2)"; return 1; }
   cp .claude/settings.json "$T/settings-mkt.json"
   jq '.marketplaces = [{"name":"demo-mkt","url":"https://example.com/demo-mkt.git","ref":"main-sha"}]
       | .packs += [
@@ -559,7 +559,7 @@ gate_m5() {
   #      url:null/ref:null with no diagnostic or a misleading downstream
   #      "cannot resolve its family" message (regression test for the arbiter
   #      review fix on research-harness-template#240).
-  T=$(mktemp -d)
+  T="$(mktemp -d)" || { bad "gate_m5: failed to create a scratch directory (5d3)"; return 1; }
   cp .claude/settings.json "$T/settings-typo.json"
   jq '.marketplaces = [{"name":"demo-mkt","url":"https://example.com/demo-mkt.git","ref":"main-sha"}]
       | .packs += [
@@ -613,7 +613,7 @@ PY
   #      research-harness-template#714): the sidecar records the error, and the
   #      pack is excluded from both the native enabledPlugins map and the
   #      sidecar's enabledPlugins list.
-  T=$(mktemp -d)
+  T="$(mktemp -d)" || { bad "gate_m5: failed to create a scratch directory (5d4)"; return 1; }
   cp .claude/settings.json "$T/settings-ghost.json"
   jq '.packs += [{"name":"ghost-bundled","enabled":true,"source":"bundled"}]' \
      harness.config.json > "$T/ghost.cfg.json"
