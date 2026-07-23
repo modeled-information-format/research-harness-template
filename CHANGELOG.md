@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.34] - 2026-07-23
+
+Release cut with no new code changes of its own — consolidates the fix
+already documented in 0.16.33 below (`research-deliverables.js`'s
+ai-spec/diataxis channel routing fix) into this tagged, attested release.
+
 ## [0.16.33] - 2026-07-23
 
 ### Fixed
@@ -41,7 +47,7 @@ already documented in 0.16.27-0.16.31 below (research-projection.js's
 `agent()`-throw guards, the standard-depth fanout calibration, and the
 pre-push branch-deletion exemption) into this tagged, attested release.
 
-## [0.16.31] - 2026-07-22
+## 0.16.31 - 2026-07-22
 
 ### Fixed
 
@@ -66,7 +72,7 @@ pre-push branch-deletion exemption) into this tagged, attested release.
   `evals/projection-report-resilience-check.sh`,
   `evals/projection-verify-resilience-check.sh`.
 
-## [0.16.30] - 2026-07-22
+## 0.16.30 - 2026-07-22
 
 ### Fixed
 
@@ -87,7 +93,7 @@ pre-push branch-deletion exemption) into this tagged, attested release.
   underlying error, instead of re-throwing and failing the run. New eval:
   `evals/projection-index-resilience-check.sh`.
 
-## [0.16.29] - 2026-07-22
+## 0.16.29 - 2026-07-22
 
 ### Changed
 
@@ -103,7 +109,7 @@ pre-push branch-deletion exemption) into this tagged, attested release.
   judge with a more useful signal. `'deep'`-depth and the deepening-decision
   logic itself are unchanged.
 
-## [0.16.28] - 2026-07-22
+## 0.16.28 - 2026-07-22
 
 ### Fixed
 
@@ -117,7 +123,7 @@ pre-push branch-deletion exemption) into this tagged, attested release.
   just-released resting state. Extends `evals/pre-push-tag-skip.sh` with a
   regression case.
 
-## [0.16.27] - 2026-07-22
+## 0.16.27 - 2026-07-22
 
 ### Fixed
 
@@ -2187,7 +2193,8 @@ First release of the domain-general research harness template.
 - **Distribution** as a Copier living template and a Claude Code plugin
   marketplace.
 
-[Unreleased]: https://github.com/modeled-information-format/research-harness-template/compare/v0.16.26...HEAD
+[Unreleased]: https://github.com/modeled-information-format/research-harness-template/compare/v0.16.32...HEAD
+[0.16.32]: https://github.com/modeled-information-format/research-harness-template/compare/v0.16.26...v0.16.32
 [0.16.26]: https://github.com/modeled-information-format/research-harness-template/compare/v0.16.21...v0.16.26
 [0.16.21]: https://github.com/modeled-information-format/research-harness-template/compare/v0.16.18...v0.16.21
 [0.16.18]: https://github.com/modeled-information-format/research-harness-template/compare/v0.16.3...v0.16.18
