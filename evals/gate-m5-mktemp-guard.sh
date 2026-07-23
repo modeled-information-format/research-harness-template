@@ -35,7 +35,10 @@
 
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 2
-TMP="$(mktemp -d)"
+TMP="$(mktemp -d)" || {
+  printf 'gate-m5-mktemp-guard: FATAL: mktemp -d failed while setting up this eval'"'"'s own scratch directory\n' >&2
+  exit 2
+}
 trap 'rm -rf "$TMP"' EXIT
 fail=0
 note() { printf '  gate-m5-mktemp-guard: %s\n' "$1"; }
@@ -51,6 +54,15 @@ no_root_collapse() {
   for m in "${ROOT_MARKERS[@]}"; do
     [ -e "$m" ] && return 1
   done
+  # Belt-and-suspenders for a locked-down root: if writing to / is
+  # permission-denied, the pre-fix regression can still ATTEMPT the
+  # "/settings-*.json" write (and fail) without ever leaving a file behind,
+  # which would let the existence check above pass despite the collapse
+  # having occurred. Scan the gate's own output for the attempted root
+  # paths too, so a permission-denied root doesn't produce a false PASS.
+  if [ -f "$OUT" ] && grep -qE '(^|[^A-Za-z0-9_./-])/settings-(on|off|mkt|typo|ghost)\.json([^A-Za-z0-9_./-]|$)' "$OUT"; then
+    return 1
+  fi
   return 0
 }
 
