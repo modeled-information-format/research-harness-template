@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.16.32] - 2026-07-22
 
+Release cut with no new code changes of its own — consolidates the fixes
+already documented in 0.16.27-0.16.31 below (research-projection.js's
+`agent()`-throw guards, the standard-depth fanout calibration, and the
+pre-push branch-deletion exemption) into this tagged, attested release.
+
 ## [0.16.31] - 2026-07-22
 
 ### Fixed
