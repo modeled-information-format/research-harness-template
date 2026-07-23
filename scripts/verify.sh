@@ -2644,7 +2644,16 @@ gate_m23() {
     else
       bad "template site.primarySurface must be 'docs' (the example report would otherwise auto-flip it to reports)"
     fi
-    if grep -A3 '_tasks:' copier.yml | grep -qF "site-toggle.sh primary reports"; then
+    # Search the WHOLE _tasks: block, not a fixed line window after it
+    # (research-harness-template#733) -- a hardcoded `-A3` broke the instant a
+    # task-ordering comment grew past 3 lines, even though the task itself was
+    # still present and correctly configured; the block's real end is the
+    # next top-level `_message_after_copy:` key, not an arbitrary line count.
+    if awk '
+        /^_tasks:/ { in_block = 1; next }
+        in_block && /^_message_after_copy:/ { in_block = 0 }
+        in_block { print }
+      ' copier.yml | grep -qF "site-toggle.sh primary reports"; then
       ok "copier _tasks activates reports-primary in a clone (site-toggle.sh primary reports)"
     else
       bad "copier.yml must run 'site-toggle.sh primary reports' in _tasks to activate the clone reports surface"

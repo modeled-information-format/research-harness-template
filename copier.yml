@@ -62,17 +62,24 @@ author_name:
 # churns the tree and destabilizes copier's temp-dir cleanup (it intermittently fails
 # to remove new_copy/.git), so we leave the topic name unchanged.
 _tasks:
+  # This provisions the mif-rh engine (mif-rh-cli) that every task below,
+  # except the two symlink re-establishments, either hard-requires (site-
+  # toggle.sh itself since research-harness-template#276/Story #302, and
+  # fetch-ontology.sh/sync-packs.sh since Story #277's jq cutover) or -- this
+  # line itself -- is the provisioner for. It MUST run first, before site-
+  # toggle.sh below — provisioning it after the first engine-requiring task
+  # defeats the purpose (research-harness-template#733:
+  # a fresh instance with no cached bin/mif-rh-cli fails site-toggle.sh with
+  # exit 5 on every `copier copy`/`copier update`, since fetch-engine.sh used
+  # to sit fourth in this list, after the one task that needed it first). A
+  # no-op if already installed/on PATH/MIF_RH_CLI-overridden
+  # (scripts/lib/engine.sh's own resolution order).
+  - "bash scripts/fetch-engine.sh"
   - "bash scripts/site-toggle.sh primary reports"
   # Copier renders symlinked directories as real dirs; re-establish the two
   # site symlinks so the Astro content collection reaches docs/ and reports/.
   - "rm -rf docs/reports && ln -s ../reports docs/reports"
   - "rm -rf src/content/docs && ln -s ../../docs src/content/docs"
-  # fetch-ontology.sh/sync-packs.sh below now delegate to the mif-rh engine
-  # (mif-rh-cli, Story #277 jq cutover) and hard-require it — provision it
-  # first, same as CI does before its own ontology-vendoring step. A no-op if
-  # already installed/on PATH/MIF_RH_CLI-overridden (scripts/lib/engine.sh's
-  # own resolution order).
-  - "bash scripts/fetch-engine.sh"
   # Vendor the enabled domain ontologies on demand from the canonical registry
   # (ADR-0012): domain packs are NOT bundled — they are fetched + sha256-verified
   # into packs/ontologies/<id>/ and pinned in ontologies.lock.json before the
