@@ -71,6 +71,20 @@ type: Finding
 placeholder
 MD
 
+# This eval proves /projection.json is never created by asserting its absence
+# after the run — that assertion is only meaningful if the path is already
+# absent *before* the run. A developer machine or a reused CI image could
+# already have a stray /projection.json for unrelated reasons; in that case
+# the post-run check would false-fail (or worse, false-pass if the script
+# were buggy and just left the pre-existing file untouched) without ever
+# proving anything about this eval. Treat a pre-existing /projection.json as
+# an unmet fixture and bail before invoking the script, rather than silently
+# reinterpreting or deleting a root-owned file.
+if [ -e /projection.json ]; then
+  note "/projection.json already exists before the eval ran — unmet fixture, cannot prove the assertion; not deleting a root-owned file"
+  exit 2
+fi
+
 set +e
 PATH="$TMP/fakebin:$PATH" MIF_RH_CLI="$TMP/mif-rh-cli" bash "$SCRIPT" "$REPORT" >"$TMP/stdout.log" 2>"$TMP/stderr.log"
 rc=$?
