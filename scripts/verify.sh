@@ -5046,6 +5046,29 @@ gate_workflows() {
     bad "research-projection.js is missing the #628 projection-lock guard (container_lock_acquire/release on reports/<topic>/.projection-lock) -- concurrent projection runs on the same topic will silently corrupt each other's artifact.json again"
   fi
 
+  # #769: the prompt above used to tell the subagent that ANY nonzero exit
+  # from container_lock_acquire meant "another projection run currently owns
+  # this topic" -- collapsing scripts/lib/container-lock.sh's own two
+  # distinct documented codes (3 = held by a live holder/lost the steal race,
+  # 1 = mkdir failed for an unrelated reason, e.g. a missing parent dir or a
+  # read-only filesystem) into a single "contention" story. A real rc=1
+  # filesystem failure would then get misreported as lock contention,
+  # misdirecting whoever investigates it. Static, comment-aware, fixed-string
+  # grep: proves (a) the old collapsed phrasing is gone and (b) the prompt
+  # text now distinguishes rc=3 from rc=1 by name, so a future edit that
+  # re-collapses them back into one undifferentiated "nonzero == contention"
+  # story is caught here, not live.
+  if [ -f "$proj" ] \
+     && ! printf '%s\n' "$proj_code" | grep -qF 'a NONZERO exit means another projection run currently owns this topic' \
+     && printf '%s\n' "$proj_code" | grep -qF 'rc=3 means' \
+     && printf '%s\n' "$proj_code" | grep -qF 'rc=1 means the' \
+     && printf '%s\n' "$proj_code" | grep -qF 'mkdir itself failed for an unrelated filesystem reason' \
+     && printf '%s\n' "$proj_code" | grep -qF '#769'; then
+    ok "research-projection.js's Report phase distinguishes container_lock_acquire's rc=3 (contention) from rc=1 (filesystem error) rather than collapsing every nonzero exit into contention (#769)"
+  else
+    bad "research-projection.js still collapses container_lock_acquire's distinct rc=3 (contention) and rc=1 (filesystem error) exits into a single 'NONZERO exit means contention' story (#769) -- a real filesystem failure would be misreported as lock contention"
+  fi
+
   # Functional proof, independent of the static grep above: the SAME
   # container-lock.sh primitive under the projection lock's own name
   # genuinely serializes two concurrent holders and releases cleanly,
