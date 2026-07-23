@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **`evals/deliverables-genre-channel-route.sh`'s case C1 no longer hardcodes
+  `sustainability-report` as its "genuinely disabled genre pack" fixture.**
+  An instance whose `harness.config.json` enables every genre pack (a
+  legitimate, observed configuration) has no pack named
+  `sustainability-report` disabled at all, so the hardcoded check falsely
+  FAILed even though the routing logic it exists to prove was unaffected.
+  The eval now walks every currently-disabled pack in `harness.config.json`
+  (still preferring `sustainability-report` when it qualifies), uses the
+  first one that is both `GENRE_PACKS`-recognized and has a real backing
+  mechanism, and explicitly SKIPs case C1 (not a fixture failure) when no
+  such pack exists — case C3's structural check still proves the "pack
+  disabled" reason category exists independent of any specific pack.
+  Discovered while updating a live instance to v0.16.36/0.16.37.
+- **`evals/fetch-engine-gh-token-check.sh` now SKIPs in an instantiated
+  clone.** The check enforces the modeled-information-format org's own
+  least-privilege-Apps model (ADR-011: every `fetch-engine.sh` step fed a
+  minted GitHub App token scoped to include `mif-rs`) — an org-specific CI
+  security policy, not a technical requirement of `fetch-engine.sh` itself
+  (which reads release assets from `mif-rs`, a public repo the ambient
+  default job token can already read). An instantiated clone opts in
+  separately to its own bespoke `.github/workflows/` (`copier.yml` excludes
+  the template's own CI tree) and has no way to satisfy this org's
+  App-installation policy — it isn't part of the org and `mif-ci` isn't
+  installed against it — so this eval produced a permanent false FAIL on any
+  instance with its own CI, identical in kind to the
+  `copier-tasks-engine-order-check.sh` regression above. Discovered
+  alongside it, same session.
+
 ## [0.16.37] - 2026-07-23
 
 ### Fixed

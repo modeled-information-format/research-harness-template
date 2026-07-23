@@ -47,6 +47,22 @@ note() { printf '  fetch-engine-gh-token-check: %s\n' "$1"; }
 
 CHECK=scripts/check-fetch-engine-gh-token.sh
 
+# Template-only. The policy this gate enforces (every fetch-engine.sh step
+# fed a minted GitHub App token whose repositories: input includes mif-rs) is
+# the modeled-information-format org's OWN least-privilege-Apps model
+# (ADR-011) for ITS reusable workflows -- not a technical requirement of
+# fetch-engine.sh itself, which reads release assets from mif-rs, a PUBLIC
+# repo the ambient default job token can already read. An instantiated clone
+# "opts in separately" to its own bespoke .github/workflows/ (copier.yml
+# excludes the template's own CI tree, see copier.yml's `.github/workflows/*`
+# exclude comment) and has no way to satisfy this org's App-installation
+# policy even if it wanted to -- it isn't part of the org and the mif-ci App
+# isn't installed against it. Applying this gate to an instance's own,
+# unrelated CI produced a permanent false FAIL identical in kind to
+# research-harness-template#733/#736's copier-tasks-engine-order-check.sh
+# regression. Discovered while updating a live instance to v0.16.36/0.16.37.
+[ -f copier.yml ] || { note "SKIP (copier.yml not found -- template-only check, ADR-011 App-token policy is this org's own, not a fetch-engine.sh requirement)"; exit 0; }
+
 command -v yq >/dev/null 2>&1 || { note "yq is required but not on PATH"; exit 2; }
 [ -x "$CHECK" ] || [ -f "$CHECK" ] || { note "$CHECK not found"; exit 2; }
 
