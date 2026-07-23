@@ -667,6 +667,18 @@ run     "report-mif-good"           scripts/mif-project.sh schemas/samples/repor
 run_neg "report-mif-bad"            scripts/mif-project.sh evals/fixtures/report-bad.md
 run_neg "report-falsified-rejected" scripts/mif-project.sh evals/fixtures/report-falsified.md
 
+# 5a-2. A mistyped --json-out flag (research-harness-template#765) is a hard
+#       error, not a silently-ignored no-op: the caller must be told the flag
+#       wasn't recognized instead of having the projection quietly skip
+#       writing its output file while still exiting 0.
+run_neg "report-mif-json-out-typo-rejected" \
+  scripts/mif-project.sh schemas/samples/report.sample.md --json_out "$TMP/typo-out.json"
+
+# 5a-3. The correctly-spelled flag still honors --json-out end to end.
+run "report-mif-json-out-honored" bash -c '
+  scripts/mif-project.sh schemas/samples/report.sample.md --json-out "'"$TMP"'/good-out.json" &&
+  [ -s "'"$TMP"'/good-out.json" ]'
+
 # 5b. The report channel emits a valid L3 report end-to-end (write-then-validate).
 run "report-channel-e2e" bash -c '
   scripts/synthesize-artifact.sh "'"$SF"'" general "'"$TMP"'/r.json" &&
