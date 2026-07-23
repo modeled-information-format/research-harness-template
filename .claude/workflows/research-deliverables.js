@@ -245,7 +245,13 @@ const SYN = A && A.synthesisPath
 if (!TOPIC) throw new Error('research-deliverables: args.topic is required')
 if (!SYN) throw new Error('research-deliverables: args.synthesisPath is required (mechanism-1 rows cross-check the synthesis-only evidence rule against it — see module header)')
 const RDIR = `${H}/reports/${TOPIC}`
-const GENRES = (A && A.genres) || []
+// research-harness-template#734 review follow-up: a truthy non-array `genres`
+// (a caller passing a bare string, say) previously survived as GENRES itself
+// (`(A && A.genres) || []` only falls back to [] when genres is falsy) — the
+// impliedChannels computation below then calls .every()/.map() on it and
+// throws at runtime (strings have no .every). Normalize to Array.isArray so
+// a malformed genres value fails closed to [] instead of crashing.
+const GENRES = Array.isArray(A && A.genres) ? A.genres : []
 // research-harness-template#626: Array.isArray, not truthiness. The prior
 // `args.channels && args.channels.length` collapsed an explicit `channels:
 // []` ("render nothing, on purpose") into the same branch as `channels`
@@ -282,6 +288,16 @@ const SOURCE_DIRECT_GENRE_CHANNELS = ['ai-spec']
 // prior version of this module assumed `diataxis:diataxis`, which does not
 // exist — the pack's actual skill is named `diataxis-docs`).
 const CHANNEL_SKILL_NAME = { diataxis: 'diataxis-docs' }
+// research-harness-template#734 review follow-up: every source-direct
+// channel's own SKILL.md argument-hint takes <findings-dir> as its first
+// positional argument (pdf/jats/xbrl/ectd/notebooklm/github-discuss/
+// github-issues/diataxis all confirmed) EXCEPT "ai-spec", whose own
+// argument-hint is "<topic> [--genre ...] [-o <out.md>]" — it resolves
+// findings/goal.json/ontology-map.json itself FROM the topic name, it does
+// not take a findings-dir path at all. A blanket "invoke against
+// ${RDIR}/findings" instruction would tell the model to pass the wrong
+// first argument to ai-spec.
+const CHANNEL_FIRST_ARG = { 'ai-spec': 'topic' } // default: 'findings-dir'
 // Genre packs (kind:"genre"). Most render through blog/book via mechanism 1
 // (empty `{}`); consumingChannel entries render through a mechanism-2
 // channel pack with a real genre axis instead (currently only `ai-spec`'s
@@ -456,9 +472,10 @@ const route = await agent(
     `check.\n` +
     `2. SOURCE-DIRECT CHANNEL PACKS (channels ${JSON.stringify(SOURCE_DIRECT_CHANNELS)}): each is its own Claude Code Skill invoked ` +
     `directly against the findings dir — built "directly FROM THE SOURCES... NEVER from a rendered report" per each pack's own ` +
-    `SKILL.md/plugin.json. The Skill reference to invoke is "<channel>:<skillName>" where skillName is ${JSON.stringify(CHANNEL_SKILL_NAME)}` +
-    `[channel] if present, else the channel name itself (e.g. "pdf:pdf", but "diataxis:diataxis-docs" — its real skill name differs from ` +
-    `the pack name, confirmed against its own SKILL.md \`name:\` field, never assume pack name == skill name). NO genre axis applies to ` +
+    `SKILL.md/plugin.json. The Skill reference to invoke is "<channel>:<skillName>" where skillName is usually the same as the channel ` +
+    `name (e.g. "pdf:pdf"), EXCEPT ${JSON.stringify(CHANNEL_SKILL_NAME)} names the channels whose real skill name differs from the pack ` +
+    `name (e.g. "diataxis:diataxis-docs", confirmed against its own SKILL.md \`name:\` field — never assume pack name == skill name). ` +
+    `NO genre axis applies to ` +
     `any of these EXCEPT "ai-spec" (${JSON.stringify(SOURCE_DIRECT_GENRE_CHANNELS)}): every other source-direct channel ignores a ` +
     `genre requested alongside it (report it, do not silently apply it, do not drop the channel because a genre was also asked); ` +
     `"ai-spec" uniquely DOES have a genre axis — its own SKILL.md argument-hint takes ` +
@@ -595,11 +612,14 @@ const rendered = await pipeline(
       : (() => {
           const skillName = CHANNEL_SKILL_NAME[p.channel] || p.channel
           const isGenreChannel = SOURCE_DIRECT_GENRE_CHANNELS.includes(p.channel) && p.genre !== '-'
+          const firstArgKind = CHANNEL_FIRST_ARG[p.channel] || 'findings-dir'
+          const firstArgText = firstArgKind === 'topic'
+            ? `the topic name "${TOPIC}" as its first argument (its own SKILL.md argument-hint: "<topic> [--genre ...] [-o <out.md>]" — it resolves findings/goal.json/ontology-map.json itself FROM that topic name, it does NOT take a findings-dir path)`
+            : `${RDIR}/findings as its first argument (its own SKILL.md argument-hint takes <findings-dir> first)`
           return agent(
             `Render ONE source-direct deliverable for topic ${TOPIC}, harness ${H}: channel="${p.channel}" (mechanism 2 — built DIRECTLY ` +
-              `from findings/citations, NEVER from a rendered artifact or report). Invoke Skill(${p.channel}:${skillName}) directly ` +
-              `against ${RDIR}/findings, following that skill's own documented pipeline and default output location (see its own ` +
-              `SKILL.md argument-hint) — do NOT run synthesize-artifact.sh or render-artifact.sh for this row; that pipeline belongs to ` +
+              `from findings/citations, NEVER from a rendered artifact or report). Invoke Skill(${p.channel}:${skillName}) directly, ` +
+              `passing it ${firstArgText}, following that skill's own documented pipeline and default output location — do NOT run synthesize-artifact.sh or render-artifact.sh for this row; that pipeline belongs to ` +
               `mechanism 1 only, and using it here would violate this channel's own "never a rendered report" non-negotiable (research-` +
               `harness-template#734: "ai-spec" is the one exception to "never run those scripts" — its own SKILL.md documents running ` +
               `synthesize-artifact.sh -> render-artifact.sh itself, internally, as part of ITS OWN pipeline; this module still never ` +
