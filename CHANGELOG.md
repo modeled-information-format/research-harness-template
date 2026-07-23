@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.37] - 2026-07-23
+
 ### Fixed
 
 - **`evals/copier-tasks-engine-order-check.sh` now actually SKIPs in an
