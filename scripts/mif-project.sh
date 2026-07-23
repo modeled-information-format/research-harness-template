@@ -30,7 +30,11 @@ ENGINE="$(engine_bin "$ROOT")" || exit 5
 # so a caller-relative path (e.g. from an eval working dir) still resolves.
 MD="${1:?usage: mif-project.sh <report.md> [--json-out <out.json>]}"
 [ -f "$MD" ] || { echo "mif-project: report not found: $MD" >&2; exit 2; }
-MD="$(cd "$(dirname "$MD")" && pwd)/$(basename "$MD")"
+MD_DIR="$(cd "$(dirname "$MD")" && pwd)" || {
+  echo "mif-project: failed to resolve directory for report (removed, renamed, or unmounted after the existence check above — a TOCTOU race, not a missing-file condition): $MD" >&2
+  exit 2
+}
+MD="$MD_DIR/$(basename "$MD")"
 JSON_OUT=""
 if [ "${2:-}" = "--json-out" ]; then
   JSON_OUT="${3:?--json-out needs a path}"

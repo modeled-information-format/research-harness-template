@@ -678,6 +678,13 @@ run     "report-mif-good"           scripts/mif-project.sh schemas/samples/repor
 run_neg "report-mif-bad"            scripts/mif-project.sh evals/fixtures/report-bad.md
 run_neg "report-falsified-rejected" scripts/mif-project.sh evals/fixtures/report-falsified.md
 
+# 5a-2. research-harness-template#762: mif-project.sh's directory
+#       re-resolution checks the cd subshell's exit status instead of
+#       silently continuing with a bogus root-level path when the report's
+#       directory vanishes (removed/renamed/unmounted) between the earlier
+#       existence check and this re-resolution (a TOCTOU race).
+run "mif-project-cd-resolve-check" bash evals/mif-project-cd-resolve-check.sh
+
 # 5b. The report channel emits a valid L3 report end-to-end (write-then-validate).
 run "report-channel-e2e" bash -c '
   scripts/synthesize-artifact.sh "'"$SF"'" general "'"$TMP"'/r.json" &&
