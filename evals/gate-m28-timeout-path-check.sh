@@ -29,34 +29,44 @@ fail=0
 note() { printf '  gate-m28-timeout-path-check: %s\n' "$1"; }
 
 # Build a PATH with every directory that supplies a `timeout` or `gtimeout`
-# binary removed, but every OTHER command those directories provide restored
-# via a scratch directory of symlinks -- so nothing except the two timing
-# wrappers themselves goes missing, regardless of platform layout (Homebrew
-# gnubin on macOS colocates `gtimeout`/`timeout` next to `jq`; a from-scratch
-# PATH entry on Linux could equally colocate `timeout` next to other
-# essentials). This keeps the eval portable instead of hardcoding one
+# binary replaced -- IN PLACE, at that same PATH position -- by a scratch
+# directory of symlinks to every OTHER command that directory provides, so
+# nothing except the two timing wrappers themselves goes missing, regardless
+# of platform layout (Homebrew gnubin on macOS colocates `gtimeout`/`timeout`
+# next to `jq`; a from-scratch PATH entry on Linux could equally colocate
+# `timeout` next to other essentials). Substituting in place (rather than
+# pooling every affected directory's contents into one directory prepended
+# to the whole PATH) preserves the original PATH's resolution order for
+# every other binary -- a single shared, prepended scratch dir would let
+# entries from a *later* PATH directory shadow a command of the same name
+# from an *earlier* one, silently changing command resolution beyond
+# timeout/gtimeout. This keeps the eval portable instead of hardcoding one
 # platform's directory layout.
 SCRATCH="$(mktemp -d)" || { note "FAIL: could not create scratch dir"; exit 2; }
 trap 'rm -rf "$SCRATCH"' EXIT
 
 NEWPATH=""
+i=0
 IFS=':' read -r -a DIRS <<< "$PATH"
 for d in "${DIRS[@]}"; do
   [ -n "$d" ] && [ -d "$d" ] || continue
   if [ -e "$d/timeout" ] || [ -e "$d/gtimeout" ]; then
+    i=$((i + 1))
+    repl="$SCRATCH/d$i"
+    mkdir -p "$repl"
     for f in "$d"/*; do
       [ -e "$f" ] || continue
       base="$(basename "$f")"
       case "$base" in
         timeout|gtimeout) continue ;;
       esac
-      [ -e "$SCRATCH/$base" ] || ln -s "$f" "$SCRATCH/$base" 2>/dev/null
+      [ -e "$repl/$base" ] || ln -s "$f" "$repl/$base" 2>/dev/null
     done
+    NEWPATH="${NEWPATH:+$NEWPATH:}$repl"
     continue
   fi
   NEWPATH="${NEWPATH:+$NEWPATH:}$d"
 done
-NEWPATH="$SCRATCH:$NEWPATH"
 
 # Sanity: the constructed PATH truly lacks both binaries before trusting
 # anything the gate reports under it.
