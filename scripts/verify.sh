@@ -3402,6 +3402,12 @@ gate_m29() {
   cp harness.config.json "$T/snapshot/harness.config.json" \
     || { bad "gate_m29: failed to back up harness.config.json before mutating it"; rm -rf "$T"; return 1; }
   local badontmap_topic="gate-m29-badontmap-test"
+  # Declared here (not at 29p, where they're used), same rationale as
+  # badontmap_topic above: restore_snapshot's cleanup below must be able to
+  # reference them unconditionally, not depend on 29p having run.
+  local CONTAINER_LOCK_LIB="scripts/lib/container-lock.sh"
+  local ontlock_topic_full="gate-m29-771-ontlock-full"
+  local ontlock_topic_subset="gate-m29-771-ontlock-subset"
   restore_snapshot() {
     # Every restore below is checked (Copilot review, PR #385): unlike the
     # guarded BACKUP calls above (issue #377), a restore step failing here
@@ -3430,6 +3436,15 @@ gate_m29() {
     rm -rf "reports/$badontmap_topic"
     rm -f "$TOPIC_DIR/knowledge-graph.json"
     rm -rf "$TOPIC_DIR/.container.lock"
+    # 29p (issue #771) instrumentation cleanup: restore the real
+    # container-lock.sh unconditionally if a backup was ever taken (best
+    # effort even if 29p itself never ran or died mid-way), and remove its
+    # two synthetic topics.
+    if [ -f "$T/container-lock.sh.orig" ]; then
+      cp "$T/container-lock.sh.orig" "$CONTAINER_LOCK_LIB" \
+        || bad "gate_m29 restore_snapshot: failed to restore $CONTAINER_LOCK_LIB -- real corpus may be left mutated"
+    fi
+    rm -rf "reports/$ontlock_topic_full" "reports/$ontlock_topic_subset"
     rm -rf "$T"
     # Deregister the EXIT copy of this trap once the restore has actually
     # run: EXIT is a last-resort net for a fatal error INSIDE this function
@@ -3867,6 +3882,130 @@ gate_m29() {
     ok "a manifest overwriting the same destination twice still rolls back to the true pre-import bytes (PR #718 review, #673)"
   else
     bad "duplicate-destination rollback regression check failed (rc=$rc_dup, seed_restored=$([ "$dup_seed_after" = "$dup_seed_before" ] && echo yes || echo no), collide_intact=$([ "$dup_collide_after" = "$dup_collide_before" ] && echo yes || echo no)): $got"
+  fi
+
+  # 29p. Regression test for issue #771: the ontology-map write branch (both
+  #      the full-scope overwrite path and the subset-scope merge path) must
+  #      call container_lock_refresh on every iteration, exactly like the
+  #      doc and finding branches beside it already do -- a destination
+  #      ontology-map.json large enough for the subset jq merge to take
+  #      non-trivial time must not have its own still-live lock misjudged as
+  #      stale and stolen mid-write by a concurrent invocation. A genuinely
+  #      slow multi-minute merge isn't practical to simulate end-to-end here
+  #      (same rationale as 31a5's direct unit test of the shared
+  #      primitive) -- instead this instruments scripts/lib/container-lock.sh
+  #      itself: a temporary copy whose container_lock_refresh ALSO appends a
+  #      marker line to $REFRESH_MARKER (the override is appended at the end
+  #      of the sourced file, so it wins regardless of the original
+  #      definition's exact text -- bash keeps the LAST definition when a
+  #      file is sourced), then runs two synthetic imports whose manifests
+  #      contain ONLY an ontology-map resource -- no finding, no doc
+  #      deliverable, the only other resource kinds that call
+  #      container_lock_refresh -- one full-scope (fresh destination) and one
+  #      subset-scope (existing destination, forcing the jq merge). Both
+  #      must produce a marker; before the fix, neither did.
+  jq --arg f "$ontlock_topic_full" --arg s "$ontlock_topic_subset" '.topics += [
+      {id: $f, title: "gate_m29 771 lock-refresh full-scope test", namespace: ("harness/" + $f), status: "active", ontologies: []},
+      {id: $s, title: "gate_m29 771 lock-refresh subset-scope test", namespace: ("harness/" + $s), status: "active", ontologies: []}
+    ]' harness.config.json > "$T/config-with-ontlock-topics.json" && cp "$T/config-with-ontlock-topics.json" harness.config.json
+  mkdir -p "reports/$ontlock_topic_full/findings" "reports/$ontlock_topic_subset/findings"
+  # Step 5 (build-graph.sh) requires at least one finding already at the
+  # destination -- an ontology-map-only manifest writes no finding of its
+  # own, so without a pre-seeded one the whole import would REJECT on a
+  # "no findings found" build-graph failure unrelated to this test's actual
+  # subject (the lock refresh), producing a false failure below.
+  jq --arg id "urn:mif:concept:harness/$ontlock_topic_full:seed" '."@id" = $id' \
+    "$seed_finding" > "reports/$ontlock_topic_full/findings/seed.json"
+  jq --arg id "urn:mif:concept:harness/$ontlock_topic_subset:seed" '."@id" = $id' \
+    "$seed_finding" > "reports/$ontlock_topic_subset/findings/seed.json"
+  # The subset destination pre-exists with one entry NOT in the incoming
+  # resource -- makes the merge branch's jq -s pass genuinely do work rather
+  # than short-circuiting on a same-content cmp -s skip.
+  echo '[{"finding_id":"urn:mif:concept:harness/'"$ontlock_topic_subset"':pre-existing","entity_type":"technology","resolved_ontology":"mif-generic@1.0.0","basis":"declared","valid":true}]' \
+    > "reports/$ontlock_topic_subset/ontology-map.json"
+
+  # Both steps below are fail-fast (Copilot review, PR #788), unlike the
+  # soft bad-and-continue pattern elsewhere in gate_m29: a failure here means
+  # the REAL scripts/lib/container-lock.sh is about to be overwritten with no
+  # guaranteed way back (restore_snapshot only restores it from
+  # $T/container-lock.sh.orig, which won't exist if the backup below never
+  # succeeded) -- returning immediately leaves $CONTAINER_LOCK_LIB untouched
+  # instead of risking it getting replaced by a broken/incomplete
+  # instrumented copy, and still runs restore_snapshot via the RETURN trap.
+  cp "$CONTAINER_LOCK_LIB" "$T/container-lock.sh.orig" \
+    || { bad "gate_m29 29p: failed to back up $CONTAINER_LOCK_LIB before instrumenting it"; return 1; }
+  cp "$T/container-lock.sh.orig" "$T/container-lock.sh.instrumented"
+  cat >> "$T/container-lock.sh.instrumented" <<'LOCKEOF'
+
+# gate_m29 29p instrumentation (issue #771 regression test): this override
+# wins over the definition above (bash keeps the LAST function definition
+# when a file is sourced), recording every call this run makes without
+# depending on matching the primitive's own implementation text.
+container_lock_refresh() {
+  # Marker is only written when $1 is a real lock dir (Copilot review, PR
+  # #788) -- otherwise a call with a bogus/missing dir would still count as
+  # "refreshed", masking the exact bug #771 regression-tests for.
+  if [ -d "$1" ]; then
+    touch "$1" 2>/dev/null || true
+    [ -n "${REFRESH_MARKER:-}" ] && printf 'refresh\n' >> "$REFRESH_MARKER" 2>/dev/null || true
+  fi
+}
+LOCKEOF
+  cp "$T/container-lock.sh.instrumented" "$CONTAINER_LOCK_LIB" \
+    || { bad "gate_m29 29p: failed to install the instrumented $CONTAINER_LOCK_LIB"; return 1; }
+
+  mkdir -p "$T/c-ontlock-full"
+  echo '[]' > "$T/c-ontlock-full/ontology-map.json"
+  local ontlock_full_digest ontlock_full_manifest_digest
+  ontlock_full_digest="$(scripts/mif-container-digest.sh resource "$T/c-ontlock-full/ontology-map.json")"
+  ontlock_full_manifest_digest="$(printf '%s\n' "$ontlock_full_digest" | scripts/mif-container-digest.sh manifest)"
+  jq -n --arg d "$ontlock_full_digest" --arg md "$ontlock_full_manifest_digest" --arg topic "$ontlock_topic_full" '{
+    profile: "https://research-harness.dev/schema/mif-container/v1",
+    sourceInstance: {namespace: "gate-m29-test", corpusUrl: null},
+    exportScope: {type: "full", topic: $topic, selector: null, generatedAt: "2026-07-10T00:00:00Z"},
+    ontologyBindings: [{packId: "mif-generic", version: "1.0.0"}],
+    resources: [{mifType: "ontology-map", path: "ontology-map.json", ontologyType: null, digest: $d}],
+    boundaryReferences: [],
+    manifestDigest: $md,
+    createdAt: "2026-07-10T00:00:00Z"
+  }' > "$T/c-ontlock-full/mif-package.json"
+
+  mkdir -p "$T/c-ontlock-subset"
+  echo '[{"finding_id":"urn:mif:concept:harness/'"$ontlock_topic_subset"':incoming","entity_type":"technology","resolved_ontology":"mif-generic@1.0.0","basis":"declared","valid":true}]' \
+    > "$T/c-ontlock-subset/ontology-map.json"
+  local ontlock_subset_digest ontlock_subset_manifest_digest
+  ontlock_subset_digest="$(scripts/mif-container-digest.sh resource "$T/c-ontlock-subset/ontology-map.json")"
+  ontlock_subset_manifest_digest="$(printf '%s\n' "$ontlock_subset_digest" | scripts/mif-container-digest.sh manifest)"
+  jq -n --arg d "$ontlock_subset_digest" --arg md "$ontlock_subset_manifest_digest" --arg topic "$ontlock_topic_subset" \
+    --arg selector "[\"urn:mif:concept:harness/$ontlock_topic_subset:incoming\"]" '{
+    profile: "https://research-harness.dev/schema/mif-container/v1",
+    sourceInstance: {namespace: "gate-m29-test", corpusUrl: null},
+    exportScope: {type: "subset", topic: $topic, selector: $selector, generatedAt: "2026-07-10T00:00:00Z"},
+    ontologyBindings: [{packId: "mif-generic", version: "1.0.0"}],
+    resources: [{mifType: "ontology-map", path: "ontology-map.json", ontologyType: null, digest: $d}],
+    boundaryReferences: [],
+    manifestDigest: $md,
+    createdAt: "2026-07-10T00:00:00Z"
+  }' > "$T/c-ontlock-subset/mif-package.json"
+
+  local full_marker="$T/refresh-marker-full" subset_marker="$T/refresh-marker-subset"
+  rm -f "$full_marker" "$subset_marker"
+  REFRESH_MARKER="$full_marker" "$IMPORT" "$T/c-ontlock-full" "$ontlock_topic_full" >/dev/null 2>&1
+  local rc_ontlock_full=$?
+  REFRESH_MARKER="$subset_marker" "$IMPORT" "$T/c-ontlock-subset" "$ontlock_topic_subset" >/dev/null 2>&1
+  local rc_ontlock_subset=$?
+
+  cp "$T/container-lock.sh.orig" "$CONTAINER_LOCK_LIB" \
+    || bad "gate_m29 29p: failed to restore the original $CONTAINER_LOCK_LIB after instrumentation"
+  rm -rf "reports/$ontlock_topic_full" "reports/$ontlock_topic_subset"
+
+  local full_refreshed=0 subset_refreshed=0
+  [ "$rc_ontlock_full" -eq 0 ] && [ -s "$full_marker" ] && full_refreshed=1
+  [ "$rc_ontlock_subset" -eq 0 ] && [ -s "$subset_marker" ] && subset_refreshed=1
+  if [ "$full_refreshed" -eq 1 ] && [ "$subset_refreshed" -eq 1 ]; then
+    ok "ontology-map write branch calls container_lock_refresh every iteration, full-scope and subset-scope alike (#771)"
+  else
+    bad "ontology-map lock-refresh regression check failed (#771): full rc=$rc_ontlock_full marker=$([ -s "$full_marker" ] && echo yes || echo no); subset rc=$rc_ontlock_subset marker=$([ -s "$subset_marker" ] && echo yes || echo no)"
   fi
 }
 
