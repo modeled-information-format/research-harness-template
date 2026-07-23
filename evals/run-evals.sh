@@ -52,6 +52,12 @@ run "stdin-detach" bash evals/stdin-detach.sh
 # marked, per-gate timings are built in, unmatched patterns fail fast.
 run "verify-selector" bash evals/verify-selector.sh
 
+# gate_m28's 28h hang-regression check must degrade gracefully (skip, not
+# hard-fail) when neither `timeout` nor `gtimeout` is on PATH (#774) -- a
+# stock-macOS contributor with no Homebrew coreutils saw a real-looking FAIL
+# from a CI-parity gate for a change that would actually pass CI.
+run "gate-m28-timeout-path-check" bash evals/gate-m28-timeout-path-check.sh
+
 # Workflow-runtime modules (.claude/workflows/*.js) use the runtime's
 # async-function-body shape, so the CI parse-check must wrap before
 # checking (#552): passes on the vendored research-goal.js, fails on a
