@@ -99,10 +99,24 @@ SLUGPATH="$(dirname "$OUT_REL")/$SLUG"
 # CONTAINER_LOCK_STALE_MIN.
 mkdir -p "$(dirname "$OUT_ABS")" || { echo "render: failed to create output directory for $OUT" >&2; exit 1; }
 RENDER_LOCK_DIR="${OUT_ABS}.render.lock"
-container_lock_acquire "$RENDER_LOCK_DIR" "render-artifact:$$ ($CHANNEL)" || {
-  echo "render: could not acquire the render lock for $OUT -- a concurrent render-artifact.sh invocation for the same output already holds it (see container-lock diagnostic above)." >&2
+container_lock_acquire "$RENDER_LOCK_DIR" "render-artifact:$$ ($CHANNEL)"
+lock_rc=$?
+if [ "$lock_rc" -ne 0 ]; then
+  # rc=3 is genuine contention (a live holder, or this racer lost the
+  # steal-a-stale-lock race) -- container_lock_acquire's own diagnostic
+  # above already names the holder. Any OTHER rc (1: mkdir failed for an
+  # unrelated reason -- permissions, a missing parent dir, a read-only FS)
+  # is NOT contention; claiming "a concurrent render already holds it" in
+  # that case would misdirect debugging of a real filesystem failure
+  # (Copilot review, PR #784). CONTAINER_LOCK_LAST_ERROR carries the
+  # library's own underlying error text for that case.
+  if [ "$lock_rc" -eq 3 ]; then
+    echo "render: could not acquire the render lock for $OUT -- a concurrent render-artifact.sh invocation for the same output already holds it (see container-lock diagnostic above)." >&2
+  else
+    echo "render: could not acquire the render lock for $OUT -- ${CONTAINER_LOCK_LAST_ERROR:-container-lock failed for an unknown reason (see diagnostic above)}." >&2
+  fi
   exit 1
-}
+fi
 # Single EXIT trap for the whole script: releases the render lock and cleans
 # up whichever channel's temp dir (RTMPD for report, BTMPD for blog/book) is
 # set at exit time. A later `trap ... EXIT` inside one channel branch would
