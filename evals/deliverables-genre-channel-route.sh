@@ -38,11 +38,14 @@
 #       behavior (URL-only Sources list, leak-clean body), not a literal
 #       "finding @id in the text" reading of that field name.
 #
-#   (c) a genuinely-disabled real pack (sustainability-report,
+#   (c) a genuinely-disabled real pack (preferably sustainability-report,
 #       `enabled:false` in the CURRENT harness.config.json — a live
-#       fact-check) and a genuinely-nonexistent one (a genre string in NEITHER
-#       harness.config.json packs[] NOR the module's own GENRE_PACKS table)
-#       are proven, structurally, to land in DIFFERENT reason buckets than
+#       fact-check; but selected dynamically from whatever IS disabled, since
+#       an instance that enables every genre pack has no fixed pack name to
+#       rely on — see case C1 below) and a genuinely-nonexistent one (a genre
+#       string in NEITHER harness.config.json packs[] NOR the module's own
+#       GENRE_PACKS table) are proven, structurally, to land in DIFFERENT
+#       reason buckets than
 #       the "no backing mechanism" case (research-harness-template#734) —
 #       the four standalone diataxis-* genre packs, which the module's own
 #       GENRE_PACKS table marks noBackingMechanism:true because they have no
@@ -238,14 +241,35 @@ if command -v mif-rh-cli >/dev/null 2>&1 || [ -x "$ROOT/bin/mif-rh-cli" ] || [ -
   fi
 fi
 
-# C1: sustainability-report is a REAL, recognized genre pack (present in the
-# module's own GENRE_PACKS table) that is genuinely disabled RIGHT NOW.
-jq -e '.packs[] | select(.name=="sustainability-report") | .enabled==false' harness.config.json >/dev/null 2>&1 \
-  || { note "harness.config.json no longer marks 'sustainability-report' enabled:false — pick a currently-disabled real genre pack for this fixture"; fail=1; }
-genre_pack_has 'sustainability-report' \
-  || { note "the module's GENRE_PACKS table no longer recognizes 'sustainability-report' — this case needs a pack the module KNOWS about but is disabled, not an unrecognized one"; fail=1; }
-genre_pack_no_backing_mechanism 'sustainability-report' \
-  && { note "'sustainability-report' unexpectedly marked noBackingMechanism:true — a disabled-but-real genre pack must not collapse into the no-backing-mechanism bucket"; fail=1; }
+# C1: a REAL, recognized genre pack (present in the module's own GENRE_PACKS
+# table) that is genuinely disabled RIGHT NOW. 'sustainability-report' is the
+# preferred default fixture (documented in this eval's header), but is not
+# hardcoded: an instance whose harness.config.json enables EVERY genre pack
+# (a legitimate, observed configuration) would have no pack named
+# 'sustainability-report' disabled at all, and a hardcoded name would falsely
+# FAIL this eval even though the routing logic it proves is unaffected. Walk
+# every currently-disabled pack in harness.config.json, preferring
+# 'sustainability-report' when it qualifies, and use the first one that is
+# both GENRE_PACKS-recognized and has a real backing mechanism.
+disabled_genre_pack=""
+for candidate in sustainability-report $(jq -r '.packs[] | select(.enabled==false) | .name' harness.config.json 2>/dev/null); do
+  jq -e --arg g "$candidate" '.packs[] | select(.name==$g) | .enabled==false' harness.config.json >/dev/null 2>&1 \
+    || continue
+  if genre_pack_has "$candidate" && ! genre_pack_no_backing_mechanism "$candidate"; then
+    disabled_genre_pack="$candidate"
+    break
+  fi
+done
+if [ -z "$disabled_genre_pack" ]; then
+  note "no currently-disabled, GENRE_PACKS-recognized, backed genre pack found in harness.config.json — skipping case C1 (the 'pack disabled' routing reason still exists structurally per case C3 below; this instance simply has nothing disabled to prove it against live)"
+else
+  jq -e --arg g "$disabled_genre_pack" '.packs[] | select(.name==$g) | .enabled==false' harness.config.json >/dev/null 2>&1 \
+    || { note "internal: selected disabled genre pack '$disabled_genre_pack' failed re-verification against harness.config.json"; fail=1; }
+  genre_pack_has "$disabled_genre_pack" \
+    || { note "internal: selected disabled genre pack '$disabled_genre_pack' not recognized by GENRE_PACKS on re-check"; fail=1; }
+  genre_pack_no_backing_mechanism "$disabled_genre_pack" \
+    && { note "internal: selected disabled genre pack '$disabled_genre_pack' unexpectedly noBackingMechanism:true on re-check"; fail=1; }
+fi
 
 # C2: a genuinely NONEXISTENT genre — absent from BOTH harness.config.json
 # packs[] and the module's own GENRE_PACKS table.
