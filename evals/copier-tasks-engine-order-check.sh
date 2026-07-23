@@ -40,10 +40,14 @@ tasks="$(awk '
 [ -n "$tasks" ] || fail "no _tasks entries found -- extraction pattern may be broken, or copier.yml's _tasks block was restructured"
 
 # Which scripts genuinely hard-require the mif-rh-cli engine: anything that
-# sources scripts/lib/engine.sh. Determined from the real source tree, not a
-# hand-maintained list, so a future script gaining the dependency (or losing
-# it) is picked up automatically.
-engine_requiring="$(grep -l 'scripts/lib/engine\.sh' scripts/*.sh 2>/dev/null | xargs -n1 basename)"
+# actually SOURCES scripts/lib/engine.sh (a `. path/to/engine.sh` or
+# `source path/to/engine.sh` line), not merely mentioning the path in a
+# comment (fetch-engine.sh itself references "scripts/lib/engine.sh" in its
+# own header comment without sourcing it -- a plain substring grep would
+# misclassify the provisioner as a requirer). Determined from the real source
+# tree, not a hand-maintained list, so a future script gaining the dependency
+# (or losing it) is picked up automatically.
+engine_requiring="$(grep -lE '^[[:space:]]*(\.|source)[[:space:]]+.*scripts/lib/engine\.sh' scripts/*.sh 2>/dev/null | sed 's#.*/##')"
 [ -n "$engine_requiring" ] || fail "no scripts found sourcing scripts/lib/engine.sh -- detection pattern may be broken"
 
 fetch_engine_idx=-1
@@ -58,7 +62,6 @@ while IFS= read -r line; do
   esac
   # Does this task invoke one of the engine-requiring scripts?
   for s in $engine_requiring; do
-    [ "$s" = "fetch-engine.sh" ] && continue # not "requiring" itself, it IS the provisioner
     case "$line" in
       *"$s"*)
         if [ "$fetch_engine_idx" = -1 ]; then

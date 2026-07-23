@@ -62,12 +62,13 @@ author_name:
 # churns the tree and destabilizes copier's temp-dir cleanup (it intermittently fails
 # to remove new_copy/.git), so we leave the topic name unchanged.
 _tasks:
-  # Every task below except the two symlink re-establishments delegates to the
-  # mif-rh engine (mif-rh-cli) and hard-requires it: site-toggle.sh itself
-  # since research-harness-template#276 (Story #302, Category B cutover), and
-  # fetch-ontology.sh/sync-packs.sh since Story #277's jq cutover. This MUST
-  # run first, before site-toggle.sh below — provisioning it after the first
-  # engine-requiring task defeats the purpose (research-harness-template#733:
+  # This provisions the mif-rh engine (mif-rh-cli) that every task below,
+  # except the two symlink re-establishments, either hard-requires (site-
+  # toggle.sh itself since research-harness-template#276/Story #302, and
+  # fetch-ontology.sh/sync-packs.sh since Story #277's jq cutover) or -- this
+  # line itself -- is the provisioner for. It MUST run first, before site-
+  # toggle.sh below — provisioning it after the first engine-requiring task
+  # defeats the purpose (research-harness-template#733:
   # a fresh instance with no cached bin/mif-rh-cli fails site-toggle.sh with
   # exit 5 on every `copier copy`/`copier update`, since fetch-engine.sh used
   # to sit fourth in this list, after the one task that needed it first). A
