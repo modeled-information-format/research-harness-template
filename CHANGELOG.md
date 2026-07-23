@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.33] - 2026-07-23
+
+### Fixed
+
+- **`research-deliverables.js` no longer misclassifies the `ai-spec` and
+  `diataxis` channels as an unsupported third mechanism
+  (research-harness-template#734).** Both are real, already-shipped
+  mechanism-2 (source-direct) channel packs — `ai-spec` runs
+  `synthesize-artifact.sh -> render-artifact.sh` internally via its own
+  Skill and uniquely accepts a `--genre` passthrough (`ai-architecture-doc`/
+  `feature-spec`/`kiro-requirements`/`kiro-design`/`kiro-tasks`); `diataxis`
+  fans out one page per finding via its own `render-diataxis.sh` (real
+  Skill name `diataxis-docs`, not `diataxis` as previously assumed). The
+  module's `CHANNELS` default also no longer blindly falls back to `['blog']`
+  when `channels` is omitted and the requested genre declares a
+  `consumingChannel` — it now defaults to that channel instead, fixing the
+  actual repro (`--genres ai-architecture-doc` with no `--channels`
+  previously defaulted to `['blog']` and was rejected as unavailable). The
+  four standalone `diataxis-*` mif-docs genre skills (unrelated to the
+  bundled `diataxis` channel pack, which takes no genre selector) are now
+  explicitly marked `noBackingMechanism` and reported `unavailable[]` with
+  that reason, rather than silently implying the `diataxis` channel pack
+  could render them. Both `evals/deliverables-route-check.sh` and
+  `evals/deliverables-genre-channel-route.sh` updated to prove the fixed
+  behavior, including a new case (G4) that reproduces and proves the
+  original default-channel bug is fixed.
+
 ## [0.16.32] - 2026-07-22
 
 Release cut with no new code changes of its own — consolidates the fixes

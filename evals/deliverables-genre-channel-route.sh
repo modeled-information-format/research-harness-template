@@ -43,10 +43,15 @@
 #       fact-check) and a genuinely-nonexistent one (a genre string in NEITHER
 #       harness.config.json packs[] NOR the module's own GENRE_PACKS table)
 #       are proven, structurally, to land in DIFFERENT reason buckets than
-#       the "out of scope" source-direct/third-mechanism case #573
-#       introduces (diataxis/ai-spec) — see part C for why this decision
-#       cannot be driven end-to-end without a live model call, and what is
-#       proven instead.
+#       the "no backing mechanism" case (research-harness-template#734) —
+#       the four standalone diataxis-* genre packs, which the module's own
+#       GENRE_PACKS table marks noBackingMechanism:true because they have no
+#       real render path in this harness at all, distinct from a merely-
+#       disabled pack that WOULD render if turned on. (diataxis/ai-spec
+#       CHANNELS themselves are no longer an out-of-scope case as of #734 —
+#       both are real, working mechanism-2 channels now; see part A/F below.)
+#       See part C for why this decision cannot be driven end-to-end without
+#       a live model call, and what is proven instead.
 #
 #   (d) the synthesis-only evidence rule, driven with a seeded canary-claim
 #       fixture: a finding-only claim absent from a companion synthesis
@@ -108,12 +113,25 @@ keys = re.findall(r"'?([A-Za-z][A-Za-z0-9-]*)'?\s*:\s*\{", m.group(1)) if m else
 sys.exit(0 if name in keys else 1)
 PY
 }
-out_of_scope_has() { # out_of_scope_has <name> -> exit 0 if present in OUT_OF_SCOPE_CHANNELS
+genre_pack_no_backing_mechanism() { # genre_pack_no_backing_mechanism <name> -> exit 0 if GENRE_PACKS[name].noBackingMechanism is true
   python3 - "$WF" "$1" <<'PY'
 import re, sys
 wf, name = open(sys.argv[1]).read(), sys.argv[2]
-m = re.search(r"const OUT_OF_SCOPE_CHANNELS = \[(.*?)\]", wf)
-items = re.findall(r"'([a-z0-9-]+)'", m.group(1)) if m else []
+m = re.search(r'const GENRE_PACKS = \{(.*?)\n\}', wf, re.S)
+body = m.group(1) if m else ''
+entry = re.search(r"'?" + re.escape(name) + r"'?\s*:\s*\{([^}]*)\}", body)
+sys.exit(0 if entry and 'noBackingMechanism' in entry.group(1) else 1)
+PY
+}
+source_direct_has() { # source_direct_has <name> -> exit 0 if present in SOURCE_DIRECT_CHANNELS or SOURCE_DIRECT_GENRE_CHANNELS
+  python3 - "$WF" "$1" <<'PY'
+import re, sys
+wf, name = open(sys.argv[1]).read(), sys.argv[2]
+items = []
+for const in ('SOURCE_DIRECT_CHANNELS', 'SOURCE_DIRECT_GENRE_CHANNELS'):
+    m = re.search(r'const %s = \[(.*?)\]' % const, wf)
+    if m:
+        items += re.findall(r"'([a-z0-9-]+)'", m.group(1))
 sys.exit(0 if name in items else 1)
 PY
 }
@@ -127,8 +145,8 @@ for s in synthesize-artifact.sh render-artifact.sh; do
   grep -qF "scripts/$s" <<<"$render_span" \
     || { note "Render phase prompt does not invoke scripts/$s for mechanism 1 (artifact-based) — verify #573's actual wiring"; fail=1; }
 done
-grep -qF 'Skill(${p.channel}:${p.channel})' "$WF" \
-  || { note "the module's source no longer contains the literal Skill(\${p.channel}:\${p.channel}) invocation template for mechanism 2 (source-direct) — has #573's actual invocation shape changed?"; fail=1; }
+grep -qF 'Skill(${p.channel}:${skillName})' "$WF" \
+  || { note "the module's source no longer contains the literal Skill(\${p.channel}:\${skillName}) invocation template for mechanism 2 (source-direct) — has #734's real-skill-name wiring changed?"; fail=1; }
 grep -qF "mechanism === 'artifact'" "$WF" \
   || { note "the Render phase's dispatch no longer branches on p.mechanism === 'artifact' — mechanism selection may no longer be structural"; fail=1; }
 grep -qF 'ARTIFACT-BASED' <<<"$route_span" && grep -qF 'SOURCE-DIRECT CHANNEL PACKS' <<<"$route_span" \
@@ -226,8 +244,8 @@ jq -e '.packs[] | select(.name=="sustainability-report") | .enabled==false' harn
   || { note "harness.config.json no longer marks 'sustainability-report' enabled:false — pick a currently-disabled real genre pack for this fixture"; fail=1; }
 genre_pack_has 'sustainability-report' \
   || { note "the module's GENRE_PACKS table no longer recognizes 'sustainability-report' — this case needs a pack the module KNOWS about but is disabled, not an unrecognized one"; fail=1; }
-out_of_scope_has 'sustainability-report' \
-  && { note "'sustainability-report' unexpectedly appears in OUT_OF_SCOPE_CHANNELS — a disabled genre pack must not collapse into the third-mechanism bucket"; fail=1; }
+genre_pack_no_backing_mechanism 'sustainability-report' \
+  && { note "'sustainability-report' unexpectedly marked noBackingMechanism:true — a disabled-but-real genre pack must not collapse into the no-backing-mechanism bucket"; fail=1; }
 
 # C2: a genuinely NONEXISTENT genre — absent from BOTH harness.config.json
 # packs[] and the module's own GENRE_PACKS table.
@@ -240,26 +258,25 @@ genre_pack_has "$BOGUS" \
 # C3: structural distinguishability — the module's Route prompt and
 # ROUTE_SCHEMA draw named, separate reason categories, so "pack disabled"
 # and "unrecognized channel" (mechanism 1/disabled-or-nonexistent) are not
-# the same wording as "out-of-scope-third-mechanism" (the real #573 case for
-# diataxis/ai-spec) or "architectural-boundary" (the "report" channel case).
-for phrase in 'pack disabled' 'unrecognized channel' 'architectural-boundary' 'artifact-based' 'source-direct'; do
+# the same wording as "no-backing-mechanism" (research-harness-template#734
+# — the four standalone diataxis-* genre packs) or "architectural-boundary"
+# (the "report" channel case).
+for phrase in 'pack disabled' 'unrecognized channel' 'architectural-boundary' 'artifact-based' 'source-direct' 'no-backing-mechanism'; do
   grep -qF "$phrase" <<<"$route_span" \
     || { note "Route prompt lost the distinct reason-category phrase '$phrase' — disabled/nonexistent-pack reasons could collapse into a single generic bucket"; fail=1; }
 done
-grep -qF 'out-of-scope' <<<"$route_span" \
-  || { note "Route prompt lost the out-of-scope third-mechanism reason category"; fail=1; }
 for c in diataxis ai-spec; do
   grep -qF "$c" <<<"$route_span" \
-    || { note "Route prompt no longer names out-of-scope channel '$c' explicitly"; fail=1; }
+    || { note "Route prompt no longer names source-direct channel '$c' explicitly (research-harness-template#734 — both are real in-scope mechanism-2 channels now)"; fail=1; }
 done
-# diataxis/ai-spec (the real out-of-scope case) must live in a DIFFERENT
-# static table than sustainability-report (a disabled-but-recognized genre
-# pack) — proving the two failure classes are structurally, not just
-# textually, distinct.
-out_of_scope_has 'diataxis' && out_of_scope_has 'ai-spec' \
-  || { note "OUT_OF_SCOPE_CHANNELS no longer contains diataxis/ai-spec"; fail=1; }
-out_of_scope_has 'sustainability-report' \
-  && { note "sustainability-report incorrectly appears alongside the out-of-scope third-mechanism channels"; fail=1; }
+source_direct_has 'diataxis' && source_direct_has 'ai-spec' \
+  || { note "SOURCE_DIRECT_CHANNELS/SOURCE_DIRECT_GENRE_CHANNELS no longer contains diataxis/ai-spec — #734's fix has regressed"; fail=1; }
+# The four standalone diataxis-* genre packs (the real no-backing-mechanism
+# case) must live in a DIFFERENT static table than sustainability-report (a
+# disabled-but-recognized genre pack) — proving the two failure classes are
+# structurally, not just textually, distinct.
+genre_pack_no_backing_mechanism 'diataxis-explanation' \
+  || { note "GENRE_PACKS no longer marks 'diataxis-explanation' noBackingMechanism:true — #734's fix has regressed"; fail=1; }
 
 # ============================================================================
 # D: synthesis-only evidence rule — seeded canary-claim fixture.
@@ -416,8 +433,10 @@ grep -qF 'GENRE SKILL APPLICATION' <<<"$render_span" \
   || { note "Render phase prompt lost the GENRE SKILL APPLICATION step (#640) — a requested genre could once again render only the neutral body"; fail=1; }
 grep -qF 'genreApplied=false, genreSkillInvoked=""' "$WF" \
   || { note "the module no longer has an explicit genreApplied=false/genreSkillInvoked=\"\" branch (the genre=\"general\" neutral case, or mechanism 2's no-genre-axis case) — #640's honest-fallback wiring may have regressed"; fail=1; }
-grep -qF 'There is no genre axis for this mechanism (#640)' <<<"$render_span" \
-  || { note "Render phase prompt's source-direct (mechanism 2) branch no longer states genreApplied is always false — the genre-doesn't-apply contract could silently drift"; fail=1; }
+grep -qF 'There is no genre axis for this mechanism (research-harness-template#734)' <<<"$render_span" \
+  || { note "Render phase prompt's source-direct (mechanism 2) branch no longer states the genre-doesn't-apply default — the contract could silently drift"; fail=1; }
+grep -qF 'GENRE PASSTHROUGH' <<<"$render_span" \
+  || { note "Render phase prompt lost the ai-spec genre-passthrough branch (research-harness-template#734) — a requested genre would silently stop reaching the ai-spec skill"; fail=1; }
 grep -qF "'genreApplied'" "$WF" \
   || { note "RENDER_SCHEMA no longer declares genreApplied — the #640 genre-skill outcome would no longer be surfaced to callers"; fail=1; }
 grep -qF "'genreSkillInvoked'" "$WF" \
@@ -464,8 +483,14 @@ PY
 # Workflow-tool invocation, where `args` can arrive as a JSON-encoded
 # STRING -- #617/#654) -- the Array.isArray truthiness semantics this grep
 # proves are unchanged, only the local identifier is.
-grep -qF "const CHANNELS = (A && Array.isArray(A.channels)) ? A.channels : ['blog']" "$WF" \
-  || { note "G1: $WF no longer computes CHANNELS via Array.isArray — the explicit-empty-vs-omitted truthiness bug (#626) may have regressed"; fail=1; }
+# research-harness-template#734: CHANNELS is now a 3-statement computation
+# (explicitChannels/impliedChannels/CHANNELS) instead of one line, since the
+# omitted-channels default now needs GENRE_PACKS to check for a genre-implied
+# channel — check the pieces instead of one exact line.
+grep -qF 'const explicitChannels = A && Array.isArray(A.channels)' "$WF" \
+  || { note "G1: $WF no longer computes explicitChannels via Array.isArray — the explicit-empty-vs-omitted truthiness bug (#626) may have regressed"; fail=1; }
+grep -qF "const CHANNELS = explicitChannels ? A.channels : (impliedChannels.length ? impliedChannels : ['blog'])" "$WF" \
+  || { note "G1: $WF's CHANNELS fallback no longer honors an explicit channels array verbatim, or lost the ['blog'] ultimate fallback — #626/#734 may have regressed"; fail=1; }
 
 cat > "$TMP/channels-driver.cjs" <<'NODE'
 'use strict';
@@ -519,7 +544,34 @@ if [ -f "$TMP/out-f3.json" ]; then
 else
   note "G3: driver produced no output ($(cat "$TMP/f3.err"))"; fail=1
 fi
-note "G: explicit channels:[] resolves to zero channels (never silently coerced to the ['blog'] default), while an omitted channels arg still defaults to ['blog'] unchanged — proven against the real module, not just a source grep"
+# G4 (research-harness-template#734): the actual bug that motivated this
+# fix — a genre with a declared consumingChannel, requested with channels
+# OMITTED, must default to that channel instead of ['blog']. This is the
+# exact repro that failed before #734: `--genres ai-architecture-doc` (no
+# --channels) defaulted to channels:['blog'], which Route then correctly
+# rejected as unavailable since ai-architecture-doc only consumes ai-spec.
+printf '%s' "{\"harnessDir\":\"$TMP/h\",\"topic\":\"channels-eval-topic\",\"synthesisPath\":\"$TMP/syn.json\",\"genres\":[\"ai-architecture-doc\"]}" > "$TMP/args-f4.json"
+node "$TMP/channels-driver.cjs" "$WF" "$TMP/args-f4.json" "$TMP/out-f4.json" >"$TMP/f4.err" 2>&1
+if [ -f "$TMP/out-f4.json" ]; then
+  python3 -c "import json,sys; d=json.load(open('$TMP/out-f4.json')); sys.exit(0 if 'Requested channels: [\"ai-spec\"]' in (d.get('routePrompt') or '') else 1)" \
+    || { note "G4: requesting genre=ai-architecture-doc with channels omitted did NOT default to CHANNELS=['ai-spec'] — #734's genre-implied-default fix has regressed (the module fell back to ['blog'] again, the exact bug #734 fixed)"; fail=1; }
+else
+  note "G4: driver produced no output ($(cat "$TMP/f4.err"))"; fail=1
+fi
+
+# G5: a genre with NO declared consumingChannel (e.g. 'engineering'), channels
+# omitted, must still default to ['blog'] — the genre-implied default must
+# never override the majority blog/book-consuming case.
+printf '%s' "{\"harnessDir\":\"$TMP/h\",\"topic\":\"channels-eval-topic\",\"synthesisPath\":\"$TMP/syn.json\",\"genres\":[\"engineering\"]}" > "$TMP/args-f5.json"
+node "$TMP/channels-driver.cjs" "$WF" "$TMP/args-f5.json" "$TMP/out-f5.json" >"$TMP/f5.err" 2>&1
+if [ -f "$TMP/out-f5.json" ]; then
+  python3 -c "import json,sys; d=json.load(open('$TMP/out-f5.json')); sys.exit(0 if 'Requested channels: [\"blog\"]' in (d.get('routePrompt') or '') else 1)" \
+    || { note "G5: requesting genre=engineering (no consumingChannel) with channels omitted no longer defaults to CHANNELS=['blog'] — #734's fix over-applied to a genre it should not affect"; fail=1; }
+else
+  note "G5: driver produced no output ($(cat "$TMP/f5.err"))"; fail=1
+fi
+
+note "G: explicit channels:[] resolves to zero channels (never silently coerced to the ['blog'] default), an omitted channels arg with no genre-implied channel still defaults to ['blog'] unchanged, and an omitted channels arg with a consumingChannel-bearing genre (e.g. ai-architecture-doc -> ai-spec) now correctly defaults to that channel instead of ['blog'] (#734) — proven against the real module, not just a source grep"
 
 if [ "$fail" -eq 0 ]; then
   echo "deliverables-genre-channel-route: all cases passed"

@@ -13,9 +13,9 @@
 # This eval was designed against that real constraint:
 #
 #   A. Static pack-taxonomy tables (GENRE_PACKS/METHODOLOGY_PACKS/
-#      SOURCE_DIRECT_CHANNELS/OUT_OF_SCOPE_CHANNELS/ARTIFACT_CHANNELS), which
-#      the module embeds so its Route prompt never has to guess a pack's
-#      kind, are cross-checked against the REAL
+#      SOURCE_DIRECT_CHANNELS/SOURCE_DIRECT_GENRE_CHANNELS/ARTIFACT_CHANNELS),
+#      which the module embeds so its Route prompt never has to guess a
+#      pack's kind, are cross-checked against the REAL
 #      docs/reference/packs/index.md "Pack inventory" table (parsed, not
 #      eyeballed) — a drift between this module's table and the real docs
 #      (a pack's kind changes, a new genre pack ships, a channel is
@@ -26,11 +26,15 @@
 #      this): the Route prompt states the exact settings.local.json
 #      enabledPlugins key shape ("<pack>@research-harness", never a bare
 #      pack-name lookup), the report-channel architectural-boundary
-#      reason, and the out-of-scope third-mechanism channels; the Render
-#      prompt's artifact-based branch invokes scripts/synthesize-artifact.sh
-#      -> scripts/render-artifact.sh (never free-form-authoring content) and
-#      its source-direct branch invokes Skill(<pack>:<pack>) directly
-#      without ever calling either script or reading synthesisPath.
+#      reason, the diataxis/ai-spec source-direct channels (research-
+#      harness-template#734 — real in-scope mechanism-2 channels, not an
+#      out-of-scope third mechanism), and the noBackingMechanism handling
+#      for the four standalone diataxis-* genre packs; the Render prompt's
+#      artifact-based branch invokes scripts/synthesize-artifact.sh ->
+#      scripts/render-artifact.sh (never free-form-authoring content), its
+#      source-direct branch invokes Skill(<channel>:<skillName>) directly
+#      without ever calling either script or reading synthesisPath, and its
+#      ai-spec row passes a requested genre through as an argument (#734).
 #
 #   C. A REAL, hermetic, no-model fixture run through the actual
 #      synthesize-artifact.sh -> render-artifact.sh pipeline (offline,
@@ -111,10 +115,10 @@ def extract_arr(name):
 genre_packs = extract_obj_keys('GENRE_PACKS')
 methodology_packs = extract_arr('METHODOLOGY_PACKS')
 source_direct = extract_arr('SOURCE_DIRECT_CHANNELS')
-out_of_scope = extract_arr('OUT_OF_SCOPE_CHANNELS')
+source_direct_genre = extract_arr('SOURCE_DIRECT_GENRE_CHANNELS')
 artifact_channels = extract_arr('ARTIFACT_CHANNELS')
 
-ok = all(x is not None for x in (genre_packs, methodology_packs, source_direct, out_of_scope, artifact_channels))
+ok = all(x is not None for x in (genre_packs, methodology_packs, source_direct, source_direct_genre, artifact_channels))
 if not ok:
     sys.exit(1)
 
@@ -150,7 +154,7 @@ fail = False
 check_all(genre_packs, 'genre', 'GENRE_PACKS')
 check_all(methodology_packs, 'methodology', 'METHODOLOGY_PACKS')
 check_all(source_direct, 'channel', 'SOURCE_DIRECT_CHANNELS')
-check_all(out_of_scope, 'channel', 'OUT_OF_SCOPE_CHANNELS')
+check_all(source_direct_genre, 'channel', 'SOURCE_DIRECT_GENRE_CHANNELS')
 # 'book' must be a real channel pack (it gates channel="book" on top of any genre check).
 if 'channel' not in doc_kinds.get('book', set()):
     print("FAIL: 'book' is not classified kind='channel' in docs/reference/packs/index.md — the module's book-pack-gates-the-channel logic assumes this")
@@ -180,10 +184,17 @@ grep -qF '@research-harness' <<<"$route_span" \
   || { note "Route prompt lost the exact settings.local.json enabledPlugins key shape ('<pack>@research-harness') — regression toward a bare pack-name lookup"; fail=1; }
 grep -qF 'research-projection' <<<"$route_span" \
   || { note "Route prompt lost the architectural-boundary reason for channel=\"report\" (research-projection's job, not this module's)"; fail=1; }
+# research-harness-template#734: diataxis/ai-spec are real in-scope mechanism-2
+# channels now, not an out-of-scope third mechanism — check they're still named
+# as real source-direct channels (never silently dropped from the Route prompt).
 for c in diataxis ai-spec; do
   grep -qF "$c" <<<"$route_span" \
-    || { note "Route prompt no longer names out-of-scope channel '$c' explicitly — a third-mechanism request could get silently mapped onto mechanism 1 or 2 instead of unavailable[]"; fail=1; }
+    || { note "Route prompt no longer names source-direct channel '$c' explicitly — it could get silently dropped from routing"; fail=1; }
 done
+grep -qF 'GENRE PASSTHROUGH' <<<"$render_span" \
+  || { note "Render phase prompt lost the ai-spec genre-passthrough branch (research-harness-template#734) — a requested genre would silently stop reaching the ai-spec skill"; fail=1; }
+grep -qF 'noBackingMechanism' <<<"$route_span" \
+  || { note "Route prompt lost the noBackingMechanism handling for the four standalone diataxis-* genre packs — a request for one could get silently routed through the diataxis channel pack as if genre selection applied there"; fail=1; }
 grep -qF 'methodology' <<<"$route_span" \
   || { note "Route prompt lost the methodology-pack-is-not-a-genre-template distinction"; fail=1; }
 
