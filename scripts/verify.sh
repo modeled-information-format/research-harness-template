@@ -511,7 +511,7 @@ gate_m5() {
   #     native enabledPlugins (materialized into settings.local.json; here proven on
   #     a temp settings path); disabling removes it. Proven on a currently-disabled
   #     plugin (competitive-analysis), on temp copies.
-  local T; T=$(mktemp -d)
+  local T; T="$(mktemp -d)" || { bad "gate_m5: failed to create a scratch directory (5c)"; return 1; }
   cp .claude/settings.json "$T/settings-on.json"
   cp .claude/settings.json "$T/settings-off.json"
   jq '(.packs[] | select(.name=="competitive-analysis") | .enabled) |= true' harness.config.json > "$T/on.cfg.json"
@@ -546,7 +546,7 @@ gate_m5() {
   # 5d2. A declared marketplaces[] entry lets two+ packs share one external
   #      source (type/url/ref) instead of repeating it per pack; a pack-local
   #      ref overrides the marketplace's ref for that pack only.
-  T=$(mktemp -d)
+  T="$(mktemp -d)" || { bad "gate_m5: failed to create a scratch directory (5d2)"; return 1; }
   cp .claude/settings.json "$T/settings-mkt.json"
   jq '.marketplaces = [{"name":"demo-mkt","url":"https://example.com/demo-mkt.git","ref":"main-sha"}]
       | .packs += [
@@ -571,7 +571,7 @@ gate_m5() {
   #      url:null/ref:null with no diagnostic or a misleading downstream
   #      "cannot resolve its family" message (regression test for the arbiter
   #      review fix on research-harness-template#240).
-  T=$(mktemp -d)
+  T="$(mktemp -d)" || { bad "gate_m5: failed to create a scratch directory (5d3)"; return 1; }
   cp .claude/settings.json "$T/settings-typo.json"
   jq '.marketplaces = [{"name":"demo-mkt","url":"https://example.com/demo-mkt.git","ref":"main-sha"}]
       | .packs += [
@@ -625,7 +625,7 @@ PY
   #      research-harness-template#714): the sidecar records the error, and the
   #      pack is excluded from both the native enabledPlugins map and the
   #      sidecar's enabledPlugins list.
-  T=$(mktemp -d)
+  T="$(mktemp -d)" || { bad "gate_m5: failed to create a scratch directory (5d4)"; return 1; }
   cp .claude/settings.json "$T/settings-ghost.json"
   jq '.packs += [{"name":"ghost-bundled","enabled":true,"source":"bundled"}]' \
      harness.config.json > "$T/ghost.cfg.json"
@@ -2642,7 +2642,7 @@ gate_m23() {
     # The full deliverable tree renders: synthesis, falsification report, and research-progress
     # each exist and start with an H1, so the derived-title loader gives them a Starlight title
     # (they are no longer excluded). This is the positive counterpart to the 23a negation removal.
-    local edir=reports/example-okf-mif-knowledge-spine all_titled=1
+    local edir=reports/example-okf-mif-knowledge-spine all_titled=1 d
     for d in "$edir"/synthesis-*.md "$edir"/*-falsification-report.md "$edir"/research-progress.md; do
       { [ -f "$d" ] && grep -qE '^#[[:space:]]+' "$d"; } || all_titled=0
     done
@@ -2837,6 +2837,7 @@ JSON
   # 24i. The exit-3 (unreadable map) path prints the SAME /ontology-review unblock footer as
   #      the exit-1 blocker — the operator needs the remediation most when the map can't be read.
   rm -f "$T/reports/edu/ontology-map.json"
+  local m3 rc3
   m3=$(scripts/check-shippable-typing.sh "$T/reports/edu" 2>&1); rc3=$?
   if [ "$rc3" = 3 ] && printf '%s' "$m3" | grep -q "/ontology-review"; then
     ok "the exit-3 (unreadable map) path names the /ontology-review unblock footer"
@@ -2849,6 +2850,7 @@ JSON
   echo '[]' > "$T/reports/edu/ontology-map.json"
   rm -f "$T/reports/edu/findings/f1.json"
   echo '{"title":"no id","extensions":{"harness":{"verification":{"verdict":"survived"}}}}' > "$T/reports/edu/findings/noid.json"
+  local mj rcj
   mj=$(scripts/check-shippable-typing.sh "$T/reports/edu" 2>&1); rcj=$?
   if [ "$rcj" = 1 ] && printf '%s' "$mj" | grep -q "noid.json"; then
     ok "a no-@id shippable finding blocks and names the file (not a bare empty id)"
@@ -2861,6 +2863,7 @@ JSON
   rm -rf "$T/reports/edu/findings"
   echo '[{"finding_id":"urn:mif:concept:x/edu:flat","entity_type":null,"resolved_ontology":null,"basis":"untyped","valid":true}]' > "$T/reports/edu/ontology-map.json"
   echo '{"@id":"urn:mif:concept:x/edu:flat","extensions":{"harness":{"verification":{"verdict":"survived"}}}}' > "$T/reports/edu/finding-flat.json"
+  local rck
   scripts/check-shippable-typing.sh "$T/reports/edu" >/dev/null 2>&1; rck=$?
   if [ "$rck" = 1 ]; then
     ok "a flat-only layout (no findings/ subdir) is gated (exit 1), not rejected with exit 2"
@@ -2893,6 +2896,28 @@ JSON
     ok "reconcile untyped_shippable also counts a discovery-only (unstamped) shippable finding"
   else
     bad "reconcile undercounted a discovery-only shippable finding vs the gate"
+  fi
+
+  # 24n. Regression (#768): m3, rc3, mj, rcj, and rck (used by 24i/24j/24k
+  #      above) must be declared `local`, or they leak into verify.sh's own
+  #      global namespace once gate_m24 returns (GATES runs each gate
+  #      un-subshelled) — a future gate reusing one of these short, generic
+  #      names would then silently inherit gate_m24's last value under
+  #      `set -uo pipefail` instead of starting unset. Introspects the live
+  #      function body via `declare -f` rather than re-invoking gate_m24, so
+  #      it can't recurse into itself.
+  local body24n missing24n v24n
+  body24n="$(declare -f gate_m24)"
+  missing24n=""
+  for v24n in m3 rc3 mj rcj rck; do
+    if ! printf '%s\n' "$body24n" | grep -E '\blocal\b' | grep -wq "$v24n"; then
+      missing24n="$missing24n $v24n"
+    fi
+  done
+  if [ -z "$missing24n" ]; then
+    ok "m3/rc3/mj/rcj/rck are declared local in gate_m24 (no unscoped-global leak, #768)"
+  else
+    bad "gate_m24 leaks unscoped globals — missing 'local' for:$missing24n (#768)"
   fi
 
   rm -rf "$T"
@@ -3414,6 +3439,12 @@ gate_m29() {
   cp harness.config.json "$T/snapshot/harness.config.json" \
     || { bad "gate_m29: failed to back up harness.config.json before mutating it"; rm -rf "$T"; return 1; }
   local badontmap_topic="gate-m29-badontmap-test"
+  # Declared here (not at 29p, where they're used), same rationale as
+  # badontmap_topic above: restore_snapshot's cleanup below must be able to
+  # reference them unconditionally, not depend on 29p having run.
+  local CONTAINER_LOCK_LIB="scripts/lib/container-lock.sh"
+  local ontlock_topic_full="gate-m29-771-ontlock-full"
+  local ontlock_topic_subset="gate-m29-771-ontlock-subset"
   restore_snapshot() {
     # Every restore below is checked (Copilot review, PR #385): unlike the
     # guarded BACKUP calls above (issue #377), a restore step failing here
@@ -3442,6 +3473,15 @@ gate_m29() {
     rm -rf "reports/$badontmap_topic"
     rm -f "$TOPIC_DIR/knowledge-graph.json"
     rm -rf "$TOPIC_DIR/.container.lock"
+    # 29p (issue #771) instrumentation cleanup: restore the real
+    # container-lock.sh unconditionally if a backup was ever taken (best
+    # effort even if 29p itself never ran or died mid-way), and remove its
+    # two synthetic topics.
+    if [ -f "$T/container-lock.sh.orig" ]; then
+      cp "$T/container-lock.sh.orig" "$CONTAINER_LOCK_LIB" \
+        || bad "gate_m29 restore_snapshot: failed to restore $CONTAINER_LOCK_LIB -- real corpus may be left mutated"
+    fi
+    rm -rf "reports/$ontlock_topic_full" "reports/$ontlock_topic_subset"
     rm -rf "$T"
     # Deregister the EXIT copy of this trap once the restore has actually
     # run: EXIT is a last-resort net for a fatal error INSIDE this function
@@ -3879,6 +3919,130 @@ gate_m29() {
     ok "a manifest overwriting the same destination twice still rolls back to the true pre-import bytes (PR #718 review, #673)"
   else
     bad "duplicate-destination rollback regression check failed (rc=$rc_dup, seed_restored=$([ "$dup_seed_after" = "$dup_seed_before" ] && echo yes || echo no), collide_intact=$([ "$dup_collide_after" = "$dup_collide_before" ] && echo yes || echo no)): $got"
+  fi
+
+  # 29p. Regression test for issue #771: the ontology-map write branch (both
+  #      the full-scope overwrite path and the subset-scope merge path) must
+  #      call container_lock_refresh on every iteration, exactly like the
+  #      doc and finding branches beside it already do -- a destination
+  #      ontology-map.json large enough for the subset jq merge to take
+  #      non-trivial time must not have its own still-live lock misjudged as
+  #      stale and stolen mid-write by a concurrent invocation. A genuinely
+  #      slow multi-minute merge isn't practical to simulate end-to-end here
+  #      (same rationale as 31a5's direct unit test of the shared
+  #      primitive) -- instead this instruments scripts/lib/container-lock.sh
+  #      itself: a temporary copy whose container_lock_refresh ALSO appends a
+  #      marker line to $REFRESH_MARKER (the override is appended at the end
+  #      of the sourced file, so it wins regardless of the original
+  #      definition's exact text -- bash keeps the LAST definition when a
+  #      file is sourced), then runs two synthetic imports whose manifests
+  #      contain ONLY an ontology-map resource -- no finding, no doc
+  #      deliverable, the only other resource kinds that call
+  #      container_lock_refresh -- one full-scope (fresh destination) and one
+  #      subset-scope (existing destination, forcing the jq merge). Both
+  #      must produce a marker; before the fix, neither did.
+  jq --arg f "$ontlock_topic_full" --arg s "$ontlock_topic_subset" '.topics += [
+      {id: $f, title: "gate_m29 771 lock-refresh full-scope test", namespace: ("harness/" + $f), status: "active", ontologies: []},
+      {id: $s, title: "gate_m29 771 lock-refresh subset-scope test", namespace: ("harness/" + $s), status: "active", ontologies: []}
+    ]' harness.config.json > "$T/config-with-ontlock-topics.json" && cp "$T/config-with-ontlock-topics.json" harness.config.json
+  mkdir -p "reports/$ontlock_topic_full/findings" "reports/$ontlock_topic_subset/findings"
+  # Step 5 (build-graph.sh) requires at least one finding already at the
+  # destination -- an ontology-map-only manifest writes no finding of its
+  # own, so without a pre-seeded one the whole import would REJECT on a
+  # "no findings found" build-graph failure unrelated to this test's actual
+  # subject (the lock refresh), producing a false failure below.
+  jq --arg id "urn:mif:concept:harness/$ontlock_topic_full:seed" '."@id" = $id' \
+    "$seed_finding" > "reports/$ontlock_topic_full/findings/seed.json"
+  jq --arg id "urn:mif:concept:harness/$ontlock_topic_subset:seed" '."@id" = $id' \
+    "$seed_finding" > "reports/$ontlock_topic_subset/findings/seed.json"
+  # The subset destination pre-exists with one entry NOT in the incoming
+  # resource -- makes the merge branch's jq -s pass genuinely do work rather
+  # than short-circuiting on a same-content cmp -s skip.
+  echo '[{"finding_id":"urn:mif:concept:harness/'"$ontlock_topic_subset"':pre-existing","entity_type":"technology","resolved_ontology":"mif-generic@1.0.0","basis":"declared","valid":true}]' \
+    > "reports/$ontlock_topic_subset/ontology-map.json"
+
+  # Both steps below are fail-fast (Copilot review, PR #788), unlike the
+  # soft bad-and-continue pattern elsewhere in gate_m29: a failure here means
+  # the REAL scripts/lib/container-lock.sh is about to be overwritten with no
+  # guaranteed way back (restore_snapshot only restores it from
+  # $T/container-lock.sh.orig, which won't exist if the backup below never
+  # succeeded) -- returning immediately leaves $CONTAINER_LOCK_LIB untouched
+  # instead of risking it getting replaced by a broken/incomplete
+  # instrumented copy, and still runs restore_snapshot via the RETURN trap.
+  cp "$CONTAINER_LOCK_LIB" "$T/container-lock.sh.orig" \
+    || { bad "gate_m29 29p: failed to back up $CONTAINER_LOCK_LIB before instrumenting it"; return 1; }
+  cp "$T/container-lock.sh.orig" "$T/container-lock.sh.instrumented"
+  cat >> "$T/container-lock.sh.instrumented" <<'LOCKEOF'
+
+# gate_m29 29p instrumentation (issue #771 regression test): this override
+# wins over the definition above (bash keeps the LAST function definition
+# when a file is sourced), recording every call this run makes without
+# depending on matching the primitive's own implementation text.
+container_lock_refresh() {
+  # Marker is only written when $1 is a real lock dir (Copilot review, PR
+  # #788) -- otherwise a call with a bogus/missing dir would still count as
+  # "refreshed", masking the exact bug #771 regression-tests for.
+  if [ -d "$1" ]; then
+    touch "$1" 2>/dev/null || true
+    [ -n "${REFRESH_MARKER:-}" ] && printf 'refresh\n' >> "$REFRESH_MARKER" 2>/dev/null || true
+  fi
+}
+LOCKEOF
+  cp "$T/container-lock.sh.instrumented" "$CONTAINER_LOCK_LIB" \
+    || { bad "gate_m29 29p: failed to install the instrumented $CONTAINER_LOCK_LIB"; return 1; }
+
+  mkdir -p "$T/c-ontlock-full"
+  echo '[]' > "$T/c-ontlock-full/ontology-map.json"
+  local ontlock_full_digest ontlock_full_manifest_digest
+  ontlock_full_digest="$(scripts/mif-container-digest.sh resource "$T/c-ontlock-full/ontology-map.json")"
+  ontlock_full_manifest_digest="$(printf '%s\n' "$ontlock_full_digest" | scripts/mif-container-digest.sh manifest)"
+  jq -n --arg d "$ontlock_full_digest" --arg md "$ontlock_full_manifest_digest" --arg topic "$ontlock_topic_full" '{
+    profile: "https://research-harness.dev/schema/mif-container/v1",
+    sourceInstance: {namespace: "gate-m29-test", corpusUrl: null},
+    exportScope: {type: "full", topic: $topic, selector: null, generatedAt: "2026-07-10T00:00:00Z"},
+    ontologyBindings: [{packId: "mif-generic", version: "1.0.0"}],
+    resources: [{mifType: "ontology-map", path: "ontology-map.json", ontologyType: null, digest: $d}],
+    boundaryReferences: [],
+    manifestDigest: $md,
+    createdAt: "2026-07-10T00:00:00Z"
+  }' > "$T/c-ontlock-full/mif-package.json"
+
+  mkdir -p "$T/c-ontlock-subset"
+  echo '[{"finding_id":"urn:mif:concept:harness/'"$ontlock_topic_subset"':incoming","entity_type":"technology","resolved_ontology":"mif-generic@1.0.0","basis":"declared","valid":true}]' \
+    > "$T/c-ontlock-subset/ontology-map.json"
+  local ontlock_subset_digest ontlock_subset_manifest_digest
+  ontlock_subset_digest="$(scripts/mif-container-digest.sh resource "$T/c-ontlock-subset/ontology-map.json")"
+  ontlock_subset_manifest_digest="$(printf '%s\n' "$ontlock_subset_digest" | scripts/mif-container-digest.sh manifest)"
+  jq -n --arg d "$ontlock_subset_digest" --arg md "$ontlock_subset_manifest_digest" --arg topic "$ontlock_topic_subset" \
+    --arg selector "[\"urn:mif:concept:harness/$ontlock_topic_subset:incoming\"]" '{
+    profile: "https://research-harness.dev/schema/mif-container/v1",
+    sourceInstance: {namespace: "gate-m29-test", corpusUrl: null},
+    exportScope: {type: "subset", topic: $topic, selector: $selector, generatedAt: "2026-07-10T00:00:00Z"},
+    ontologyBindings: [{packId: "mif-generic", version: "1.0.0"}],
+    resources: [{mifType: "ontology-map", path: "ontology-map.json", ontologyType: null, digest: $d}],
+    boundaryReferences: [],
+    manifestDigest: $md,
+    createdAt: "2026-07-10T00:00:00Z"
+  }' > "$T/c-ontlock-subset/mif-package.json"
+
+  local full_marker="$T/refresh-marker-full" subset_marker="$T/refresh-marker-subset"
+  rm -f "$full_marker" "$subset_marker"
+  REFRESH_MARKER="$full_marker" "$IMPORT" "$T/c-ontlock-full" "$ontlock_topic_full" >/dev/null 2>&1
+  local rc_ontlock_full=$?
+  REFRESH_MARKER="$subset_marker" "$IMPORT" "$T/c-ontlock-subset" "$ontlock_topic_subset" >/dev/null 2>&1
+  local rc_ontlock_subset=$?
+
+  cp "$T/container-lock.sh.orig" "$CONTAINER_LOCK_LIB" \
+    || bad "gate_m29 29p: failed to restore the original $CONTAINER_LOCK_LIB after instrumentation"
+  rm -rf "reports/$ontlock_topic_full" "reports/$ontlock_topic_subset"
+
+  local full_refreshed=0 subset_refreshed=0
+  [ "$rc_ontlock_full" -eq 0 ] && [ -s "$full_marker" ] && full_refreshed=1
+  [ "$rc_ontlock_subset" -eq 0 ] && [ -s "$subset_marker" ] && subset_refreshed=1
+  if [ "$full_refreshed" -eq 1 ] && [ "$subset_refreshed" -eq 1 ]; then
+    ok "ontology-map write branch calls container_lock_refresh every iteration, full-scope and subset-scope alike (#771)"
+  else
+    bad "ontology-map lock-refresh regression check failed (#771): full rc=$rc_ontlock_full marker=$([ -s "$full_marker" ] && echo yes || echo no); subset rc=$rc_ontlock_subset marker=$([ -s "$subset_marker" ] && echo yes || echo no)"
   fi
 }
 
@@ -5056,6 +5220,29 @@ gate_workflows() {
     ok "research-projection.js's Report phase still wires the reports/<topic>/.projection-lock acquire/release guard (#628)"
   else
     bad "research-projection.js is missing the #628 projection-lock guard (container_lock_acquire/release on reports/<topic>/.projection-lock) -- concurrent projection runs on the same topic will silently corrupt each other's artifact.json again"
+  fi
+
+  # #769: the prompt above used to tell the subagent that ANY nonzero exit
+  # from container_lock_acquire meant "another projection run currently owns
+  # this topic" -- collapsing scripts/lib/container-lock.sh's own two
+  # distinct documented codes (3 = held by a live holder/lost the steal race,
+  # 1 = mkdir failed for an unrelated reason, e.g. a missing parent dir or a
+  # read-only filesystem) into a single "contention" story. A real rc=1
+  # filesystem failure would then get misreported as lock contention,
+  # misdirecting whoever investigates it. Static, comment-aware, fixed-string
+  # grep: proves (a) the old collapsed phrasing is gone and (b) the prompt
+  # text now distinguishes rc=3 from rc=1 by name, so a future edit that
+  # re-collapses them back into one undifferentiated "nonzero == contention"
+  # story is caught here, not live.
+  if [ -f "$proj" ] \
+     && ! printf '%s\n' "$proj_code" | grep -qF 'a NONZERO exit means another projection run currently owns this topic' \
+     && printf '%s\n' "$proj_code" | grep -qF 'rc=3 means' \
+     && printf '%s\n' "$proj_code" | grep -qF 'rc=1 means the' \
+     && printf '%s\n' "$proj_code" | grep -qF 'mkdir itself failed for an unrelated filesystem reason' \
+     && printf '%s\n' "$proj_code" | grep -qF '#769'; then
+    ok "research-projection.js's Report phase distinguishes container_lock_acquire's rc=3 (contention) from rc=1 (filesystem error) rather than collapsing every nonzero exit into contention (#769)"
+  else
+    bad "research-projection.js still collapses container_lock_acquire's distinct rc=3 (contention) and rc=1 (filesystem error) exits into a single 'NONZERO exit means contention' story (#769) -- a real filesystem failure would be misreported as lock contention"
   fi
 
   # Functional proof, independent of the static grep above: the SAME
