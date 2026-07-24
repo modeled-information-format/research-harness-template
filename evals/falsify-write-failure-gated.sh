@@ -236,7 +236,10 @@ node "$TMP/harness.cjs" "$WF" fixed
 # exist at that revision, the control is skipped rather than failing the
 # gate on an environment limitation unrelated to the fix itself.
 # ============================================================================
-git fetch origin main >/dev/null 2>&1 || true
+# No network fetch here -- this eval must stay hermetic. It relies on
+# whatever origin/main ref is already present locally; if the local clone
+# has no origin/main ref at all, the control below is skipped instead of
+# reaching out to the network to fetch one.
 BASE_REF="$(git merge-base HEAD origin/main 2>/dev/null || true)"
 if [ -n "$BASE_REF" ] && git cat-file -e "$BASE_REF:$WF" 2>/dev/null; then
   PREFIX_WF="$TMP/research-falsify-prefix.js"
