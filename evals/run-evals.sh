@@ -1266,6 +1266,15 @@ run "copier-tasks-engine-order-check" bash evals/copier-tasks-engine-order-check
 # instead of limping through with a misattributed pack-toggle failure.
 run "gate-m5-mktemp-guard" bash evals/gate-m5-mktemp-guard.sh
 
+# research-harness-template#748: gate_m11's 11j fail-safe check did
+# `engine_bin ... || exit 5` directly in verify.sh's own process, so an
+# engine_bin failure hard-exited the ENTIRE run and silently skipped every
+# gate after gate_m11 with no bad message and no final summary. Forces
+# engine_bin to fail (MIF_RH_CLI pointed at a nonexistent path) and asserts
+# gate_m11 fails closed (bad + return) while gate_m12 still runs and the
+# summary line still prints, instead of the whole process exiting rc=5.
+run "gate-m11-engine-bin-hard-exit" bash evals/gate-m11-engine-bin-hard-exit.sh
+
 echo
 if [ "$FAIL" -gt 0 ]; then
   printf '%srun-evals: %d passed, %d FAILED%s\n' "$RED" "$PASS" "$FAIL" "$RST"
