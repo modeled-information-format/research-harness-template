@@ -105,14 +105,17 @@ set -e 2>/dev/null || true
 if [ "$rc_a" -eq 0 ]; then
   note "FAIL: mif-project.sh exited 0 despite a failing cp to --json-out — the unchecked-cp defect (#752) is present"
   fail=1
+elif [ "$rc_a" -ne 4 ]; then
+  note "FAIL: mif-project.sh exited $rc_a, expected the documented exit code 4 — got: $out_a"
+  fail=1
 else
-  note "ok: mif-project.sh exits non-zero ($rc_a) when cp to --json-out fails"
+  note "ok: mif-project.sh exits with the documented code (4) when cp to --json-out fails"
 fi
 
-if printf '%s' "$out_a" | grep -qi 'failed to write JSON projection'; then
-  note "ok: stderr names the real cause (JSON projection write failure)"
+if printf '%s' "$out_a" | grep -qF "mif-project: failed to write JSON projection to $BAD_JSON_OUT"; then
+  note "ok: stderr names the real cause and the failing --json-out target path"
 else
-  note "FAIL: stderr does not name the JSON projection write failure — got: $out_a"
+  note "FAIL: stderr does not match the full diagnostic line naming \$BAD_JSON_OUT — got: $out_a"
   fail=1
 fi
 
