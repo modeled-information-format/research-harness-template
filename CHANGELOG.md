@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`research-pivot.js`'s Classify phase no longer silently drops a failed
+  batch's finding ids from every bucket.** Each element of `batches` becomes
+  an independent `agent()` call inside `parallel()`; per the Workflow-runtime's
+  documented contract, a batch whose call errors or whose subagent dies on a
+  terminal API error resolves that slot to `null`. The prior `.filter(Boolean)`
+  before bucketing correctly avoided crashing the run, but that whole batch's
+  finding ids then never appeared in `carry`, `stale`, or `outOfScope` at
+  all — neither carried forward as reusable evidence, nor flagged for
+  re-gating, nor recorded as deliberately out-of-scope — with no retry and
+  no record beyond an aggregate count mismatch in one log line. The
+  downstream Plan phase then reasoned about gaps over that silently
+  incomplete view. A failed batch is now retried exactly once (the same
+  retry-once idiom `research-falsify.js`'s write-assertion check already
+  uses, #659); a batch still `null` after the retry has its ids captured
+  explicitly in a new `unclassifiedIds` return field, folded into `stale`
+  (so they get re-gated rather than lost), named in a log line, and unioned
+  into the final `reverifyIds` regardless of what the Plan agent itself
+  returns (research-harness-template#758).
 - **`container_lock_refresh` (and `container_lock_release`) now verify
   ownership before acting on `reports/<topic>/.container.lock`.**
   `container_lock_acquire` previously stamped only a human-readable `owner`

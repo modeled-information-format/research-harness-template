@@ -57,6 +57,24 @@
 // phase then decides gapDimensions (which dimensions the carried corpus
 // cannot answer the new checks from) and reverifyIds (the stale list).
 //
+// #758 FIX — a deliberate deviation from the reference's own Classify
+// phase, called out here (this is the one part of Classify that is NOT
+// carried forward unchanged from the reference, unlike the paragraph
+// above). Per the Workflow-runtime's documented parallel() contract, a
+// batch whose agent() call errors or whose subagent dies on a terminal API
+// error resolves that batch's slot to null; the reference's own
+// `.filter(Boolean)` before bucketing then silently drops that ENTIRE
+// batch's finding ids from carry, stale, AND out-of-scope alike — no
+// retry, no record of which ids were lost, nothing beyond an aggregate
+// count mismatch in one log line. The Plan phase then reasons about gaps
+// over that unaccountably incomplete carry/stale view. Fixed the same way
+// research-falsify.js's write-assertion gap (#659) was: retry each failed
+// batch exactly once (same retry-once idiom), and a batch still null after
+// retry has its ids explicitly captured in `unclassified` — never silently
+// merged away — logged by id, folded into `stale` (so they get RE-GATED
+// rather than vanishing from every bucket), and unioned into the final
+// `reverifyIds` regardless of what the Plan agent itself returns.
+//
 // FALSIFY REGATE HOOKUP (confirmed interface alignment, #547): reverifyIds
 // is a plain array of finding @id strings. research-falsify.js's `scope`
 // argument accepts exactly `{ paths?: string[], ids?: string[] }` with a
@@ -174,21 +192,40 @@ const listing = await agent(
 const ids = (listing && listing.findingIds) || []
 const batches = []
 for (let i = 0; i < ids.length; i += BATCH) batches.push(ids.slice(i, i + BATCH))
-const classified = await parallel(
-  batches.map((batch, bi) => () =>
-    agent(
-      `Classify each finding against the NEW goal version ${reshape.goalVersion} of topic ${TOPIC} (harness ${H}; read ${RDIR}/goal.json for the authoritative new goal). Findings are GATHERED ONCE AND REUSED across goal versions; classification decides reuse, it never deletes.\n` +
-        `Batch: ${JSON.stringify(batch)} (read each file under ${RDIR}/findings/).\n` +
-        `Classes: carry = in the new scope and its evidence still current; stale = in scope but its verification predates conditions the delta changed, or its evidence is time-sensitive and old — needs RE-GATING, not re-gathering; out-of-scope = the new scope/non_goals exclude it (it stays on disk, simply unused by this version). One row per finding with a one-clause why.`,
-      { label: `pivot:classify-${bi + 1}`, phase: 'Classify', model: 'haiku', schema: CLASSIFY_SCHEMA },
-    ),
-  ),
-)
-const rows = classified.filter(Boolean).flatMap((c) => (Array.isArray(c.classifications) ? c.classifications : []))
+function classifyBatch(batch, bi, isRetry) {
+  return agent(
+    `Classify each finding against the NEW goal version ${reshape.goalVersion} of topic ${TOPIC} (harness ${H}; read ${RDIR}/goal.json for the authoritative new goal). Findings are GATHERED ONCE AND REUSED across goal versions; classification decides reuse, it never deletes.\n` +
+      `Batch: ${JSON.stringify(batch)} (read each file under ${RDIR}/findings/).\n` +
+      `Classes: carry = in the new scope and its evidence still current; stale = in scope but its verification predates conditions the delta changed, or its evidence is time-sensitive and old — needs RE-GATING, not re-gathering; out-of-scope = the new scope/non_goals exclude it (it stays on disk, simply unused by this version). One row per finding with a one-clause why.`,
+    { label: `pivot:classify-${bi + 1}${isRetry ? '-retry' : ''}`, phase: 'Classify', model: 'haiku', schema: CLASSIFY_SCHEMA },
+  )
+}
+const firstPass = await parallel(batches.map((batch, bi) => () => classifyBatch(batch, bi, false)))
+// #758: a batch that resolved to null (its agent() call errored, or the
+// subagent died on a terminal API error — the documented parallel()
+// failure shape) is retried exactly once, matching research-falsify.js's
+// write-assertion retry-once idiom (#659) — never silently accepted as a
+// permanent loss on the first failure.
+const failedIdx = firstPass.map((c, bi) => (c ? -1 : bi)).filter((bi) => bi >= 0)
+const retried = failedIdx.length ? await parallel(failedIdx.map((bi) => () => classifyBatch(batches[bi], bi, true))) : []
+const resolved = firstPass.slice()
+failedIdx.forEach((bi, i) => { resolved[bi] = retried[i] })
+// Any batch still null after the retry has its ids captured explicitly —
+// never silently merged into carry/stale/out-of-scope, and never simply
+// absent from all three either (the exact #758 defect).
+const unclassified = batches.filter((_, bi) => !resolved[bi]).flat()
+if (unclassified.length) {
+  log(`Classification: ${unclassified.length} finding id(s) could not be classified after one retry — forcing into stale/reverify rather than silently dropping: ${JSON.stringify(unclassified)}`)
+}
+const rows = resolved.filter(Boolean).flatMap((c) => (Array.isArray(c.classifications) ? c.classifications : []))
 const carry = rows.filter((r) => r.class === 'carry').map((r) => r.id)
-const stale = rows.filter((r) => r.class === 'stale').map((r) => r.id)
+// Unclassified ids are folded into `stale` (never merely appended
+// out-of-band) so the Plan phase's own prompt below — which is only ever
+// told about `carry`/`stale` — reasons over the true, fully-accounted-for
+// set rather than a view that silently omits them.
+const stale = rows.filter((r) => r.class === 'stale').map((r) => r.id).concat(unclassified)
 const dropped = rows.filter((r) => r.class === 'out-of-scope').map((r) => r.id)
-log(`Classification: ${carry.length} carry, ${stale.length} stale, ${dropped.length} out-of-scope (of ${ids.length})`)
+log(`Classification: ${carry.length} carry, ${stale.length} stale (incl. ${unclassified.length} unclassified), ${dropped.length} out-of-scope (of ${ids.length})`)
 
 phase('Plan')
 const plan = await agent(
@@ -199,6 +236,13 @@ const plan = await agent(
   { label: 'pivot:plan', model: 'sonnet', schema: PLAN_SCHEMA },
 )
 
+// #758: unclassified ids are unioned into reverifyIds regardless of what
+// the Plan agent itself returns — the Plan phase's own prompt tells it
+// `stale` already includes them, but its output must never be trusted as
+// the ONLY place they can survive; a model that dropped them from its own
+// reverifyIds answer must not un-do the accounting above.
+const reverifyIds = Array.from(new Set(((plan && plan.reverifyIds) || stale).concat(unclassified)))
+
 return {
   goalVersion: reshape.goalVersion,
   supersedes: reshape.supersedes,
@@ -206,6 +250,10 @@ return {
   carry,
   stale,
   outOfScope: dropped,
+  // #758: findings a batch failed to classify even after one retry — always
+  // a subset of `stale` above, surfaced separately so a caller can tell
+  // "genuinely re-gate-worthy" apart from "classification itself broke".
+  unclassifiedIds: unclassified,
   gapDimensions: (plan && plan.gapDimensions) || reshape.newDimensions,
   // Feeds DIRECTLY into research-falsify's scope argument with no adapter:
   // research-falsify({ ..., scope: { ids: reverifyIds }, regate: true }).
@@ -213,6 +261,6 @@ return {
   // regate:true flag is gated to require that explicit id/path scope (it
   // refuses on 'all'/'dimension:*') — reverifyIds already IS that ids[]
   // array, so the orchestrator wires it straight through.
-  reverifyIds: (plan && plan.reverifyIds) || stale,
+  reverifyIds,
   rationale: plan ? plan.rationale : 'gap-plan agent failed; defaulted to new dimensions + stale list',
 }
