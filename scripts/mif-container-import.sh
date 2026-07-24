@@ -558,6 +558,20 @@ while IFS=$'\t' read -r rpath rdigest rmiftype; do
       if [ -f "$dest" ]; then
         dest_digest="$(scripts/mif-container-digest.sh resource "$dest" 2>/dev/null)" || dest_digest=""
         [ "$dest_digest" = "$rdigest" ] && continue
+      fi
+      # Re-verify the incoming file's digest immediately before staging/
+      # publishing (issue #759) -- closes the same TOCTOU window between
+      # step 2's bulk verification and this write that the doc-write
+      # (Copilot review, PR #491) and finding-overwrite-in-place paths
+      # already close with their own `recheck`. Without this, a mutable or
+      # network-backed $CONTAINER_DIR whose $rfile changed after step 2 but
+      # before this write would have its unverified content published into
+      # the destination corpus.
+      ontmap_recheck="$(scripts/mif-container-digest.sh resource "$rfile" 2>/dev/null)" \
+        || fail "failed to re-verify the digest of $rpath immediately before writing"
+      [ "$ontmap_recheck" = "$rdigest" ] \
+        || fail "$rpath's digest changed between verification and write (expected $rdigest, got $ontmap_recheck) -- refusing to write unverified content"
+      if [ -f "$dest" ]; then
         rollback_backup "$dest"
       else
         rollback_track_created "$dest"
@@ -580,6 +594,19 @@ while IFS=$'\t' read -r rpath rdigest rmiftype; do
     # destination) is appended. This matters because gate_m31's own regression test
     # compares the destination array before/after a same-content subset re-import and
     # expects it byte-identical, not merely set-equal.
+    # Re-verify the incoming file's digest immediately before staging/
+    # merging (issue #759) -- closes the same TOCTOU window between step
+    # 2's bulk verification and this write that the doc-write (Copilot
+    # review, PR #491) and finding-overwrite-in-place paths already close
+    # with their own `recheck`. Unlike the full-scope branch above, a
+    # subset merge always reaches this point (there is no "destination
+    # already matches" early skip before the merge itself runs), so this
+    # must run unconditionally before the jq merge below.
+    ontmap_recheck="$(scripts/mif-container-digest.sh resource "$rfile" 2>/dev/null)" \
+      || fail "failed to re-verify the digest of $rpath immediately before writing"
+    [ "$ontmap_recheck" = "$rdigest" ] \
+      || fail "$rpath's digest changed between verification and write (expected $rdigest, got $ontmap_recheck) -- refusing to write unverified content"
+
     # Ledger before staging (issue #673): a same-content merge below may
     # still skip via cmp -s, which makes this backup unnecessary but
     # harmless -- restoring identical bytes is a no-op, and taking it
