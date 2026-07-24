@@ -147,6 +147,11 @@ corpus_check() {
 
 corpus_build() {
   [ -f "$MAP" ] || die "corpus map not found: $MAP — run scripts/synthesize-corpus.sh first"
+  # Fail closed on a truncated/invalid MAP, exactly like corpus_check() already
+  # does (research-harness-template#761): every jq -r read below silently
+  # returns empty on malformed JSON, which previously let a garbled README get
+  # written and reported as success (exit 0) instead of failing loudly here.
+  jq empty "$MAP" 2>/dev/null || die "corpus map is not valid JSON: $MAP"
 
   # Only ever link to corpus-synthesis.md when it actually exists — corpus_build can
   # run before the atlas is rendered (corpus-map.json alone is enough to build this
