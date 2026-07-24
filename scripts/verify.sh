@@ -5512,10 +5512,22 @@ gate_workflows() {
   local proj=".claude/workflows/research-projection.js"
   local proj_code=""
   [ -f "$proj" ] && proj_code="$(grep -vE '^[[:space:]]*//' "$proj")"
+  # NOTE (research-harness-template#804 CI investigation): the three checks
+  # below use a herestring (<<<), not `printf ... | grep -qF ...`. proj_code
+  # is the WHOLE comment-stripped module -- large enough that under this
+  # script's `set -uo pipefail` (line 19), grep -q exiting as soon as it
+  # finds its match can SIGPIPE the still-writing printf before it finishes;
+  # pipefail then reports the pipeline's status as printf's nonzero SIGPIPE
+  # exit rather than grep's real (successful) one, so this gate can FAIL
+  # even when every string it looks for is genuinely present -- observed
+  # live on PR #804 once an unrelated edit grew research-projection.js past
+  # whatever size made the race reliable. A herestring has no separate
+  # writer process to race: bash populates it before exec'ing grep, so
+  # there's nothing for grep's early exit to SIGPIPE.
   if [ -f "$proj" ] \
-     && printf '%s\n' "$proj_code" | grep -qF 'container_lock_acquire "${RDIR}/.projection-lock"' \
-     && printf '%s\n' "$proj_code" | grep -qF 'container_lock_release "${RDIR}/.projection-lock"' \
-     && printf '%s\n' "$proj_code" | grep -qF '#628'; then
+     && grep -qF 'container_lock_acquire "${RDIR}/.projection-lock"' <<< "$proj_code" \
+     && grep -qF 'container_lock_release "${RDIR}/.projection-lock"' <<< "$proj_code" \
+     && grep -qF '#628' <<< "$proj_code"; then
     ok "research-projection.js's Report phase still wires the reports/<topic>/.projection-lock acquire/release guard (#628)"
   else
     bad "research-projection.js is missing the #628 projection-lock guard (container_lock_acquire/release on reports/<topic>/.projection-lock) -- concurrent projection runs on the same topic will silently corrupt each other's artifact.json again"
@@ -5533,12 +5545,14 @@ gate_workflows() {
   # text now distinguishes rc=3 from rc=1 by name, so a future edit that
   # re-collapses them back into one undifferentiated "nonzero == contention"
   # story is caught here, not live.
+  # Herestrings here too, same #804 broken-pipe/pipefail rationale as the
+  # #628 check just above -- proj_code is the same large whole-module blob.
   if [ -f "$proj" ] \
-     && ! printf '%s\n' "$proj_code" | grep -qF 'a NONZERO exit means another projection run currently owns this topic' \
-     && printf '%s\n' "$proj_code" | grep -qF 'rc=3 means' \
-     && printf '%s\n' "$proj_code" | grep -qF 'rc=1 means the' \
-     && printf '%s\n' "$proj_code" | grep -qF 'mkdir itself failed for an unrelated filesystem reason' \
-     && printf '%s\n' "$proj_code" | grep -qF '#769'; then
+     && ! grep -qF 'a NONZERO exit means another projection run currently owns this topic' <<< "$proj_code" \
+     && grep -qF 'rc=3 means' <<< "$proj_code" \
+     && grep -qF 'rc=1 means the' <<< "$proj_code" \
+     && grep -qF 'mkdir itself failed for an unrelated filesystem reason' <<< "$proj_code" \
+     && grep -qF '#769' <<< "$proj_code"; then
     ok "research-projection.js's Report phase distinguishes container_lock_acquire's rc=3 (contention) from rc=1 (filesystem error) rather than collapsing every nonzero exit into contention (#769)"
   else
     bad "research-projection.js still collapses container_lock_acquire's distinct rc=3 (contention) and rc=1 (filesystem error) exits into a single 'NONZERO exit means contention' story (#769) -- a real filesystem failure would be misreported as lock contention"
