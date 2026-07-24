@@ -95,7 +95,34 @@ if [ ! -e "$BAK" ]; then
   exit 1
 fi
 
+# Liveness check: confirm the background verify.sh is still actually running
+# before signaling it. If it already exited on its own (e.g. it raced to
+# completion right after creating $BAK), `kill -TERM` would fail silently and
+# `wait` would just return that already-finished process's exit status --
+# the test would then "pass" without ever having exercised the SIGTERM
+# interruption window at all, since a normal RETURN-path completion also
+# cleans up $BAK.
+if ! kill -0 "$pid" 2>/dev/null; then
+  note "FAIL: background verify.sh already exited before SIGTERM could be sent -- the interruption window was never exercised, this run proves nothing"
+  wait "$pid" 2>/dev/null
+  exit 1
+fi
+
 kill -TERM "$pid" 2>/dev/null
+
+# Bounded wait for the SIGTERM to take effect, with a SIGKILL fallback so a
+# process that ignores/blocks on TERM can't hang this eval forever.
+term_waited=0
+while kill -0 "$pid" 2>/dev/null; do
+  sleep 0.02
+  term_waited=$((term_waited + 1))
+  if [ "$term_waited" -gt 500 ]; then
+    note "FAIL: background verify.sh did not exit within ~10s of SIGTERM -- forcing SIGKILL"
+    kill -9 "$pid" 2>/dev/null
+    fail=1
+    break
+  fi
+done
 wait "$pid" 2>/dev/null
 
 if [ -e "$BAK" ]; then

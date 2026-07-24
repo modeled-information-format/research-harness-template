@@ -5609,7 +5609,15 @@ gate_engine_lazy_gating() {
       mv bin/mif-rh-cli.gate_engine_lazy_gating.bak bin/mif-rh-cli \
         || bad "gate_engine_lazy_gating restore_engine_bin: failed to restore bin/mif-rh-cli -- engine-dependent gates will spuriously fail until this is fixed by hand"
     fi
-    trap - RETURN EXIT
+    # Deregister only the EXIT copy of this trap, matching gate_m29/gate_m30/
+    # gate_m31's own restore functions: EXIT is a last-resort net for a fatal
+    # error INSIDE this function (e.g. an unbound-variable abort under this
+    # script's own `set -u`), but once gate_engine_lazy_gating DOES return
+    # normally its `local` variable ($hidden_bin) stops existing in the
+    # calling scope -- deregistering RETURN too would clobber any
+    # previously configured RETURN trap in the parent scope instead of just
+    # this function's own EXIT safety net.
+    trap - EXIT
   }
   trap restore_engine_bin RETURN EXIT
   if [ -x bin/mif-rh-cli ]; then
