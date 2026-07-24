@@ -685,19 +685,41 @@ const rendered = await pipeline(
       ? agent(
           checkPrompt(r.outputPath, r.mechanism, p.genre, p.channel),
           { label: `check:${p.genre}x${p.channel}`, phase: 'Check', model: 'haiku', effort: 'low', schema: CHECK_SCHEMA },
-        ).then((v) => ({ ...r, validation: v }))
+        ).then((v) => {
+          // research-harness-template#755: a null Check result here (user
+          // skip, or the subagent dying after retries — the same agent()
+          // failure mode the post-fix recheck below already handles) must
+          // not be silently swallowed. `{ ...r, validation: null }` is still
+          // truthy, so it survives `rendered.filter(Boolean)` below; without
+          // this WARNING and the matching `dirty` filter change, it would
+          // read as `clean: null` mixed anonymously among genuinely-passing
+          // artifacts, never fixed, never re-checked, and never logged.
+          if (!v) log(`WARNING: initial validation produced no result for ${r.outputPath} — treating as dirty and routing to the repair loop`)
+          return { ...r, validation: v }
+        })
       : null,
 )
 
 const artifacts = rendered.filter(Boolean)
-const dirty = artifacts.filter((a) => a.validation && !a.validation.clean)
+// A null validation (see the WARNING above) means the Check phase never
+// actually ran, not that it ran and passed — treat it as dirty too, the
+// same as an explicit `clean: false`, so it enters the repair loop below
+// instead of being silently excluded from it.
+const dirty = artifacts.filter((a) => !a.validation || !a.validation.clean)
 if (dirty.length) {
   phase('Check')
   const refixed = await parallel(
     dirty.map((a) => async () => {
+      // research-harness-template#755: `a.validation` can be null here (the
+      // initial Check never produced a result — see the WARNING above), so
+      // there is no `.problems` list to relay; give the fix agent an honest
+      // description of that instead of throwing on `null.problems`.
+      const problemsText = a.validation
+        ? a.validation.problems.map((p) => `- ${p}`).join('\n')
+        : '- initial validation could not be completed for this artifact (the Check phase returned no result); re-render and re-validate it from scratch.'
       await agent(
         `Fix these validation problems in ${a.outputPath} (harness ${H}) without changing any claim content or citations:\n` +
-          a.validation.problems.map((p) => `- ${p}`).join('\n'),
+          problemsText,
         { label: `fix:${a.genre}x${a.channel}`, phase: 'Check', model: 'haiku' },
       )
       // Re-validate after the fix — a fix is not done until it proves out

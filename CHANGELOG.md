@@ -51,6 +51,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `channel` against the module's own closed channel set
   (`ARTIFACT_CHANNELS`/`SOURCE_DIRECT_CHANNELS`/`SOURCE_DIRECT_GENRE_CHANNELS`)
   and cross-checks mechanism/channel agreement, failing closed before Render.
+- **`research-deliverables.js`'s Render pipeline no longer silently drops an
+  artifact from the repair loop when its initial Check result is `null`
+  (#755).** The pipeline's second stage (`(r, p) => r ? agent(checkPrompt(...),
+  {...}).then((v) => ({ ...r, validation: v })) : null`) produced
+  `{ ...r, validation: null }` whenever the Check-phase `agent()` call itself
+  resolved to `null` (user skip, or the subagent dying after retries — the
+  same failure mode the post-fix re-check already handled). That object is
+  still truthy, so it survived `rendered.filter(Boolean)`, but the `dirty`
+  filter (`a.validation && !a.validation.clean`) treated a `null` validation
+  as NOT dirty — the artifact was never fixed, never re-checked, and never
+  logged, reported only as an ambiguous `clean: null` mixed in among
+  genuinely-passing artifacts. A `null` initial Check result now logs a
+  `WARNING` naming the artifact (mirroring the post-fix re-check's existing
+  `WARNING`), and the `dirty` filter now also treats a `null` validation as
+  dirty so the artifact actually enters the fix + re-check repair loop
+  instead of being silently excluded from it.
 - **`gate_m27`'s 27f "unreadable file fails closed" check no longer breaks
   when `verify.sh` runs as root.** The check used `chmod 000` to simulate a
   permission-denied read, but root (or any process with DAC-override

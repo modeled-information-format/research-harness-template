@@ -344,6 +344,20 @@ run "deliverables-genre-channel-route" bash evals/deliverables-genre-channel-rou
 # still renders.
 run "deliverables-channel-validation-check" bash evals/deliverables-channel-validation-check.sh
 
+# research-harness-template#755: the Render pipeline's second stage produced
+# `{ ...r, validation: null }` whenever the initial Check-phase agent() call
+# itself resolved to null (user skip, or the subagent dying after retries) —
+# that object is still truthy, so it survived `rendered.filter(Boolean)`,
+# but the pre-fix `dirty` filter (`a.validation && !a.validation.clean`)
+# treated a null validation as NOT dirty, silently excluding the artifact
+# from the repair loop entirely: never fixed, never re-checked, never
+# logged, unlike the symmetric post-fix re-check path which already logs a
+# WARNING for the identical null case. This eval proves a null initial Check
+# result now logs a WARNING, is treated as dirty, actually enters the repair
+# (fix + re-check) loop, and ends up with a real clean verdict instead of
+# the ambiguous `clean: null`.
+run "deliverables-null-check-repair-check" bash evals/deliverables-null-check-repair-check.sh
+
 # The research-augment module's Decide phase has deterministic teeth where its
 # own logic can express it (#580, Epic #545, following #578's vendoring and
 # #579's discover-delegation fix): the Assess phase's discover-skill
