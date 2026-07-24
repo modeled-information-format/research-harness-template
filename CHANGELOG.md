@@ -21,7 +21,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `$lock_dir/.owner-token`); `mif-container-export.sh`/`mif-container-import.sh`
   capture it and pass it to every later refresh/release call, and a mismatch
   now aborts the export/import instead of continuing under a false assumption
-  of exclusive access (research-harness-template#763).
+  of exclusive access (research-harness-template#763). `container_lock_refresh`
+  also now propagates a `touch` failure as a fatal nonzero return instead of
+  swallowing it, and `container_lock_release` treats a missing/empty stamped
+  `.owner-token` as a mismatch (not "no guard needed") when the caller
+  supplies a real token, so it never removes a live lock that simply was
+  never stamped (PR #796 review).
 
 ## [0.16.38] - 2026-07-23
 

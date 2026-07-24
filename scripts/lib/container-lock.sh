@@ -186,7 +186,10 @@ container_lock_refresh() {
     echo "container-lock: LOST ownership of $lock_dir -- it is now held by a different run (this run's token: '$token'; currently stamped: '${current:-<none>}'). Another run stole this lock; refusing to refresh or keep writing under a false assumption of exclusive access." >&2
     return 1
   fi
-  touch "$lock_dir" 2>/dev/null || true
+  if ! touch "$lock_dir" 2>/dev/null; then
+    echo "container-lock: FAILED to refresh $lock_dir -- touch failed (permissions or read-only filesystem?); the lock's mtime was NOT extended and it may now be judged stale by a concurrent acquirer. Treat this as loss of ownership." >&2
+    return 1
+  fi
 }
 
 # container_lock_release <lock_dir> [token] -- drop the lock. rm -rf, not
@@ -209,8 +212,8 @@ container_lock_release() {
   local lock_dir="$1" token="${2:-}" current
   if [ -n "$token" ] && [ -d "$lock_dir" ]; then
     current="$(cat "$lock_dir/.owner-token" 2>/dev/null || true)"
-    if [ -n "$current" ] && [ "$current" != "$token" ]; then
-      echo "container-lock: SKIPPED release of $lock_dir -- it is currently held by a different run than the one that acquired it; not removing another run's lock." >&2
+    if [ "$current" != "$token" ]; then
+      echo "container-lock: SKIPPED release of $lock_dir -- it is currently held by a different run than the one that acquired it (stamped token: '${current:-<missing>}'); not removing another run's lock." >&2
       return 0
     fi
   fi

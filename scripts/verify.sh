@@ -4342,6 +4342,53 @@ gate_m31() {
   fi
   rm -rf "$TOPIC_DIR/.refresh-test.lock" "$TOPIC_DIR/.ownership-test.lock"
 
+  # 31a7. Regression test for PR #796 Copilot review: (a) container_lock_refresh
+  #      must propagate a `touch` failure as nonzero instead of swallowing it
+  #      (`|| true`) -- a lock whose mtime silently fails to extend would be
+  #      misjudged as stale and stolen by a concurrent invocation while the
+  #      caller believes it is still safely refreshed; and (b)
+  #      container_lock_release must treat a MISSING/empty stamped
+  #      `.owner-token` as a mismatch when a token is supplied, not as "no
+  #      guard needed" -- otherwise a caller holding a real token could
+  #      `rm -rf` a live lock that simply never got stamped (older lock dir,
+  #      partial stamp, manual lock).
+  (
+    # shellcheck source=scripts/lib/container-lock.sh
+    . scripts/lib/container-lock.sh
+
+    # (a) touch failure must fail the refresh, not swallow it. A file's owner
+    #     can update its own mtime even with write bits stripped (POSIX
+    #     utimes allows the owner regardless of mode), so chmod alone can't
+    #     force `touch` to fail portably here -- shim `touch` on PATH instead
+    #     so this works identically on macOS and Linux CI.
+    TOUCH_LOCK="$TOPIC_DIR/.touchfail-test.lock"
+    rm -rf "$TOUCH_LOCK"
+    container_lock_acquire "$TOUCH_LOCK" "touchfail-test" || exit 1
+    TOUCH_TOKEN="$CONTAINER_LOCK_TOKEN"
+    FAKE_BIN="$(mktemp -d)"
+    printf '#!/bin/sh\nexit 1\n' > "$FAKE_BIN/touch"
+    chmod +x "$FAKE_BIN/touch"
+    ( PATH="$FAKE_BIN:$PATH"; container_lock_refresh "$TOUCH_LOCK" "$TOUCH_TOKEN" ) 2>/dev/null && { rm -rf "$FAKE_BIN" "$TOUCH_LOCK"; exit 1; }
+    rm -rf "$FAKE_BIN" "$TOUCH_LOCK"
+
+    # (b) a lock with no stamped token at all must be treated as a mismatch
+    #     (release skipped) when the caller supplies a real token -- never
+    #     assumed to be "this run's lock, safe to remove" by default.
+    UNSTAMPED_LOCK="$TOPIC_DIR/.unstamped-test.lock"
+    rm -rf "$UNSTAMPED_LOCK"
+    mkdir "$UNSTAMPED_LOCK" || exit 1   # simulate an older/partial lock: no .owner-token written
+    container_lock_release "$UNSTAMPED_LOCK" "some-caller-token" 2>/dev/null
+    [ -d "$UNSTAMPED_LOCK" ] || exit 1   # must NOT have been removed
+    rm -rf "$UNSTAMPED_LOCK"
+    exit 0
+  )
+  if [ "$?" -eq 0 ]; then
+    ok "container-lock (PR #796 review): refresh propagates a touch failure instead of swallowing it, and release refuses to remove an unstamped lock when a token is supplied"
+  else
+    bad "container-lock (PR #796 review) touch-failure/unstamped-token regression"
+  fi
+  rm -rf "$TOPIC_DIR/.touchfail-test.lock" "$TOPIC_DIR/.unstamped-test.lock"
+
   # 31b. The exported manifest validates against schemas/mif-container.schema.json.
   ajv validate --spec=draft2020 --strict=false -c ajv-formats \
     -s schemas/mif-container.schema.json -d "$T/full-export/mif-package.json" > /dev/null 2>&1
