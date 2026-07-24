@@ -39,6 +39,8 @@ cd "$ROOT" || exit 2
 # shellcheck source=scripts/lib/engine.sh
 . "$ROOT/scripts/lib/engine.sh"
 ENGINE="$(engine_bin "$ROOT")" || exit 5
+# shellcheck source=scripts/lib/container-lock.sh
+. "$ROOT/scripts/lib/container-lock.sh"
 
 ART="${1:?usage: render-artifact.sh <artifact.json> <report|blog|book> <out.md> [verification.json]}"
 CHANNEL="${2:?usage: render-artifact.sh <artifact.json> <report|blog|book> <out.md> [verification.json]}"
@@ -76,6 +78,57 @@ case "$OUT" in
 esac
 OUT_REL="${OUT_ABS#"$REPO_ROOT"/}"
 SLUGPATH="$(dirname "$OUT_REL")/$SLUG"
+
+# Concurrency (research-harness-template#776): two render-artifact.sh
+# invocations targeting the SAME $OUT at nearly the same time (a scheduled
+# re-render racing a manual one, say) used to both read the same prior
+# `version:` before either had written its own output, both compute the same
+# next VERSION, and both render+mv — silently producing a duplicate version
+# stamp with no error, corrupting the "primary on-disk record that this is
+# revision N" guarantee the header comment above promises callers. The whole
+# read-prior-version -> render -> mv critical section below is now serialized
+# per-$OUT via the same mkdir-atomic, staleness-aware lock
+# scripts/mif-container-export.sh/mif-container-import.sh already use
+# (scripts/lib/container-lock.sh, #375/#382) rather than inventing a second
+# locking primitive — a lock dir keyed on the file's own absolute path, so two
+# callers naming the same output (whether relative or absolute) always
+# contend on the same lock, and two callers targeting different outputs never
+# block each other. Acquire BEFORE reading the prior version, hold through the
+# final mv, release via the master EXIT trap (set right below) so a crash or
+# early exit anywhere downstream never leaves the lock wedged for longer than
+# CONTAINER_LOCK_STALE_MIN.
+mkdir -p "$(dirname "$OUT_ABS")" || { echo "render: failed to create output directory for $OUT" >&2; exit 1; }
+RENDER_LOCK_DIR="${OUT_ABS}.render.lock"
+container_lock_acquire "$RENDER_LOCK_DIR" "render-artifact:$$ ($CHANNEL)"
+lock_rc=$?
+if [ "$lock_rc" -ne 0 ]; then
+  # rc=3 is genuine contention (a live holder, or this racer lost the
+  # steal-a-stale-lock race) -- container_lock_acquire's own diagnostic
+  # above already names the holder. Any OTHER rc (1: mkdir failed for an
+  # unrelated reason -- permissions, a missing parent dir, a read-only FS)
+  # is NOT contention; claiming "a concurrent render already holds it" in
+  # that case would misdirect debugging of a real filesystem failure
+  # (Copilot review, PR #784). CONTAINER_LOCK_LAST_ERROR carries the
+  # library's own underlying error text for that case.
+  if [ "$lock_rc" -eq 3 ]; then
+    echo "render: could not acquire the render lock for $OUT -- a concurrent render-artifact.sh invocation for the same output already holds it (see container-lock diagnostic above)." >&2
+  else
+    echo "render: could not acquire the render lock for $OUT -- ${CONTAINER_LOCK_LAST_ERROR:-container-lock failed for an unknown reason (see diagnostic above)}." >&2
+  fi
+  exit 1
+fi
+# Single EXIT trap for the whole script: releases the render lock and cleans
+# up whichever channel's temp dir (RTMPD for report, BTMPD for blog/book) is
+# set at exit time. A later `trap ... EXIT` inside one channel branch would
+# silently REPLACE this one (bash keeps only the last trap per signal) and
+# drop the lock release -- so the channel branches below only ever SET
+# RTMPD/BTMPD, they never re-trap EXIT themselves.
+_render_cleanup() {
+  [ -n "${RTMPD:-}" ] && rm -rf "$RTMPD"
+  [ -n "${BTMPD:-}" ] && rm -rf "$BTMPD"
+  container_lock_release "$RENDER_LOCK_DIR"
+}
+trap _render_cleanup EXIT
 
 # Version indicator: a genre re-rendered for the same topic overwrites its file
 # in place (this harness keeps no automatic history), so a real, extractable
@@ -116,7 +169,10 @@ case "$CHANNEL" in
       echo "render: failed to create a temp dir for the report render (nothing written to $OUT)" >&2
       exit 1
     fi
-    RTMP="$RTMPD/report.md"; trap 'rm -rf "$RTMPD"' EXIT
+    # NOTE: cleanup of RTMPD is handled by the single _render_cleanup EXIT
+    # trap set above (alongside the render lock release) -- do not re-trap
+    # EXIT here, it would silently replace that trap and drop the lock.
+    RTMP="$RTMPD/report.md"
     if ! "$ENGINE" "${RENDER_ARGS[@]+"${RENDER_ARGS[@]}"}" "$RTMP" >/dev/null; then
       echo "render: composing the report failed" >&2
       exit 1
@@ -160,7 +216,10 @@ case "$CHANNEL" in
       echo "render: failed to create a temp dir for the $CHANNEL render (nothing written to $OUT)" >&2
       exit 1
     fi
-    BTMP="$BTMPD/$CHANNEL.md"; trap 'rm -rf "$BTMPD"' EXIT
+    # NOTE: cleanup of BTMPD is handled by the single _render_cleanup EXIT
+    # trap set above (alongside the render lock release) -- do not re-trap
+    # EXIT here, it would silently replace that trap and drop the lock.
+    BTMP="$BTMPD/$CHANNEL.md"
     if ! "$ENGINE" "${RENDER_ARGS[@]+"${RENDER_ARGS[@]}"}" "$BTMP" >/dev/null; then
       echo "render: composing the $CHANNEL output failed (nothing written to $OUT)" >&2
       exit 1
