@@ -1261,7 +1261,14 @@ gate_m11() {
   local bad_out bad_rc BAD_ENGINE
   # shellcheck source=scripts/lib/engine.sh
   . scripts/lib/engine.sh
-  BAD_ENGINE="$(engine_bin "$(pwd)")" || exit 5
+  # research-harness-template#748: this used to be `|| exit 5`, run directly
+  # in verify.sh's own process (not a subshell) -- an engine_bin failure here
+  # hard-exited the ENTIRE verify.sh run, silently skipping every gate after
+  # gate_m11 (gate_m12 through gate_workflows) with no bad/PASS-FAIL summary,
+  # and leaking gate_m11's own $T scratch dir. gate_m20/gate_m22 hit the
+  # identical engine_bin call and correctly `bad ...; return` instead --
+  # match that established pattern here too.
+  BAD_ENGINE="$(engine_bin "$(pwd)")" || { bad "gate_m11 needs the mif-rh-cli engine for the 11j fail-safe check (not found/too old — see the engine: diagnostic above)"; rm -rf "$T"; return; }
   jq 'del(.extensions)' schemas/samples/finding.sample.json > "$T/broken-sample.json"
   bad_out=$("$BAD_ENGINE" harness reconcile-session "$RD2" \
     --schema "schemas/findings.schema.json" \
@@ -3475,6 +3482,12 @@ gate_m29() {
   local CONTAINER_LOCK_LIB="scripts/lib/container-lock.sh"
   local ontlock_topic_full="gate-m29-771-ontlock-full"
   local ontlock_topic_subset="gate-m29-771-ontlock-subset"
+  # Declared here (not at 29q, where they're used), same rationale as
+  # ontlock_topic_full/subset above: restore_snapshot's cleanup below must be
+  # able to reference them unconditionally, not depend on 29q having run.
+  local CONTAINER_DIGEST_BIN="scripts/mif-container-digest.sh"
+  local toctou_topic_full="gate-m29-759-toctou-full"
+  local toctou_topic_subset="gate-m29-759-toctou-subset"
   restore_snapshot() {
     # Every restore below is checked (Copilot review, PR #385): unlike the
     # guarded BACKUP calls above (issue #377), a restore step failing here
@@ -3512,6 +3525,15 @@ gate_m29() {
         || bad "gate_m29 restore_snapshot: failed to restore $CONTAINER_LOCK_LIB -- real corpus may be left mutated"
     fi
     rm -rf "reports/$ontlock_topic_full" "reports/$ontlock_topic_subset"
+    # 29q (issue #759) instrumentation cleanup: restore the real
+    # mif-container-digest.sh unconditionally if a backup was ever taken
+    # (best effort even if 29q itself never ran or died mid-way), and remove
+    # its two synthetic topics.
+    if [ -f "$T/mif-container-digest.sh.orig" ]; then
+      cp "$T/mif-container-digest.sh.orig" "$CONTAINER_DIGEST_BIN" \
+        || bad "gate_m29 restore_snapshot: failed to restore $CONTAINER_DIGEST_BIN -- real corpus may be left mutated"
+    fi
+    rm -rf "reports/$toctou_topic_full" "reports/$toctou_topic_subset"
     rm -rf "$T"
     # Deregister the EXIT copy of this trap once the restore has actually
     # run: EXIT is a last-resort net for a fatal error INSIDE this function
@@ -4073,6 +4095,130 @@ LOCKEOF
     ok "ontology-map write branch calls container_lock_refresh every iteration, full-scope and subset-scope alike (#771)"
   else
     bad "ontology-map lock-refresh regression check failed (#771): full rc=$rc_ontlock_full marker=$([ -s "$full_marker" ] && echo yes || echo no); subset rc=$rc_ontlock_subset marker=$([ -s "$subset_marker" ] && echo yes || echo no)"
+  fi
+
+  # 29q. Regression test for issue #759: the ontology-map write branch (both
+  #      the full-scope overwrite path and the subset-scope merge path) must
+  #      re-verify $rfile's digest immediately before staging/publishing,
+  #      exactly like the doc-write (PR #491) and finding-overwrite-in-place
+  #      paths beside it already do -- closing the TOCTOU window between
+  #      step 2's bulk verification and this write. A real concurrent
+  #      mutation of a network-backed $CONTAINER_DIR mid-run isn't practical
+  #      to race deterministically here (same rationale as 29p's lock-
+  #      refresh instrumentation) -- instead this instruments
+  #      scripts/mif-container-digest.sh itself so ONE specific resource
+  #      file's SECOND `resource` computation returns a digest that
+  #      provably mismatches its manifest-declared one, simulating "the
+  #      file's content changed since step 2 verified it" without touching
+  #      the fixture's actual bytes. Every other call (a different file, or
+  #      the `manifest` subcommand) delegates to the untouched original, so
+  #      step 2's own first-pass verification -- and every other resource's
+  #      digest check in the whole pipeline -- is unaffected.
+  local toctou_full_ontmap="$T/c-toctou-full/ontology-map.json"
+  local toctou_subset_ontmap="$T/c-toctou-subset/ontology-map.json"
+  mkdir -p "$T/c-toctou-full" "$T/c-toctou-subset"
+  echo '[]' > "$toctou_full_ontmap"
+  echo '[{"finding_id":"urn:mif:concept:harness/'"$toctou_topic_subset"':incoming","entity_type":"technology","resolved_ontology":"mif-generic@1.0.0","basis":"declared","valid":true}]' \
+    > "$toctou_subset_ontmap"
+  # Real digests, computed BEFORE the digest script is instrumented below --
+  # these are the manifest's declared (correct) values throughout.
+  local toctou_full_digest toctou_full_manifest_digest
+  toctou_full_digest="$(scripts/mif-container-digest.sh resource "$toctou_full_ontmap")"
+  toctou_full_manifest_digest="$(printf '%s\n' "$toctou_full_digest" | scripts/mif-container-digest.sh manifest)"
+  local toctou_subset_digest toctou_subset_manifest_digest
+  toctou_subset_digest="$(scripts/mif-container-digest.sh resource "$toctou_subset_ontmap")"
+  toctou_subset_manifest_digest="$(printf '%s\n' "$toctou_subset_digest" | scripts/mif-container-digest.sh manifest)"
+  jq -n --arg d "$toctou_full_digest" --arg md "$toctou_full_manifest_digest" --arg topic "$toctou_topic_full" '{
+    profile: "https://research-harness.dev/schema/mif-container/v1",
+    sourceInstance: {namespace: "gate-m29-test", corpusUrl: null},
+    exportScope: {type: "full", topic: $topic, selector: null, generatedAt: "2026-07-10T00:00:00Z"},
+    ontologyBindings: [{packId: "mif-generic", version: "1.0.0"}],
+    resources: [{mifType: "ontology-map", path: "ontology-map.json", ontologyType: null, digest: $d}],
+    boundaryReferences: [],
+    manifestDigest: $md,
+    createdAt: "2026-07-10T00:00:00Z"
+  }' > "$T/c-toctou-full/mif-package.json"
+  jq -n --arg d "$toctou_subset_digest" --arg md "$toctou_subset_manifest_digest" --arg topic "$toctou_topic_subset" \
+    --arg selector "[\"urn:mif:concept:harness/$toctou_topic_subset:incoming\"]" '{
+    profile: "https://research-harness.dev/schema/mif-container/v1",
+    sourceInstance: {namespace: "gate-m29-test", corpusUrl: null},
+    exportScope: {type: "subset", topic: $topic, selector: $selector, generatedAt: "2026-07-10T00:00:00Z"},
+    ontologyBindings: [{packId: "mif-generic", version: "1.0.0"}],
+    resources: [{mifType: "ontology-map", path: "ontology-map.json", ontologyType: null, digest: $d}],
+    boundaryReferences: [],
+    manifestDigest: $md,
+    createdAt: "2026-07-10T00:00:00Z"
+  }' > "$T/c-toctou-subset/mif-package.json"
+
+  jq --arg f "$toctou_topic_full" --arg s "$toctou_topic_subset" '.topics += [
+      {id: $f, title: "gate_m29 759 toctou full-scope test", namespace: ("harness/" + $f), status: "active", ontologies: []},
+      {id: $s, title: "gate_m29 759 toctou subset-scope test", namespace: ("harness/" + $s), status: "active", ontologies: []}
+    ]' harness.config.json > "$T/config-with-toctou-topics.json" && cp "$T/config-with-toctou-topics.json" harness.config.json
+  mkdir -p "reports/$toctou_topic_full/findings" "reports/$toctou_topic_subset/findings"
+  jq --arg id "urn:mif:concept:harness/$toctou_topic_full:seed" '."@id" = $id' \
+    "$seed_finding" > "reports/$toctou_topic_full/findings/seed.json"
+  jq --arg id "urn:mif:concept:harness/$toctou_topic_subset:seed" '."@id" = $id' \
+    "$seed_finding" > "reports/$toctou_topic_subset/findings/seed.json"
+  # The subset destination pre-exists with content DIFFERENT from the
+  # incoming resource, both so the merge branch does real work (not a
+  # same-content cmp -s skip) and so a false-negative "nothing changed
+  # anyway" can't masquerade as this test passing: if the fix were absent
+  # (or broken) this pre-existing content would get overwritten/merged with
+  # the incoming (untrusted-by-the-recheck) bytes.
+  echo '[{"finding_id":"urn:mif:concept:harness/'"$toctou_topic_subset"':pre-existing","entity_type":"technology","resolved_ontology":"mif-generic@1.0.0","basis":"declared","valid":true}]' \
+    > "reports/$toctou_topic_subset/ontology-map.json"
+  local toctou_subset_dest_before
+  toctou_subset_dest_before="$(scripts/mif-container-digest.sh resource "reports/$toctou_topic_subset/ontology-map.json")"
+
+  cp "$CONTAINER_DIGEST_BIN" "$T/mif-container-digest.sh.orig" \
+    || { bad "gate_m29 29q: failed to back up $CONTAINER_DIGEST_BIN before instrumenting it"; return 1; }
+  cat > "$T/mif-container-digest.sh.instrumented" <<'DIGESTEOF'
+#!/usr/bin/env bash
+# gate_m29 29q instrumentation (issue #759 TOCTOU regression test): the
+# SECOND `resource <TOCTOU_TARGET>` call returns a digest that provably
+# mismatches its manifest-declared value, simulating the file's content
+# having changed since step 2's bulk verification already read it. Every
+# other call delegates unchanged to the real original.
+set -uo pipefail
+if [ "${1:-}" = "resource" ] && [ -n "${TOCTOU_TARGET:-}" ] && [ "${2:-}" = "$TOCTOU_TARGET" ]; then
+  if [ -f "${TOCTOU_MARKER:?TOCTOU_MARKER not set}" ]; then
+    echo "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    exit 0
+  fi
+  touch "$TOCTOU_MARKER"
+fi
+exec "${TOCTOU_DIGEST_ORIG:?TOCTOU_DIGEST_ORIG not set}" "$@"
+DIGESTEOF
+  cp "$T/mif-container-digest.sh.instrumented" "$CONTAINER_DIGEST_BIN" \
+    && chmod +x "$CONTAINER_DIGEST_BIN" \
+    || { bad "gate_m29 29q: failed to install the instrumented $CONTAINER_DIGEST_BIN"; return 1; }
+
+  local toctou_full_marker="$T/toctou-marker-full" toctou_subset_marker="$T/toctou-marker-subset"
+  rm -f "$toctou_full_marker" "$toctou_subset_marker"
+  local toctou_full_out toctou_subset_out
+  toctou_full_out="$(TOCTOU_TARGET="$toctou_full_ontmap" TOCTOU_MARKER="$toctou_full_marker" \
+    TOCTOU_DIGEST_ORIG="$T/mif-container-digest.sh.orig" \
+    "$IMPORT" "$T/c-toctou-full" "$toctou_topic_full" 2>&1)"
+  local rc_toctou_full=$?
+  toctou_subset_out="$(TOCTOU_TARGET="$toctou_subset_ontmap" TOCTOU_MARKER="$toctou_subset_marker" \
+    TOCTOU_DIGEST_ORIG="$T/mif-container-digest.sh.orig" \
+    "$IMPORT" "$T/c-toctou-subset" "$toctou_topic_subset" 2>&1)"
+  local rc_toctou_subset=$?
+
+  cp "$T/mif-container-digest.sh.orig" "$CONTAINER_DIGEST_BIN" \
+    || bad "gate_m29 29q: failed to restore the original $CONTAINER_DIGEST_BIN after instrumentation"
+
+  local toctou_subset_dest_after
+  toctou_subset_dest_after="$(scripts/mif-container-digest.sh resource "reports/$toctou_topic_subset/ontology-map.json" 2>/dev/null)"
+
+  rm -rf "reports/$toctou_topic_full" "reports/$toctou_topic_subset"
+
+  if [ "$rc_toctou_full" -ne 0 ] && printf '%s' "$toctou_full_out" | grep -q "digest changed between verification and write" \
+     && [ "$rc_toctou_subset" -ne 0 ] && printf '%s' "$toctou_subset_out" | grep -q "digest changed between verification and write" \
+     && [ "$toctou_subset_dest_after" = "$toctou_subset_dest_before" ]; then
+    ok "ontology-map write branch re-verifies the resource's digest immediately before writing, full-scope and subset-scope alike (#759)"
+  else
+    bad "ontology-map TOCTOU-recheck regression check failed (#759): full rc=$rc_toctou_full out='$toctou_full_out'; subset rc=$rc_toctou_subset out='$toctou_subset_out'; subset dest unchanged=$([ "$toctou_subset_dest_after" = "$toctou_subset_dest_before" ] && echo yes || echo no)"
   fi
 }
 

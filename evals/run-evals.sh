@@ -153,6 +153,18 @@ run "fanout-lane-contract" bash evals/fanout-lane-contract.sh
 # indistinguishable from one that was clean from the start.
 run "fanout-repair-disclosure-check" bash evals/fanout-repair-disclosure-check.sh
 
+# research-harness-template#751: the repair lane's revalidate `.then((rv) =>
+# {...})` callback dereferenced `rv.invalid.length` with no null check, even
+# though `agent()` can legitimately resolve to null on a terminal failure
+# after retries. That uncaught TypeError propagated out of pipeline()'s
+# per-item stage chain and crashed the ENTIRE fanout run for every
+# dimension, discarding whatever other dimensions' work had already
+# completed. This eval proves a null revalidate() result no longer throws,
+# that unrelated dimensions' completed work survives, and that the failed
+# dimension is dropped (consistent with this file's existing null-
+# propagation convention) rather than silently reported as succeeded.
+run "fanout-null-revalidate-crash" bash evals/fanout-null-revalidate-crash.sh
+
 # The research-falsify verdict-merge table has deterministic teeth (#562):
 # mergeVotes()'s arithmetic (unanimous, majority-falsified, minority-
 # falsified-contested-escalates, mixed-non-falsified-takes-worst) and the
@@ -344,6 +356,20 @@ run "deliverables-genre-channel-route" bash evals/deliverables-genre-channel-rou
 # still renders.
 run "deliverables-channel-validation-check" bash evals/deliverables-channel-validation-check.sh
 
+# research-harness-template#755: the Render pipeline's second stage produced
+# `{ ...r, validation: null }` whenever the initial Check-phase agent() call
+# itself resolved to null (user skip, or the subagent dying after retries) —
+# that object is still truthy, so it survived `rendered.filter(Boolean)`,
+# but the pre-fix `dirty` filter (`a.validation && !a.validation.clean`)
+# treated a null validation as NOT dirty, silently excluding the artifact
+# from the repair loop entirely: never fixed, never re-checked, never
+# logged, unlike the symmetric post-fix re-check path which already logs a
+# WARNING for the identical null case. This eval proves a null initial Check
+# result now logs a WARNING, is treated as dirty, actually enters the repair
+# (fix + re-check) loop, and ends up with a real clean verdict instead of
+# the ambiguous `clean: null`.
+run "deliverables-null-check-repair-check" bash evals/deliverables-null-check-repair-check.sh
+
 # The research-augment module's Decide phase has deterministic teeth where its
 # own logic can express it (#580, Epic #545, following #578's vendoring and
 # #579's discover-delegation fix): the Assess phase's discover-skill
@@ -451,6 +477,20 @@ run "pivot-check" bash evals/pivot-check.sh
 # mif-container-nfr-verification.sh already uses for this exact shared
 # real-corpus-mutation window.
 run "import-check" bash evals/import-check.sh
+
+# research-harness-template#746: a mistyped or unrecognized flag (e.g.
+# --dryrun, -dry-run) fell through the arg-parsing loop's wildcard branch
+# into POSITIONAL[] like an ordinary positional argument -- DRY_RUN silently
+# stayed 0 (its default) and the old "at least 2" positional count check
+# never caught it, so the script proceeded straight through step 4's real
+# write with zero error or warning, contradicting its own documented
+# --dry-run contract. Hermetic (every case exits during arg-parsing, before
+# any directory/manifest resolution, so no real container/topic fixture is
+# needed): a mistyped flag is now rejected with a message naming the bad
+# option (never silently absorbed), an adjacent extra-bare-positional case
+# is rejected too (exact count, not >=2), and the real --dry-run flag plus
+# ordinary 2-arg usage are proven unaffected by the fix.
+run "import-arg-parse-check" bash evals/import-arg-parse-check.sh
 
 # The research-coverage-audit module's Sweep/Critique/Prioritize pipeline has
 # deterministic teeth where its own logic can express it (#597, Epic #549,
@@ -1225,6 +1265,15 @@ run "copier-tasks-engine-order-check" bash evals/copier-tasks-engine-order-check
 # asserts gate_m5 fails closed with an explicit scratch-directory message
 # instead of limping through with a misattributed pack-toggle failure.
 run "gate-m5-mktemp-guard" bash evals/gate-m5-mktemp-guard.sh
+
+# research-harness-template#748: gate_m11's 11j fail-safe check did
+# `engine_bin ... || exit 5` directly in verify.sh's own process, so an
+# engine_bin failure hard-exited the ENTIRE run and silently skipped every
+# gate after gate_m11 with no bad message and no final summary. Forces
+# engine_bin to fail (MIF_RH_CLI pointed at a nonexistent path) and asserts
+# gate_m11 fails closed (bad + return) while gate_m12 still runs and the
+# summary line still prints, instead of the whole process exiting rc=5.
+run "gate-m11-engine-bin-hard-exit" bash evals/gate-m11-engine-bin-hard-exit.sh
 
 echo
 if [ "$FAIL" -gt 0 ]; then
