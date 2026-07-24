@@ -122,14 +122,26 @@ gate_m1() {
   #     holds finding ids (the template's reports/ cleanliness is covered by 8c).
   # git grep handles filenames with spaces and an empty match set safely (it
   # never reads stdin and returns 1 on no match), unlike `git ls-files | xargs grep`.
-  local hits
+  # Exit-code discipline matters here (research-harness-template#770): git grep
+  # exits 0 (match found -> contamination), 1 (no match -> genuinely clean), or
+  # >1 for a real error (unsupported pathspec magic, a corrupted/partial
+  # checkout, an I/O error, a future bad regex). Only exit 1 may be treated as
+  # "clean" -- swallowing every other exit code via `2>/dev/null || true` let a
+  # scan that never actually ran report `ok` anyway, with no trace it was
+  # skipped. Capture stderr into `hits` instead of discarding it, so the >1
+  # branch can surface *why* the scan failed.
+  local hits rc
   hits=$(git grep -nE 'f_(tech|competitive|trends|customer|sizing|financial|regulatory)_[0-9]+|reports/[a-z0-9][a-z0-9-]+/findings_' -- \
            ':!COMPLETION-CRITERIA.md' ':!IMPLEMENTATION-PLAN.md' ':!PROGRESS.md' \
- ':!reports' 2>/dev/null || true)
-  if [ -z "$hits" ]; then
+           ':!reports' 2>&1)
+  rc=$?
+  if [ "$rc" -eq 1 ]; then
     ok "no corpus finding IDs or corpus report-slug paths in built artifacts"
-  else
+  elif [ "$rc" -eq 0 ]; then
     bad "corpus contamination found in built artifacts:"
+    printf '%s\n' "$hits" >&2
+  else
+    bad "git grep failed during corpus contamination scrub (exit $rc), scan did not run:"
     printf '%s\n' "$hits" >&2
   fi
 }
