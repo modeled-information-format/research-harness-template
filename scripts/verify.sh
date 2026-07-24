@@ -3344,10 +3344,23 @@ gate_m28() {
   #      (the script runs under -uo pipefail, not -e). Bounded by `timeout`
   #      so a regression here fails this gate instead of hanging verify.sh.
   jq 'del(.edges)' "$GRAPH" > "$T/graph-no-edges.json"
-  if ! command -v timeout >/dev/null 2>&1; then
-    bad "resolver hang-regression check requires 'timeout' on PATH, which is not available -- cannot verify fail-fast behavior"
+  # `timeout` is GNU coreutils (Linux/CI); stock macOS lacks it but Homebrew
+  # coreutils ships it as `gtimeout` (same fallback scripts/write-finding.sh
+  # already uses). Unlike write-finding.sh's ajv call, this check exists
+  # specifically to bound a known hang regression (see comment above) --
+  # running it unwrapped when neither binary is present would silently
+  # reintroduce the exact failure mode it guards against, so with neither on
+  # PATH this check is skipped (info, not bad/ok) rather than hard-failing
+  # or running unbounded, matching 27a's sha256sum/shasum precedent of
+  # degrading gracefully instead of hard-failing on an absent optional tool.
+  local TMO=""
+  if command -v timeout >/dev/null 2>&1; then TMO="timeout 5"
+  elif command -v gtimeout >/dev/null 2>&1; then TMO="gtimeout 5"
+  fi
+  if [ -z "$TMO" ]; then
+    info "resolver hang-regression check skipped -- neither 'timeout' nor 'gtimeout' is on PATH (install GNU coreutils, e.g. 'brew install coreutils' on macOS, to run it locally; CI's ubuntu-latest always has 'timeout')"
   else
-    timeout 5 "$RESOLVE" "$T/graph-no-edges.json" "$T/partial-scope.json" --closure >/dev/null 2>&1
+    $TMO "$RESOLVE" "$T/graph-no-edges.json" "$T/partial-scope.json" --closure >/dev/null 2>&1
     local rc_noedges=$?
     if [ "$rc_noedges" -ne 0 ] && [ "$rc_noedges" -ne 124 ]; then
       ok "resolver fails fast (not hangs) on a graph missing .edges[] under --closure"

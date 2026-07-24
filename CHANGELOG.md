@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`research-deliverables.js`'s `channel` field now gets the same
+  injection-validation guard `genre` already had (#764).** The Route phase's
+  GENRE STRING VALIDATION guard (#640) checked a caller-controlled
+  `route.plan[].genre` against the pack-name pattern before interpolating it
+  into a shell-command argument / `Skill()` reference, but the identical
+  `channel` field — interpolated into the same two positions
+  (`render-artifact.sh`'s `${p.channel}` argument, and mechanism 2's
+  `Skill(${p.channel}:${skillName})` reference) — had no equivalent check.
+  Since Route is a haiku model call whose `plan[]` cannot be trusted to have
+  enforced this itself, a malformed/hallucinated channel could previously
+  reach those interpolation points unvalidated, caught only downstream by
+  `render-artifact.sh`'s own exact-string `case` exit or a non-existent
+  `Skill()` invocation. Added a CHANNEL STRING VALIDATION guard that checks
+  `channel` against the module's own closed channel set
+  (`ARTIFACT_CHANNELS`/`SOURCE_DIRECT_CHANNELS`/`SOURCE_DIRECT_GENRE_CHANNELS`)
+  and cross-checks mechanism/channel agreement, failing closed before Render.
 - **`gate_m27`'s 27f "unreadable file fails closed" check no longer breaks
   when `verify.sh` runs as root.** The check used `chmod 000` to simulate a
   permission-denied read, but root (or any process with DAC-override
