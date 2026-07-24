@@ -4122,8 +4122,10 @@ gate_m30() {
     # step has actually succeeded; otherwise leave it in place for manual
     # inspection/recovery.
     local restore_failed=0
-    rm -rf "$TOPIC_DIR/findings"
-    mkdir -p "$TOPIC_DIR/findings"
+    rm -rf "$TOPIC_DIR/findings" \
+      || { bad "gate_m30 restore_snapshot: failed to clear $TOPIC_DIR/findings before restoring it -- real corpus may be left mutated"; restore_failed=1; }
+    mkdir -p "$TOPIC_DIR/findings" \
+      || { bad "gate_m30 restore_snapshot: failed to recreate $TOPIC_DIR/findings before restoring it -- real corpus may be left mutated"; restore_failed=1; }
     cp -r "$T/snapshot/findings/." "$TOPIC_DIR/findings/" \
       || { bad "gate_m30 restore_snapshot: failed to restore $TOPIC_DIR/findings -- real corpus may be left mutated"; restore_failed=1; }
     cp "$T/snapshot/README.md" "$TOPIC_DIR/README.md" \
