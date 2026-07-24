@@ -186,10 +186,22 @@ container_lock_refresh() {
     echo "container-lock: LOST ownership of $lock_dir -- it is now held by a different run (this run's token: '$token'; currently stamped: '${current:-<none>}'). Another run stole this lock; refusing to refresh or keep writing under a false assumption of exclusive access." >&2
     return 1
   fi
-  if ! touch "$lock_dir" 2>/dev/null; then
-    echo "container-lock: FAILED to refresh $lock_dir -- touch failed (permissions or read-only filesystem?); the lock's mtime was NOT extended and it may now be judged stale by a concurrent acquirer. Treat this as loss of ownership." >&2
-    return 1
-  fi
+  # Retried up to 3x with a brief backoff (PR #796 review follow-up): this
+  # call happens once per finding during a real import/export (up to
+  # dozens of touches in well under a second), and a bare single-attempt
+  # `touch` reproducibly hit a transient failure under that pattern on
+  # GitHub Actions' runners (never on local disk) -- turning an otherwise
+  # healthy, in-progress import into a hard failure on a one-off I/O blip.
+  # Only a PERSISTENT touch failure (permissions, read-only filesystem,
+  # disk full) is treated as fatal; a single transient hiccup is retried
+  # rather than immediately propagated.
+  local attempt
+  for attempt in 1 2 3; do
+    touch "$lock_dir" 2>/dev/null && return 0
+    [ "$attempt" -lt 3 ] && sleep 0.05
+  done
+  echo "container-lock: FAILED to refresh $lock_dir after 3 attempts -- touch failed (permissions or read-only filesystem?); the lock's mtime was NOT extended and it may now be judged stale by a concurrent acquirer. Treat this as loss of ownership." >&2
+  return 1
 }
 
 # container_lock_release <lock_dir> [token] -- drop the lock. rm -rf, not

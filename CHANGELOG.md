@@ -22,11 +22,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   capture it and pass it to every later refresh/release call, and a mismatch
   now aborts the export/import instead of continuing under a false assumption
   of exclusive access (research-harness-template#763). `container_lock_refresh`
-  also now propagates a `touch` failure as a fatal nonzero return instead of
-  swallowing it, and `container_lock_release` treats a missing/empty stamped
-  `.owner-token` as a mismatch (not "no guard needed") when the caller
-  supplies a real token, so it never removes a live lock that simply was
-  never stamped (PR #796 review).
+  also now propagates a PERSISTENT `touch` failure as a fatal nonzero return
+  instead of swallowing it (retrying up to 3x with a brief backoff first --
+  a single-attempt fatal touch reproducibly broke a real, healthy import
+  under CI's once-per-finding refresh cadence on a one-off transient I/O
+  blip, never on local disk), and `container_lock_release` treats a
+  missing/empty stamped `.owner-token` as a mismatch (not "no guard needed")
+  when the caller supplies a real token, so it never removes a live lock
+  that simply was never stamped (PR #796 review).
 
 ## [0.16.38] - 2026-07-23
 
