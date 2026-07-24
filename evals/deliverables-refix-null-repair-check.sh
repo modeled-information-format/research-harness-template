@@ -202,12 +202,35 @@ else:
     print("  ok  the module did not crash when one repair thunk's fix() call threw")
 
 logs = d.get('logs', [])
-warning_logs = [l for l in logs if 'WARNING' in l and d['OUTPUT_PATH_BLOG'] in l]
-if not warning_logs:
-    print(f"  FAIL: no WARNING was logged naming the artifact whose repair thunk threw (research-harness-template#740) — logs={logs}")
+# Specifically the "repair ... threw" WARNING, not just any WARNING that
+# happens to mention the blog path — a broader match would also pass on the
+# generic "re-validation after fix produced no result" warning, which is a
+# DIFFERENT condition (a resolved-but-empty recheck, not a thrown repair)
+# and must not fire for this thrown case (see the duplicate-warning check
+# just below).
+threw_warning_logs = [
+    l for l in logs
+    if 'WARNING' in l and 'repair (fix and/or re-check) threw' in l and d['OUTPUT_PATH_BLOG'] in l
+]
+if not threw_warning_logs:
+    print(f"  FAIL: no 'repair ... threw' WARNING was logged naming the artifact whose repair thunk threw (research-harness-template#740) — logs={logs}")
     ok = False
 else:
-    print("  ok  a WARNING is logged naming the artifact whose repair (fix/recheck) threw")
+    print("  ok  a 'repair ... threw' WARNING is logged naming the artifact whose repair (fix/recheck) threw")
+
+# The thrown case must not ALSO trigger the generic re-validation-produced-
+# no-result warning for the same artifact — that would be a duplicate,
+# misleading pair of warnings for one failure (the second reads as a null
+# recheck, not a thrown repair).
+duplicate_warning_logs = [
+    l for l in logs
+    if 'WARNING' in l and 're-validation after fix produced no result' in l and d['OUTPUT_PATH_BLOG'] in l
+]
+if duplicate_warning_logs:
+    print(f"  FAIL: the generic re-validation warning ALSO fired for the thrown artifact — duplicate/misleading warnings for one failure: {duplicate_warning_logs}")
+    ok = False
+else:
+    print("  ok  the generic re-validation warning did not also fire for the artifact whose repair threw (no duplicate warnings)")
 
 recheck_calls_blog = [c for c in d['calls'] if c.get('fn') == 'agent' and c.get('label') == 'recheck:generalxblog']
 if recheck_calls_blog:

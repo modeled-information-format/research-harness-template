@@ -747,8 +747,18 @@ if (dirty.length) {
         )
         return { a, rv }
       } catch (err) {
-        log(`WARNING: repair (fix and/or re-check) threw for ${a.outputPath}: ${err && err.message} — leaving prior (failing) validation recorded`)
-        return { a, rv: null }
+        // A thrown (non-Error) value — e.g. `throw 'boom'` — has no
+        // `.message`; fall back to the thrown value itself (or its own
+        // string form) so the log line is never a bare "undefined".
+        const errText = err instanceof Error ? err.message : String(err)
+        log(`WARNING: repair (fix and/or re-check) threw for ${a.outputPath}: ${errText} — leaving prior (failing) validation recorded`)
+        // Tag this as the thrown case (distinct from a *resolved* `rv: null`,
+        // e.g. a future recheck agent() call that legitimately returns no
+        // result) so the loop below doesn't also log the generic
+        // "re-validation ... produced no result" warning for it — that
+        // warning reads as a null recheck, not a thrown repair, and logging
+        // both for the same failure is duplicate and misleading.
+        return { a, rv: null, threw: true }
       }
     }),
   )
@@ -761,9 +771,9 @@ if (dirty.length) {
       log('WARNING: a repair-loop entry resolved to null — leaving its prior (failing) validation recorded')
       continue
     }
-    const { a, rv } = entry
+    const { a, rv, threw } = entry
     if (rv) a.validation = rv
-    else log(`WARNING: re-validation after fix produced no result for ${a.outputPath} — leaving prior (failing) validation recorded`)
+    else if (!threw) log(`WARNING: re-validation after fix produced no result for ${a.outputPath} — leaving prior (failing) validation recorded`)
   }
 }
 
