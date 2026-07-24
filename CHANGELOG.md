@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.39] - 2026-07-24
+
 ### Fixed
 
 - **`scripts/lib/container-lock.sh`'s stale-lock steal path is no longer a
