@@ -1261,7 +1261,14 @@ gate_m11() {
   local bad_out bad_rc BAD_ENGINE
   # shellcheck source=scripts/lib/engine.sh
   . scripts/lib/engine.sh
-  BAD_ENGINE="$(engine_bin "$(pwd)")" || exit 5
+  # research-harness-template#748: this used to be `|| exit 5`, run directly
+  # in verify.sh's own process (not a subshell) -- an engine_bin failure here
+  # hard-exited the ENTIRE verify.sh run, silently skipping every gate after
+  # gate_m11 (gate_m12 through gate_workflows) with no bad/PASS-FAIL summary,
+  # and leaking gate_m11's own $T scratch dir. gate_m20/gate_m22 hit the
+  # identical engine_bin call and correctly `bad ...; return` instead --
+  # match that established pattern here too.
+  BAD_ENGINE="$(engine_bin "$(pwd)")" || { bad "gate_m11 needs the mif-rh-cli engine for the 11j fail-safe check (not found/too old — see the engine: diagnostic above)"; rm -rf "$T"; return; }
   jq 'del(.extensions)' schemas/samples/finding.sample.json > "$T/broken-sample.json"
   bad_out=$("$BAD_ENGINE" harness reconcile-session "$RD2" \
     --schema "schemas/findings.schema.json" \
