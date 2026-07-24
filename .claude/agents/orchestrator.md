@@ -195,31 +195,44 @@ gap dims=[$(echo $WORK_DIMS | tr '\n' ' ')]; stale to re-verify=$(jq '.stale|len
    # LIVE run on this topic. A crashed run's lock ages out (staleness window) so
    # /resume re-acquires; the lock is refreshed at each phase boundary (below) and
    # released on every graceful exit.
-   if ! scripts/run-lock.sh acquire "$REPORTS_DIR" "orchestrator/$MODE"; then
+   if ! RUN_LOCK_TOKEN=$(scripts/run-lock.sh acquire "$REPORTS_DIR" "orchestrator/$MODE"); then
      echo "Another live run owns $REPORTS_DIR — stopping so its findings are not corrupted." >&2
      exit 3
    fi
    ```
 
+   **Capture `$RUN_LOCK_TOKEN` from `acquire`'s stdout and pass it to every later
+   `refresh`/`release` call for the rest of this run** (research-harness-template#798).
+   Unlike the sourced `container-lock.sh` library, `run-lock.sh` runs as separate CLI
+   invocations with no shared shell state between them — `refresh`/`release` cannot
+   otherwise tell "the lock this run originally acquired" from "a different run's lock
+   that has since replaced it at the same path" (a stale-lock steal race, or a phase
+   boundary long enough for the lock to age out between refreshes), and would silently
+   act on whichever lock currently occupies the path. Never call `refresh`/`release`
+   without `"$RUN_LOCK_TOKEN"`.
+
    If the lock is held by another live run, **STOP and report it — do not fan
    out.** `/resume` re-enters this same path: a prior run that crashed left a
    stale lock that ages out, or `scripts/run-lock.sh steal "$REPORTS_DIR"` forces
-   recovery.
+   recovery (capture ITS printed token as the new `$RUN_LOCK_TOKEN` if you invoke it
+   yourself, though normal recovery re-enters via a fresh `acquire` instead).
 
    Two invariants govern the lock for the rest of the run — apply them everywhere,
    not just on the happy path:
 
    - **Refresh at every phase boundary.** Phase 1 fan-out, the Phase 2 gate loop,
-     and Phase 4 synthesis each `scripts/run-lock.sh refresh "$REPORTS_DIR"` so a
-     long phase never ages the lock out underneath a live run (a stolen lock =
-     two concurrent writers = the corruption this prevents).
+     and Phase 4 synthesis each `scripts/run-lock.sh refresh "$REPORTS_DIR"
+     "$RUN_LOCK_TOKEN"` so a long phase never ages the lock out underneath a live run
+     (a stolen lock = two concurrent writers = the corruption this prevents). **A
+     nonzero exit means this run lost ownership — treat it as fatal and STOP** (do not
+     log-and-continue writing under a false assumption of exclusive access).
    - **Release before EVERY stop.** The rule is simple: *if you are about to stop
      this orchestrator — for any reason — run `scripts/run-lock.sh release
-     "$REPORTS_DIR"` as your last action first.* That covers Phase 4 completion,
-     the rate-limited PARTIAL stop, a `reconcile-session.sh` / ontology-resolution
-     / toolchain failure that forces a STOP, the gate's PARTIAL stop, and any
-     bound abort. Only an uncatchable crash skips it, and staleness covers that —
-     never leave the lock held on a path you chose to stop on.
+     "$REPORTS_DIR" "$RUN_LOCK_TOKEN"` as your last action first.* That covers Phase 4
+     completion, the rate-limited PARTIAL stop, a `reconcile-session.sh` /
+     ontology-resolution / toolchain failure that forces a STOP, the gate's PARTIAL
+     stop, and any bound abort. Only an uncatchable crash skips it, and staleness
+     covers that — never leave the lock held on a path you chose to stop on.
 
 2. **Create phase tasks** for your own progress tracking (no `owner` — there are
    no named teammates to assign), each blocked by the previous:
@@ -346,8 +359,9 @@ dimension when none is named), running at most `MAX_CONCURRENCY` at a time:
 
    As each analyst returns, mark its task complete (`TaskUpdate(taskId, status:
    "completed")`), record the finding paths from its return, and
-   `scripts/run-lock.sh refresh "$REPORTS_DIR"` — fan-out is the longest phase, so
-   refresh on each return keeps the lock from aging out before the gate even starts.
+   `scripts/run-lock.sh refresh "$REPORTS_DIR" "$RUN_LOCK_TOKEN"` — fan-out is the
+   longest phase, so refresh on each return keeps the lock from aging out before the
+   gate even starts. A nonzero exit means ownership was lost — STOP.
    Optionally append a one-line breadcrumb per analyst return (e.g. `- {dim}: {k}
    findings`) so per-dimension progress is visible to a supervisor as well.
 
@@ -383,10 +397,11 @@ Poll disk until the batch's finding output stops growing:
 ```bash
 NOPROG=0; PREV=-1
 while :; do
-  scripts/run-lock.sh refresh "$REPORTS_DIR"   # every iteration, not just once per round —
-                                                # keeps the lock's own mtime a true liveness
-                                                # heartbeat for as long as this loop is actually
-                                                # running (issue #392)
+  scripts/run-lock.sh refresh "$REPORTS_DIR" "$RUN_LOCK_TOKEN" || exit 1   # every iteration, not
+                                                # just once per round — keeps the lock's own mtime
+                                                # a true liveness heartbeat for as long as this loop
+                                                # is actually running (issue #392); nonzero = lost
+                                                # ownership (#798), STOP rather than keep polling
   TOTAL=$(ls "$REPORTS_DIR"/findings/*.json 2>/dev/null | wc -l)
   [ "$TOTAL" -eq "$PREV" ] && NOPROG=$((NOPROG+1)) || NOPROG=0
   PREV=$TOTAL
@@ -442,8 +457,8 @@ done
   mark a zero/rate-killed dimension complete and NEVER proceed to the gate or synthesis as
   if the corpus is whole (a zero-finding dimension stays `done < total`, so `/resume` and
   the Phase 3 loop re-fan it out). This is a terminal stop — **release the run
-  lock** (`scripts/run-lock.sh release "$REPORTS_DIR"`) so `/resume` re-acquires
-  cleanly after the limit resets.
+  lock** (`scripts/run-lock.sh release "$REPORTS_DIR" "$RUN_LOCK_TOKEN"`) so
+  `/resume` re-acquires cleanly after the limit resets.
 
 **Reconcile reported counts against disk (issue #357 — a partial loss, not just a
 total one).** The zero-check above catches a dimension that produced nothing; it
@@ -618,8 +633,9 @@ ungated(){ for f in "$REPORTS_DIR"/findings/*.json; do [ -e "$f" ] || continue  
 `TaskCreate("Falsify findings")` — capture the returned id as `{taskId}`. Then loop:
 
 1. **Refresh the window and the run lock** (`touch "$REPORTS_DIR/.gate-active"` and
-   `scripts/run-lock.sh refresh "$REPORTS_DIR"`) so neither marker ages past its
-   freshness bound during a long loop. Then
+   `scripts/run-lock.sh refresh "$REPORTS_DIR" "$RUN_LOCK_TOKEN"` — STOP on a nonzero
+   exit, it means ownership was lost) so neither marker ages past its freshness bound
+   during a long loop. Then
    `ungated | head -n "$BATCH" > "$REPORTS_DIR/.gate-batch"`; `REM=$(ungated | wc -l)`.
 2. If `REM` is 0 the gate is **COMPLETE** — break.
 3. Spawn ONE `falsification-analyst` (`run_in_background: true`) over the slice with
@@ -631,9 +647,11 @@ ungated(){ for f in "$REPORTS_DIR"/findings/*.json; do [ -e "$f" ] || continue  
    turn here and do NOT say you'll wait for a completion notification** (see "Synchronous
    supervision" at the top of this file — this exact substitution is issue #392). Instead,
    in this SAME turn, immediately run the bounded `Bash` poll loop below to a stop
-   condition before doing anything else: `scripts/run-lock.sh refresh "$REPORTS_DIR"` (every
-   iteration, not just once per round — the lock's own mtime stays a true liveness heartbeat
-   for as long as you are actually polling, issue #392), then `sleep` ~20s and re-count how
+   condition before doing anything else: `scripts/run-lock.sh refresh "$REPORTS_DIR"
+   "$RUN_LOCK_TOKEN"` (every iteration, not just once per round — the lock's own mtime
+   stays a true liveness heartbeat for as long as you are actually polling, issue #392;
+   a nonzero exit means ownership was lost — STOP, do not keep polling), then `sleep`
+   ~20s and re-count how
    many of the batch's `@id`s now carry `attempted_at`. Stop polling when the batch is fully
    gated OR no new finding gates across ~3 consecutive polls (the slice hung or was interrupted), then go
    to step 4. Disk state — not the sub-agent's return — is the signal you act on, so you
@@ -687,9 +705,9 @@ A dimension whose `state.json` `dimensions[d]` has `done == total` is COMPLETE �
 budget). Loop only dimensions the plan reports with `done < total`, plus any
 dimension an unmet goal check names. **If `reconcile-session.sh` exits non-zero it
 has failed safe (broken toolchain) — release the run lock
-(`scripts/run-lock.sh release "$REPORTS_DIR"`, per the Phase 0 release invariant),
-STOP and report; do NOT re-fan-out, and never treat the failure as "everything
-remaining".**
+(`scripts/run-lock.sh release "$REPORTS_DIR" "$RUN_LOCK_TOKEN"`, per the Phase 0
+release invariant), STOP and report; do NOT re-fan-out, and never treat the failure
+as "everything remaining".**
 
 Evaluate the goal's `completion_condition.checks[]` against the current state.
 Each check is a transcript-verifiable fact (it may carry an optional `verify`
@@ -766,7 +784,7 @@ Append to the progress file:
    files):
 
    ```bash
-   scripts/run-lock.sh refresh "$REPORTS_DIR"
+   scripts/run-lock.sh refresh "$REPORTS_DIR" "$RUN_LOCK_TOKEN" || exit 1   # lost ownership -- STOP
    bash scripts/ontology-review.sh --topic "$TOPIC_SLUG"   # rebuild ONLY this topic's ontology-map.json
    bash scripts/check-shippable-typing.sh "$REPORTS_DIR"   # FAIL-CLOSED: untyped/unresolved/invalid shippable finding -> exit 1
    ```
@@ -786,7 +804,7 @@ Append to the progress file:
      echo "- The ontology-completeness gate did not pass — see the gate output above (an untyped/unresolved shippable finding, a missing ontology-map, or an ontology-review error)."
      echo "- Unblock: \`/ontology-review --topic $TOPIC_SLUG --enrich\` then \`/resume --topic $TOPIC_SLUG\`."
    } >> "$REPORTS_DIR/research-progress.md"
-   scripts/run-lock.sh release "$REPORTS_DIR"   # a stopped run frees the topic
+   scripts/run-lock.sh release "$REPORTS_DIR" "$RUN_LOCK_TOKEN"   # a stopped run frees the topic
    ```
 
    **If the gate PASSES:** clear any stale sentinel, reconcile the cross-topic spine
@@ -842,9 +860,10 @@ Append to the progress file:
    this topic: the per-topic typing gate above is the authoritative shippable-output
    block (a cross-topic `@id`-merge violation must not strand an unrelated topic).
 
-2. **Synthesize.** First `scripts/run-lock.sh refresh "$REPORTS_DIR"` (synthesis can
-   be long — keep the lock fresh so it is not stolen before you release it in step 6),
-   then spawn the `report-synthesizer` as a **nameless subagent** over the active
+2. **Synthesize.** First `scripts/run-lock.sh refresh "$REPORTS_DIR" "$RUN_LOCK_TOKEN"`
+   (synthesis can be long — keep the lock fresh so it is not stolen before you release
+   it in step 6; STOP if this returns nonzero — ownership was lost), then spawn the
+   `report-synthesizer` as a **nameless subagent** over the active
    (surviving + downgraded) findings:
 
    ```text
@@ -917,7 +936,7 @@ Append to the progress file:
 
    ```bash
    rm -f "$REPORTS_DIR/.synthesis-withheld"
-   scripts/run-lock.sh release "$REPORTS_DIR"
+   scripts/run-lock.sh release "$REPORTS_DIR" "$RUN_LOCK_TOKEN"
    ```
 
    Present the user a summary: goal met / partial, finding counts, surviving

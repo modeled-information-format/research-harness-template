@@ -2,7 +2,7 @@
 id: reference-scripts
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-23T23:50:09.585Z'
+modified: '2026-07-24T12:08:40.324Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -96,7 +96,7 @@ manage the session run lock.
 | `scripts/wrap-source.sh` | Normalises a raw source to a MIF source-envelope at the ingestion boundary, validates at L3 before an analyst consumes it. | `jq`, `ajv` |
 | `scripts/falsify.sh` | Deterministic falsification substrate: writes an ordinal verdict into `extensions.harness.verification`, logs one `falsification-gate: run` line per invocation, enforces the one-round rule. | `mif-rh-cli` (engine) |
 | `scripts/reconcile-session.sh` | Derives a durable session checkpoint (`state.json`) from disk. A finding is DONE iff it validates against the full schema (which requires a `verification` block) **and** its verdict is not `falsified` — a falsified-but-valid finding is intentionally not done. Idempotent and byte-deterministic. | `jq`, `ajv` |
-| `scripts/run-lock.sh` | Topic-level mutual-exclusion lock (directory-based atomic test-and-set). Prevents concurrent writers on the same topic. Staleness window: `RUN_LOCK_STALE_MIN` (default 240 min). Operations: `acquire`, `release`, `refresh`, `steal`. | coreutils (`find`, `touch`, `mkdir`, `rm`, `cat`) |
+| `scripts/run-lock.sh` | Topic-level mutual-exclusion lock (directory-based atomic test-and-set). Prevents concurrent writers on the same topic. Staleness window: `RUN_LOCK_STALE_MIN` (default 240 min). Operations: `acquire`, `release`, `refresh`, `steal`. `acquire`/`steal` stamp a unique per-acquisition ownership token in `$LOCK/.owner-token` and print it on stdout; `refresh` requires that token and refuses (without touching the lock) if it no longer matches, and `release`'s token argument is optional but skips removal on a mismatch — so a caller (run as a separate process from `acquire`) can never extend or delete a different run's lock at the same path after a steal/staleness race (research-harness-template#798, same defect class `scripts/lib/container-lock.sh`'s `container_lock_refresh` fixed for #763). | coreutils (`find`, `touch`, `mkdir`, `rm`, `cat`) |
 | `scripts/goal-version.sh` | Computes a content-hash goal version ID (`gv-<sha256[:12]>`) by normalising the goal JSON (removing lineage fields, sorting keys). | `jq`, `sha256sum` / `shasum` / `openssl` |
 | `scripts/resolve-membership.sh` | Deterministic scope-resolution for a goal version: emits `reports/<topic>/goals/goal-<version>.members.json` with `members[]`, `stale[]`, and `gap_dimensions[]`. | `jq` |
 | `scripts/check-citation-integrity.sh` | Citation-integrity gate: asserts at least one citation per finding; each citation traceable (well-formed `http(s)` URL *format* or an `internal:` source with a `note`) and carrying a `citationRole`; no `falsified` finding ships; and no citation URL is pre-marked dead via `extensions.harness.citationStatus.deadUrls[]`. It validates URL format and the marked-dead list — it does **not** probe URL liveness. | `mif-rh-cli` (engine) |
