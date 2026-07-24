@@ -104,6 +104,12 @@ run "start-error-handling-glob-check" bash evals/start-error-handling-glob-check
 # coverage_per_dimension check permanently unsatisfiable (#676).
 run "goal-writer-findings-path" bash evals/goal-writer-findings-path.sh
 
+# research-goal.js's Context schema must require existingGoalSummary, not just
+# type it as string|null (#766): the Draft prompt unconditionally interpolates
+# it whenever existingGoalPath is truthy, so an omitted-but-schema-valid
+# summary produced a literal "(undefined)" leak into the Draft agent's prompt.
+run "goal-context-summary-required" bash evals/goal-context-summary-required.sh
+
 # The research-goal draft→lint→repair contract has deterministic teeth
 # (#554): scripts/lint-goal.sh FAILS the seeded-invalid fixture (step-shaped
 # check assertion + off-config dimension) that ajv alone accepts, fails
