@@ -538,14 +538,16 @@ fi
 
 # ============================================================================
 # B8 (research-harness-template#743). The reverify pass actually DRAINS past
-# a single call: when the first regate falsify call defers ids -- the exact
-# real-world shape of reverifyIds.length exceeding the child's own default
-# claimBudget (50) -- a SECOND regate call must run, scoped to EXACTLY the
-# first call's deferredIds, still regate: true. Before the fix, pivot mode
-# called wf('falsify', ...) exactly once and discarded its return value
-# entirely -- this fixture's falsify stub would have left the second batch
-# ungated with zero retry and zero signal to the caller, exactly the bug
-# report's failure scenario.
+# a single call: when the first regate falsify call defers ids, a SECOND
+# regate call must run, scoped to EXACTLY the first call's deferredIds,
+# still regate: true. This fixture's falsify stub simulates the deferredIds
+# behavior that occurs when reverifyIds.length exceeds the child's own
+# default claimBudget (50) -- it does not itself set up a reverifyIds set
+# that large; it stubs the resulting deferral directly. Before the fix,
+# pivot mode called wf('falsify', ...) exactly once and discarded its
+# return value entirely -- this fixture's falsify stub would have left the
+# second batch ungated with zero retry and zero signal to the caller,
+# exactly the bug report's failure scenario.
 # ============================================================================
 printf '%s' "{\"harnessDir\":\"$TMP/h\",\"topic\":\"pipeline-eval-topic\",\"mode\":\"pivot\",\"delta\":\"reclassified 80 findings as stale\"}" > "$TMP/args-b8.json"
 cat > "$TMP/stubs-b8.cjs" <<'NODE'
