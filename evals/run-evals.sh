@@ -153,6 +153,18 @@ run "fanout-lane-contract" bash evals/fanout-lane-contract.sh
 # indistinguishable from one that was clean from the start.
 run "fanout-repair-disclosure-check" bash evals/fanout-repair-disclosure-check.sh
 
+# research-harness-template#751: the repair lane's revalidate `.then((rv) =>
+# {...})` callback dereferenced `rv.invalid.length` with no null check, even
+# though `agent()` can legitimately resolve to null on a terminal failure
+# after retries. That uncaught TypeError propagated out of pipeline()'s
+# per-item stage chain and crashed the ENTIRE fanout run for every
+# dimension, discarding whatever other dimensions' work had already
+# completed. This eval proves a null revalidate() result no longer throws,
+# that unrelated dimensions' completed work survives, and that the failed
+# dimension is dropped (consistent with this file's existing null-
+# propagation convention) rather than silently reported as succeeded.
+run "fanout-null-revalidate-crash" bash evals/fanout-null-revalidate-crash.sh
+
 # The research-falsify verdict-merge table has deterministic teeth (#562):
 # mergeVotes()'s arithmetic (unanimous, majority-falsified, minority-
 # falsified-contested-escalates, mixed-non-falsified-takes-worst) and the
