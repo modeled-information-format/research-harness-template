@@ -32,9 +32,22 @@ MD="${1:?usage: mif-project.sh <report.md> [--json-out <out.json>]}"
 [ -f "$MD" ] || { echo "mif-project: report not found: $MD" >&2; exit 2; }
 MD="$(cd "$(dirname "$MD")" && pwd)/$(basename "$MD")"
 JSON_OUT=""
-if [ "${2:-}" = "--json-out" ]; then
-  JSON_OUT="${3:?--json-out needs a path}"
-  case "$JSON_OUT" in /*) : ;; *) JSON_OUT="$(pwd)/$JSON_OUT" ;; esac
+if [ -n "${2:-}" ]; then
+  if [ "$2" = "--json-out" ]; then
+    if [ -z "${3:-}" ]; then
+      echo "mif-project: --json-out needs a path" >&2
+      exit 2
+    fi
+    if [ -n "${4:-}" ]; then
+      echo "mif-project: unrecognized argument: $4 (usage: mif-project.sh <report.md> [--json-out <out.json>])" >&2
+      exit 2
+    fi
+    JSON_OUT="$3"
+    case "$JSON_OUT" in /*) : ;; *) JSON_OUT="$(pwd)/$JSON_OUT" ;; esac
+  else
+    echo "mif-project: unrecognized argument: $2 (expected --json-out <path>)" >&2
+    exit 2
+  fi
 fi
 
 TMPD="$(mktemp -d)" || { echo "mif-project: mktemp failed" >&2; exit 3; }
