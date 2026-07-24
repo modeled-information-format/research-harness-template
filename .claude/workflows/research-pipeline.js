@@ -279,9 +279,14 @@ if (MODE === 'pivot') {
   if (!A.delta) throw new Error('pivot mode requires args.delta')
   const pivot = await wf('pivot', { delta: A.delta })
   // Re-gate the stale carry-overs through falsify.sh's re-verify path, then research only the gaps.
-  if (pivot.reverifyIds && pivot.reverifyIds.length) {
-    await wf('falsify', { scope: { ids: pivot.reverifyIds }, regate: true, claimBudget: A.claimBudget, queryBudget: A.queryBudget, lenses: A.lenses })
-  }
+  // research-harness-template#743: drain via falsifyAll() (scoped regate on reverifyIds) instead of
+  // a single wf('falsify', ...) call — a single call only gates the child's default claimBudget (50),
+  // silently leaving anything beyond that ungated with no retry and no signal to the caller. Mirrors
+  // import mode's identical #678 fix at the sibling call site above (falsifyAll's own scope-narrowing
+  // to deferredIds on each drain iteration is what actually closes the gap here).
+  const reverifyGate = (pivot.reverifyIds && pivot.reverifyIds.length)
+    ? await falsifyAll({ scope: { ids: pivot.reverifyIds }, regate: true })
+    : { gated: 0, rollup: {} }
   let fan = null
   if (pivot.gapDimensions && pivot.gapDimensions.length && !budgetLow()) {
     fan = await wf('fanout', { dimensions: pivot.gapDimensions, depth: 'standard', roundContext: `Goal pivoted (${pivot.goalVersion}): ${pivot.goalStatement}. Carried ${pivot.carry.length} findings; you are filling the gaps only.` })
@@ -289,7 +294,7 @@ if (MODE === 'pivot') {
   }
   const syn = await wf('synthesis', {})
   const proj = (syn && syn.ok) ? await wf('projection', { synthesisPath: syn.synthesisPath }) : null
-  return { mode: MODE, goalVersion: pivot.goalVersion, carried: pivot.carry.length, stale: pivot.stale.length, fanout: fan, synthesis: syn, projection: proj }
+  return { mode: MODE, goalVersion: pivot.goalVersion, carried: pivot.carry.length, stale: pivot.stale.length, reverifyGate, fanout: fan, synthesis: syn, projection: proj }
 }
 
 if (MODE === 'augment') {
