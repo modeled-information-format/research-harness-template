@@ -75,6 +75,14 @@ run "gate-m14-no-var-leak" bash evals/gate-m14-no-var-leak.sh
 # `while read d` loop instead of starting from an unset variable.
 run "gate-m23-loop-var-scope-check" bash evals/gate-m23-loop-var-scope-check.sh
 
+# gate_m31's restore_state() unconditionally ran `rm -rf "$T"` (its own
+# backup scratch dir) even when the preceding restore of harness.config.json
+# had just failed and was flagged with `bad` (#750) -- the same defect class
+# as gate_m30's restore_snapshot() (#754). Shims `cp` so only that one
+# restore call fails and asserts the backup is preserved (with the original
+# still recoverable inside it) instead of being deleted alongside the report.
+run "gate-m31-restore-backup-preserved-check" bash evals/gate-m31-restore-backup-preserved-check.sh
+
 # Workflow-runtime modules (.claude/workflows/*.js) use the runtime's
 # async-function-body shape, so the CI parse-check must wrap before
 # checking (#552): passes on the vendored research-goal.js, fails on a
