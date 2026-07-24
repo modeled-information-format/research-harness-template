@@ -223,7 +223,7 @@ corpus_build() {
       printf 'Run `scripts/synthesize-corpus.sh` to render the full atlas (Cross-Corpus Insights, entity-reuse detail, contradictions, what was disproven).\n'
     fi
   } > "$out_tmp" || { rm -f "$out_tmp"; CURRENT_TMP=""; die "failed to write $OUT"; }
-  mv "$out_tmp" "$OUT"
+  mv "$out_tmp" "$OUT" || { rm -f "$out_tmp"; CURRENT_TMP=""; die "failed to move $out_tmp to $OUT"; }
   CURRENT_TMP=""
   echo "wrote $OUT ($topic_count topics)"
 }
@@ -629,6 +629,6 @@ sweep_stale_tmp "$OUT"
 OUT_TMP="$OUT.tmp.$$"
 CURRENT_TMP="$OUT_TMP"
 build_readme > "$OUT_TMP" || { rm -f "$OUT_TMP"; CURRENT_TMP=""; die "failed to write $OUT"; }
-mv "$OUT_TMP" "$OUT"
+mv "$OUT_TMP" "$OUT" || { rm -f "$OUT_TMP"; CURRENT_TMP=""; die "failed to move $OUT_TMP to $OUT"; }
 CURRENT_TMP=""
 echo "wrote $OUT ($COUNT findings, $SOURCES sources)"
