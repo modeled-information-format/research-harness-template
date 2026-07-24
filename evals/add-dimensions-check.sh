@@ -23,6 +23,14 @@
 #          back from goal.json after minting — never the value you would
 #          have computed yourself").
 #
+#   B0. Null-Propose-result case (research-harness-template#749): the Propose
+#      phase agent() call resolves to null (subagent died after retries, or a
+#      mid-run user skip — per the Workflow-tool DSL contract this does not
+#      throw, it resolves null). Asserts the module THROWS rather than
+#      silently treating this the same as the distinct, valid
+#      `{candidates: []}` zero-candidate outcome — proving the fix
+#      distinguishes an operational failure from a legitimate empty answer.
+#
 #   B. Zero-candidate and all-rejected outcomes (inherently reachable without
 #      any model judgment about WHICH candidates to keep — only that the
 #      module's OWN control flow handles empty proposals/all-pruned
@@ -34,6 +42,19 @@
 #      touch NEITHER the fixture harness.config.json NOR any goal.json/goals/
 #      file: the Amend phase's agent() call is never invoked at all in
 #      either path (asserted from the driver's own call log, not inferred).
+#
+#   B3. NULL-prune case (research-harness-template#753): the Prune-phase
+#      agent() call itself returns null (simulating the skeptic agent dying
+#      after retries / being skipped) — a genuinely different failure mode
+#      from B2's "agent ran and rejected everything." Pre-fix code let the
+#      `pruned && pruned.approved.includes(...)` guard silently coerce this
+#      into approved=[], then logged "All N candidate(s) rejected by the
+#      skeptic" — a factually false claim, since no skeptic pass ever
+#      completed — and returned a normal-looking success-shaped result
+#      (rejected: [], goalVersion: null) with no indication the agent call
+#      failed. Proven here: the module now THROWS on a null prune result
+#      instead of reporting a fabricated rejection, and the Amend phase is
+#      never reached.
 #
 #   C. Seeded-overlap rejection: a fixture proposal names one candidate that
 #      genuinely restates an existing dimension ("technical-details",
@@ -222,6 +243,58 @@ EOF
 }
 
 # ============================================================================
+# B0 (research-harness-template#749): null-Propose-result case — the
+# Propose phase agent() call resolves to null/undefined (subagent died after
+# retries, or a mid-run user skip — per the Workflow-tool DSL contract this
+# does not throw, it resolves null). This MUST be treated as an operational
+# FAILURE (thrown), never conflated with the distinct, valid
+# `{candidates: []}` zero-candidate outcome exercised by B1 below.
+# ============================================================================
+FIX_NULLPROPOSE="$(new_fixture nullpropose)"
+cat > "$TMP/stubs-nullpropose.cjs" <<'NODE'
+module.exports = {
+  'add-dim:propose': async () => null,
+  'add-dim:prune': async () => { throw new Error('add-dim:prune must NOT be called when Propose returns null'); },
+  'add-dim:amend': async () => { throw new Error('add-dim:amend must NOT be called when Propose returns null'); },
+};
+NODE
+run_case nullpropose "$FIX_NULLPROPOSE" add-dim-eval-topic "$TMP/stubs-nullpropose.cjs" "$TMP/out-nullpropose.json"
+
+if [ -f "$TMP/out-nullpropose.json" ]; then
+  python3 - "$TMP/out-nullpropose.json" "$FIX_NULLPROPOSE" <<'PY'
+import json, sys, os
+d = json.load(open(sys.argv[1], encoding='utf-8'))
+fixture = sys.argv[2]
+ok = True
+def check(name, cond, detail=''):
+    global ok
+    if cond:
+        print(f"  ok  {name}")
+    else:
+        ok = False
+        print(f"FAIL  {name}{(' -- ' + detail) if detail else ''}")
+
+check('a null Propose result THROWS (agent failure, not silently swallowed as zero candidates)', d['threw'] is not None, str(d['threw']))
+check('the thrown error is NOT the generic amendment-failed message (it is the null-Propose-specific error)',
+      d['threw'] is not None and 'amendment failed' not in d['threw'].get('message', ''), json.dumps(d.get('threw')))
+labels = [c['opts']['label'] for c in d['calls']]
+check('only add-dim:propose was called (Prune/Amend never reached)', labels == ['add-dim:propose'], json.dumps(labels))
+
+cfg_path = os.path.join(fixture, 'harness.config.json')
+with open(cfg_path, encoding='utf-8') as f:
+    cfg = json.load(f)
+check('fixture harness.config.json dimensions[] untouched (still exactly 2)', len(cfg['dimensions']) == 2, json.dumps(cfg['dimensions']))
+goal_path = os.path.join(fixture, 'reports/add-dim-eval-topic/goal.json')
+with open(goal_path, encoding='utf-8') as f:
+    goal = json.load(f)
+check('fixture goal.json untouched (no .version stamped)', 'version' not in goal, json.dumps(goal))
+sys.exit(0 if ok else 1)
+PY
+  rc=$?
+  [ "$rc" -eq 0 ] || fail=1
+fi
+
+# ============================================================================
 # B1: Zero-candidate case — Propose returns candidates: [] — a valid,
 # non-error outcome per the module's own header/return comment.
 # ============================================================================
@@ -318,6 +391,66 @@ check('added[] is genuinely empty', r.get('added') == [], json.dumps(r.get('adde
 rejected = r.get('rejected') or []
 check('rejected[] carries both candidates with their stated reasons', len(rejected) == 2 and all(x.get('why') for x in rejected), json.dumps(rejected))
 check('goalVersion is null (no lineage event happened)', r.get('goalVersion') is None, json.dumps(r.get('goalVersion')))
+labels = [c['opts']['label'] for c in d['calls']]
+check('only propose+prune were called (Amend never reached)', labels == ['add-dim:propose', 'add-dim:prune'], json.dumps(labels))
+
+cfg_path = os.path.join(fixture, 'harness.config.json')
+with open(cfg_path, encoding='utf-8') as f:
+    cfg = json.load(f)
+check('fixture harness.config.json dimensions[] untouched (still exactly 2)', len(cfg['dimensions']) == 2, json.dumps(cfg['dimensions']))
+goal_path = os.path.join(fixture, 'reports/add-dim-eval-topic/goal.json')
+with open(goal_path, encoding='utf-8') as f:
+    goal = json.load(f)
+check('fixture goal.json untouched (no .version stamped)', 'version' not in goal, json.dumps(goal))
+sys.exit(0 if ok else 1)
+PY
+  rc=$?
+  [ "$rc" -eq 0 ] || fail=1
+fi
+
+# ============================================================================
+# B3: NULL-prune case (research-harness-template#753) — the Prune-phase
+# agent() call returns null (skeptic agent died after retries / was
+# skipped), a DIFFERENT failure from B2's "agent ran and rejected
+# everything." Pre-fix, the `pruned && pruned.approved.includes(...)` guard
+# silently coerced this into approved=[], logged the FALSE claim "All N
+# candidate(s) rejected by the skeptic," and returned a normal-looking
+# success-shaped result. Proven here: the module now throws instead, and
+# Amend is never reached / config+goal are never mutated.
+# ============================================================================
+FIX_NULLPRUNE="$(new_fixture nullprune)"
+cat > "$TMP/stubs-nullprune.cjs" <<'NODE'
+module.exports = {
+  'add-dim:propose': async () => ({
+    candidates: [
+      { id: 'regulatory', description: 'Regulatory and compliance posture', evidence: 'homeless lead', methodologyNote: 'note' },
+    ],
+  }),
+  'add-dim:prune': async () => null,
+  'add-dim:amend': async () => { throw new Error('add-dim:amend must NOT be called when the prune phase itself failed (null result)'); },
+};
+NODE
+run_case nullprune "$FIX_NULLPRUNE" add-dim-eval-topic "$TMP/stubs-nullprune.cjs" "$TMP/out-nullprune.json"
+
+if [ -f "$TMP/out-nullprune.json" ]; then
+  python3 - "$TMP/out-nullprune.json" "$FIX_NULLPRUNE" <<'PY'
+import json, sys, os
+d = json.load(open(sys.argv[1], encoding='utf-8'))
+fixture = sys.argv[2]
+ok = True
+def check(name, cond, detail=''):
+    global ok
+    if cond:
+        print(f"  ok  {name}")
+    else:
+        ok = False
+        print(f"FAIL  {name}{(' -- ' + detail) if detail else ''}")
+
+check('a null prune result THROWS (never silently reported as a skeptic rejection)', d['threw'] is not None, str(d['threw']))
+if d['threw'] is not None:
+    check('the thrown error names the prune-phase failure explicitly', 'prune' in d['threw']['message'].lower(), d['threw']['message'])
+r = d.get('result')
+check('no fabricated success-shaped result was returned (result is null, run threw before any return)', r is None, json.dumps(r))
 labels = [c['opts']['label'] for c in d['calls']]
 check('only propose+prune were called (Amend never reached)', labels == ['add-dim:propose', 'add-dim:prune'], json.dumps(labels))
 
@@ -551,7 +684,7 @@ PY
 fi
 
 if [ "$fail" -eq 0 ]; then
-  note "Amend phase invokes the REAL scripts/goal-version.sh exactly twice (OLD then NEW), never a freehand-narrated hash; zero-candidate and all-rejected outcomes both complete with no throw, structured reasoning, and provably untouched config/goal files (Amend never invoked); a seeded overlap candidate is correctly filtered out of added[] with its stated OVERLAP reason preserved, and Amend never sees it; and the approved-candidate path lands the new dimension in an independently-ajv-clean harness.config.json, with the new goal version's supersedes/version fields matching THREE separate fresh invocations of the real scripts/goal-version.sh (baseline before mutation, and two independent recomputations after) — proving the hash is a real, stable function of content, not a hand-simulated or narrated value. The one gap this eval cannot close — whether a live skeptic model actually judges 'technical-details' as overlapping — is genuine and non-deterministic, documented here rather than faked."
+  note "A null Propose result (agent failure) correctly THROWS rather than being silently swallowed as a zero-candidate success (#749); a NULL prune-phase result (#753) now throws instead of being silently coerced into a fabricated 'skeptic rejected everything' success-shaped result; Amend phase invokes the REAL scripts/goal-version.sh exactly twice (OLD then NEW), never a freehand-narrated hash; zero-candidate and all-rejected outcomes both complete with no throw, structured reasoning, and provably untouched config/goal files (Amend never invoked); a seeded overlap candidate is correctly filtered out of added[] with its stated OVERLAP reason preserved, and Amend never sees it; and the approved-candidate path lands the new dimension in an independently-ajv-clean harness.config.json, with the new goal version's supersedes/version fields matching THREE separate fresh invocations of the real scripts/goal-version.sh (baseline before mutation, and two independent recomputations after) — proving the hash is a real, stable function of content, not a hand-simulated or narrated value. The one gap this eval cannot close — whether a live skeptic model actually judges 'technical-details' as overlapping — is genuine and non-deterministic, documented here rather than faked."
 else
   echo "add-dimensions-check: FAILED (see notes above)"
 fi

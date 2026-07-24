@@ -139,7 +139,17 @@ const MODE = A.mode || 'full'
 // is the fallthrough remainder of the script, not its own `if` branch).
 const KNOWN_MODES = ['full', 'augment', 'pivot', 'import', 'audit', 'deliverables', 'falsify']
 if (!KNOWN_MODES.includes(MODE)) throw new Error(`research-pipeline: unknown mode '${MODE}' (expected one of ${KNOWN_MODES.join(', ')})`)
-const MAX_ROUNDS = A.maxRounds || 3
+// research-harness-template#756: `||` treats an explicit `args.maxRounds: 0`
+// (a legitimate "run zero research rounds" request, e.g. a goal-only/dry-run
+// caller, or one computing a dynamic round budget that legitimately
+// evaluates to 0) as falsy, silently coercing it to the default of 3 and
+// running up to 3 full rounds the caller explicitly tried to avoid, with no
+// error or log indicating the override. `??` only falls back to the
+// default when maxRounds is actually absent (undefined/null), so an
+// explicit 0 is honored — the round loop's own bound
+// (`round <= MAX_ROUNDS`) already handles MAX_ROUNDS === 0 correctly (the
+// loop body never executes), it just never used to see the real value.
+const MAX_ROUNDS = A.maxRounds ?? 3
 const W = A.workflowsDir || '.claude/workflows'
 const RUN_DATE = A.runDate
 const BUDGET_FLOOR = 60000 // stop opening new rounds below this many remaining tokens

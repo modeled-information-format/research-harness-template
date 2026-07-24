@@ -77,5 +77,8 @@ if ! "$ROOT/scripts/check-citation-integrity.sh" "$TMP" >/dev/null 2>&1; then
   exit 1
 fi
 
-[ -n "$JSON_OUT" ] && cp "$TMP" "$JSON_OUT"
+if [ -n "$JSON_OUT" ] && ! cp "$TMP" "$JSON_OUT"; then
+  echo "mif-project: failed to write JSON projection to $JSON_OUT" >&2
+  exit 4
+fi
 echo "mif-project: $MD projects to a valid MIF L3 finding"

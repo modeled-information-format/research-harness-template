@@ -143,7 +143,15 @@ const proposal = await agent(
     `A new dimension is justified ONLY when a germane line of inquiry cannot be housed by any existing dimension without distorting its methodology. Dimensions are domain-general axes of investigation, not topics or findings. Each candidate: schema-legal id ([a-z][a-z0-9_-]*), one-sentence description matching the config's dimension style, the evidence, and a methodology note (how an analyst would research it). Propose at most 4; zero is a valid answer.`,
   { label: 'add-dim:propose', model: 'sonnet', schema: PROPOSE_SCHEMA },
 )
-if (!proposal || !proposal.candidates.length) {
+// research-harness-template#749: a null proposal (subagent died after
+// retries, or a mid-run user skip) is a genuine operational FAILURE, per the
+// Workflow-tool DSL contract (agent() resolves to null rather than
+// throwing) — it must never be conflated with a valid, schema-conforming
+// `{candidates: []}` response, which the prompt above explicitly allows
+// ("zero is a valid answer"). Mirrors research-fanout.js:124, which throws
+// on the analogous `!plan` null case rather than treating it as empty.
+if (!proposal) throw new Error('research-add-dimensions: Propose phase returned no result (agent failure — retries exhausted or skipped)')
+if (!proposal.candidates.length) {
   log('No new dimensions proposed — current set holds the evidence')
   return { added: [], rejected: [], goalVersion: null }
 }
@@ -154,10 +162,11 @@ const pruned = await agent(
     `Attack each: (1) OVERLAP — is it really a subset/restatement of an existing dimension? (2) SCOPE — does the goal's out_of_scope/non_goals exclude it? (3) DECISION-RELEVANCE — would findings on this axis change the goal's decision, or merely be interesting? Reject on any hit, with the specific reason. Approve only what survives all three.`,
   { label: 'add-dim:prune', model: 'sonnet', schema: PRUNE_SCHEMA },
 )
-const approved = proposal.candidates.filter((c) => pruned && pruned.approved.includes(c.id))
+if (!pruned) throw new Error('research-add-dimensions: prune phase failed (no result from skeptic agent)')
+const approved = proposal.candidates.filter((c) => pruned.approved.includes(c.id))
 if (!approved.length) {
   log(`All ${proposal.candidates.length} candidate(s) rejected by the skeptic`)
-  return { added: [], rejected: (pruned && pruned.rejected) || [], goalVersion: null }
+  return { added: [], rejected: pruned.rejected || [], goalVersion: null }
 }
 log(`Adding dimension(s): ${approved.map((c) => c.id).join(', ')}`)
 
@@ -181,7 +190,7 @@ if (!amend || !amend.configPatched) throw new Error('research-add-dimensions: am
 
 return {
   added: amend.added,
-  rejected: (pruned && pruned.rejected) || [],
+  rejected: pruned.rejected || [],
   goalVersion: amend.goalVersion,
   supersedes: amend.supersedes,
   // the orchestrator fans out ONLY the new dimensions next round

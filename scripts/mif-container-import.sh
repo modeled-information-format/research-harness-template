@@ -109,10 +109,28 @@ POSITIONAL=()
 for arg in "$@"; do
   case "$arg" in
     --dry-run) DRY_RUN=1 ;;
+    # A mistyped/unrecognized flag (e.g. --dryrun, -dry-run) used to fall
+    # through the wildcard branch below into POSITIONAL[] like any ordinary
+    # positional argument -- DRY_RUN silently stayed 0 (its default) and the
+    # script proceeded straight through step 4's real write, contradicting
+    # this script's own "--dry-run: ... report the outcome without writing
+    # anything" contract with zero error or warning (research-harness-
+    # template#746). Anything that LOOKS like an option (leading '-') but
+    # isn't the exact literal --dry-run is now rejected here, before it can
+    # ever reach POSITIONAL[] or the count check below.
+    -*)
+      echo "mif-container-import: unrecognized option: $arg" >&2
+      echo "usage: mif-container-import.sh <container-dir> <topic> [--dry-run]" >&2
+      exit 2
+      ;;
     *) POSITIONAL+=("$arg") ;;
   esac
 done
-[ "${#POSITIONAL[@]}" -ge 2 ] || {
+# Exactly 2 (not merely "at least 2", #746): a genuine typo'd flag is now
+# caught above, but an extra bare positional argument (no leading '-') would
+# otherwise still silently slide into POSITIONAL[2] and be ignored the same
+# way -- closing that adjacent instance of the same silent-acceptance defect.
+[ "${#POSITIONAL[@]}" -eq 2 ] || {
   echo "usage: mif-container-import.sh <container-dir> <topic> [--dry-run]" >&2
   exit 2
 }
@@ -546,8 +564,15 @@ while IFS=$'\t' read -r rpath rdigest rmiftype; do
     # the finding branch (below) already have, so a destination
     # ontology-map.json large enough for the subset jq merge to take
     # non-trivial time could have its own still-live lock misjudged as stale
-    # and stolen mid-write by a concurrent invocation.
-    container_lock_refresh "$LOCK_DIR"
+    # and stolen mid-write by a concurrent invocation. Pass LOCK_TOKEN and be
+    # fatal on mismatch, exactly like the doc/finding branches: since #763
+    # container_lock_refresh REQUIRES the ownership token (a tokenless call is
+    # refused as a no-op and never actually refreshes), a bare
+    # `container_lock_refresh "$LOCK_DIR"` here would silently defeat this very
+    # fix and emit a spurious "no ownership token supplied" diagnostic each
+    # iteration.
+    container_lock_refresh "$LOCK_DIR" "$LOCK_TOKEN" \
+      || fail "lost exclusive access to $LOCK_DIR mid-import -- another run has taken over this topic's lock"
     rfile="$CONTAINER_DIR/$rpath"
     dest="reports/$TOPIC/ontology-map.json"
     jq -e 'type == "array"' "$rfile" > /dev/null 2>&1 \
@@ -558,6 +583,20 @@ while IFS=$'\t' read -r rpath rdigest rmiftype; do
       if [ -f "$dest" ]; then
         dest_digest="$(scripts/mif-container-digest.sh resource "$dest" 2>/dev/null)" || dest_digest=""
         [ "$dest_digest" = "$rdigest" ] && continue
+      fi
+      # Re-verify the incoming file's digest immediately before staging/
+      # publishing (issue #759) -- closes the same TOCTOU window between
+      # step 2's bulk verification and this write that the doc-write
+      # (Copilot review, PR #491) and finding-overwrite-in-place paths
+      # already close with their own `recheck`. Without this, a mutable or
+      # network-backed $CONTAINER_DIR whose $rfile changed after step 2 but
+      # before this write would have its unverified content published into
+      # the destination corpus.
+      ontmap_recheck="$(scripts/mif-container-digest.sh resource "$rfile" 2>/dev/null)" \
+        || fail "failed to re-verify the digest of $rpath immediately before writing"
+      [ "$ontmap_recheck" = "$rdigest" ] \
+        || fail "$rpath's digest changed between verification and write (expected $rdigest, got $ontmap_recheck) -- refusing to write unverified content"
+      if [ -f "$dest" ]; then
         rollback_backup "$dest"
       else
         rollback_track_created "$dest"
@@ -580,6 +619,19 @@ while IFS=$'\t' read -r rpath rdigest rmiftype; do
     # destination) is appended. This matters because gate_m31's own regression test
     # compares the destination array before/after a same-content subset re-import and
     # expects it byte-identical, not merely set-equal.
+    # Re-verify the incoming file's digest immediately before staging/
+    # merging (issue #759) -- closes the same TOCTOU window between step
+    # 2's bulk verification and this write that the doc-write (Copilot
+    # review, PR #491) and finding-overwrite-in-place paths already close
+    # with their own `recheck`. Unlike the full-scope branch above, a
+    # subset merge always reaches this point (there is no "destination
+    # already matches" early skip before the merge itself runs), so this
+    # must run unconditionally before the jq merge below.
+    ontmap_recheck="$(scripts/mif-container-digest.sh resource "$rfile" 2>/dev/null)" \
+      || fail "failed to re-verify the digest of $rpath immediately before writing"
+    [ "$ontmap_recheck" = "$rdigest" ] \
+      || fail "$rpath's digest changed between verification and write (expected $rdigest, got $ontmap_recheck) -- refusing to write unverified content"
+
     # Ledger before staging (issue #673): a same-content merge below may
     # still skip via cmp -s, which makes this backup unnecessary but
     # harmless -- restoring identical bytes is a no-op, and taking it

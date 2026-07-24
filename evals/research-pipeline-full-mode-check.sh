@@ -93,6 +93,13 @@
 #         report is still well-formed (checks/synthesis/projection all
 #         null, done:false) rather than crashing on an unset lastCheck/
 #         lastSyn.
+#      B10 (research-harness-template#756, maxRounds-zero-is-honored): an
+#         explicit args.maxRounds: 0 also runs zero rounds — the same
+#         zero-round shape as B5, but reached via the caller's own explicit
+#         bound rather than the budget floor. Regression trap for the `||`
+#         vs `??` bug: on the old `A.maxRounds || 3` code, 0 is falsy and
+#         MAX_ROUNDS silently became 3, so this case's throw-on-call stubs
+#         for fanout/falsify/synthesis would have fired for real.
 #
 #      Every case also asserts add-dimensions is NEVER called (none of
 #      these fixtures' coverage-audit backlogs propose it) — confirming the
@@ -182,8 +189,8 @@ grep -qF 'if (round === MAX_ROUNDS || budgetLow()) break' "$WF" \
   || { note "the maxRounds/budget-floor stop guard before adaptation is missing or reshaped"; fail=1; }
 grep -qF 'const BUDGET_FLOOR = 60000' "$WF" \
   || { note "BUDGET_FLOOR's literal value moved or was removed"; fail=1; }
-grep -qF "MAX_ROUNDS = A.maxRounds || 3" "$WF" \
-  || { note "MAX_ROUNDS's default-3 code comparison moved or was removed"; fail=1; }
+grep -qF "MAX_ROUNDS = A.maxRounds ?? 3" "$WF" \
+  || { note "MAX_ROUNDS's default-3 code comparison moved or was removed (research-harness-template#756: must be '??', never '||', so an explicit maxRounds:0 is honored instead of silently coerced to 3)"; fail=1; }
 grep -qF 'if (lastCheck.boundHit) { log(' "$WF" \
   || { note "the goal's own boundHit stop guard is missing or reshaped"; fail=1; }
 
@@ -986,6 +993,71 @@ PY
   [ "$rc" -eq 0 ] || fail=1
 else
   note "B9: no out-b9.json produced"
+  fail=1
+fi
+
+# ============================================================================
+# B10 (research-harness-template#756): an explicit args.maxRounds: 0 (a
+# legitimate "run zero research rounds" request) must run ZERO rounds --
+# never silently coerced to the default of 3. Mirrors B5's zero-round
+# shape (every child workflow throws if called, proving none of them run)
+# but is a DIFFERENT trigger: B5's zero rounds come from the budget floor
+# tripping before round 1; B10's come from the caller's own explicit bound.
+# Before the fix (`A.maxRounds || 3`), 0 is falsy so MAX_ROUNDS silently
+# became 3 and fanout/falsify/synthesis ran up to 3 full rounds here --
+# this case fails loudly on that old code (fanout/falsify/synthesis are
+# stubbed to throw) and passes once `??` is used instead.
+# ============================================================================
+printf '%s' "{\"harnessDir\":\"$TMP/h\",\"topic\":\"pipeline-eval-topic\",\"maxRounds\":0}" > "$TMP/args-b10.json"
+cat > "$TMP/stubs-b10.cjs" <<NODE
+'use strict';
+module.exports = {
+  wf: {
+    $GOAL_STUB_JS
+    fanout: async () => { throw new Error('fanout must NOT be called -- maxRounds:0 must run zero rounds'); },
+    falsify: async () => { throw new Error('falsify must NOT be called'); },
+    synthesis: async () => { throw new Error('synthesis must NOT be called'); },
+    'coverage-audit': async () => { throw new Error('coverage-audit must NOT be called'); },
+    augment: async () => { throw new Error('augment must NOT be called'); },
+    'add-dimensions': async () => { throw new Error('add-dimensions must NOT be called'); },
+    projection: async () => { throw new Error('projection must NOT be called -- lastSyn is never set when zero rounds run'); },
+  },
+  completionCheck: () => { throw new Error('completionCheck must NOT be called -- zero rounds run'); },
+};
+NODE
+run_case b10 "$TMP/args-b10.json" "$TMP/stubs-b10.cjs" "$TMP/out-b10.json"
+
+if [ -f "$TMP/out-b10.json" ]; then
+  python3 - "$TMP/out-b10.json" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1], encoding='utf-8'))
+ok = True
+def check(name, cond, detail=''):
+    global ok
+    if cond:
+        print(f"  ok  B10: {name}")
+    else:
+        ok = False
+        print(f"FAIL  B10: {name}{(' -- ' + detail) if detail else ''}")
+
+check('module did not throw (maxRounds:0 is a valid, well-formed zero-round request, not a crash)', d['threw'] is None, str(d['threw']))
+r = d.get('result') or {}
+by_name = {}
+for c in d['wfCalls']:
+    by_name.setdefault(c['name'], []).append(c)
+check('fanout never ran (maxRounds:0 must skip the round loop entirely, never silently coerced to the default of 3)', len(by_name.get('fanout', [])) == 0, json.dumps(list(by_name.keys())))
+check('no completionCheck call happened', len(d['agentCalls']) == 0, json.dumps([a['label'] for a in d['agentCalls']]))
+check('projection never ran (lastSyn is never set on a zero-round run)', len(by_name.get('projection', [])) == 0)
+check('result.done is false', r.get('done') is False, str(r.get('done')))
+check('result.checks is null (lastCheck was never assigned)', r.get('checks') is None, str(r.get('checks')))
+check('result.synthesis is null (lastSyn was never assigned)', r.get('synthesis') is None, str(r.get('synthesis')))
+
+sys.exit(0 if ok else 1)
+PY
+  rc=$?
+  [ "$rc" -eq 0 ] || fail=1
+else
+  note "B10: no out-b10.json produced"
   fail=1
 fi
 

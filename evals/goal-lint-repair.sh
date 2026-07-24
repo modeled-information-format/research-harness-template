@@ -176,5 +176,21 @@ grep -qF 'PRESERVE OR LEAVE ABSENT, NEVER ELICIT' "$WF" \
 grep -qF 'CANNOT pause for user input' "$WF" \
   || { note "$WF's Draft prompt no longer states the engine path cannot pause for AskUserQuestion — a future edit could silently reintroduce elicitation on this path"; fail=1; }
 
+# Case 10 (research-harness-template#760): --config with no path after it
+# (or an empty path) is a usage mistake and must exit 2 via usage(), never
+# bash's own ${2:?msg} parameter-expansion error (which exits 1 and makes a
+# usage mistake indistinguishable by exit code from a real lint failure).
+LINT "$FX/goal-repaired.json" --config > "$TMP/noconfigpath.out" 2>&1
+rc=$?
+[ "$rc" -eq 2 ] || { note "--config with no path: expected exit 2, got $rc"; fail=1; }
+grep -q '^usage: lint-goal.sh' "$TMP/noconfigpath.out" \
+  || { note "--config with no path did not print the usage message"; fail=1; }
+
+LINT "$FX/goal-repaired.json" --config "" > "$TMP/emptyconfigpath.out" 2>&1
+rc=$?
+[ "$rc" -eq 2 ] || { note "--config with an empty path: expected exit 2, got $rc"; fail=1; }
+grep -q '^usage: lint-goal.sh' "$TMP/emptyconfigpath.out" \
+  || { note "--config with an empty path did not print the usage message"; fail=1; }
+
 [ "$fail" -eq 0 ] && note "lint gate rejects the seeded-invalid goal (ajv-valid, lint-invalid), repaired goal is green, the 2-round repair bound converges or fails closed, the optional deliverables field validates when present/omitted and fails closed on an unrecognized key, and research-goal.js's Draft prompt never elicits deliverables itself"
 exit "$fail"
