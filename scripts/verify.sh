@@ -4112,23 +4112,37 @@ gate_m30() {
     # runs inside the EXIT/RETURN trap itself, so `bad` is the only way to
     # surface a failed restore instead of silently proceeding as if it
     # succeeded. Every step still runs regardless of an earlier one failing.
+    #
+    # research-harness-template#754: a failed restore step must NOT still
+    # cause the unconditional `rm -rf "$T"` below to run -- doing so
+    # destroyed the only backup of the pre-mutation corpus even though the
+    # failure was already detected and reported via `bad`, leaving a user
+    # running verify.sh with real, uncommitted findings no recovery path.
+    # Track whether any restore step failed and only remove $T once every
+    # step has actually succeeded; otherwise leave it in place for manual
+    # inspection/recovery.
+    local restore_failed=0
     rm -rf "$TOPIC_DIR/findings"
     mkdir -p "$TOPIC_DIR/findings"
     cp -r "$T/snapshot/findings/." "$TOPIC_DIR/findings/" \
-      || bad "gate_m30 restore_snapshot: failed to restore $TOPIC_DIR/findings -- real corpus may be left mutated"
+      || { bad "gate_m30 restore_snapshot: failed to restore $TOPIC_DIR/findings -- real corpus may be left mutated"; restore_failed=1; }
     cp "$T/snapshot/README.md" "$TOPIC_DIR/README.md" \
-      || bad "gate_m30 restore_snapshot: failed to restore $TOPIC_DIR/README.md -- real corpus may be left mutated"
+      || { bad "gate_m30 restore_snapshot: failed to restore $TOPIC_DIR/README.md -- real corpus may be left mutated"; restore_failed=1; }
     cp "$T/snapshot/concordance.json" reports/concordance.json \
-      || bad "gate_m30 restore_snapshot: failed to restore reports/concordance.json -- real corpus may be left mutated"
+      || { bad "gate_m30 restore_snapshot: failed to restore reports/concordance.json -- real corpus may be left mutated"; restore_failed=1; }
     if [ "$had_sameas_proposals" -eq 1 ]; then
       cp "$T/snapshot/concordance-sameas-proposals.json" reports/concordance-sameas-proposals.json \
-        || bad "gate_m30 restore_snapshot: failed to restore reports/concordance-sameas-proposals.json"
+        || { bad "gate_m30 restore_snapshot: failed to restore reports/concordance-sameas-proposals.json"; restore_failed=1; }
     else
       rm -f reports/concordance-sameas-proposals.json
     fi
     rm -f "$TOPIC_DIR/knowledge-graph.json"
     rm -rf "$TOPIC_DIR/.container.lock"
-    rm -rf "$T"
+    if [ "$restore_failed" -eq 0 ]; then
+      rm -rf "$T"
+    else
+      info "gate_m30 restore_snapshot: leaving backup at $T in place after a failed restore step -- inspect/recover it manually, then remove it"
+    fi
     trap - EXIT
   }
   trap restore_snapshot RETURN EXIT
@@ -4295,6 +4309,36 @@ gate_m30() {
     ok "a corrupt destination finding (reconciliation merge throws) rejects the WHOLE import -- not even an independent valid new-@id resource in the same manifest is written"
   else
     bad "corrupt-destination partial-write regression check failed (rc=$rc_corrupt, independent_written=$independent_written)"
+  fi
+
+  # 30g. Regression (research-harness-template#754): restore_snapshot's own
+  #      backup ($T) must survive a FAILED restore step, not get deleted
+  #      unconditionally. Force one restore `cp` (reports/concordance.json)
+  #      to fail via a permission error, invoke restore_snapshot directly
+  #      with `bad`/`ok`/`info` shadowed to no-ops (so this induced,
+  #      expected failure -- restore_snapshot correctly calling `bad` on
+  #      it -- does not itself count against this gate's real PASS/FAIL
+  #      totals, and its `info` note doesn't leak into the captured
+  #      output this probe checks), and assert $T is still present
+  #      afterward. The permission bit is
+  #      restored, and gate_m30's own trap-driven restore_snapshot (armed
+  #      at the top of this function) then runs a real, unobstructed
+  #      restore at the true end of the gate, so this probe never leaves
+  #      the corpus or the scratch dir behind.
+  chmod 000 reports/concordance.json
+  local t_survives
+  t_survives="$(
+    bad() { :; }
+    ok() { :; }
+    info() { :; }
+    restore_snapshot >/dev/null 2>&1
+    [ -d "$T" ] && echo yes || echo no
+  )"
+  chmod 644 reports/concordance.json
+  if [ "$t_survives" = "yes" ]; then
+    ok "restore_snapshot preserves its own backup ($T) when a restore step fails, instead of deleting it unconditionally"
+  else
+    bad "restore_snapshot deleted its backup ($T) even though a restore step failed -- unrecoverable corpus mutation risk"
   fi
 }
 
