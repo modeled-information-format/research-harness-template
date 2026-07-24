@@ -170,6 +170,20 @@ run "fanout-repair-disclosure-check" bash evals/fanout-repair-disclosure-check.s
 # LENSES[i] lookup after filter(Boolean).
 run "falsify-verdict-merge" bash evals/falsify-verdict-merge.sh
 
+# research-harness-template#747: a genuine write failure (written=false)
+# fell straight through to the Gate phase's return statement regardless of
+# outcome, so Rollup counted it as gated even though falsify.sh never
+# persisted anything to disk. This eval extracts the write/retry/return
+# span verbatim and drives it with a stubbed agent(): written=false on both
+# the initial call and a new #747 retry now throws loudly (never silently
+# returns); a transient failure that recovers on retry (including a
+# one-round-rule skip) is accepted; the pre-existing #659 half-write matrix
+# and the single-call happy path are unaffected. A CONTROL run against the
+# pre-fix revision (resolved via merge-base with origin/main) proves the
+# eval actually reproduces #747's silent-gating defect when run against the
+# old source, not merely that it passes against the fixed one.
+run "falsify-write-failure-gated" bash evals/falsify-write-failure-gated.sh
+
 # The fanout->falsify HANDOFF SEAM has deterministic teeth (#652/#653):
 # neither fanout-lane-contract.sh (structural-only: the FINDING_CONTRACT
 # constant exists/is embedded) nor falsify-verdict-merge.sh (one-round rule
