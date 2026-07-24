@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The genre-application `Skill()` call in `research-projection.js`,
+  `research-deliverables.js`, and `report-synthesizer.md` now invokes the
+  correct plugin namespace: `Skill(mif-docs:<genre>)`, not
+  `Skill(<genre>:<genre>)` (research-harness-template#744).** Every genre
+  pack (`academic`, `engineering`, `briefing`, …) is a `packs[]` entry
+  sourced from the single external `mif-docs` marketplace-ref plugin — there
+  is no standalone `<genre>` plugin in either this repo's own
+  `.claude-plugin/marketplace.json` or `mif-docs-plugin`'s own marketplace.
+  Previously, once `genrePackEnabled` correctly resolved `true`, the
+  Report/Render phase would instruct invoking a Skill reference to a plugin
+  namespace that does not exist, so the genre restructuring step 6b/step 4
+  exists to perform could never actually run for any genre-enabled
+  report/deliverable — either the `Skill()` call errors, or the outcome is
+  reported inconsistently with what actually happened.
+  `report-synthesizer.md`'s own Step 2 (previously cited by
+  `research-projection.js`'s header as the "known-working mechanism" this
+  logic mirrored) carried the identical wrong-namespace guidance and is
+  fixed alongside it. `evals/deliverables-genre-channel-route.sh` and
+  `evals/projection-supersession-check.sh` gained regression assertions for
+  the corrected reference (and a guard against the old one reappearing).
 - **`container_lock_refresh` (and `container_lock_release`) now verify
   ownership before acting on `reports/<topic>/.container.lock`.**
   `container_lock_acquire` previously stamped only a human-readable `owner`

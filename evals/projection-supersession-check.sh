@@ -66,7 +66,7 @@
 #
 #   G. Genre skill invocation (research-harness-template#633). Before this
 #      fix, `genre` was passed straight through to synthesize-artifact.sh as
-#      pass-through metadata — no genre's real Skill(<genre>:<genre>) template
+#      pass-through metadata — no genre's real Skill(mif-docs:<genre>) template
 #      was ever invoked, so every genre rendered the identical neutral body
 #      with only the frontmatter `genre:` field differing, indistinguishable
 #      from a correctly-genred report by inspection. Two-part proof, mirroring
@@ -77,7 +77,7 @@
 #      enabled genre pack, a disabled one, and a genre absent from packs[]
 #      entirely; (2) structural proof (grepped from the Report phase's own
 #      AGENT PROMPT body) that an enabled genre pack's resolution literally
-#      invokes Skill(<genre>:<genre>) and that a disabled/absent pack's
+#      invokes Skill(mif-docs:<genre>) and that a disabled/absent pack's
 #      resolution explicitly forbids the output from claiming a genre it
 #      didn't earn, plus schema/return-shape proof that genreApplied and
 #      genreSkillInvoked are actually surfaced to callers rather than
@@ -215,13 +215,24 @@ fi
 
 # G2 — structural proof (grepped from the Report phase's own AGENT PROMPT
 # body, never a header-comment mention) that an enabled genre pack's
-# resolution literally invokes Skill(<genre>:<genre>), that a disabled/absent
+# resolution literally invokes Skill(mif-docs:<genre>) (research-harness-template#744), that a disabled/absent
 # pack's resolution explicitly forbids claiming an unearned genre, and that
 # the outcome is surfaced through REPORT_SCHEMA and the module's final return.
 grep -qF 'GENRE ENABLEMENT CHECK' <<<"$report_span" \
   || { note "Report phase prompt lost its GENRE ENABLEMENT CHECK step — the #633 pack-enablement resolution has regressed away"; fail=1; }
 grep -qF 'Skill(${genreResolution.genreSkillRef})' "$WF" \
   || { note "the module no longer invokes Skill(\${genreResolution.genreSkillRef}) when a genre's pack is enabled — the #633 genre-skill application has regressed away"; fail=1; }
+# research-harness-template#744: genreSkillRef itself must resolve to
+# "mif-docs:<genre>" — every genre pack sources from the single external
+# "mif-docs" plugin, never a standalone "<genre>" plugin (confirmed: neither
+# this repo's own .claude-plugin/marketplace.json nor mif-docs-plugin's own
+# marketplace declares a plugin named after any individual genre). A prior
+# regression had the genre-resolve prompt instruct genreSkillRef="<genre>:
+# <genre>", producing a Skill() call to a plugin namespace that does not exist.
+grep -qF 'genreSkillRef="mif-docs:${GENRE}"' <<<"$report_span" \
+  || { note "Report phase's genre-resolve prompt no longer instructs genreSkillRef=\"mif-docs:\${GENRE}\" — the #744 correct-namespace fix has regressed away"; fail=1; }
+grep -qF 'genreSkillRef="${GENRE}:${GENRE}"' <<<"$report_span" \
+  && { note "Report phase's genre-resolve prompt still instructs the WRONG genreSkillRef=\"\${GENRE}:\${GENRE}\" (research-harness-template#744 regression) — no standalone <genre> plugin exists, only the single mif-docs plugin"; fail=1; }
 grep -qF 'never let the output claim a genre whose' <<<"$report_span" \
   || { note "Report phase prompt lost its explicit never-claim-an-unearned-genre instruction (#633) — mirrors report-synthesizer.md's own rule"; fail=1; }
 grep -qF "'genreApplied'" "$WF" \
@@ -499,5 +510,5 @@ else
     || { note "count-drift message did not name the stale stated value (99): $count_check_out"; fail=1; }
 fi
 
-[ "$fail" -eq 0 ] && note "script-delegated composition holds (Report: synthesize-artifact.sh->falsify.sh->render-artifact.sh->mif-project.sh; Index: build-topic-readme.sh+build-graph.sh+assert-graph-mif.sh, both grepped from the module's own AGENT PROMPT bodies, never a comment); supersession @id is proven identical across two real pipeline renders with genuinely differing content (version incremented, genre changed); the synthesisPath preflight guard is proven (by driving the verbatim-extracted branch) to fail closed with a clear, actionable message on a missing/unusable path and pass through on a usable one; computed README counts are proven to catch a stale hand-typed value via build-topic-readme.sh's real --check gate; the Verify phase's targeted-gates-only (D-10) language is intact; the #632 witnessed-provenance stamp (Skill(mif-docs:mif-provenance), graceful decline handling, no hand-authored workaround) is wired into the Report phase prompt with its outcome surfaced through REPORT_SCHEMA and the module's final return; and the #633 genre-skill-invocation fix holds (the pack-enablement jq filter extracted from the prompt correctly resolves enabled/disabled/absent genre packs against a real fixture, an enabled pack's resolution invokes Skill(<genre>:<genre>), a disabled/absent pack's resolution forbids claiming an unearned genre, and genreApplied/genreSkillInvoked are surfaced through REPORT_SCHEMA and the module's final return)"
+[ "$fail" -eq 0 ] && note "script-delegated composition holds (Report: synthesize-artifact.sh->falsify.sh->render-artifact.sh->mif-project.sh; Index: build-topic-readme.sh+build-graph.sh+assert-graph-mif.sh, both grepped from the module's own AGENT PROMPT bodies, never a comment); supersession @id is proven identical across two real pipeline renders with genuinely differing content (version incremented, genre changed); the synthesisPath preflight guard is proven (by driving the verbatim-extracted branch) to fail closed with a clear, actionable message on a missing/unusable path and pass through on a usable one; computed README counts are proven to catch a stale hand-typed value via build-topic-readme.sh's real --check gate; the Verify phase's targeted-gates-only (D-10) language is intact; the #632 witnessed-provenance stamp (Skill(mif-docs:mif-provenance), graceful decline handling, no hand-authored workaround) is wired into the Report phase prompt with its outcome surfaced through REPORT_SCHEMA and the module's final return; and the #633 genre-skill-invocation fix holds (the pack-enablement jq filter extracted from the prompt correctly resolves enabled/disabled/absent genre packs against a real fixture, an enabled pack's resolution invokes Skill(mif-docs:<genre>) (research-harness-template#744), a disabled/absent pack's resolution forbids claiming an unearned genre, and genreApplied/genreSkillInvoked are surfaced through REPORT_SCHEMA and the module's final return)"
 exit "$fail"

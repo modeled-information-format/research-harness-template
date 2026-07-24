@@ -435,24 +435,30 @@ grep -qF 'provenanceOutcome: a.provenanceOutcome' "$WF" \
 # research-projection.js's #633). Before this fix, mechanism 1's Render step
 # passed the resolved genre straight through to synthesize-artifact.sh/
 # render-artifact.sh as pass-through metadata and never invoked any genre's
-# real Skill(<genre>:<genre>) template — every genre rendered the identical
+# real Skill(mif-docs:<genre>) template — every genre rendered the identical
 # neutral body with only the frontmatter `genre:` field differing,
-# indistinguishable from a correctly-genred deliverable by inspection.
-# Structural proof (grepped from the module's ACTUAL AGENT PROMPT/source,
-# never a header comment) that: an enabled genre's Render row invokes
-# Skill(<genre>:<genre>), a genre="general" row does not, mechanism 2 rows
-# always report no genre applied, the outcome is surfaced through
-# RENDER_SCHEMA/the final return, and a caller-supplied genre is validated
-# against the pack-name pattern before being interpolated into a shell
-# command or Skill() reference (mirrors #633's own injection guard). This is
-# inherently model-driven (Route/Render are bare `agent()` calls, per this
-# file's own header) — proven structurally, per this repo's established
-# precedent, not faked as hermetic.
+# indistinguishable from a correctly-genred deliverable by inspection. A
+# second regression (research-harness-template#744) then had this module
+# invoke `Skill(<genre>:<genre>)` — a plugin namespace that does not exist,
+# since every genre pack sources from the single external `mif-docs` plugin,
+# never a standalone `<genre>` plugin. Structural proof (grepped from the
+# module's ACTUAL AGENT PROMPT/source, never a header comment) that: an
+# enabled genre's Render row invokes Skill(mif-docs:<genre>), a
+# genre="general" row does not, mechanism 2 rows always report no genre
+# applied, the outcome is surfaced through RENDER_SCHEMA/the final return,
+# and a caller-supplied genre is validated against the pack-name pattern
+# before being interpolated into a shell command or Skill() reference
+# (mirrors #633's own injection guard). This is inherently model-driven
+# (Route/Render are bare `agent()` calls, per this file's own header) —
+# proven structurally, per this repo's established precedent, not faked as
+# hermetic.
 # ============================================================================
 grep -qF "genreArg !== 'general'" "$WF" \
   || { note "the module's source no longer branches the genre-skill step on genreArg !== 'general' — has #640's conditional wiring changed?"; fail=1; }
+grep -qF 'Skill(mif-docs:${genreArg})' "$WF" \
+  || { note "the module's source no longer contains the literal Skill(mif-docs:\${genreArg}) invocation template for mechanism 1's enabled-genre case — has #640/#744's actual invocation shape changed?"; fail=1; }
 grep -qF 'Skill(${genreArg}:${genreArg})' "$WF" \
-  || { note "the module's source no longer contains the literal Skill(\${genreArg}:\${genreArg}) invocation template for mechanism 1's enabled-genre case — has #640's actual invocation shape changed?"; fail=1; }
+  && { note "the module's source still contains the WRONG Skill(\${genreArg}:\${genreArg}) invocation template (research-harness-template#744 regression) — every genre pack sources from the single mif-docs plugin, never a standalone <genre> plugin"; fail=1; }
 grep -qF 'GENRE SKILL APPLICATION' <<<"$render_span" \
   || { note "Render phase prompt lost the GENRE SKILL APPLICATION step (#640) — a requested genre could once again render only the neutral body"; fail=1; }
 grep -qF 'genreApplied=false, genreSkillInvoked=""' "$WF" \

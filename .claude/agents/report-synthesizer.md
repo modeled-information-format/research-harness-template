@@ -119,16 +119,18 @@ jq -r --arg g "$GENRE" '.packs[] | select(.name==$g and .enabled) | .name' harne
 ```
 
 - **The requested genre's pack is enabled:** load its template via the `Skill`
-  tool, never a hardcoded `reports:` prefix — Claude Code's native plugin
-  model resolves every skill as `pack:skill`, where `pack` is the pack's own
-  `name` from `packs[]` (NOT `source.marketplace`, which only says where the
-  plugin's code is *fetched from* — `scripts/sync-packs.sh` registers every
-  enabled pack, bundled or external, under this harness's own plugin
-  namespace regardless of upstream source). Each genre pack is one plugin
-  with one skill, self-named (`academic`, `engineering`, `briefing`, …), so
-  invoke e.g. `Skill(academic:academic)`, `Skill(engineering:engineering)` —
-  `<pack-name>:<pack-name>`, not the marketplace it happens to be vendored
-  from. Honor the loaded template's declared section structure, audience, altitude,
+  tool, never a hardcoded `reports:` prefix. Every genre pack's `packs[]`
+  entry (`academic`, `engineering`, `briefing`, …) sources from the single
+  external `mif-docs` marketplace-ref plugin — there is no standalone
+  `<genre>` plugin (confirmed: this repo's own `.claude-plugin/marketplace.json`
+  declares no plugin named `academic`/`engineering`/etc., and `mif-docs-plugin`'s
+  own marketplace declares exactly ONE plugin, name="mif-docs", "one skill per
+  document genre"). So invoke `Skill(mif-docs:<genre>)` — e.g.
+  `Skill(mif-docs:academic)`, `Skill(mif-docs:engineering)` — never
+  `Skill(<genre>:<genre>)` (research-harness-template#744; this file previously
+  carried that wrong-namespace guidance, cited as the "KNOWN-WORKING mechanism"
+  by `.claude/workflows/research-projection.js`'s header, which it was not).
+  Honor the loaded template's declared section structure, audience, altitude,
   citation style, and required front-/back-matter. Domain methodology a genre
   may draw on (from a separate methodology pack) plugs in only when that pack
   is enabled — the core stays domain-general.

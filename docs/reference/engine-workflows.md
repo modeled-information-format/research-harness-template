@@ -2,7 +2,7 @@
 id: reference-engine-workflows
 type: semantic
 created: '2026-07-17T20:25:00-04:00'
-modified: '2026-07-23T23:26:45.988Z'
+modified: '2026-07-24T12:21:42.603Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -525,13 +525,13 @@ Source: `.claude/workflows/research-projection.js`.
 | `synthesisPath` | yes | — | The ephemeral output path from a `research-synthesis` call — see the [consumption contract](#synthesispath-consumption-contract-same-process-only) below. A missing `synthesisPath` throws before any phase runs. |
 | `harnessDir` | no | `.` | Path to the harness instance (the #552/#556/#560/#564 precedent). |
 | `slug` | no | `topic` | The report file's slug (`reports/<topic>/<slug>.md`). |
-| `genre` | no | `'general'` | The requested genre. Resolved against `harness.config.json` `packs[]` enablement before rendering (#633): only an ENABLED genre pack's real `Skill(<genre>:<genre>)` template is actually applied to the rendered report body; `'general'` or a disabled/absent genre pack renders the neutral script pipeline honestly under `genreArg="general"` — the report's own genre metadata never claims a genre whose template was not actually applied. See [Genre resolution](#genre-resolution-skillgenregenre-applied-only-when-enabled-633) below. |
+| `genre` | no | `'general'` | The requested genre. Resolved against `harness.config.json` `packs[]` enablement before rendering (#633): only an ENABLED genre pack's real `Skill(mif-docs:<genre>)` template is actually applied to the rendered report body; `'general'` or a disabled/absent genre pack renders the neutral script pipeline honestly under `genreArg="general"` — the report's own genre metadata never claims a genre whose template was not actually applied. See [Genre resolution](#genre-resolution-skillmif-docsgenre-applied-only-when-enabled-633) below. |
 
 ### Phases
 
 | Phase | Model | What it does |
 | --- | --- | --- |
-| Report | sonnet | A same-process existence/non-empty/valid-JSON preflight check on `synthesisPath` (folded into the top of this phase, not a separate stage), then genre resolution against `harness.config.json` `packs[]` enablement (#633), then the `publish-report` skill's script pipeline: `synthesize-artifact.sh` → a REAL falsification pass over the report's own central claims via `falsify.sh` (never a hand-authored verdict) → `render-artifact.sh` → `mif-project.sh` → `Skill(<genre>:<genre>)` applied + re-confirmed only when that genre's pack is enabled. A `falsified` verdict quarantines the report — it is not shipped, and the module returns `ok: false` without proceeding to Index. Wrapped in try/catch (research-harness-template#727): a thrown `agent()` failure is logged and re-thrown as a clearer, `#727`-tagged error — never degraded to a null report, since every downstream field is read unconditionally by this phase's own null-guard and by Index/Verify below. |
+| Report | sonnet | A same-process existence/non-empty/valid-JSON preflight check on `synthesisPath` (folded into the top of this phase, not a separate stage), then genre resolution against `harness.config.json` `packs[]` enablement (#633), then the `publish-report` skill's script pipeline: `synthesize-artifact.sh` → a REAL falsification pass over the report's own central claims via `falsify.sh` (never a hand-authored verdict) → `render-artifact.sh` → `mif-project.sh` → `Skill(mif-docs:<genre>)` applied + re-confirmed only when that genre's pack is enabled. A `falsified` verdict quarantines the report — it is not shipped, and the module returns `ok: false` without proceeding to Index. Wrapped in try/catch (research-harness-template#727): a thrown `agent()` failure is logged and re-thrown as a clearer, `#727`-tagged error — never degraded to a null report, since every downstream field is read unconditionally by this phase's own null-guard and by Index/Verify below. |
 | Index | sonnet | The `readme` skill's `build-topic-readme.sh` for the computed structural backbone (counts, dates, verdict breakdown, source total, dimension rollup, report/artifact tables — never guessed), with only the Key Findings/Purpose prose hand-authored on top; then the `graph` skill's `build-graph.sh` + `assert-graph-mif.sh` to refresh and re-verify the knowledge graph. Wrapped in try/catch (research-harness-template#720): degrades to a null index with a named warning on any throw, never fails the pipeline. |
 | Verify | haiku | Targeted gates (markdownlint + `ajv`) on only the files this run actually changed — never the full `verify.sh` suite. See [Decision D-10](#verify-phase-decision-d-10-targeted-gates-only) below. Wrapped in try/catch (research-harness-template#727, mirroring Index's #720 shape): degrades to a null verify with a named warning on any throw — the final return already treats a null verify as a safe, non-fatal `ok: false`. The model deliberately stays `haiku`: Verify's task is a single-shot mechanical check-and-report with no authored-prose sub-step, unlike Index's synthesis-bullet authoring. |
 
@@ -655,7 +655,7 @@ delegate-to-`scripts/*.sh` precedent `research-goal`/`research-fanout`/
 `research-falsify`/`research-synthesis` already established for their own
 substrates.
 
-### Genre resolution: `Skill(<genre>:<genre>)` applied only when enabled (#633)
+### Genre resolution: `Skill(mif-docs:<genre>)` applied only when enabled (#633)
 
 Before this fix, `genre` flowed straight into `synthesize-artifact.sh` as
 pass-through metadata — the deterministic script is genre-neutral by design,
@@ -663,8 +663,9 @@ so every requested genre rendered the identical findings-dump body with only
 the frontmatter `genre:` field differing from a neutral render, indistinguishable
 from a correctly-genred report without diffing bodies across two genres. The Report phase now resolves the requested genre **before**
 rendering, mirroring `.claude/agents/report-synthesizer.md`'s own Step 2
-("Resolve the genre (optional, pack-provided)") — the known-working
-mechanism for the interactive `/start` path:
+("Resolve the genre (optional, pack-provided)") enablement-check logic
+for the interactive `/start` path (that file's own `Skill()` reference
+carried the identical wrong-namespace bug fixed here — research-harness-template#744):
 
 - `genre="general"` (the default) needs no lookup: it is definitionally the
   neutral render, `genreArg="general"`.
@@ -672,8 +673,10 @@ mechanism for the interactive `/start` path:
   determines whether the SPECIFIC requested genre's own pack is enabled —
   each genre ships as its own individually-toggleable pack, never a shared
   "reports" family pack. An **enabled** pack resolves `genreArg=<genre>` and
-  a `genreSkillRef="<genre>:<genre>"`; after the script pipeline renders the
-  neutral body, the Report phase invokes `Skill(<genre>:<genre>)` to
+  a `genreSkillRef="mif-docs:<genre>"` (research-harness-template#744 — every genre
+  pack sources from the single external `mif-docs` plugin, never a standalone
+  `<genre>` plugin); after the script pipeline renders the
+  neutral body, the Report phase invokes `Skill(mif-docs:<genre>)` to
   restructure that body per the genre's real documented template (e.g.
   `engineering`'s mandatory Trade-offs comparison table, `briefing`'s
   Headline/What's New/Why It Matters/What's Next), built from the same
@@ -689,7 +692,7 @@ mechanism for the interactive `/start` path:
   genre whose template was really applied).
 
 The Report phase's returned `genreApplied` (boolean) and `genreSkillInvoked`
-(the `"<genre>:<genre>"` reference, or `""`) make this outcome caller-visible
+(the `"mif-docs:<genre>"` reference, or `""`) make this outcome caller-visible
 instead of silently cosmetic — see [Returns](#returns) below. A falsified
 verdict (step 3) quarantines the report before either the genre resolution's
 skill-application step or the provenance stamp ever runs:
@@ -735,7 +738,7 @@ supersession-stable `@id`, `mifLevel` the achieved MIF frontmatter level,
 `verificationVerdict` the verdict `falsify.sh` actually wrote (never
 hand-authored), `genreRequested` the raw `genre` arg as passed in,
 `genreApplied`/`genreSkillInvoked` the genre resolution's outcome (#633 —
-`true`/`"<genre>:<genre>"` only when that genre's pack was enabled and its
+`true`/`"mif-docs:<genre>"` only when that genre's pack was enabled and its
 skill actually invoked; `false`/`""` for `"general"`, a disabled/absent
 pack, or a falsified report), `provenanceOutcome`/`provenanceReason` the
 `Skill(mif-docs:mif-provenance)` stamp attempt's outcome (#632 —
@@ -773,7 +776,7 @@ from a rendered artifact). Source:
 | Phase | Model | What it does |
 | --- | --- | --- |
 | Route | haiku | A same-process preflight on `synthesisPath` (verbatim from `research-projection`'s guard), then classifies every requested genre×channel pair against `harness.config.json` `packs[]` and `.claude/settings.local.json`'s native `enabledPlugins` (`"<pack>@research-harness"` key shape — never a bare pack-name lookup) into a mechanism-tagged render plan. Every pair that cannot be served lands in `unavailable[]` with a reason naming the mechanism and exactly what is missing. |
-| Render | sonnet | Mechanism 1 (artifact-based): `synthesize-artifact.sh` → synthesis-only cross-check against `synthesisPath` → `render-artifact.sh` → `Skill(<genre>:<genre>)` applied to the rendered body whenever genre≠`"general"` (#640 — that genre's pack enablement was already confirmed by Route, so no re-check is needed here) → `Skill(mif-docs:mif-provenance)` witnessed-provenance stamp (#632). Mechanism 2 (source-direct): `Skill(<pack>:<pack>)` invoked directly against the findings dir, `synthesisPath` never consulted, no genre axis (`genreApplied` always `false`), provenance stamp explicitly `not-applicable`. |
+| Render | sonnet | Mechanism 1 (artifact-based): `synthesize-artifact.sh` → synthesis-only cross-check against `synthesisPath` → `render-artifact.sh` → `Skill(mif-docs:<genre>)` applied to the rendered body whenever genre≠`"general"` (#640 — that genre's pack enablement was already confirmed by Route, so no re-check is needed here) → `Skill(mif-docs:mif-provenance)` witnessed-provenance stamp (#632). Mechanism 2 (source-direct): `Skill(<pack>:<pack>)` invoked directly against the findings dir, `synthesisPath` never consulted, no genre axis (`genreApplied` always `false`), provenance stamp explicitly `not-applicable`. |
 | Check | haiku | Per-artifact validation — markdownlint where the output is Markdown, the citation-leak gate (no internal research identifiers in published prose) regardless of format, and ≥1 primary-source citation. A dirty artifact is fixed in place without touching claim content. |
 
 ### Two disjoint rendering mechanisms, and why a third is out of scope
@@ -827,14 +830,14 @@ applies **only** to mechanism 1 — mechanism 2's packs are non-negotiably
 built the opposite way (`synthesize-artifact.sh` never runs for them, and
 `synthesisPath` is deliberately never read for their rows).
 
-### Genre resolution: `Skill(<genre>:<genre>)` applied only when enabled (#640)
+### Genre resolution: `Skill(mif-docs:<genre>)` applied only when enabled (#640)
 
 Before this fix, mechanism 1's Render step passed the resolved genre straight
 into `synthesize-artifact.sh`/`render-artifact.sh` as pass-through metadata
 and never invoked any genre's real template — every requested genre rendered
 the identical neutral body, indistinguishable from a correctly-genred
 deliverable without diffing bodies across two genres (the same defect class
-`research-projection.js`'s [genre resolution](#genre-resolution-skillgenregenre-applied-only-when-enabled-633)
+`research-projection.js`'s [genre resolution](#genre-resolution-skillmif-docsgenre-applied-only-when-enabled-633)
 closed for the report channel, #633). This module already runs a dedicated
 Route phase that resolves genre×channel servability — including pack
 enablement — **before** Render ever starts, so unlike #633's fix, Render does
@@ -844,13 +847,13 @@ own pack confirmed enabled by Route.
 
 - `genre="general"` renders the neutral body from `synthesize-artifact.sh` →
   `render-artifact.sh` unchanged — no skill invocation, `genreApplied=false`.
-- Any other genre invokes `Skill(<genre>:<genre>)` (a new Render step,
+- Any other genre invokes `Skill(mif-docs:<genre>)` (a new Render step,
   inserted between `render-artifact.sh` and the `#632` provenance stamp) to
   restructure the rendered body per that genre's real documented template —
   built from the same artifact claims already established, never inventing
   new content, never touching the citation/References section
   `render-artifact.sh` already wrote — then reports `genreApplied=true` and
-  `genreSkillInvoked="<genre>:<genre>"`.
+  `genreSkillInvoked="mif-docs:<genre>"`.
 - Mechanism 2 (source-direct channel packs) has no genre axis at all — every
   row reports `genreApplied=false`, `genreSkillInvoked=""` regardless of
   whether a genre was requested alongside it (matching the existing
@@ -894,7 +897,7 @@ successfully rendered deliverable (`path`, `genre`, `channel`, `mechanism`,
 `provenanceReason`), `unavailable[]` every requested pair that could not be
 served with its distinguishing reason, and `ok` true iff at least one
 deliverable rendered. `genreApplied`/`genreSkillInvoked` are the genre
-resolution's outcome (#640 — `true`/`"<genre>:<genre>"` only for a
+resolution's outcome (#640 — `true`/`"mif-docs:<genre>"` only for a
 mechanism-1 row whose genre was not `"general"`; `false`/`""` for a
 `"general"` render or any mechanism-2 row). `provenanceOutcome`/
 `provenanceReason` are the `Skill(mif-docs:mif-provenance)` stamp attempt's
@@ -1703,7 +1706,7 @@ Each iteration passes its own `genre` and a genre-suffixed `slug`:
 `reports/<topic>/<topic>.<genre>.md`, so two or more requested genres never
 collide on one canonical-report path (`research-projection`'s own genre
 resolution then decides, per #633, whether that genre's real
-`Skill(<genre>:<genre>)` template actually applies, or the pack is
+`Skill(mif-docs:<genre>)` template actually applies, or the pack is
 disabled/absent and it falls back to an honest `genre="general"` render at
 that same genre-suffixed slug).
 
