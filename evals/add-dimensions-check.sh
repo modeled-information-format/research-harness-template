@@ -23,6 +23,14 @@
 #          back from goal.json after minting — never the value you would
 #          have computed yourself").
 #
+#   B0. Null-Propose-result case (research-harness-template#749): the Propose
+#      phase agent() call resolves to null (subagent died after retries, or a
+#      mid-run user skip — per the Workflow-tool DSL contract this does not
+#      throw, it resolves null). Asserts the module THROWS rather than
+#      silently treating this the same as the distinct, valid
+#      `{candidates: []}` zero-candidate outcome — proving the fix
+#      distinguishes an operational failure from a legitimate empty answer.
+#
 #   B. Zero-candidate and all-rejected outcomes (inherently reachable without
 #      any model judgment about WHICH candidates to keep — only that the
 #      module's OWN control flow handles empty proposals/all-pruned
@@ -233,6 +241,58 @@ EOF
 EOF
   echo "$dir"
 }
+
+# ============================================================================
+# B0 (research-harness-template#749): null-Propose-result case — the
+# Propose phase agent() call resolves to null/undefined (subagent died after
+# retries, or a mid-run user skip — per the Workflow-tool DSL contract this
+# does not throw, it resolves null). This MUST be treated as an operational
+# FAILURE (thrown), never conflated with the distinct, valid
+# `{candidates: []}` zero-candidate outcome exercised by B1 below.
+# ============================================================================
+FIX_NULLPROPOSE="$(new_fixture nullpropose)"
+cat > "$TMP/stubs-nullpropose.cjs" <<'NODE'
+module.exports = {
+  'add-dim:propose': async () => null,
+  'add-dim:prune': async () => { throw new Error('add-dim:prune must NOT be called when Propose returns null'); },
+  'add-dim:amend': async () => { throw new Error('add-dim:amend must NOT be called when Propose returns null'); },
+};
+NODE
+run_case nullpropose "$FIX_NULLPROPOSE" add-dim-eval-topic "$TMP/stubs-nullpropose.cjs" "$TMP/out-nullpropose.json"
+
+if [ -f "$TMP/out-nullpropose.json" ]; then
+  python3 - "$TMP/out-nullpropose.json" "$FIX_NULLPROPOSE" <<'PY'
+import json, sys, os
+d = json.load(open(sys.argv[1], encoding='utf-8'))
+fixture = sys.argv[2]
+ok = True
+def check(name, cond, detail=''):
+    global ok
+    if cond:
+        print(f"  ok  {name}")
+    else:
+        ok = False
+        print(f"FAIL  {name}{(' -- ' + detail) if detail else ''}")
+
+check('a null Propose result THROWS (agent failure, not silently swallowed as zero candidates)', d['threw'] is not None, str(d['threw']))
+check('the thrown error is NOT the generic amendment-failed message (it is the null-Propose-specific error)',
+      d['threw'] is not None and 'amendment failed' not in d['threw'].get('message', ''), json.dumps(d.get('threw')))
+labels = [c['opts']['label'] for c in d['calls']]
+check('only add-dim:propose was called (Prune/Amend never reached)', labels == ['add-dim:propose'], json.dumps(labels))
+
+cfg_path = os.path.join(fixture, 'harness.config.json')
+with open(cfg_path, encoding='utf-8') as f:
+    cfg = json.load(f)
+check('fixture harness.config.json dimensions[] untouched (still exactly 2)', len(cfg['dimensions']) == 2, json.dumps(cfg['dimensions']))
+goal_path = os.path.join(fixture, 'reports/add-dim-eval-topic/goal.json')
+with open(goal_path, encoding='utf-8') as f:
+    goal = json.load(f)
+check('fixture goal.json untouched (no .version stamped)', 'version' not in goal, json.dumps(goal))
+sys.exit(0 if ok else 1)
+PY
+  rc=$?
+  [ "$rc" -eq 0 ] || fail=1
+fi
 
 # ============================================================================
 # B1: Zero-candidate case — Propose returns candidates: [] — a valid,
@@ -624,7 +684,7 @@ PY
 fi
 
 if [ "$fail" -eq 0 ]; then
-  note "Amend phase invokes the REAL scripts/goal-version.sh exactly twice (OLD then NEW), never a freehand-narrated hash; zero-candidate and all-rejected outcomes both complete with no throw, structured reasoning, and provably untouched config/goal files (Amend never invoked); a NULL prune-phase result (#753) now throws instead of being silently coerced into a fabricated 'skeptic rejected everything' success-shaped result; a seeded overlap candidate is correctly filtered out of added[] with its stated OVERLAP reason preserved, and Amend never sees it; and the approved-candidate path lands the new dimension in an independently-ajv-clean harness.config.json, with the new goal version's supersedes/version fields matching THREE separate fresh invocations of the real scripts/goal-version.sh (baseline before mutation, and two independent recomputations after) — proving the hash is a real, stable function of content, not a hand-simulated or narrated value. The one gap this eval cannot close — whether a live skeptic model actually judges 'technical-details' as overlapping — is genuine and non-deterministic, documented here rather than faked."
+  note "A null Propose result (agent failure) correctly THROWS rather than being silently swallowed as a zero-candidate success (#749); a NULL prune-phase result (#753) now throws instead of being silently coerced into a fabricated 'skeptic rejected everything' success-shaped result; Amend phase invokes the REAL scripts/goal-version.sh exactly twice (OLD then NEW), never a freehand-narrated hash; zero-candidate and all-rejected outcomes both complete with no throw, structured reasoning, and provably untouched config/goal files (Amend never invoked); a seeded overlap candidate is correctly filtered out of added[] with its stated OVERLAP reason preserved, and Amend never sees it; and the approved-candidate path lands the new dimension in an independently-ajv-clean harness.config.json, with the new goal version's supersedes/version fields matching THREE separate fresh invocations of the real scripts/goal-version.sh (baseline before mutation, and two independent recomputations after) — proving the hash is a real, stable function of content, not a hand-simulated or narrated value. The one gap this eval cannot close — whether a live skeptic model actually judges 'technical-details' as overlapping — is genuine and non-deterministic, documented here rather than faked."
 else
   echo "add-dimensions-check: FAILED (see notes above)"
 fi

@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`mif-container-import.sh` now rejects a mistyped or unrecognized flag
+  instead of silently absorbing it as an extra positional argument
+  (research-harness-template#746).** The arg-parsing loop's wildcard branch
+  previously routed anything that wasn't the exact literal `--dry-run` into
+  `POSITIONAL[]`, and the positional-count check only required *at least* 2
+  entries — so a call like `mif-container-import.sh <dir> <topic> --dryrun`
+  (missing a hyphen) left `DRY_RUN` at its default 0 and the script
+  proceeded straight through step 4's real write with zero error or
+  warning, directly contradicting its own documented `--dry-run` contract.
+  Anything that looks like an option (a leading `-`) but isn't the exact
+  literal `--dry-run` is now rejected with a message naming the bad option,
+  before it can ever reach `POSITIONAL[]`; the count check also tightens
+  from `-ge 2` to `-eq 2` to close the adjacent instance of the same
+  silent-acceptance class (a stray extra bare positional argument).
 - **`container_lock_refresh` (and `container_lock_release`) now verify
   ownership before acting on `reports/<topic>/.container.lock`.**
   `container_lock_acquire` previously stamped only a human-readable `owner`
@@ -35,6 +49,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   finding already written, `ontology-map.json` and the deliverables never
   reached), which this default converts into the function's own existing
   graceful "no ownership token supplied" refusal (PR #796 review).
+- **`scripts/run-lock.sh refresh`/`release` now verify ownership before
+  acting on `reports/<topic>/.run-lock`** — the same defect class #763 fixed
+  in `container_lock_refresh`, closed here too (research-harness-template#798).
+  `refresh` previously touched `.run-lock` unconditionally with no way to tell
+  "the lock this run originally acquired" from "a different run's lock that
+  has since replaced it at the same path" (a stale-lock steal race, or a
+  phase boundary far enough apart for `RUN_LOCK_STALE_MIN` to elapse between
+  refreshes). Unlike `container-lock.sh` (sourced into one long-lived shell,
+  so an in-memory token survives from acquire to refresh), `run-lock.sh` runs
+  as separate CLI process invocations with no shared shell state — `acquire`/
+  `steal` now stamp each (re)acquisition with a unique token in
+  `$LOCK/.owner-token` and print it on stdout so a caller can capture it
+  (`TOKEN=$(scripts/run-lock.sh acquire "$DIR" "label")`) and pass it to every
+  later `refresh`/`release` call. `refresh` refuses — without touching the
+  lock, and retrying a transient touch failure up to 3x before treating it as
+  fatal — when the token is missing, the lock is gone, or the stamped token no
+  longer matches; a nonzero return is fatal for the caller, never a
+  log-and-continue warning. `release`'s token is optional (back-compat) but
+  skips removal on a mismatch, so it can never delete a different run's live
+  lock. Every caller in `.claude/agents/orchestrator.md` and
+  `.claude/commands/falsify.md` now captures and threads the token through
+  its own acquire/refresh/release calls. Adds regression tests to
+  `evals/run-lock-test.sh` covering the exact steal-then-refresh scenario the
+  issue describes, a mismatched-token release, and a missing-token refresh.
+- **`research-fanout.js`'s repair lane no longer crashes the entire fanout
+  run when a dimension's revalidate `agent()` call resolves to null.** The
+  revalidate step's `.then((rv) => { if (rv.invalid.length) ... })`
+  callback dereferenced `rv` unguarded, even though `agent()` can
+  legitimately resolve to null on a terminal failure after retries (its
+  documented "returns null on death" contract). Hitting that case threw an
+  uncaught `TypeError` inside `pipeline()`'s per-item stage chain with no
+  try/catch around it, which propagated out of the top-level
+  `await pipeline(...)` and crashed the whole module run for every
+  dimension — not just the one whose revalidate call failed — discarding
+  whatever other dimensions' work had already completed. The callback now
+  checks for a null `rv` first and drops just that dimension's lane
+  (consistent with how the file's earlier research/validate stages already
+  propagate a null result through `results.filter(Boolean)`), so an
+  unrelated dimension's completed findings survive (research-harness-template#751).
 - **`research-deliverables.js`'s `channel` field now gets the same
   injection-validation guard `genre` already had (#764).** The Route phase's
   GENRE STRING VALIDATION guard (#640) checked a caller-controlled
@@ -51,6 +104,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `channel` against the module's own closed channel set
   (`ARTIFACT_CHANNELS`/`SOURCE_DIRECT_CHANNELS`/`SOURCE_DIRECT_GENRE_CHANNELS`)
   and cross-checks mechanism/channel agreement, failing closed before Render.
+- **`research-deliverables.js`'s Render pipeline no longer silently drops an
+  artifact from the repair loop when its initial Check result is `null`
+  (#755).** The pipeline's second stage (`(r, p) => r ? agent(checkPrompt(...),
+  {...}).then((v) => ({ ...r, validation: v })) : null`) produced
+  `{ ...r, validation: null }` whenever the Check-phase `agent()` call itself
+  resolved to `null` (user skip, or the subagent dying after retries — the
+  same failure mode the post-fix re-check already handled). That object is
+  still truthy, so it survived `rendered.filter(Boolean)`, but the `dirty`
+  filter (`a.validation && !a.validation.clean`) treated a `null` validation
+  as NOT dirty — the artifact was never fixed, never re-checked, and never
+  logged, reported only as an ambiguous `clean: null` mixed in among
+  genuinely-passing artifacts. A `null` initial Check result now logs a
+  `WARNING` naming the artifact (mirroring the post-fix re-check's existing
+  `WARNING`), and the `dirty` filter now also treats a `null` validation as
+  dirty so the artifact actually enters the fix + re-check repair loop
+  instead of being silently excluded from it.
 - **`gate_m27`'s 27f "unreadable file fails closed" check no longer breaks
   when `verify.sh` runs as root.** The check used `chmod 000` to simulate a
   permission-denied read, but root (or any process with DAC-override

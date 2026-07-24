@@ -526,6 +526,44 @@ const gated = await pipeline(
       `"skipped-one-round" (no genuine write occurred), report attemptedAtPresent=false regardless — this field is ` +
       `about a GENUINE write, not the one-round-rule skip path.`
     let written = await agent(writeBrief, { label: `write:${g.f.id.slice(-8)}`, phase: 'Gate', model: 'haiku', effort: 'low', schema: WRITE_SCHEMA })
+    // #747: a genuine written=false (or a missing/malformed report) is not a
+    // data point to fold into the returned verdict — it means falsify.sh
+    // never persisted anything to disk for this finding, so the verdict/
+    // basis computed above cannot be trusted as gated. Before this fix,
+    // execution fell straight through to the `return` below regardless of
+    // `written.written`, which still attached the full verdict to the
+    // returned object; Rollup's `gated: done.length` then counted this
+    // finding as gated even though nothing was written, and the next
+    // Enumerate step silently rediscovered the same still-ungated finding
+    // and repeated the identical doomed write, burning budget with no
+    // surfaced signal. Retry once (the agent may have hit a transient
+    // mktemp/falsify.sh/mv failure), then fail loudly — the same idiom the
+    // #659 check just below already uses for a different half-completed-
+    // write shape.
+    if (!written || !written.written) {
+      const retriedWrite = await agent(
+        `RETRY (research-falsify write failure, #747): the previous attempt to write finding ${g.f.id} ` +
+          `(${g.f.path}) through falsify.sh reported written=${written ? written.written : 'undefined'} — the write ` +
+          `did not complete. Re-invoke the write EXACTLY as before: mktemp a file OUTSIDE the repo tree, write this ` +
+          `exact fixture JSON verbatim: ${fixtureJson}\n` +
+          `then invoke bash ${H}/scripts/falsify.sh ${g.f.path} <fixture-path>, redirect its stdout to a temp file, ` +
+          `mv it over ${g.f.path} (re-validate against ${H}/schemas/findings.schema.json with the full mif/ ref ` +
+          `closure before considering the write done), and remove the mktemp fixture file.\n${REMEDIATION_CONTRACT}\n` +
+          `Report written=true only if the mv+re-validate genuinely completed THIS turn — never from assumption.`,
+        { label: `write-retry-failed:${g.f.id.slice(-8)}`, phase: 'Gate', model: 'haiku', effort: 'low', schema: WRITE_SCHEMA },
+      )
+      if (!retriedWrite || !retriedWrite.written) {
+        throw new Error(
+          `research-falsify: #747 — finding ${g.f.id} (${g.f.path}) did not complete a falsify.sh write (written=` +
+            `${retriedWrite ? retriedWrite.written : 'undefined'}) after one retry. Refusing to silently count this ` +
+            `finding as gated — the verdict/basis computed this round was never persisted to disk, so treating it as ` +
+            `gated would report false progress (a compromised round) and mask the real write-path failure. Investigate ` +
+            `the write path (mktemp/falsify.sh/mv/re-validate) manually rather than proceeding; ${g.f.id} will remain ` +
+            `unverified and get rediscovered by the next Enumerate step until this is fixed.`,
+        )
+      }
+      written = retriedWrite
+    }
     // Deterministic post-write assertion (#659): verdict/write-completeness is
     // never left to a model's own self-report, the same idiom as
     // mergeVotes()/reconcileEnumeration() above. A genuine (non-one-round-
@@ -568,7 +606,13 @@ const gated = await pipeline(
       }
       written = retried
     }
-    return { id: g.f.id, dimension: g.f.dimension, verdict, contested, remediation: written ? written.remediation : 'write-failed' }
+    // written is guaranteed non-null with written.written === true here (the
+    // #747 check above throws rather than falling through on a genuine write
+    // failure) — the `written ? ... : 'write-failed'` fallback that used to
+    // sit here was the bug itself: it let a write-failed finding still
+    // return a fully-populated verdict object instead of never reaching this
+    // line at all.
+    return { id: g.f.id, dimension: g.f.dimension, verdict, contested, remediation: written.remediation }
   },
 )
 

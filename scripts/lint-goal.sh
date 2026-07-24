@@ -35,7 +35,14 @@ GOAL=""
 CONFIG="$ROOT/harness.config.json"
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    --config) CONFIG="${2:?--config needs a path}"; shift 2 ;;
+    --config)
+      # A missing/empty path here is a usage mistake (exit 2), not a lint
+      # failure (exit 1) — must not fall through to bash's own
+      # ${2:?msg} parameter-expansion error, which aborts with status 1
+      # and makes the two failure classes indistinguishable by exit code
+      # (research-harness-template#760).
+      [ "$#" -ge 2 ] && [ -n "$2" ] || usage
+      CONFIG="$2"; shift 2 ;;
     -h|--help) usage ;;
     -*) usage ;;
     *) [ -n "$GOAL" ] && usage; GOAL="$1"; shift ;;

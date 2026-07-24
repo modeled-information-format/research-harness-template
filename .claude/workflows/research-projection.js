@@ -130,6 +130,22 @@
 // separately as research-harness-template#640, deliberately out of scope
 // here.
 //
+// UNVALIDATED LLM-OUTPUT INJECTION GAP — closed, not carried forward
+// (research-harness-template#757). The GENRE RESOLUTION step below re-derives
+// genreArg/genreSkillRef via an agent() call rather than reusing GENRE
+// verbatim (see the GENRE SKILL INVOCATION GAP note above), but that agent()
+// call's structured-output schema (GENRE_SCHEMA) only declared them as plain
+// strings — no `pattern` — even though the values are used at the exact same
+// two injection-sensitive sinks (a shell command, a Skill() reference) that
+// GENRE itself is regex-validated against BEFORE this resolution step ever
+// runs. Since GENRE_SCHEMA's shape alone does not constrain string content,
+// an agent() call is not a trusted-input boundary the way caller-supplied
+// `args` is — genreResolution.genreArg/genreSkillRef are now re-validated
+// against the identical `^[a-z][a-z0-9-]*$` pack-name pattern (plus pinned to
+// the only values the prompt is ever asked to produce) immediately after
+// resolution, before either is interpolated anywhere, mirroring the fail-
+// closed posture GENRE itself already has.
+//
 // CONCURRENCY FIX (issue #628) — a topic-scoped lock, not a genre-suffixed
 // path. The Report phase's intermediates (${RDIR}/artifact.json,
 // report-finding.json, report-finding.falsified.json,
@@ -364,6 +380,84 @@ const genreResolution =
 if (!genreResolution) throw new Error('research-projection: genre resolution failed')
 if (GENRE !== 'general' && !genreResolution.genrePackEnabled) {
   log(`Genre "${GENRE}" requested but its pack is not enabled — falling back to genreArg="general" honestly (research-harness-template#633); the report will NOT claim genre="${GENRE}" in frontmatter`)
+}
+
+// SECURITY (research-harness-template#757): genreResolution.genreArg and
+// genreResolution.genreSkillRef are LLM output — the genre-resolve agent()
+// call above, not trusted caller-supplied args like GENRE itself. GENRE_SCHEMA
+// only declares them as plain strings with no `pattern`, so nothing stops a
+// malformed or hallucinated value from reaching the exact two injection-
+// sensitive sinks the GENRE validation above (line ~261) exists to protect:
+// genreArg is interpolated into the synthesize-artifact.sh shell command at
+// step 1 below, and genreSkillRef is interpolated into a Skill() reference in
+// genreStepText just below. Re-validate both against the SAME pack-name
+// pattern before either is used, and additionally pin them to the ONLY two
+// values the prompt above ever legitimately asks the model to return
+// ("general"/GENRE for genreArg, ""/"GENRE:GENRE" for genreSkillRef) — fail
+// closed rather than trust the schema's shape alone to constrain content.
+const GENRE_ARG_PATTERN = /^[a-z][a-z0-9-]*$/
+if (genreResolution.genreArg !== 'general' && !GENRE_ARG_PATTERN.test(genreResolution.genreArg)) {
+  throw new Error(
+    `research-projection: genre resolution returned genreArg "${genreResolution.genreArg}", which does not match ` +
+      `the pack-name pattern harness.config.schema.json enforces (^[a-z][a-z0-9-]*$) and is not "general" — ` +
+      `refusing to interpolate an unvalidated, LLM-produced string into a shell command (research-harness-template#757).`,
+  )
+}
+if (genreResolution.genreArg !== 'general' && genreResolution.genreArg !== GENRE) {
+  throw new Error(
+    `research-projection: genre resolution returned genreArg "${genreResolution.genreArg}", which matches ` +
+      `neither the honest fallback "general" nor the requested genre "${GENRE}" — refusing to proceed with a ` +
+      `value the genre-resolve prompt was never asked to produce (research-harness-template#757).`,
+  )
+}
+const GENRE_SKILL_REF_PATTERN = /^[a-z][a-z0-9-]*:[a-z][a-z0-9-]*$/
+if (genreResolution.genreSkillRef !== '' && !GENRE_SKILL_REF_PATTERN.test(genreResolution.genreSkillRef)) {
+  throw new Error(
+    `research-projection: genre resolution returned genreSkillRef "${genreResolution.genreSkillRef}", which does ` +
+      `not match ^[a-z][a-z0-9-]*:[a-z][a-z0-9-]*$ and is not "" — refusing to interpolate an unvalidated, ` +
+      `LLM-produced string into a Skill() reference (research-harness-template#757).`,
+  )
+}
+if (genreResolution.genreSkillRef !== '' && genreResolution.genreSkillRef !== `${GENRE}:${GENRE}`) {
+  throw new Error(
+    `research-projection: genre resolution returned genreSkillRef "${genreResolution.genreSkillRef}", which does ` +
+      `not match the expected "${GENRE}:${GENRE}" — refusing to proceed with an unexpected Skill() reference ` +
+      `(research-harness-template#757).`,
+  )
+}
+if (genreResolution.genrePackEnabled && genreResolution.genreSkillRef === '') {
+  throw new Error(
+    `research-projection: genre resolution reported genrePackEnabled=true but genreSkillRef="" — internally ` +
+      `inconsistent result, refusing to proceed (research-harness-template#757).`,
+  )
+}
+// Copilot review, PR #804: the four checks above each validate genreArg and
+// genreSkillRef individually (pattern + pinned-value), and the check just
+// above catches genrePackEnabled=true paired with an empty genreSkillRef —
+// but nothing yet caught the MIRROR-IMAGE inconsistency: genrePackEnabled=
+// false paired with a genreArg/genreSkillRef that still names the disabled
+// genre. Each of genreArg==="${GENRE}" and genreSkillRef==="${GENRE}:${GENRE}"
+// individually satisfies every check above (they match the pinned-value
+// checks), so a genre-resolve response of {genrePackEnabled:false,
+// genreArg:GENRE, genreSkillRef:`${GENRE}:${GENRE}`} would pass validation
+// and reach genreStepText's `else` branch believing the pack is disabled
+// while genreArg had already been interpolated into synthesize-artifact.sh's
+// shell command as the (still-enabled-looking) genre string one step earlier
+// — reintroducing #633's "report claims/applies the wrong genre" failure
+// mode the #757 fix was never asked to close. Fail closed on both
+// directions of the genrePackEnabled mismatch, not just the one above.
+if (!genreResolution.genrePackEnabled && genreResolution.genreArg !== 'general') {
+  throw new Error(
+    `research-projection: genre resolution reported genrePackEnabled=false but genreArg="${genreResolution.genreArg}" ` +
+      `(expected the honest fallback "general") — internally inconsistent result, refusing to proceed ` +
+      `(research-harness-template#757).`,
+  )
+}
+if (!genreResolution.genrePackEnabled && genreResolution.genreSkillRef !== '') {
+  throw new Error(
+    `research-projection: genre resolution reported genrePackEnabled=false but genreSkillRef="${genreResolution.genreSkillRef}" ` +
+      `(expected "") — internally inconsistent result, refusing to proceed (research-harness-template#757).`,
+  )
 }
 
 const genreStepText = genreResolution.genrePackEnabled
