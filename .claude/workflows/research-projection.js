@@ -425,8 +425,14 @@ try {
     `reports/<topic>/.run-lock and reports/<topic>/.container.lock (mirrors the pre-existing intentional separation between ` +
     `those two), so it never contends with the orchestrator's findings-mutation lock or a concurrent /export /import:\n` +
     `bash -c '. "${H}/scripts/lib/container-lock.sh" && container_lock_acquire "${RDIR}/.projection-lock" "projection:${GENRE}"' ` +
-    `— a NONZERO exit means another projection run currently owns this topic; STOP immediately (do not steal a live lock, do ` +
-    `not proceed to step 1) and report failure. On success, hold the lock for the entire remainder of this Report phase and ` +
+    `— capture its exit code and do NOT treat every nonzero exit as contention (research-harness-template#769): ` +
+    `container_lock_acquire's own header in scripts/lib/container-lock.sh documents two distinct nonzero codes. rc=3 means ` +
+    `another projection run genuinely holds this topic's lock (or this attempt lost the steal race against one) — STOP ` +
+    `immediately (do not steal a live lock, do not proceed to step 1) and report failure as LOCK CONTENTION. rc=1 means the ` +
+    `mkdir itself failed for an unrelated filesystem reason (e.g. ${RDIR} missing, a read-only filesystem) — STOP immediately ` +
+    `here too, but report failure as that underlying FILESYSTEM ERROR (quote container-lock.sh's own stderr message), never ` +
+    `as lock contention; no other projection run is necessarily involved. On success (rc=0), hold the lock for the entire ` +
+    `remainder of this Report phase and ` +
     `release it exactly once before the phase ends, on EVERY exit path (success at step 7, a falsified verdict at step 3, or ` +
     `any earlier failure) — never leave the topic locked:\n` +
     `bash -c '. "${H}/scripts/lib/container-lock.sh" && container_lock_release "${RDIR}/.projection-lock"'\n` +

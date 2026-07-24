@@ -25,6 +25,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `channel` against the module's own closed channel set
   (`ARTIFACT_CHANNELS`/`SOURCE_DIRECT_CHANNELS`/`SOURCE_DIRECT_GENRE_CHANNELS`)
   and cross-checks mechanism/channel agreement, failing closed before Render.
+- **`scripts/verify.sh`'s `gate_m5` (Packs) no longer collapses to
+  filesystem-root paths on a failed `mktemp -d`.** Its 5c/5d/5d2/5d3/5d4
+  scratch-directory setup calls were unguarded, unlike the `|| { bad ...;
+  return 1; }` pattern `gate_m29`/`gate_m30`/`gate_m31` already use: if
+  `mktemp -d` failed (full/unwritable `/tmp`, a sandboxed CI runner with a
+  misconfigured `TMPDIR`), `T` silently became an empty string and every
+  subsequent `"$T/..."` path collapsed to a bare filesystem-root path (e.g.
+  `/settings-on.json`), producing confusing `cp`/`jq`/`sync-packs.sh`
+  failures that misattributed the break to the pack-toggle logic under test
+  rather than the broken temp-dir setup, and turned the matching
+  `rm -rf "$T"` cleanup into a silent `rm -rf ""` no-op. Verified while
+  fixing this that 5d3's Python heredoc is a more severe variant of the same
+  root cause: `Path(sys.argv[1])` with `T=""` resolves to `.` (the repo
+  root, since `verify.sh` `cd`s there), so an unguarded mktemp failure there
+  actually overwrote the real, tracked `harness.config.json` with synthetic
+  fixture content. All four now guard identically to `gate_m29`-`gate_m31`.
+  (research-harness-template#778)
 
 ## [0.16.38] - 2026-07-23
 
