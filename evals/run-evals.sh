@@ -679,6 +679,17 @@ run "report-mif-json-out-honored" bash -c '
   scripts/mif-project.sh schemas/samples/report.sample.md --json-out "'"$TMP"'/good-out.json" &&
   [ -s "'"$TMP"'/good-out.json" ]'
 
+# 5a-4. --json-out with a missing/empty path is a controlled exit-2 usage error
+#       (prefixed "mif-project: ..."), not bash's own unprefixed exit-1 message
+#       from an unset-parameter expansion (PR #799 Copilot review).
+run_neg "report-mif-json-out-missing-path-rejected" \
+  scripts/mif-project.sh schemas/samples/report.sample.md --json-out
+
+# 5a-5. A trailing argument after a valid --json-out <path> is rejected instead
+#       of being silently ignored (PR #799 Copilot review).
+run_neg "report-mif-trailing-arg-rejected" \
+  scripts/mif-project.sh schemas/samples/report.sample.md --json-out "$TMP/trailing-out.json" --typo
+
 # 5b. The report channel emits a valid L3 report end-to-end (write-then-validate).
 run "report-channel-e2e" bash -c '
   scripts/synthesize-artifact.sh "'"$SF"'" general "'"$TMP"'/r.json" &&
