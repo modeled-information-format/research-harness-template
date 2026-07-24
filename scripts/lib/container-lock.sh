@@ -157,7 +157,16 @@ _container_lock_mtime_epoch() {
 # 0 = stole it; 3 = DENIED (lost the race, or a live lock now occupies it);
 # 1 = an unrelated filesystem failure (permissions, read-only FS, ENOSPC).
 _container_lock_steal() {
-  local lock_dir="$1" label="$2" mutex="${lock_dir}.steal-mutex"
+  local lock_dir="$1" label="$2"
+  # NB: a second `local` here, not folded into the line above -- within a
+  # single `local` statement bash evaluates each RHS against the value the
+  # name held BEFORE this `local` took effect, so `mutex="${lock_dir}..."`
+  # on the same line would derive from the caller's dynamically-scoped
+  # `lock_dir`, not this function's own parameter (SC2318). It happens to
+  # match today only because the sole caller passes its identically-named
+  # local; splitting the statement makes the derivation depend on `$1`, the
+  # actual contract, so it stays correct under any future call site.
+  local mutex="${lock_dir}.steal-mutex"
   local attempt mutex_err mutex_mtime now age
   for attempt in $(seq 1 20); do
     if mutex_err="$(mkdir "$mutex" 2>&1)"; then
