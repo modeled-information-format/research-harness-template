@@ -52,6 +52,12 @@ run "stdin-detach" bash evals/stdin-detach.sh
 # marked, per-gate timings are built in, unmatched patterns fail fast.
 run "verify-selector" bash evals/verify-selector.sh
 
+# gate_m28's 28h hang-regression check must degrade gracefully (skip, not
+# hard-fail) when neither `timeout` nor `gtimeout` is on PATH (#774) -- a
+# stock-macOS contributor with no Homebrew coreutils saw a real-looking FAIL
+# from a CI-parity gate for a change that would actually pass CI.
+run "gate-m28-timeout-path-check" bash evals/gate-m28-timeout-path-check.sh
+
 # gate_m14's bypass_cmds loop variable must stay function-scoped (#780): a
 # missing `local` here leaks into the caller once gate_m14 returns, since
 # verify.sh calls every gate in-process ("$gate", never a subshell).
