@@ -709,6 +709,61 @@ run "build-topic-readme-genre-fallback-report-dash" bash -c '
     --out "'"$TMP"'/readme-genretest.md" >/dev/null &&
   grep -qE "\| _evaltmpgenre \|" "'"$TMP"'/readme-genretest.md"'
 
+# 5b-4b. build-topic-readme.sh's ".tmp.$$" atomic-write staging file must never
+#        accumulate forever when a prior invocation was killed before its mv()
+#        ran (research-harness-template#772): a leftover "<out>.tmp.<stale-pid>"
+#        is swept (sweep_stale_tmp) the next time the script writes to that
+#        same $OUT, and the real README still writes correctly. Uses the
+#        engine-free _corpus path against a throwaway scratch dir, so this
+#        needs no mif-rh-cli install and never touches a real topic.
+run "build-topic-readme-sweeps-stale-tmp" bash -c '
+  d="'"$TMP"'/sweep-corpus"; mkdir -p "$d/reports/_corpus"
+  printf "%s" "{\"topics\":[],\"verdict_distribution\":{},\"entity_reuse\":[],\"contradictions\":[],\"disproven\":[]}" \
+    > "$d/reports/_corpus/corpus-map.json"
+  : > "$d/reports/_corpus/README.md.tmp.999999" &&
+  CLAUDE_PROJECT_DIR="$d" bash scripts/build-topic-readme.sh _corpus >/dev/null &&
+  [ ! -e "$d/reports/_corpus/README.md.tmp.999999" ] &&
+  [ -f "$d/reports/_corpus/README.md" ]
+'
+
+# 5b-4c. build-topic-readme.sh must not leave its ".tmp.$$" staging file behind
+#        when killed mid-write by SIGTERM (research-harness-template#772's other
+#        half — the PostToolUse rebuild hook hitting its timeout): the
+#        top-of-file trap removes the in-flight temp file and re-raises the
+#        signal so the process still terminates rather than resuming. Forces a
+#        wide write window with a synthetic 1,000,000-topic corpus-map.json —
+#        the group-command redirect creates "$OUT.tmp.$$" the instant the
+#        write starts, and jq keeps it open for over a second processing that
+#        many rows — so the poll-then-kill below lands reliably mid-write
+#        instead of racing a write that is already done.
+run "build-topic-readme-sigterm-cleanup" bash -c '
+  d="'"$TMP"'/sigterm-corpus"; mkdir -p "$d/reports/_corpus"
+  python3 -c "
+import json
+n = 1000000
+json.dump({\"topics\": [f\"t{i}\" for i in range(n)], \"verdict_distribution\": {},
+            \"entity_reuse\": [], \"contradictions\": [], \"disproven\": []},
+           open(\"$d/reports/_corpus/corpus-map.json\", \"w\"))
+"
+  CLAUDE_PROJECT_DIR="$d" bash scripts/build-topic-readme.sh _corpus >/dev/null 2>&1 &
+  pid=$!
+  tmp="$d/reports/_corpus/README.md.tmp.$pid"
+  waited=0
+  while [ ! -e "$tmp" ]; do
+    sleep 0.05
+    waited=$((waited+1))
+    if [ "$waited" -gt 100 ]; then
+      echo "tmp staging file never appeared" >&2
+      kill -9 "$pid" 2>/dev/null
+      exit 1
+    fi
+  done
+  kill -TERM "$pid"
+  wait "$pid" 2>/dev/null
+  [ ! -e "$tmp" ] &&
+  [ ! -e "$d/reports/_corpus/README.md" ]
+'
+
 # 5b-5. render-artifact.sh stamps `slug:` as a clean repo-root-relative route
 #       even when $OUT is given as an ABSOLUTE path under the repo checkout
 #       (report-synthesizer.md documents this usage via an absolute
