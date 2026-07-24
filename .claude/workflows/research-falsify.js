@@ -168,6 +168,27 @@ const LENS_SCHEMA = {
   },
   required: ['verdict', 'basis', 'sources', 'perClaim'],
 }
+// research-harness-template#738: scripts/falsify.sh refuses (exit 3) to write
+// any reports/<topic>/findings/*.json finding unless this topic's
+// <RDIR>/.gate-active window is open and fresh (<240min) — SPEC §6b restricts
+// opening it to the orchestrator's Phase 2 loop or the /falsify command
+// (.claude/commands/falsify.md), which also acquire the companion
+// scripts/run-lock.sh topic lock first (the same shared findings/ directory
+// two concurrent writers corrupt — see run-lock.sh's own header). This
+// module is neither of those two callers: it is the vendored JS engine's OWN
+// write step, invoked (directly or via research-pipeline.js's wf('falsify',
+// ...)) from research-pipeline.js's full/augment/pivot/import/falsify modes
+// and from a direct top-level scriptPath call. Before this fix every write
+// below was therefore either DENIED outright by the guard-falsify-gate.sh
+// PreToolUse hook, or exited 3 from falsify.sh itself once the hook was
+// bypassed — no finding's verdict was ever actually persisted to disk
+// through this engine. LOCK_ACQUIRE_SCHEMA/LOCK_STATUS_SCHEMA back the
+// acquire/refresh/release agent() calls in the Gate phase below, which
+// mirror falsify.md's Phase 2 contract exactly: acquire once before any
+// write, refresh before every finding, release on EVERY exit path (success
+// or a thrown error) via try/finally.
+const LOCK_ACQUIRE_SCHEMA = { type: 'object', properties: { ok: { type: 'boolean' }, token: { type: 'string' }, error: { type: 'string' } }, required: ['ok'] }
+const LOCK_STATUS_SCHEMA = { type: 'object', properties: { ok: { type: 'boolean' } }, required: ['ok'] }
 const WRITE_SCHEMA = {
   type: 'object',
   properties: {
@@ -426,7 +447,46 @@ log(`Gating ${working.length} finding(s); ${enumerated.skippedAlreadyVerifiedIds
 if (!working.length) return { gated: 0, deferredIds: deferred, rollup: {}, alreadyVerified: enumerated.skippedAlreadyVerifiedIds.length }
 
 phase('Gate')
-const gated = await pipeline(
+// #738: open the gate window and acquire the topic run lock BEFORE any
+// finding write — see the LOCK_ACQUIRE_SCHEMA comment above for why this
+// module must do this itself rather than assume some other caller already
+// did. A failed acquisition (a live orchestrator run, or another /falsify,
+// already owns this topic) must stop this Gate phase entirely, not proceed
+// to write anyway — that is the exact concurrent-writer corruption
+// scripts/run-lock.sh's own header documents as a real prior incident.
+const lockAcquired = await agent(
+  `Open the falsification gate window and acquire the topic run lock BEFORE any finding write, harness ${H}, topic dir ${RDIR}. ` +
+    `Run exactly: bash ${H}/scripts/run-lock.sh acquire ${RDIR} research-falsify — capture its stdout (the printed ownership token) VERBATIM, nothing appended or trimmed. ` +
+    `If that command exits nonzero (a live run — the orchestrator, or another /falsify — already owns this topic), report ok=false and put its stderr message in error; do NOT touch ${RDIR}/.gate-active and do NOT proceed further. ` +
+    `If it exits 0, THEN run: touch ${RDIR}/.gate-active — this opens the window scripts/falsify.sh requires (SPEC §6b) for every reports/<topic>/findings/*.json write this Gate phase is about to make — and report ok=true, token=<the exact captured token, verbatim>.`,
+  { label: 'falsify:lock-acquire', phase: 'Gate', model: 'haiku', effort: 'low', schema: LOCK_ACQUIRE_SCHEMA },
+)
+if (!lockAcquired || !lockAcquired.ok) {
+  throw new Error(
+    `research-falsify: could not acquire the topic run lock / open the gate window for ${RDIR}` +
+      `${lockAcquired && lockAcquired.error ? ` (${lockAcquired.error})` : ''} — refusing to write any finding through ` +
+      `falsify.sh while a live run may already own this topic (a second concurrent writer on the shared findings/ ` +
+      `directory is the exact documented concurrency-corruption failure scripts/run-lock.sh's own header describes).`,
+  )
+}
+// LOCK_ACQUIRE_SCHEMA only requires `ok`, not `token` (an ok=false response
+// legitimately carries no token) — so an ok=true response that accidentally
+// omits it still passes schema validation and LOCK_TOKEN would silently
+// become undefined, making every later refresh/release call below run
+// against an empty token (refresh hard-fails; release may silently no-op),
+// leaving the topic lock/gate window in a bad state. Guard explicitly rather
+// than trusting the schema alone.
+if (!lockAcquired.token) {
+  throw new Error(
+    `research-falsify: lock acquisition for ${RDIR} reported ok=true but returned no token — refusing to proceed ` +
+      `with an empty lock token (every subsequent refresh/release call would silently operate against an unowned lock).`,
+  )
+}
+const LOCK_TOKEN = lockAcquired.token
+
+let gated
+try {
+gated = await pipeline(
   working,
   (f) =>
     agent(
@@ -451,6 +511,27 @@ const gated = await pipeline(
       : null,
   async (g) => {
     if (!g || !g.lensResults.length) return null
+    // #738: refresh the lock/gate before ANY mutation this finding makes —
+    // the regate-reset jq mutation below (when REGATE) and the falsify.sh
+    // write further down are both a mutation of the shared topic findings/,
+    // so both must happen only while this run still genuinely owns the lock
+    // and the window is still fresh. A nonzero refresh means another run
+    // stole the lock (or it aged out) — that is fatal, never a warning to
+    // log and keep writing under a false assumption of exclusive access
+    // (scripts/run-lock.sh's own refresh contract).
+    const lockFresh = await agent(
+      `Refresh this topic's run lock and gate window before writing finding ${g.f.id} (harness ${H}, topic dir ${RDIR}, token ${LOCK_TOKEN}). ` +
+        `Run: bash ${H}/scripts/run-lock.sh refresh ${RDIR} ${LOCK_TOKEN} — if it exits nonzero, this run LOST ownership of the topic (another run stole it, or it aged out); report ok=false and STOP, do not write anything for this finding. ` +
+        `If it exits 0, ALSO run: touch ${RDIR}/.gate-active — to keep the gate window fresh — and report ok=true.`,
+      { label: `lock-refresh:${g.f.id.slice(-8)}`, phase: 'Gate', model: 'haiku', effort: 'low', schema: LOCK_STATUS_SCHEMA },
+    )
+    if (!lockFresh || !lockFresh.ok) {
+      throw new Error(
+        `research-falsify: #738 — lost ownership of the run lock/gate for ${RDIR} while gating ${g.f.id} — stopping ` +
+          `rather than write under a false assumption of exclusive access (scripts/run-lock.sh's own refresh contract: ` +
+          `a lost lock is fatal, never a warning to log and continue).`,
+      )
+    }
     const votes = g.lensResults.map((r) => r.verdict)
     let { verdict, contested } = mergeVotes(votes)
     let basis = g.lensResults.map((r) => `[${r.lensKey}:${r.verdict}] ${r.basis}`).join(' | ')
@@ -615,6 +696,35 @@ const gated = await pipeline(
     return { id: g.f.id, dimension: g.f.dimension, verdict, contested, remediation: written.remediation }
   },
 )
+} finally {
+  // #738: release the topic run lock and close the gate window on EVERY exit
+  // path — the pipeline() call above completing normally, or a per-finding
+  // throw (#747/#659, or the lock-refresh loss below) propagating out of it —
+  // mirroring falsify.md's own "release the lock on EVERY exit path" Phase 2
+  // contract. This cleanup call is best-effort: the agent() invocation itself
+  // (a live model call over an untrusted shell command) can still throw or
+  // reject, and if it did so uncaught here it would replace whatever error
+  // (if any) is already propagating out of the try block above — the exact
+  // failure mode this comment used to only assert away rather than actually
+  // prevent. Catch and log instead, so cleanup failure is visible but never
+  // masks the real gating error.
+  try {
+    await agent(
+      `Close the falsification gate window and release the topic run lock for ${RDIR} (harness ${H}, token ${LOCK_TOKEN}) — ` +
+        `this runs on every exit path, success or failure. Run: rm -f ${RDIR}/.gate-active ${RDIR}/.gate-batch; then ` +
+        `bash ${H}/scripts/run-lock.sh release ${RDIR} ${LOCK_TOKEN}. Report ok=true once both commands have been run, ` +
+        `regardless of either command's own exit code (this is best-effort cleanup, never a reason to throw further).`,
+      { label: 'falsify:lock-release', phase: 'Gate', model: 'haiku', effort: 'low', schema: LOCK_STATUS_SCHEMA },
+    )
+  } catch (cleanupErr) {
+    log(
+      `research-falsify: WARNING — lock-release cleanup for ${RDIR} (token ${LOCK_TOKEN}) itself failed/threw: ` +
+        `${cleanupErr && cleanupErr.message ? cleanupErr.message : cleanupErr}. The topic lock/gate window may still ` +
+        `be held; manual cleanup (rm -f ${RDIR}/.gate-active ${RDIR}/.gate-batch; bash ${H}/scripts/run-lock.sh release ${RDIR} ${LOCK_TOKEN}) ` +
+        `may be required. Not rethrown so any real gating error already propagating out of the try block above is preserved.`,
+    )
+  }
+}
 
 phase('Rollup')
 const done = gated.filter(Boolean)

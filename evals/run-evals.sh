@@ -219,6 +219,24 @@ run "falsify-verdict-merge" bash evals/falsify-verdict-merge.sh
 # old source, not merely that it passes against the fixed one.
 run "falsify-write-failure-gated" bash evals/falsify-write-failure-gated.sh
 
+# research-harness-template#738: the write step never opened the
+# .gate-active window (or acquired the companion scripts/run-lock.sh topic
+# lock) that scripts/falsify.sh requires for every reports/<topic>/
+# findings/*.json write -- every finding needing gating through this
+# vendored engine was either denied outright by guard-falsify-gate.sh's
+# PreToolUse hook, or exited 3 from falsify.sh once the hook was bypassed;
+# no verdict was ever actually persisted to disk. This eval extracts the
+# real acquire/try/finally control-flow span verbatim and drives it with a
+# stubbed pipeline()/agent(): a failed acquire throws before pipeline() is
+# ever called (and makes no release call, since nothing was acquired); a
+# successful acquire + normal completion releases exactly once, naming the
+# exact token acquire returned; a per-finding failure thrown out of
+# pipeline() still propagates AND still releases exactly once (the finally
+# is not bypassed on the error path). Structural checks additionally prove
+# the per-finding refresh step exists and sits before that finding's own
+# write step, never after.
+run "falsify-gate-lock-window" bash evals/falsify-gate-lock-window.sh
+
 # The fanout->falsify HANDOFF SEAM has deterministic teeth (#652/#653):
 # neither fanout-lane-contract.sh (structural-only: the FINDING_CONTRACT
 # constant exists/is embedded) nor falsify-verdict-merge.sh (one-round rule
