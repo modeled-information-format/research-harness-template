@@ -564,8 +564,15 @@ while IFS=$'\t' read -r rpath rdigest rmiftype; do
     # the finding branch (below) already have, so a destination
     # ontology-map.json large enough for the subset jq merge to take
     # non-trivial time could have its own still-live lock misjudged as stale
-    # and stolen mid-write by a concurrent invocation.
-    container_lock_refresh "$LOCK_DIR"
+    # and stolen mid-write by a concurrent invocation. Pass LOCK_TOKEN and be
+    # fatal on mismatch, exactly like the doc/finding branches: since #763
+    # container_lock_refresh REQUIRES the ownership token (a tokenless call is
+    # refused as a no-op and never actually refreshes), a bare
+    # `container_lock_refresh "$LOCK_DIR"` here would silently defeat this very
+    # fix and emit a spurious "no ownership token supplied" diagnostic each
+    # iteration.
+    container_lock_refresh "$LOCK_DIR" "$LOCK_TOKEN" \
+      || fail "lost exclusive access to $LOCK_DIR mid-import -- another run has taken over this topic's lock"
     rfile="$CONTAINER_DIR/$rpath"
     dest="reports/$TOPIC/ontology-map.json"
     jq -e 'type == "array"' "$rfile" > /dev/null 2>&1 \
