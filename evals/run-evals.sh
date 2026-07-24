@@ -660,6 +660,17 @@ run "atomic-workflows-args-parse-check" bash evals/atomic-workflows-args-parse-c
 # via string args must still hit the fail-closed pack-name-pattern throw.
 run "projection-slug-genre-args-check" bash evals/projection-slug-genre-args-check.sh
 
+# research-harness-template#757: research-projection.js's #633 GENRE
+# RESOLUTION step derives genreArg/genreSkillRef via an agent() call, but
+# GENRE_SCHEMA declared them as plain strings with no `pattern` -- unlike
+# GENRE itself, which IS regex-validated before use at the identical two
+# sinks (a shell command, a Skill() reference). This eval pins that defect
+# class: a malformed genreArg (shell metacharacters) or an unexpected
+# genreSkillRef (not matching "<GENRE>:<GENRE>") returned by the
+# genre-resolve agent() must fail closed before either reaches its sink; a
+# well-formed pair must proceed with no regression.
+run "projection-genre-resolution-injection-check" bash evals/projection-genre-resolution-injection-check.sh
+
 # release.yml never uploads to an already-published (immutable) release
 # (#537): tag-push trigger, no post-publish `gh release upload`, artifact
 # attached in the same `gh release create` call.
