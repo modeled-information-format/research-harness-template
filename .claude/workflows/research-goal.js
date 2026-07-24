@@ -52,7 +52,13 @@ const CONTEXT_SCHEMA = {
     existingGoalSummary: { type: ['string', 'null'] },
     notes: { type: 'string' },
   },
-  required: ['topicRegistered', 'configDimensions', 'existingGoalPath', 'notes'],
+  // research-harness-template#766: existingGoalSummary must be required, not
+  // merely typed as string|null -- the Draft prompt below unconditionally
+  // interpolates ctx.existingGoalSummary whenever ctx.existingGoalPath is
+  // truthy, so a schema-valid Context result that OMITS the field (legal
+  // before this fix) produced the literal text "(undefined)" in the Draft
+  // agent's prompt instead of a real summary.
+  required: ['topicRegistered', 'configDimensions', 'existingGoalPath', 'existingGoalSummary', 'notes'],
 }
 
 const DRAFT_SCHEMA = {
@@ -116,7 +122,7 @@ const draft = await agent(
     `RAW ASK: ${ASK || '(none given — derive the sharpest decision-enabling goal from the topic and existing goal context)'}\n` +
     `TOPIC: ${TOPIC}. Config dimensions available: ${JSON.stringify(ctx.configDimensions)}. ` +
     (ctx.existingGoalPath
-      ? `An existing goal exists (${ctx.existingGoalSummary}); you are re-authoring it. The goal is immutable per version (ADR-0006, content-hashed append-only lineage): follow the update flow in ${H}/.claude/commands/goal-writer.md — snapshot the live version FIRST (OLD=$(bash ${H}/scripts/goal-version.sh ${H}/reports/${TOPIC}/goal.json); mkdir -p ${H}/reports/${TOPIC}/goals; cp ${H}/reports/${TOPIC}/goal.json ${H}/reports/${TOPIC}/goals/goal-$OLD.json), then write the new content and mint its lineage (NEW=$(bash ${H}/scripts/goal-version.sh ${H}/reports/${TOPIC}/goal.json); stamp .version=$NEW, .supersedes=$OLD, and .revision {rationale, changed, date} with jq, then re-validate). Never overwrite the live goal without minting — no ad hoc goal.prior.json snapshots.`
+      ? `An existing goal exists (${ctx.existingGoalSummary || `summary unavailable -- read ${H}/reports/${TOPIC}/goal.json directly before re-authoring`}); you are re-authoring it. The goal is immutable per version (ADR-0006, content-hashed append-only lineage): follow the update flow in ${H}/.claude/commands/goal-writer.md — snapshot the live version FIRST (OLD=$(bash ${H}/scripts/goal-version.sh ${H}/reports/${TOPIC}/goal.json); mkdir -p ${H}/reports/${TOPIC}/goals; cp ${H}/reports/${TOPIC}/goal.json ${H}/reports/${TOPIC}/goals/goal-$OLD.json), then write the new content and mint its lineage (NEW=$(bash ${H}/scripts/goal-version.sh ${H}/reports/${TOPIC}/goal.json); stamp .version=$NEW, .supersedes=$OLD, and .revision {rationale, changed, date} with jq, then re-validate). Never overwrite the live goal without minting — no ad hoc goal.prior.json snapshots.`
       : 'No existing goal — author fresh.') +
     `\nProduce: (1) ${H}/reports/${TOPIC}/goal.json composed with jq and validated with ajv against ${H}/schemas/goal.schema.json (draft2020, ajv-formats); (2) the /goal prose paragraph. ` +
     `One checkable end state, not a plan of steps: goal_statement is the decision this session enables; every completion_condition.check is a transcript-verifiable fact with a printable verify where possible; dimensions[] drawn from the config-declared set. Do not proceed past a failing ajv run — fix and re-validate.\n` +
