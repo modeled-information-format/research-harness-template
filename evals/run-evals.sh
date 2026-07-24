@@ -1066,6 +1066,13 @@ run "anti-narration-guard-resume" bash -c 'grep -q "Issue #490" .claude/commands
 # already having the engine cached before any real _tasks run.
 run "copier-tasks-engine-order-check" bash evals/copier-tasks-engine-order-check.sh
 
+# research-harness-template#778: gate_m5's mktemp -d calls (5c/5d/5d2/5d3/5d4)
+# had no failure guard, so a failed mktemp silently collapsed every "$T/..."
+# path to filesystem root. Shadows mktemp with a stub that always fails and
+# asserts gate_m5 fails closed with an explicit scratch-directory message
+# instead of limping through with a misattributed pack-toggle failure.
+run "gate-m5-mktemp-guard" bash evals/gate-m5-mktemp-guard.sh
+
 echo
 if [ "$FAIL" -gt 0 ]; then
   printf '%srun-evals: %d passed, %d FAILED%s\n' "$RED" "$PASS" "$FAIL" "$RST"
