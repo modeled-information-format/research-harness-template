@@ -154,6 +154,22 @@ else
     || { note "goal with an unknown deliverables key did not fail via the fail-closed ajv schema gate"; fail=1; }
 fi
 
+# Case 10 (research-harness-template#760): --config with no path after it
+# (or an empty path) is a usage mistake and must exit 2 via usage(), never
+# bash's own ${2:?msg} parameter-expansion error (which exits 1 and makes a
+# usage mistake indistinguishable by exit code from a real lint failure).
+LINT "$FX/goal-repaired.json" --config > "$TMP/noconfigpath.out" 2>&1
+rc=$?
+[ "$rc" -eq 2 ] || { note "--config with no path: expected exit 2, got $rc"; fail=1; }
+grep -q '^usage: lint-goal.sh' "$TMP/noconfigpath.out" \
+  || { note "--config with no path did not print the usage message"; fail=1; }
+
+LINT "$FX/goal-repaired.json" --config "" > "$TMP/emptyconfigpath.out" 2>&1
+rc=$?
+[ "$rc" -eq 2 ] || { note "--config with an empty path: expected exit 2, got $rc"; fail=1; }
+grep -q '^usage: lint-goal.sh' "$TMP/emptyconfigpath.out" \
+  || { note "--config with an empty path did not print the usage message"; fail=1; }
+
 # Case 6: the workflow module encodes the same contract.
 grep -q 'repairs < 2' "$WF" \
   || { note "$WF lost the 2-round repair bound (repairs < 2)"; fail=1; }
