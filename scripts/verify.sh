@@ -1261,7 +1261,14 @@ gate_m11() {
   local bad_out bad_rc BAD_ENGINE
   # shellcheck source=scripts/lib/engine.sh
   . scripts/lib/engine.sh
-  BAD_ENGINE="$(engine_bin "$(pwd)")" || exit 5
+  # research-harness-template#748: this used to be `|| exit 5`, run directly
+  # in verify.sh's own process (not a subshell) -- an engine_bin failure here
+  # hard-exited the ENTIRE verify.sh run, silently skipping every gate after
+  # gate_m11 (gate_m12 through gate_workflows) with no bad/PASS-FAIL summary,
+  # and leaking gate_m11's own $T scratch dir. gate_m20/gate_m22 hit the
+  # identical engine_bin call and correctly `bad ...; return` instead --
+  # match that established pattern here too.
+  BAD_ENGINE="$(engine_bin "$(pwd)")" || { bad "gate_m11 needs the mif-rh-cli engine for the 11j fail-safe check (not found/too old — see the engine: diagnostic above)"; rm -rf "$T"; return; }
   jq 'del(.extensions)' schemas/samples/finding.sample.json > "$T/broken-sample.json"
   bad_out=$("$BAD_ENGINE" harness reconcile-session "$RD2" \
     --schema "schemas/findings.schema.json" \
@@ -3475,6 +3482,12 @@ gate_m29() {
   local CONTAINER_LOCK_LIB="scripts/lib/container-lock.sh"
   local ontlock_topic_full="gate-m29-771-ontlock-full"
   local ontlock_topic_subset="gate-m29-771-ontlock-subset"
+  # Declared here (not at 29q, where they're used), same rationale as
+  # ontlock_topic_full/subset above: restore_snapshot's cleanup below must be
+  # able to reference them unconditionally, not depend on 29q having run.
+  local CONTAINER_DIGEST_BIN="scripts/mif-container-digest.sh"
+  local toctou_topic_full="gate-m29-759-toctou-full"
+  local toctou_topic_subset="gate-m29-759-toctou-subset"
   restore_snapshot() {
     # Every restore below is checked (Copilot review, PR #385): unlike the
     # guarded BACKUP calls above (issue #377), a restore step failing here
@@ -3512,6 +3525,15 @@ gate_m29() {
         || bad "gate_m29 restore_snapshot: failed to restore $CONTAINER_LOCK_LIB -- real corpus may be left mutated"
     fi
     rm -rf "reports/$ontlock_topic_full" "reports/$ontlock_topic_subset"
+    # 29q (issue #759) instrumentation cleanup: restore the real
+    # mif-container-digest.sh unconditionally if a backup was ever taken
+    # (best effort even if 29q itself never ran or died mid-way), and remove
+    # its two synthetic topics.
+    if [ -f "$T/mif-container-digest.sh.orig" ]; then
+      cp "$T/mif-container-digest.sh.orig" "$CONTAINER_DIGEST_BIN" \
+        || bad "gate_m29 restore_snapshot: failed to restore $CONTAINER_DIGEST_BIN -- real corpus may be left mutated"
+    fi
+    rm -rf "reports/$toctou_topic_full" "reports/$toctou_topic_subset"
     rm -rf "$T"
     # Deregister the EXIT copy of this trap once the restore has actually
     # run: EXIT is a last-resort net for a fatal error INSIDE this function
@@ -4074,6 +4096,130 @@ LOCKEOF
   else
     bad "ontology-map lock-refresh regression check failed (#771): full rc=$rc_ontlock_full marker=$([ -s "$full_marker" ] && echo yes || echo no); subset rc=$rc_ontlock_subset marker=$([ -s "$subset_marker" ] && echo yes || echo no)"
   fi
+
+  # 29q. Regression test for issue #759: the ontology-map write branch (both
+  #      the full-scope overwrite path and the subset-scope merge path) must
+  #      re-verify $rfile's digest immediately before staging/publishing,
+  #      exactly like the doc-write (PR #491) and finding-overwrite-in-place
+  #      paths beside it already do -- closing the TOCTOU window between
+  #      step 2's bulk verification and this write. A real concurrent
+  #      mutation of a network-backed $CONTAINER_DIR mid-run isn't practical
+  #      to race deterministically here (same rationale as 29p's lock-
+  #      refresh instrumentation) -- instead this instruments
+  #      scripts/mif-container-digest.sh itself so ONE specific resource
+  #      file's SECOND `resource` computation returns a digest that
+  #      provably mismatches its manifest-declared one, simulating "the
+  #      file's content changed since step 2 verified it" without touching
+  #      the fixture's actual bytes. Every other call (a different file, or
+  #      the `manifest` subcommand) delegates to the untouched original, so
+  #      step 2's own first-pass verification -- and every other resource's
+  #      digest check in the whole pipeline -- is unaffected.
+  local toctou_full_ontmap="$T/c-toctou-full/ontology-map.json"
+  local toctou_subset_ontmap="$T/c-toctou-subset/ontology-map.json"
+  mkdir -p "$T/c-toctou-full" "$T/c-toctou-subset"
+  echo '[]' > "$toctou_full_ontmap"
+  echo '[{"finding_id":"urn:mif:concept:harness/'"$toctou_topic_subset"':incoming","entity_type":"technology","resolved_ontology":"mif-generic@1.0.0","basis":"declared","valid":true}]' \
+    > "$toctou_subset_ontmap"
+  # Real digests, computed BEFORE the digest script is instrumented below --
+  # these are the manifest's declared (correct) values throughout.
+  local toctou_full_digest toctou_full_manifest_digest
+  toctou_full_digest="$(scripts/mif-container-digest.sh resource "$toctou_full_ontmap")"
+  toctou_full_manifest_digest="$(printf '%s\n' "$toctou_full_digest" | scripts/mif-container-digest.sh manifest)"
+  local toctou_subset_digest toctou_subset_manifest_digest
+  toctou_subset_digest="$(scripts/mif-container-digest.sh resource "$toctou_subset_ontmap")"
+  toctou_subset_manifest_digest="$(printf '%s\n' "$toctou_subset_digest" | scripts/mif-container-digest.sh manifest)"
+  jq -n --arg d "$toctou_full_digest" --arg md "$toctou_full_manifest_digest" --arg topic "$toctou_topic_full" '{
+    profile: "https://research-harness.dev/schema/mif-container/v1",
+    sourceInstance: {namespace: "gate-m29-test", corpusUrl: null},
+    exportScope: {type: "full", topic: $topic, selector: null, generatedAt: "2026-07-10T00:00:00Z"},
+    ontologyBindings: [{packId: "mif-generic", version: "1.0.0"}],
+    resources: [{mifType: "ontology-map", path: "ontology-map.json", ontologyType: null, digest: $d}],
+    boundaryReferences: [],
+    manifestDigest: $md,
+    createdAt: "2026-07-10T00:00:00Z"
+  }' > "$T/c-toctou-full/mif-package.json"
+  jq -n --arg d "$toctou_subset_digest" --arg md "$toctou_subset_manifest_digest" --arg topic "$toctou_topic_subset" \
+    --arg selector "[\"urn:mif:concept:harness/$toctou_topic_subset:incoming\"]" '{
+    profile: "https://research-harness.dev/schema/mif-container/v1",
+    sourceInstance: {namespace: "gate-m29-test", corpusUrl: null},
+    exportScope: {type: "subset", topic: $topic, selector: $selector, generatedAt: "2026-07-10T00:00:00Z"},
+    ontologyBindings: [{packId: "mif-generic", version: "1.0.0"}],
+    resources: [{mifType: "ontology-map", path: "ontology-map.json", ontologyType: null, digest: $d}],
+    boundaryReferences: [],
+    manifestDigest: $md,
+    createdAt: "2026-07-10T00:00:00Z"
+  }' > "$T/c-toctou-subset/mif-package.json"
+
+  jq --arg f "$toctou_topic_full" --arg s "$toctou_topic_subset" '.topics += [
+      {id: $f, title: "gate_m29 759 toctou full-scope test", namespace: ("harness/" + $f), status: "active", ontologies: []},
+      {id: $s, title: "gate_m29 759 toctou subset-scope test", namespace: ("harness/" + $s), status: "active", ontologies: []}
+    ]' harness.config.json > "$T/config-with-toctou-topics.json" && cp "$T/config-with-toctou-topics.json" harness.config.json
+  mkdir -p "reports/$toctou_topic_full/findings" "reports/$toctou_topic_subset/findings"
+  jq --arg id "urn:mif:concept:harness/$toctou_topic_full:seed" '."@id" = $id' \
+    "$seed_finding" > "reports/$toctou_topic_full/findings/seed.json"
+  jq --arg id "urn:mif:concept:harness/$toctou_topic_subset:seed" '."@id" = $id' \
+    "$seed_finding" > "reports/$toctou_topic_subset/findings/seed.json"
+  # The subset destination pre-exists with content DIFFERENT from the
+  # incoming resource, both so the merge branch does real work (not a
+  # same-content cmp -s skip) and so a false-negative "nothing changed
+  # anyway" can't masquerade as this test passing: if the fix were absent
+  # (or broken) this pre-existing content would get overwritten/merged with
+  # the incoming (untrusted-by-the-recheck) bytes.
+  echo '[{"finding_id":"urn:mif:concept:harness/'"$toctou_topic_subset"':pre-existing","entity_type":"technology","resolved_ontology":"mif-generic@1.0.0","basis":"declared","valid":true}]' \
+    > "reports/$toctou_topic_subset/ontology-map.json"
+  local toctou_subset_dest_before
+  toctou_subset_dest_before="$(scripts/mif-container-digest.sh resource "reports/$toctou_topic_subset/ontology-map.json")"
+
+  cp "$CONTAINER_DIGEST_BIN" "$T/mif-container-digest.sh.orig" \
+    || { bad "gate_m29 29q: failed to back up $CONTAINER_DIGEST_BIN before instrumenting it"; return 1; }
+  cat > "$T/mif-container-digest.sh.instrumented" <<'DIGESTEOF'
+#!/usr/bin/env bash
+# gate_m29 29q instrumentation (issue #759 TOCTOU regression test): the
+# SECOND `resource <TOCTOU_TARGET>` call returns a digest that provably
+# mismatches its manifest-declared value, simulating the file's content
+# having changed since step 2's bulk verification already read it. Every
+# other call delegates unchanged to the real original.
+set -uo pipefail
+if [ "${1:-}" = "resource" ] && [ -n "${TOCTOU_TARGET:-}" ] && [ "${2:-}" = "$TOCTOU_TARGET" ]; then
+  if [ -f "${TOCTOU_MARKER:?TOCTOU_MARKER not set}" ]; then
+    echo "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    exit 0
+  fi
+  touch "$TOCTOU_MARKER"
+fi
+exec "${TOCTOU_DIGEST_ORIG:?TOCTOU_DIGEST_ORIG not set}" "$@"
+DIGESTEOF
+  cp "$T/mif-container-digest.sh.instrumented" "$CONTAINER_DIGEST_BIN" \
+    && chmod +x "$CONTAINER_DIGEST_BIN" \
+    || { bad "gate_m29 29q: failed to install the instrumented $CONTAINER_DIGEST_BIN"; return 1; }
+
+  local toctou_full_marker="$T/toctou-marker-full" toctou_subset_marker="$T/toctou-marker-subset"
+  rm -f "$toctou_full_marker" "$toctou_subset_marker"
+  local toctou_full_out toctou_subset_out
+  toctou_full_out="$(TOCTOU_TARGET="$toctou_full_ontmap" TOCTOU_MARKER="$toctou_full_marker" \
+    TOCTOU_DIGEST_ORIG="$T/mif-container-digest.sh.orig" \
+    "$IMPORT" "$T/c-toctou-full" "$toctou_topic_full" 2>&1)"
+  local rc_toctou_full=$?
+  toctou_subset_out="$(TOCTOU_TARGET="$toctou_subset_ontmap" TOCTOU_MARKER="$toctou_subset_marker" \
+    TOCTOU_DIGEST_ORIG="$T/mif-container-digest.sh.orig" \
+    "$IMPORT" "$T/c-toctou-subset" "$toctou_topic_subset" 2>&1)"
+  local rc_toctou_subset=$?
+
+  cp "$T/mif-container-digest.sh.orig" "$CONTAINER_DIGEST_BIN" \
+    || bad "gate_m29 29q: failed to restore the original $CONTAINER_DIGEST_BIN after instrumentation"
+
+  local toctou_subset_dest_after
+  toctou_subset_dest_after="$(scripts/mif-container-digest.sh resource "reports/$toctou_topic_subset/ontology-map.json" 2>/dev/null)"
+
+  rm -rf "reports/$toctou_topic_full" "reports/$toctou_topic_subset"
+
+  if [ "$rc_toctou_full" -ne 0 ] && printf '%s' "$toctou_full_out" | grep -q "digest changed between verification and write" \
+     && [ "$rc_toctou_subset" -ne 0 ] && printf '%s' "$toctou_subset_out" | grep -q "digest changed between verification and write" \
+     && [ "$toctou_subset_dest_after" = "$toctou_subset_dest_before" ]; then
+    ok "ontology-map write branch re-verifies the resource's digest immediately before writing, full-scope and subset-scope alike (#759)"
+  else
+    bad "ontology-map TOCTOU-recheck regression check failed (#759): full rc=$rc_toctou_full out='$toctou_full_out'; subset rc=$rc_toctou_subset out='$toctou_subset_out'; subset dest unchanged=$([ "$toctou_subset_dest_after" = "$toctou_subset_dest_before" ] && echo yes || echo no)"
+  fi
 }
 
 # ---------------------------------------------------------------------------
@@ -4112,23 +4258,39 @@ gate_m30() {
     # runs inside the EXIT/RETURN trap itself, so `bad` is the only way to
     # surface a failed restore instead of silently proceeding as if it
     # succeeded. Every step still runs regardless of an earlier one failing.
-    rm -rf "$TOPIC_DIR/findings"
-    mkdir -p "$TOPIC_DIR/findings"
+    #
+    # research-harness-template#754: a failed restore step must NOT still
+    # cause the unconditional `rm -rf "$T"` below to run -- doing so
+    # destroyed the only backup of the pre-mutation corpus even though the
+    # failure was already detected and reported via `bad`, leaving a user
+    # running verify.sh with real, uncommitted findings no recovery path.
+    # Track whether any restore step failed and only remove $T once every
+    # step has actually succeeded; otherwise leave it in place for manual
+    # inspection/recovery.
+    local restore_failed=0
+    rm -rf "$TOPIC_DIR/findings" \
+      || { bad "gate_m30 restore_snapshot: failed to clear $TOPIC_DIR/findings before restoring it -- real corpus may be left mutated"; restore_failed=1; }
+    mkdir -p "$TOPIC_DIR/findings" \
+      || { bad "gate_m30 restore_snapshot: failed to recreate $TOPIC_DIR/findings before restoring it -- real corpus may be left mutated"; restore_failed=1; }
     cp -r "$T/snapshot/findings/." "$TOPIC_DIR/findings/" \
-      || bad "gate_m30 restore_snapshot: failed to restore $TOPIC_DIR/findings -- real corpus may be left mutated"
+      || { bad "gate_m30 restore_snapshot: failed to restore $TOPIC_DIR/findings -- real corpus may be left mutated"; restore_failed=1; }
     cp "$T/snapshot/README.md" "$TOPIC_DIR/README.md" \
-      || bad "gate_m30 restore_snapshot: failed to restore $TOPIC_DIR/README.md -- real corpus may be left mutated"
+      || { bad "gate_m30 restore_snapshot: failed to restore $TOPIC_DIR/README.md -- real corpus may be left mutated"; restore_failed=1; }
     cp "$T/snapshot/concordance.json" reports/concordance.json \
-      || bad "gate_m30 restore_snapshot: failed to restore reports/concordance.json -- real corpus may be left mutated"
+      || { bad "gate_m30 restore_snapshot: failed to restore reports/concordance.json -- real corpus may be left mutated"; restore_failed=1; }
     if [ "$had_sameas_proposals" -eq 1 ]; then
       cp "$T/snapshot/concordance-sameas-proposals.json" reports/concordance-sameas-proposals.json \
-        || bad "gate_m30 restore_snapshot: failed to restore reports/concordance-sameas-proposals.json"
+        || { bad "gate_m30 restore_snapshot: failed to restore reports/concordance-sameas-proposals.json"; restore_failed=1; }
     else
       rm -f reports/concordance-sameas-proposals.json
     fi
     rm -f "$TOPIC_DIR/knowledge-graph.json"
     rm -rf "$TOPIC_DIR/.container.lock"
-    rm -rf "$T"
+    if [ "$restore_failed" -eq 0 ]; then
+      rm -rf "$T"
+    else
+      info "gate_m30 restore_snapshot: leaving backup at $T in place after a failed restore step -- inspect/recover it manually, then remove it"
+    fi
     trap - EXIT
   }
   trap restore_snapshot RETURN EXIT
@@ -4296,6 +4458,49 @@ gate_m30() {
   else
     bad "corrupt-destination partial-write regression check failed (rc=$rc_corrupt, independent_written=$independent_written)"
   fi
+
+  # 30g. Regression (research-harness-template#754): restore_snapshot's own
+  #      backup ($T) must survive a FAILED restore step, not get deleted
+  #      unconditionally. Force one restore `cp` (reports/concordance.json)
+  #      to fail via a permission error, invoke restore_snapshot directly
+  #      with `bad`/`ok`/`info` shadowed to no-ops (so this induced,
+  #      expected failure -- restore_snapshot correctly calling `bad` on
+  #      it -- does not itself count against this gate's real PASS/FAIL
+  #      totals, and its `info` note doesn't leak into the captured
+  #      output this probe checks), and assert $T is still present
+  #      afterward. The permission bit is
+  #      restored, and gate_m30's own trap-driven restore_snapshot (armed
+  #      at the top of this function) then runs a real, unobstructed
+  #      restore at the true end of the gate, so this probe never leaves
+  #      the corpus or the scratch dir behind.
+  #
+  #      chmod 000 does not deny write to root -- or any other
+  #      DAC_OVERRIDE-capable process, e.g. a root-uid Docker/devcontainer
+  #      verify.sh run -- so the induced restore `cp` would then SUCCEED, $T
+  #      would be deleted, and this probe would false-FAIL against a correct
+  #      fix (research-harness-template#777, same premise as gate 27f above).
+  #      Probe writability after chmod 000 and, if the file is still
+  #      writable, SKIP: the induced-failure premise does not hold.
+  chmod 000 reports/concordance.json
+  if [ -w reports/concordance.json ]; then
+    chmod 644 reports/concordance.json
+    skip "restore_snapshot backup-preservation check (chmod 000 did not deny write -- running as root or with DAC override; premise does not hold, #777)"
+  else
+    local t_survives
+    t_survives="$(
+      bad() { :; }
+      ok() { :; }
+      info() { :; }
+      restore_snapshot >/dev/null 2>&1
+      [ -d "$T" ] && echo yes || echo no
+    )"
+    chmod 644 reports/concordance.json
+    if [ "$t_survives" = "yes" ]; then
+      ok "restore_snapshot preserves its own backup ($T) when a restore step fails, instead of deleting it unconditionally"
+    else
+      bad "restore_snapshot deleted its backup ($T) even though a restore step failed -- unrecoverable corpus mutation risk"
+    fi
+  fi
 }
 
 # ---------------------------------------------------------------------------
@@ -4346,6 +4551,12 @@ gate_m31() {
   # future refactor, an external signal -- could skip, leaving it behind
   # despite restore_state()'s trap claiming to fully restore state).
   local malformed_topic="gate-m31-malformed-test"
+  # Tracks whether any of restore_state()'s own backup-restoring `cp` calls
+  # below failed (issue #750): read (never `local`-redeclared) from inside
+  # restore_state() the same dynamic-scope way $T/$TOPIC_DIR/$had_sameas_proposals
+  # already are, so a failure recorded deep in the function is visible at its
+  # end where the decision to keep or delete "$T" is made.
+  local restore_failed=0
   restore_state() {
     # Every restore below is checked (Copilot review, PR #385) -- same
     # rationale as gate_m29/gate_m30's restore_snapshot(): a restore step
@@ -4353,12 +4564,12 @@ gate_m31() {
     # surface a failed restore instead of silently proceeding as if it
     # succeeded. Every step still runs regardless of an earlier one failing.
     cp "$T/harness.config.json.orig" harness.config.json \
-      || bad "gate_m31 restore_state: failed to restore harness.config.json -- real corpus may be left mutated"
+      || { bad "gate_m31 restore_state: failed to restore harness.config.json -- real corpus may be left mutated"; restore_failed=1; }
     cp "$T/concordance.json.orig" reports/concordance.json \
-      || bad "gate_m31 restore_state: failed to restore reports/concordance.json -- real corpus may be left mutated"
+      || { bad "gate_m31 restore_state: failed to restore reports/concordance.json -- real corpus may be left mutated"; restore_failed=1; }
     if [ "$had_sameas_proposals" -eq 1 ]; then
       cp "$T/concordance-sameas-proposals.json.orig" reports/concordance-sameas-proposals.json \
-        || bad "gate_m31 restore_state: failed to restore reports/concordance-sameas-proposals.json"
+        || { bad "gate_m31 restore_state: failed to restore reports/concordance-sameas-proposals.json"; restore_failed=1; }
     else
       rm -f reports/concordance-sameas-proposals.json
     fi
@@ -4369,7 +4580,16 @@ gate_m31() {
     # same defensive cleanup gate_m29/gate_m30's restore_snapshot() already
     # does for that lock, needed here too now that export shares it.
     rm -rf "$TOPIC_DIR/.container.lock"
-    rm -rf "$T"
+    # issue #750: only delete the backup scratch dir when every restore step
+    # above actually succeeded. Deleting it unconditionally -- the prior
+    # behavior -- destroyed the only copy of the pre-run harness.config.json/
+    # concordance.json originals at the exact moment a failed restore had
+    # already left the real tracked files mutated, with no recovery path.
+    if [ "$restore_failed" -eq 1 ]; then
+      bad "gate_m31 restore_state: a restore step failed above -- preserving backup instead of deleting it so the pre-run harness.config.json/concordance.json originals can still be recovered manually: $T"
+    else
+      rm -rf "$T"
+    fi
     trap - EXIT
   }
   trap restore_state RETURN EXIT
@@ -5373,10 +5593,22 @@ gate_workflows() {
   local proj=".claude/workflows/research-projection.js"
   local proj_code=""
   [ -f "$proj" ] && proj_code="$(grep -vE '^[[:space:]]*//' "$proj")"
+  # NOTE (research-harness-template#804 CI investigation): the three checks
+  # below use a herestring (<<<), not `printf ... | grep -qF ...`. proj_code
+  # is the WHOLE comment-stripped module -- large enough that under this
+  # script's `set -uo pipefail` (line 19), grep -q exiting as soon as it
+  # finds its match can SIGPIPE the still-writing printf before it finishes;
+  # pipefail then reports the pipeline's status as printf's nonzero SIGPIPE
+  # exit rather than grep's real (successful) one, so this gate can FAIL
+  # even when every string it looks for is genuinely present -- observed
+  # live on PR #804 once an unrelated edit grew research-projection.js past
+  # whatever size made the race reliable. A herestring has no separate
+  # writer process to race: bash populates it before exec'ing grep, so
+  # there's nothing for grep's early exit to SIGPIPE.
   if [ -f "$proj" ] \
-     && printf '%s\n' "$proj_code" | grep -qF 'container_lock_acquire "${RDIR}/.projection-lock"' \
-     && printf '%s\n' "$proj_code" | grep -qF 'container_lock_release "${RDIR}/.projection-lock"' \
-     && printf '%s\n' "$proj_code" | grep -qF '#628'; then
+     && grep -qF 'container_lock_acquire "${RDIR}/.projection-lock"' <<< "$proj_code" \
+     && grep -qF 'container_lock_release "${RDIR}/.projection-lock"' <<< "$proj_code" \
+     && grep -qF '#628' <<< "$proj_code"; then
     ok "research-projection.js's Report phase still wires the reports/<topic>/.projection-lock acquire/release guard (#628)"
   else
     bad "research-projection.js is missing the #628 projection-lock guard (container_lock_acquire/release on reports/<topic>/.projection-lock) -- concurrent projection runs on the same topic will silently corrupt each other's artifact.json again"
@@ -5394,12 +5626,14 @@ gate_workflows() {
   # text now distinguishes rc=3 from rc=1 by name, so a future edit that
   # re-collapses them back into one undifferentiated "nonzero == contention"
   # story is caught here, not live.
+  # Herestrings here too, same #804 broken-pipe/pipefail rationale as the
+  # #628 check just above -- proj_code is the same large whole-module blob.
   if [ -f "$proj" ] \
-     && ! printf '%s\n' "$proj_code" | grep -qF 'a NONZERO exit means another projection run currently owns this topic' \
-     && printf '%s\n' "$proj_code" | grep -qF 'rc=3 means' \
-     && printf '%s\n' "$proj_code" | grep -qF 'rc=1 means the' \
-     && printf '%s\n' "$proj_code" | grep -qF 'mkdir itself failed for an unrelated filesystem reason' \
-     && printf '%s\n' "$proj_code" | grep -qF '#769'; then
+     && ! grep -qF 'a NONZERO exit means another projection run currently owns this topic' <<< "$proj_code" \
+     && grep -qF 'rc=3 means' <<< "$proj_code" \
+     && grep -qF 'rc=1 means the' <<< "$proj_code" \
+     && grep -qF 'mkdir itself failed for an unrelated filesystem reason' <<< "$proj_code" \
+     && grep -qF '#769' <<< "$proj_code"; then
     ok "research-projection.js's Report phase distinguishes container_lock_acquire's rc=3 (contention) from rc=1 (filesystem error) rather than collapsing every nonzero exit into contention (#769)"
   else
     bad "research-projection.js still collapses container_lock_acquire's distinct rc=3 (contention) and rc=1 (filesystem error) exits into a single 'NONZERO exit means contention' story (#769) -- a real filesystem failure would be misreported as lock contention"
@@ -5452,8 +5686,38 @@ gate_engine_lazy_gating() {
   # even parsed, hard-failing every scoped run regardless of which gate was
   # actually asked for.
   local hidden_bin=0
+  # Trap-based restore (issue #745): every other stateful gate in this file
+  # (gate_m29, gate_m30, gate_m31) guarantees its rename/mutation is undone via
+  # `trap ... RETURN EXIT`, not a plain end-of-function statement. This gate
+  # renamed bin/mif-rh-cli aside with only a bare `if`/`mv` sequence -- if
+  # verify.sh was interrupted (Ctrl-C, CI job timeout/SIGTERM) while this
+  # gate's nested `bash scripts/verify.sh --gates 'gate_workflows$'` subprocess
+  # was running below, bin/mif-rh-cli was left permanently renamed to
+  # bin/mif-rh-cli.gate_engine_lazy_gating.bak, and every subsequent
+  # verify.sh/ontology-review.sh run then spuriously failed every
+  # engine-dependent gate with "engine: mif-rh-cli not found" until someone
+  # noticed and renamed it back by hand. restore_engine_bin() runs on RETURN
+  # (normal completion) and EXIT (interruption) alike, the same guarantee
+  # gate_m29/gate_m30/gate_m31 already give their own mutated state.
+  restore_engine_bin() {
+    if [ "$hidden_bin" -eq 1 ] && [ -e bin/mif-rh-cli.gate_engine_lazy_gating.bak ]; then
+      mv bin/mif-rh-cli.gate_engine_lazy_gating.bak bin/mif-rh-cli \
+        || bad "gate_engine_lazy_gating restore_engine_bin: failed to restore bin/mif-rh-cli -- engine-dependent gates will spuriously fail until this is fixed by hand"
+    fi
+    # Deregister only the EXIT copy of this trap, matching gate_m29/gate_m30/
+    # gate_m31's own restore functions: EXIT is a last-resort net for a fatal
+    # error INSIDE this function (e.g. an unbound-variable abort under this
+    # script's own `set -u`), but once gate_engine_lazy_gating DOES return
+    # normally its `local` variable ($hidden_bin) stops existing in the
+    # calling scope -- deregistering RETURN too would clobber any
+    # previously configured RETURN trap in the parent scope instead of just
+    # this function's own EXIT safety net.
+    trap - EXIT
+  }
+  trap restore_engine_bin RETURN EXIT
   if [ -x bin/mif-rh-cli ]; then
-    mv bin/mif-rh-cli bin/mif-rh-cli.gate_engine_lazy_gating.bak
+    mv bin/mif-rh-cli bin/mif-rh-cli.gate_engine_lazy_gating.bak \
+      || { bad "gate_engine_lazy_gating: failed to rename bin/mif-rh-cli aside"; return 1; }
     hidden_bin=1
   fi
   # Resolve bash's absolute path *before* PATH filtering below -- if
@@ -5472,9 +5736,6 @@ gate_engine_lazy_gating() {
   done
   local out rc
   out=$(env -u MIF_RH_CLI PATH="$clean_path" "$bash_bin" scripts/verify.sh --gates 'gate_workflows$' 2>&1); rc=$?
-  if [ "$hidden_bin" -eq 1 ]; then
-    mv bin/mif-rh-cli.gate_engine_lazy_gating.bak bin/mif-rh-cli
-  fi
   if [ "$rc" -eq 0 ] && ! printf '%s' "$out" | grep -q 'engine: mif-rh-cli not found'; then
     ok "a --gates run selecting only a non-engine gate succeeds with no mif-rh-cli reachable via any resolution path"
   else

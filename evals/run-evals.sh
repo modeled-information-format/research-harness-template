@@ -75,6 +75,14 @@ run "gate-m14-no-var-leak" bash evals/gate-m14-no-var-leak.sh
 # `while read d` loop instead of starting from an unset variable.
 run "gate-m23-loop-var-scope-check" bash evals/gate-m23-loop-var-scope-check.sh
 
+# gate_m31's restore_state() unconditionally ran `rm -rf "$T"` (its own
+# backup scratch dir) even when the preceding restore of harness.config.json
+# had just failed and was flagged with `bad` (#750) -- the same defect class
+# as gate_m30's restore_snapshot() (#754). Shims `cp` so only that one
+# restore call fails and asserts the backup is preserved (with the original
+# still recoverable inside it) instead of being deleted alongside the report.
+run "gate-m31-restore-backup-preserved-check" bash evals/gate-m31-restore-backup-preserved-check.sh
+
 # Workflow-runtime modules (.claude/workflows/*.js) use the runtime's
 # async-function-body shape, so the CI parse-check must wrap before
 # checking (#552): passes on the vendored research-goal.js, fails on a
@@ -153,6 +161,18 @@ run "fanout-lane-contract" bash evals/fanout-lane-contract.sh
 # indistinguishable from one that was clean from the start.
 run "fanout-repair-disclosure-check" bash evals/fanout-repair-disclosure-check.sh
 
+# research-harness-template#751: the repair lane's revalidate `.then((rv) =>
+# {...})` callback dereferenced `rv.invalid.length` with no null check, even
+# though `agent()` can legitimately resolve to null on a terminal failure
+# after retries. That uncaught TypeError propagated out of pipeline()'s
+# per-item stage chain and crashed the ENTIRE fanout run for every
+# dimension, discarding whatever other dimensions' work had already
+# completed. This eval proves a null revalidate() result no longer throws,
+# that unrelated dimensions' completed work survives, and that the failed
+# dimension is dropped (consistent with this file's existing null-
+# propagation convention) rather than silently reported as succeeded.
+run "fanout-null-revalidate-crash" bash evals/fanout-null-revalidate-crash.sh
+
 # The research-falsify verdict-merge table has deterministic teeth (#562):
 # mergeVotes()'s arithmetic (unanimous, majority-falsified, minority-
 # falsified-contested-escalates, mixed-non-falsified-takes-worst) and the
@@ -169,6 +189,20 @@ run "fanout-repair-disclosure-check" bash evals/fanout-repair-disclosure-check.s
 # exact misattribution shape, and structural greps forbid a positional
 # LENSES[i] lookup after filter(Boolean).
 run "falsify-verdict-merge" bash evals/falsify-verdict-merge.sh
+
+# research-harness-template#747: a genuine write failure (written=false)
+# fell straight through to the Gate phase's return statement regardless of
+# outcome, so Rollup counted it as gated even though falsify.sh never
+# persisted anything to disk. This eval extracts the write/retry/return
+# span verbatim and drives it with a stubbed agent(): written=false on both
+# the initial call and a new #747 retry now throws loudly (never silently
+# returns); a transient failure that recovers on retry (including a
+# one-round-rule skip) is accepted; the pre-existing #659 half-write matrix
+# and the single-call happy path are unaffected. A CONTROL run against the
+# pre-fix revision (resolved via merge-base with origin/main) proves the
+# eval actually reproduces #747's silent-gating defect when run against the
+# old source, not merely that it passes against the fixed one.
+run "falsify-write-failure-gated" bash evals/falsify-write-failure-gated.sh
 
 # The fanout->falsify HANDOFF SEAM has deterministic teeth (#652/#653):
 # neither fanout-lane-contract.sh (structural-only: the FINDING_CONTRACT
@@ -284,6 +318,13 @@ run "projection-report-schema-falsify-exit-check" bash evals/projection-report-s
 # /projection.json instead of failing closed with a named diagnostic.
 run "mif-project-mktemp-check" bash evals/mif-project-mktemp-check.sh
 
+# research-harness-template#752: scripts/mif-project.sh's final
+# `cp "$TMP" "$JSON_OUT"` was unchecked, so a failing cp (missing target
+# directory, full disk, denied permission) silently fell through to the
+# "projects to a valid MIF L3 finding" success message and exited 0 instead
+# of failing closed with a named diagnostic.
+run "mif-project-json-out-cp-check" bash evals/mif-project-json-out-cp-check.sh
+
 # The research-deliverables module has deterministic teeth where its own
 # logic can express it (#573, Epic #544): the module's static pack-taxonomy
 # tables (which genres/methodology packs/source-direct channels/out-of-scope
@@ -343,6 +384,20 @@ run "deliverables-genre-channel-route" bash evals/deliverables-genre-channel-rou
 # mismatch both fail closed before Render, while a genuinely valid channel
 # still renders.
 run "deliverables-channel-validation-check" bash evals/deliverables-channel-validation-check.sh
+
+# research-harness-template#755: the Render pipeline's second stage produced
+# `{ ...r, validation: null }` whenever the initial Check-phase agent() call
+# itself resolved to null (user skip, or the subagent dying after retries) —
+# that object is still truthy, so it survived `rendered.filter(Boolean)`,
+# but the pre-fix `dirty` filter (`a.validation && !a.validation.clean`)
+# treated a null validation as NOT dirty, silently excluding the artifact
+# from the repair loop entirely: never fixed, never re-checked, never
+# logged, unlike the symmetric post-fix re-check path which already logs a
+# WARNING for the identical null case. This eval proves a null initial Check
+# result now logs a WARNING, is treated as dirty, actually enters the repair
+# (fix + re-check) loop, and ends up with a real clean verdict instead of
+# the ambiguous `clean: null`.
+run "deliverables-null-check-repair-check" bash evals/deliverables-null-check-repair-check.sh
 
 # The research-augment module's Decide phase has deterministic teeth where its
 # own logic can express it (#580, Epic #545, following #578's vendoring and
@@ -451,6 +506,20 @@ run "pivot-check" bash evals/pivot-check.sh
 # mif-container-nfr-verification.sh already uses for this exact shared
 # real-corpus-mutation window.
 run "import-check" bash evals/import-check.sh
+
+# research-harness-template#746: a mistyped or unrecognized flag (e.g.
+# --dryrun, -dry-run) fell through the arg-parsing loop's wildcard branch
+# into POSITIONAL[] like an ordinary positional argument -- DRY_RUN silently
+# stayed 0 (its default) and the old "at least 2" positional count check
+# never caught it, so the script proceeded straight through step 4's real
+# write with zero error or warning, contradicting its own documented
+# --dry-run contract. Hermetic (every case exits during arg-parsing, before
+# any directory/manifest resolution, so no real container/topic fixture is
+# needed): a mistyped flag is now rejected with a message naming the bad
+# option (never silently absorbed), an adjacent extra-bare-positional case
+# is rejected too (exact count, not >=2), and the real --dry-run flag plus
+# ordinary 2-arg usage are proven unaffected by the fix.
+run "import-arg-parse-check" bash evals/import-arg-parse-check.sh
 
 # The research-coverage-audit module's Sweep/Critique/Prioritize pipeline has
 # deterministic teeth where its own logic can express it (#597, Epic #549,
@@ -619,6 +688,17 @@ run "atomic-workflows-args-parse-check" bash evals/atomic-workflows-args-parse-c
 # string args into the module's real calls, and an invalid genre arriving
 # via string args must still hit the fail-closed pack-name-pattern throw.
 run "projection-slug-genre-args-check" bash evals/projection-slug-genre-args-check.sh
+
+# research-harness-template#757: research-projection.js's #633 GENRE
+# RESOLUTION step derives genreArg/genreSkillRef via an agent() call, but
+# GENRE_SCHEMA declared them as plain strings with no `pattern` -- unlike
+# GENRE itself, which IS regex-validated before use at the identical two
+# sinks (a shell command, a Skill() reference). This eval pins that defect
+# class: a malformed genreArg (shell metacharacters) or an unexpected
+# genreSkillRef (not matching "<GENRE>:<GENRE>") returned by the
+# genre-resolve agent() must fail closed before either reaches its sink; a
+# well-formed pair must proceed with no regression.
+run "projection-genre-resolution-injection-check" bash evals/projection-genre-resolution-injection-check.sh
 
 # release.yml never uploads to an already-published (immutable) release
 # (#537): tag-push trigger, no post-publish `gh release upload`, artifact
@@ -1225,6 +1305,24 @@ run "copier-tasks-engine-order-check" bash evals/copier-tasks-engine-order-check
 # asserts gate_m5 fails closed with an explicit scratch-directory message
 # instead of limping through with a misattributed pack-toggle failure.
 run "gate-m5-mktemp-guard" bash evals/gate-m5-mktemp-guard.sh
+
+# research-harness-template#745: gate_engine_lazy_gating renamed
+# bin/mif-rh-cli aside with a bare `if`/`mv` sequence and no trap-based
+# restore, unlike gate_m29/gate_m30/gate_m31's `trap ... RETURN EXIT`
+# pattern -- an interrupted verify.sh (Ctrl-C, CI job timeout/SIGTERM) left
+# the engine binary permanently renamed aside. Interrupts the real gate
+# mid-flight with SIGTERM and asserts bin/mif-rh-cli is restored, not left
+# renamed.
+run "gate-engine-lazy-gating-trap-restore" bash evals/gate-engine-lazy-gating-trap-restore.sh
+
+# research-harness-template#748: gate_m11's 11j fail-safe check did
+# `engine_bin ... || exit 5` directly in verify.sh's own process, so an
+# engine_bin failure hard-exited the ENTIRE run and silently skipped every
+# gate after gate_m11 with no bad message and no final summary. Forces
+# engine_bin to fail (MIF_RH_CLI pointed at a nonexistent path) and asserts
+# gate_m11 fails closed (bad + return) while gate_m12 still runs and the
+# summary line still prints, instead of the whole process exiting rc=5.
+run "gate-m11-engine-bin-hard-exit" bash evals/gate-m11-engine-bin-hard-exit.sh
 
 echo
 if [ "$FAIL" -gt 0 ]; then
