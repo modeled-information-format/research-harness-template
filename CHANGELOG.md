@@ -35,6 +35,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   finding already written, `ontology-map.json` and the deliverables never
   reached), which this default converts into the function's own existing
   graceful "no ownership token supplied" refusal (PR #796 review).
+- **`research-fanout.js`'s repair lane no longer crashes the entire fanout
+  run when a dimension's revalidate `agent()` call resolves to null.** The
+  revalidate step's `.then((rv) => { if (rv.invalid.length) ... })`
+  callback dereferenced `rv` unguarded, even though `agent()` can
+  legitimately resolve to null on a terminal failure after retries (its
+  documented "returns null on death" contract). Hitting that case threw an
+  uncaught `TypeError` inside `pipeline()`'s per-item stage chain with no
+  try/catch around it, which propagated out of the top-level
+  `await pipeline(...)` and crashed the whole module run for every
+  dimension — not just the one whose revalidate call failed — discarding
+  whatever other dimensions' work had already completed. The callback now
+  checks for a null `rv` first and drops just that dimension's lane
+  (consistent with how the file's earlier research/validate stages already
+  propagate a null result through `results.filter(Boolean)`), so an
+  unrelated dimension's completed findings survive (research-harness-template#751).
 - **`research-deliverables.js`'s `channel` field now gets the same
   injection-validation guard `genre` already had (#764).** The Route phase's
   GENRE STRING VALIDATION guard (#640) checked a caller-controlled
