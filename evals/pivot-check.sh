@@ -110,6 +110,30 @@
 #      vendored modules share (#547's chain-context note: neither has been
 #      run together since being vendored independently) actually holds.
 #
+#   F. Failed-batch accounting regression (research-harness-template#758): a
+#      4-finding, 2-batch fixture (batchSize:2) where batch 1 (findings a, b)
+#      classifies normally but batch 2's (findings c, d) FIRST classify
+#      attempt resolves to null (parallel()'s documented failure shape for an
+#      errored/dead agent() call).
+#        F1. Batch 2 SUCCEEDS on the retry: asserts the module actually
+#            retries (both 'pivot:classify-2' and 'pivot:classify-2-retry'
+#            appear in the call log, in that order, exactly once each — no
+#            infinite-retry loop), the retried classifications land in the
+#            correct buckets exactly like a first-try success would,
+#            unclassifiedIds is empty, and no "could not be classified"
+#            log line appears.
+#        F2. Batch 2 FAILS AGAIN on the retry (still null): asserts the two
+#            ids from that batch are captured verbatim in unclassifiedIds
+#            (never silently merged away and never silently absent from
+#            every bucket — the exact defect #758 reported), are folded into
+#            `stale` (forcing re-verification rather than data loss),
+#            appear in the final reverifyIds even independent of what the
+#            Plan agent itself returns, that carry+stale+outOfScope together
+#            account for all 4 seeded ids with none missing and none
+#            duplicated, and that a log line names the dropped ids
+#            explicitly (the "nothing beyond an aggregate count mismatch in
+#            one log line" gap #758 reported).
+#
 # Hermetic: node/jq/python3/ajv/bash/scripts/goal-version.sh (itself
 # delegating to the vendored bin/mif-rh-cli engine, offline — ADR-0016), no
 # network, no live model/API calls anywhere in this eval — every agent()
@@ -754,8 +778,199 @@ else
   fail=1
 fi
 
+# ============================================================================
+# F: Failed-batch accounting regression (research-harness-template#758).
+# A 4-finding, 2-batch fixture (batchSize:2): batch 1 (a, b) classifies
+# normally; batch 2's (c, d) FIRST classify attempt resolves to null (the
+# parallel() failure shape). F1 recovers on retry; F2 fails again on retry.
+# ============================================================================
+FIX_RETRY="$TMP/fixture-retry"
+RDIR_RETRY="$FIX_RETRY/reports/pivot-eval-retry"
+mkdir -p "$RDIR_RETRY/findings"
+
+A_ID="urn:mif:concept:pivot-eval:retry-a"
+B_ID="urn:mif:concept:pivot-eval:retry-b"
+C_ID="urn:mif:concept:pivot-eval:retry-c"
+D_ID="urn:mif:concept:pivot-eval:retry-d"
+cat > "$RDIR_RETRY/findings/a.json" <<EOF
+{"@id": "$A_ID", "@type": "Concept", "extensions": {"harness": {"dimension": "technical"}}}
+EOF
+cat > "$RDIR_RETRY/findings/b.json" <<EOF
+{"@id": "$B_ID", "@type": "Concept", "extensions": {"harness": {"dimension": "landscape"}}}
+EOF
+cat > "$RDIR_RETRY/findings/c.json" <<EOF
+{"@id": "$C_ID", "@type": "Concept", "extensions": {"harness": {"dimension": "technical"}}}
+EOF
+cat > "$RDIR_RETRY/findings/d.json" <<EOF
+{"@id": "$D_ID", "@type": "Concept", "extensions": {"harness": {"dimension": "technical"}}}
+EOF
+
+RETRY_ARGS_JSON="$TMP/retry-args.json"
+printf '%s' "{\"harnessDir\":\"$FIX_RETRY\",\"topic\":\"pivot-eval-retry\",\"delta\":\"Batch-failure accounting regression fixture (#758).\",\"batchSize\":2}" > "$RETRY_ARGS_JSON"
+
+# --- F1: batch 2 recovers on retry ------------------------------------------
+cat > "$TMP/stubs-retry-recover.cjs" <<NODE
+'use strict';
+const fs = require('fs');
+const path = require('path');
+
+const RDIR = '$RDIR_RETRY';
+const A_ID = '$A_ID', B_ID = '$B_ID', C_ID = '$C_ID', D_ID = '$D_ID';
+
+module.exports = {
+  'pivot:reshape': async () => ({
+    goalVersion: 'gv-pivotevalretry1', supersedes: 'gv-pivotevalretry0',
+    newDimensions: [], droppedDimensions: [], newChecks: [],
+    goalStatement: 'Eval fixture pivot goal for batch-retry-recovery wiring (#758).',
+  }),
+  'pivot:list': async () => {
+    const dir = path.join(RDIR, 'findings');
+    // Sorted so batch grouping (batchSize:2) is deterministic regardless of
+    // the filesystem's own readdir order: batch 1 = [a, b], batch 2 = [c, d].
+    const ids = fs.readdirSync(dir).filter((f) => f.endsWith('.json')).sort()
+      .map((f) => JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'))['@id']);
+    return { findingIds: ids };
+  },
+  'pivot:classify-1': async (prompt) => {
+    if (!prompt.includes(A_ID) || !prompt.includes(B_ID)) throw new Error('pivot:classify-1 missing seeded ids');
+    return { classifications: [
+      { id: A_ID, class: 'carry', why: 'still in scope' },
+      { id: B_ID, class: 'out-of-scope', why: 'landscape excluded' },
+    ] };
+  },
+  // First attempt at batch 2 fails outright (the documented parallel()
+  // null-slot shape for an errored/dead agent() call).
+  'pivot:classify-2': async () => null,
+  'pivot:classify-2-retry': async (prompt) => {
+    if (!prompt.includes(C_ID) || !prompt.includes(D_ID)) throw new Error('pivot:classify-2-retry missing seeded ids');
+    return { classifications: [
+      { id: C_ID, class: 'stale', why: 'needs re-gating' },
+      { id: D_ID, class: 'carry', why: 'still in scope' },
+    ] };
+  },
+  'pivot:plan': async (prompt) => {
+    const staleMatch = prompt.match(/Stale ids \(re-gate, don't re-gather\): (\[[^\]]*\])/);
+    const stale = staleMatch ? JSON.parse(staleMatch[1]) : [];
+    return { gapDimensions: [], reverifyIds: stale, rationale: 'reverifyIds mirrors the stale list' };
+  },
+};
+NODE
+run_case retry_recover "$RETRY_ARGS_JSON" "$TMP/stubs-retry-recover.cjs" "$TMP/out-retry-recover.json"
+
+if [ -f "$TMP/out-retry-recover.json" ]; then
+  python3 - "$TMP/out-retry-recover.json" "$A_ID" "$B_ID" "$C_ID" "$D_ID" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1], encoding='utf-8'))
+a_id, b_id, c_id, d_id = sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
+ok = True
+def check(name, cond, detail=''):
+    global ok
+    if cond:
+        print(f"  ok  {name}")
+    else:
+        ok = False
+        print(f"FAIL  {name}{(' -- ' + detail) if detail else ''}")
+
+check('F1 (retry-recover) run did not throw', d['threw'] is None, str(d['threw']))
+r = d.get('result') or {}
+labels = [c['opts']['label'] for c in d['calls']]
+check('the module retried the failed batch exactly once (classify-2 then classify-2-retry, in order, no more)',
+      labels == ['pivot:reshape', 'pivot:list', 'pivot:classify-1', 'pivot:classify-2', 'pivot:classify-2-retry', 'pivot:plan'],
+      json.dumps(labels))
+check('carry == [a, d] (a from the first-try batch, d recovered by the retry)', r.get('carry') == [a_id, d_id], json.dumps(r.get('carry')))
+check('stale == [c] (recovered by the retry)', r.get('stale') == [c_id], json.dumps(r.get('stale')))
+check('outOfScope == [b]', r.get('outOfScope') == [b_id], json.dumps(r.get('outOfScope')))
+check('unclassifiedIds is empty — the retry recovered the batch, nothing was permanently lost', r.get('unclassifiedIds') == [], json.dumps(r.get('unclassifiedIds')))
+check('reverifyIds == [c] exactly', r.get('reverifyIds') == [c_id], json.dumps(r.get('reverifyIds')))
+logs = [l.get('log') for l in d.get('logs', []) if 'log' in l]
+check('no "could not be classified" log line fired — the retry succeeded, nothing was force-dropped',
+      not any('could not be classified' in (m or '') for m in logs), json.dumps(logs))
+sys.exit(0 if ok else 1)
+PY
+  rc=$?
+  [ "$rc" -eq 0 ] || fail=1
+fi
+
+# --- F2: batch 2 fails again on the retry — permanent, must be accounted ----
+cat > "$TMP/stubs-retry-permanent.cjs" <<NODE
+'use strict';
+const fs = require('fs');
+const path = require('path');
+
+const RDIR = '$RDIR_RETRY';
+const A_ID = '$A_ID', B_ID = '$B_ID';
+
+module.exports = {
+  'pivot:reshape': async () => ({
+    goalVersion: 'gv-pivotevalretry1', supersedes: 'gv-pivotevalretry0',
+    newDimensions: [], droppedDimensions: [], newChecks: [],
+    goalStatement: 'Eval fixture pivot goal for permanent-batch-failure accounting (#758).',
+  }),
+  'pivot:list': async () => {
+    const dir = path.join(RDIR, 'findings');
+    const ids = fs.readdirSync(dir).filter((f) => f.endsWith('.json')).sort()
+      .map((f) => JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'))['@id']);
+    return { findingIds: ids };
+  },
+  'pivot:classify-1': async () => ({ classifications: [
+    { id: A_ID, class: 'carry', why: 'still in scope' },
+    { id: B_ID, class: 'out-of-scope', why: 'landscape excluded' },
+  ] }),
+  // Both the first attempt AND the retry fail — a permanent batch loss the
+  // module must account for, never silently drop.
+  'pivot:classify-2': async () => null,
+  'pivot:classify-2-retry': async () => null,
+  'pivot:plan': async (prompt) => {
+    const staleMatch = prompt.match(/Stale ids \(re-gate, don't re-gather\): (\[[^\]]*\])/);
+    const stale = staleMatch ? JSON.parse(staleMatch[1]) : [];
+    return { gapDimensions: [], reverifyIds: stale, rationale: 'reverifyIds mirrors the stale list' };
+  },
+};
+NODE
+run_case retry_permanent "$RETRY_ARGS_JSON" "$TMP/stubs-retry-permanent.cjs" "$TMP/out-retry-permanent.json"
+
+if [ -f "$TMP/out-retry-permanent.json" ]; then
+  python3 - "$TMP/out-retry-permanent.json" "$A_ID" "$B_ID" "$C_ID" "$D_ID" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1], encoding='utf-8'))
+a_id, b_id, c_id, d_id = sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
+ok = True
+def check(name, cond, detail=''):
+    global ok
+    if cond:
+        print(f"  ok  {name}")
+    else:
+        ok = False
+        print(f"FAIL  {name}{(' -- ' + detail) if detail else ''}")
+
+check('F2 (retry-permanent) run did not throw — a permanently-failed batch degrades gracefully, it does not crash the pivot', d['threw'] is None, str(d['threw']))
+r = d.get('result') or {}
+labels = [c['opts']['label'] for c in d['calls']]
+check('the module retried exactly once and stopped (classify-2 then classify-2-retry, no third attempt)',
+      labels == ['pivot:reshape', 'pivot:list', 'pivot:classify-1', 'pivot:classify-2', 'pivot:classify-2-retry', 'pivot:plan'],
+      json.dumps(labels))
+check('unclassifiedIds == [c, d] exactly — the #758 defect: these must be captured, never silently absent from every bucket',
+      r.get('unclassifiedIds') == [c_id, d_id], json.dumps(r.get('unclassifiedIds')))
+check('carry == [a] — d never got classified, so it must NOT appear in carry', r.get('carry') == [a_id], json.dumps(r.get('carry')))
+check('outOfScope == [b] — c must NOT appear here either', r.get('outOfScope') == [b_id], json.dumps(r.get('outOfScope')))
+check('stale includes both c and d — forced into re-verification rather than lost (#758 fix)', set(r.get('stale') or []) == {c_id, d_id}, json.dumps(r.get('stale')))
+check('reverifyIds includes both c and d regardless of what the Plan agent itself returned', {c_id, d_id} <= set(r.get('reverifyIds') or []), json.dumps(r.get('reverifyIds')))
+all_ids = {a_id, b_id, c_id, d_id}
+accounted = (r.get('carry') or []) + (r.get('stale') or []) + (r.get('outOfScope') or [])
+check('carry + stale + outOfScope together account for all 4 seeded ids with none missing', set(accounted) == all_ids, json.dumps(accounted))
+check('carry + stale + outOfScope has no duplicate id (each finding lands in exactly one bucket)', len(accounted) == len(set(accounted)), json.dumps(accounted))
+logs = [l.get('log') for l in d.get('logs', []) if 'log' in l]
+combined_logs = ' | '.join(m for m in logs if m)
+check('a log line explicitly names the ids that could not be classified (never just an aggregate count mismatch)',
+      c_id in combined_logs and d_id in combined_logs, combined_logs)
+sys.exit(0 if ok else 1)
+PY
+  rc=$?
+  [ "$rc" -eq 0 ] || fail=1
+fi
+
 if [ "$fail" -eq 0 ]; then
-  note "Reshape phase invokes the REAL scripts/goal-version.sh exactly twice (OLD then NEW), never a freehand-narrated hash, and the lineage/hash fixture's supersedes/version match independent fresh recomputations of the real script; the no-delta invocation refuses before any agent() call; a seeded 3-finding corpus classifies to exactly carry/stale/out-of-scope with the quarantined sibling correctly excluded from the listing and every finding file byte-identical on disk before/after (classification never deletes); reverifyIds equals exactly the stale list, and the Plan-agent-failure case falls back to the module's own real fallback expressions; and research-falsify.js accepts the pivot fixture's real reverifyIds as scope:{ids:[...]},regate:true without tripping its guard error, proving the two independently-vendored modules' interface actually lines up end to end. The one gap this eval cannot close — whether a live model actually CLASSIFIES/plans the way this fixture's ground truth assumes — is genuine and non-deterministic, documented here rather than faked."
+  note "Reshape phase invokes the REAL scripts/goal-version.sh exactly twice (OLD then NEW), never a freehand-narrated hash, and the lineage/hash fixture's supersedes/version match independent fresh recomputations of the real script; the no-delta invocation refuses before any agent() call; a seeded 3-finding corpus classifies to exactly carry/stale/out-of-scope with the quarantined sibling correctly excluded from the listing and every finding file byte-identical on disk before/after (classification never deletes); reverifyIds equals exactly the stale list, and the Plan-agent-failure case falls back to the module's own real fallback expressions; research-falsify.js accepts the pivot fixture's real reverifyIds as scope:{ids:[...]},regate:true without tripping its guard error, proving the two independently-vendored modules' interface actually lines up end to end; and a failed classify batch (#758) is retried exactly once, recovering cleanly when the retry succeeds and — when it still fails — has its ids explicitly captured in unclassifiedIds, folded into stale/reverifyIds, and named in a log line, with carry+stale+outOfScope always accounting for every seeded finding with none missing and none duplicated. The one gap this eval cannot close — whether a live model actually CLASSIFIES/plans the way this fixture's ground truth assumes — is genuine and non-deterministic, documented here rather than faked."
 else
   echo "pivot-check: FAILED (see notes above)"
 fi
