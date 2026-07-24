@@ -976,6 +976,15 @@ run "relationship-targets" bash evals/relationship-targets.sh
 # -> export again reproduces a byte-identical manifest digest.
 run "mif-container-nfr-verification" bash evals/mif-container-nfr-verification.sh
 
+# gate_m27's 27f "unreadable file fails closed" check root-safety
+# (research-harness-template#777): chmod 000 doesn't deny root/DAC-override
+# processes read access, so the check's premise can silently not hold. Proves
+# the classification helper (scripts/lib/unreadable-probe.sh) treats a
+# bypassed read as SKIP rather than a false FAIL, while still catching the
+# original swallow-bug defect class, and that the real gate still passes
+# end-to-end for a normal (non-root) run.
+run "gate-m27-root-safe-unreadable-check" bash evals/gate-m27-root-safe-unreadable-check.sh
+
 # Continuous research monitoring (Epic #416, Story #425): dry-run over
 # fixture source data (no live network calls), real pipeline logic --
 # covers the fail-closed budget path, the Editorial Gate's no-bypass and
