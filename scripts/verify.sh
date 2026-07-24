@@ -5591,8 +5591,30 @@ gate_engine_lazy_gating() {
   # even parsed, hard-failing every scoped run regardless of which gate was
   # actually asked for.
   local hidden_bin=0
+  # Trap-based restore (issue #745): every other stateful gate in this file
+  # (gate_m29, gate_m30, gate_m31) guarantees its rename/mutation is undone via
+  # `trap ... RETURN EXIT`, not a plain end-of-function statement. This gate
+  # renamed bin/mif-rh-cli aside with only a bare `if`/`mv` sequence -- if
+  # verify.sh was interrupted (Ctrl-C, CI job timeout/SIGTERM) while this
+  # gate's nested `bash scripts/verify.sh --gates 'gate_workflows$'` subprocess
+  # was running below, bin/mif-rh-cli was left permanently renamed to
+  # bin/mif-rh-cli.gate_engine_lazy_gating.bak, and every subsequent
+  # verify.sh/ontology-review.sh run then spuriously failed every
+  # engine-dependent gate with "engine: mif-rh-cli not found" until someone
+  # noticed and renamed it back by hand. restore_engine_bin() runs on RETURN
+  # (normal completion) and EXIT (interruption) alike, the same guarantee
+  # gate_m29/gate_m30/gate_m31 already give their own mutated state.
+  restore_engine_bin() {
+    if [ "$hidden_bin" -eq 1 ] && [ -e bin/mif-rh-cli.gate_engine_lazy_gating.bak ]; then
+      mv bin/mif-rh-cli.gate_engine_lazy_gating.bak bin/mif-rh-cli \
+        || bad "gate_engine_lazy_gating restore_engine_bin: failed to restore bin/mif-rh-cli -- engine-dependent gates will spuriously fail until this is fixed by hand"
+    fi
+    trap - RETURN EXIT
+  }
+  trap restore_engine_bin RETURN EXIT
   if [ -x bin/mif-rh-cli ]; then
-    mv bin/mif-rh-cli bin/mif-rh-cli.gate_engine_lazy_gating.bak
+    mv bin/mif-rh-cli bin/mif-rh-cli.gate_engine_lazy_gating.bak \
+      || { bad "gate_engine_lazy_gating: failed to rename bin/mif-rh-cli aside"; return 1; }
     hidden_bin=1
   fi
   # Resolve bash's absolute path *before* PATH filtering below -- if
@@ -5611,9 +5633,6 @@ gate_engine_lazy_gating() {
   done
   local out rc
   out=$(env -u MIF_RH_CLI PATH="$clean_path" "$bash_bin" scripts/verify.sh --gates 'gate_workflows$' 2>&1); rc=$?
-  if [ "$hidden_bin" -eq 1 ]; then
-    mv bin/mif-rh-cli.gate_engine_lazy_gating.bak bin/mif-rh-cli
-  fi
   if [ "$rc" -eq 0 ] && ! printf '%s' "$out" | grep -q 'engine: mif-rh-cli not found'; then
     ok "a --gates run selecting only a non-engine gate succeeds with no mif-rh-cli reachable via any resolution path"
   else
