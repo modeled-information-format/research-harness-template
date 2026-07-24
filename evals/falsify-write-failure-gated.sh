@@ -30,11 +30,13 @@
 #      throw (naming #747), and must NEVER reach the return statement.
 #      Run first against a COPY of the CURRENT (fixed) module -- proving
 #      the fix -- and then, as a control proving this eval actually would
-#      have caught #747, against the git-committed PRE-FIX revision
-#      (the parent of this fix, resolved via `git log -1 --format=%H --
-#      <path>` from the branch's merge-base with origin/main): the SAME
-#      stub run against the pre-fix source must NOT throw and must return
-#      a fully-populated object with remediation="write-failed" -- exactly
+#      have caught #747, against the git-committed PRE-FIX revision (the
+#      parent of the commit found via a pickaxe search for the `#747`
+#      marker string, research-harness-template#824 -- never a merge-base
+#      with origin/main, which stops meaning "pre-fix" once that fix has
+#      permanently landed on main): the SAME stub run against the pre-fix
+#      source must NOT throw and must return a fully-populated object with
+#      remediation="write-failed" -- exactly
 #      the silent-gating defect #747 reported. If the control does not
 #      reproduce the defect, this eval's "would have caught #747" claim is
 #      false, so it is checked, never assumed.
@@ -229,25 +231,33 @@ node "$TMP/harness.cjs" "$WF" fixed
 
 # ============================================================================
 # CONTROL: run the identical harness against the pre-fix revision of this
-# module, resolved as the merge-base between HEAD and origin/main (the
-# commit this fix branched from) -- proving the eval actually discriminates
-# the defect rather than trivially passing against any source. If the repo
-# has no origin/main reachable (a shallow/offline clone) or the file did not
-# exist at that revision, the control is skipped rather than failing the
-# gate on an environment limitation unrelated to the fix itself.
+# module -- proving the eval actually discriminates the defect rather than
+# trivially passing against any source. If the fix commit or its parent
+# can't be resolved (a shallow/offline clone, or the file's history was
+# rewritten), the control is skipped rather than failing the gate on an
+# environment limitation unrelated to the fix itself.
+#
+# The pre-fix revision is resolved via a pickaxe search (`git log -S`) for
+# the `#747` marker string this fix introduced into the file, then taking
+# that commit's OWN PARENT -- never `git merge-base HEAD origin/main`
+# (research-harness-template#824): that resolves to "the commit this branch
+# forked from", which only coincides with "the commit before the fix
+# landed" transiently, before the fix's own PR merges. Once origin/main
+# permanently contains the fix, merge-base(HEAD, origin/main) for ANY
+# synced branch (including main itself) resolves to a commit that already
+# has the fix, so the control silently stopped testing anything.
 # ============================================================================
-# No network fetch here -- this eval must stay hermetic. It relies on
-# whatever origin/main ref is already present locally; if the local clone
-# has no origin/main ref at all, the control below is skipped instead of
-# reaching out to the network to fetch one.
-BASE_REF="$(git merge-base HEAD origin/main 2>/dev/null || true)"
+# No network fetch here -- this eval must stay hermetic; it only reads
+# whatever history is already present locally.
+FIX_COMMIT="$(git log --format=%H -S'#747' -- "$WF" 2>/dev/null | tail -1)"
+BASE_REF="${FIX_COMMIT:+${FIX_COMMIT}^}"
 if [ -n "$BASE_REF" ] && git cat-file -e "$BASE_REF:$WF" 2>/dev/null; then
   PREFIX_WF="$TMP/research-falsify-prefix.js"
   git show "$BASE_REF:$WF" > "$PREFIX_WF" 2>/dev/null
   node "$TMP/harness.cjs" "$PREFIX_WF" prefix
   [ "$?" -eq 0 ] || fail=1
 else
-  note "origin/main merge-base unavailable -- skipping the pre-fix control (not this eval's own gate)"
+  note "pre-fix revision of $WF unresolvable -- skipping the pre-fix control (not this eval's own gate)"
 fi
 
 [ "$fail" -eq 0 ] && note "a genuine write failure (written=false) throws loudly naming #747 instead of silently returning a fully-populated verdict object counted as gated; the retry path recovers a transient failure and a one-round-rule skip on retry; the pre-existing #659 half-write matrix and the happy path are unaffected; the pre-fix control (when available) reproduces #747's exact silent-gating defect, proving this eval would have caught it"
