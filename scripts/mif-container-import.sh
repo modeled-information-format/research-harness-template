@@ -541,6 +541,13 @@ ONTMAP_WRITTEN=0
 DOCS_WRITTEN=0
 while IFS=$'\t' read -r rpath rdigest rmiftype; do
   if [ "$rmiftype" = "ontology-map" ]; then
+    # Refresh the lock every iteration (issue #771): this branch was missing
+    # the same per-iteration refresh the doc branch (line ~617-ish above) and
+    # the finding branch (below) already have, so a destination
+    # ontology-map.json large enough for the subset jq merge to take
+    # non-trivial time could have its own still-live lock misjudged as stale
+    # and stolen mid-write by a concurrent invocation.
+    container_lock_refresh "$LOCK_DIR"
     rfile="$CONTAINER_DIR/$rpath"
     dest="reports/$TOPIC/ontology-map.json"
     jq -e 'type == "array"' "$rfile" > /dev/null 2>&1 \
