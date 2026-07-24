@@ -9,11 +9,12 @@
 #
 # Per the architecture doc's mode-routing table (docs/reference/
 # engine-workflows.md's "Mode router" section, reproduced verbatim from the
-# real module source below): `pivot` mode is `research-pivot` -> a regate
-# falsify call scoped to `pivot.reverifyIds` (`regate: true`) -> (if
-# `gapDimensions` is non-empty and the budget floor hasn't been hit)
-# `research-fanout` over just the gap dimensions plus a falsify drain ->
-# `research-synthesis` -> `research-projection`.
+# real module source below): `pivot` mode is `research-pivot` -> a DRAINING
+# regate falsify pass scoped to `pivot.reverifyIds` (`regate: true`, via
+# falsifyAll() — research-harness-template#743) -> (if `gapDimensions` is
+# non-empty and the budget floor hasn't been hit) `research-fanout` over just
+# the gap dimensions plus a falsify drain -> `research-synthesis` ->
+# `research-projection`.
 #
 # What this eval proves WITHOUT a live model call (research-pivot,
 # research-falsify, research-fanout, research-synthesis, and
@@ -52,8 +53,19 @@
 #         budget-floor half of the two-condition guard is real, not
 #         decorative).
 #      B7 (synthesis.ok === false skips projection; result carries
-#         goalVersion/carried/stale/fanout/synthesis/projection with carried
-#         and stale as plain LENGTHS, not the raw arrays).
+#         goalVersion/carried/stale/reverifyGate/fanout/synthesis/projection
+#         with carried and stale as plain LENGTHS, not the raw arrays).
+#      B8 (research-harness-template#743: the reverify pass actually DRAINS
+#         past a single call. When the first regate falsify call defers ids
+#         — the exact real-world shape of reverifyIds.length exceeding the
+#         child's own default claimBudget — a SECOND regate call must run,
+#         scoped to EXACTLY the first call's deferredIds, still regate: true.
+#         Proves the fix: pivot's reverify path now behaves identically to
+#         import mode's #678 falsifyAll() drain, never the pre-#743 bare
+#         single wf('falsify', ...) call that silently dropped anything past
+#         the first round. result.reverifyGate.gated sums both iterations.
+#         result.reverifyGate on the reverifyIds-EMPTY path (the zero-gate
+#         default `{ gated: 0, rollup: {} }`) is already proven by B3.)
 #
 # What this eval CANNOT close (genuine, non-deterministic, stated plainly,
 # not faked): whether a live research-pivot run's own Reshape/Classify/Plan
@@ -95,11 +107,14 @@ grep -qF "if (!A.delta) throw new Error('pivot mode requires args.delta')" <<<"$
 grep -qF "const pivot = await wf('pivot', { delta: A.delta })" <<<"$pivot_span" \
   || { note "wf('pivot', ...) no longer passes delta straight through from args"; fail=1; }
 
-grep -qF "if (pivot.reverifyIds && pivot.reverifyIds.length) {" <<<"$pivot_span" \
+grep -qF "const reverifyGate = (pivot.reverifyIds && pivot.reverifyIds.length)" <<<"$pivot_span" \
   || { note "the regate falsify gate is no longer literally on reverifyIds.length"; fail=1; }
 
-grep -qF "await wf('falsify', { scope: { ids: pivot.reverifyIds }, regate: true, claimBudget: A.claimBudget, queryBudget: A.queryBudget, lenses: A.lenses })" <<<"$pivot_span" \
-  || { note "the regate falsify call no longer carries the documented { scope: { ids }, regate: true, claimBudget, queryBudget, lenses } shape"; fail=1; }
+grep -qF "? await falsifyAll({ scope: { ids: pivot.reverifyIds }, regate: true })" <<<"$pivot_span" \
+  || { note "the regate falsify pass no longer drains via falsifyAll() with { scope: { ids }, regate: true } (research-harness-template#743 -- a single wf('falsify', ...) call silently drops anything past the child's own default claimBudget)"; fail=1; }
+
+grep -qF ": { gated: 0, rollup: {} }" <<<"$pivot_span" \
+  || { note "the reverifyIds-empty branch no longer falls back to the zero-gate default { gated: 0, rollup: {} }"; fail=1; }
 
 grep -qF "if (pivot.gapDimensions && pivot.gapDimensions.length && !budgetLow()) {" <<<"$pivot_span" \
   || { note "the gap-fill fanout guard is no longer the documented two-condition (gapDimensions.length AND !budgetLow()) guard"; fail=1; }
@@ -116,8 +131,8 @@ grep -qF "const syn = await wf('synthesis', {})" <<<"$pivot_span" \
 grep -qF "const proj = (syn && syn.ok) ? await wf('projection', { synthesisPath: syn.synthesisPath }) : null" <<<"$pivot_span" \
   || { note "the projection call is no longer gated on syn && syn.ok"; fail=1; }
 
-grep -qF "goalVersion: pivot.goalVersion, carried: pivot.carry.length, stale: pivot.stale.length" <<<"$pivot_span" \
-  || { note "the final return no longer maps carry/stale to plain lengths"; fail=1; }
+grep -qF "goalVersion: pivot.goalVersion, carried: pivot.carry.length, stale: pivot.stale.length, reverifyGate" <<<"$pivot_span" \
+  || { note "the final return no longer maps carry/stale to plain lengths, or dropped the reverifyGate field (research-harness-template#743 -- the caller needs a way to detect an undrained reverify shortfall)"; fail=1; }
 
 # ============================================================================
 # Shared driver: runs the REAL research-pipeline.js via the Workflow-
@@ -308,6 +323,7 @@ check('result.goalVersion is pivot''s own goalVersion', r.get('goalVersion') == 
 check('result.carried is a plain LENGTH (3), not the raw carry array', r.get('carried') == 3, str(r.get('carried')))
 check('result.stale is a plain LENGTH (1), not the raw stale array', r.get('stale') == 1, str(r.get('stale')))
 check('result.fanout is the real fanout result, not null', r.get('fanout') is not None and r['fanout'].get('dimensions') == ['defensive-tactics'], json.dumps(r.get('fanout')))
+check('result.reverifyGate carries the drained falsifyAll() rollup (gated: 1, from the single-round regate call)', r.get('reverifyGate') == {'gated': 1, 'rollup': {'survived': 1}}, json.dumps(r.get('reverifyGate')))
 
 sys.exit(0 if ok else 1)
 PY
@@ -356,6 +372,7 @@ check('falsify never ran at all (reverifyIds empty, gapDimensions empty)', len(b
 check('fanout never ran (gapDimensions empty)', len(bn.get('fanout', [])) == 0)
 r = d.get('result') or {}
 check('result.fanout is null (fan stayed null, gapDimensions was empty)', r.get('fanout') is None, str(r.get('fanout')))
+check('result.reverifyGate is the zero-gate default { gated: 0, rollup: {} }, never a falsify call''s own shape', r.get('reverifyGate') == {'gated': 0, 'rollup': {}}, json.dumps(r.get('reverifyGate')))
 
 sys.exit(0 if ok else 1)
 PY
@@ -405,6 +422,7 @@ check('the regate falsify call still ran once (reverifyIds was non-empty)', len(
 check('fanout never ran (gapDimensions was empty)', len(bn.get('fanout', [])) == 0)
 r = d.get('result') or {}
 check('result.fanout is null', r.get('fanout') is None, str(r.get('fanout')))
+check('result.reverifyGate carries the drained gate rollup (gated: 1)', r.get('reverifyGate') == {'gated': 1, 'rollup': {'survived': 1}}, json.dumps(r.get('reverifyGate')))
 
 sys.exit(0 if ok else 1)
 PY
@@ -518,8 +536,89 @@ else
   fail=1
 fi
 
+# ============================================================================
+# B8 (research-harness-template#743). The reverify pass actually DRAINS past
+# a single call: when the first regate falsify call defers ids, a SECOND
+# regate call must run, scoped to EXACTLY the first call's deferredIds,
+# still regate: true. This fixture's falsify stub simulates the deferredIds
+# behavior that occurs when reverifyIds.length exceeds the child's own
+# default claimBudget (50) -- it does not itself set up a reverifyIds set
+# that large; it stubs the resulting deferral directly. Before the fix,
+# pivot mode called wf('falsify', ...) exactly once and discarded its
+# return value entirely -- this fixture's falsify stub would have left the
+# second batch ungated with zero retry and zero signal to the caller,
+# exactly the bug report's failure scenario.
+# ============================================================================
+printf '%s' "{\"harnessDir\":\"$TMP/h\",\"topic\":\"pipeline-eval-topic\",\"mode\":\"pivot\",\"delta\":\"reclassified 80 findings as stale\"}" > "$TMP/args-b8.json"
+cat > "$TMP/stubs-b8.cjs" <<'NODE'
+'use strict';
+let falsifyCalls = 0;
+module.exports = {
+  wf: {
+    pivot: async () => ({
+      goalVersion: 'gv-7777777',
+      supersedes: 'gv-6666666',
+      goalStatement: 'Reclassify stale carry-overs.',
+      carry: ['urn:mif:concept:x:finding-1'],
+      stale: ['urn:mif:concept:x:finding-2', 'urn:mif:concept:x:finding-3'],
+      outOfScope: [],
+      gapDimensions: [],
+      reverifyIds: ['urn:mif:concept:x:finding-2', 'urn:mif:concept:x:finding-3'],
+    }),
+    falsify: async () => {
+      falsifyCalls += 1;
+      if (falsifyCalls === 1) return { gated: 1, rollup: { survived: 1 }, verdicts: [], deferredIds: ['urn:mif:concept:x:finding-3'], alreadyVerified: 0 };
+      return { gated: 1, rollup: { survived: 1 }, verdicts: [], deferredIds: [], alreadyVerified: 0 };
+    },
+    fanout: async () => { throw new Error('fanout must NOT be called — gapDimensions is empty'); },
+    synthesis: async () => ({ ok: true, synthesisPath: 'reports/pipeline-eval-topic/synthesis-pivot-drain.json', sections: [], findingsUsed: [], checkCoverage: [], openIssues: [], ungatedFindings: [] }),
+    projection: async (a) => ({ ok: true, reportPath: 'reports/pipeline-eval-topic/report.md', reportId: 'urn:mif:concept:pipeline-eval-topic:report', mifLevel: 3, checksAddressed: [], verificationVerdict: 'survived', readmePath: null, readmeCheckPassed: false, graphRefreshed: false, graphAssertPassed: false, problems: [], _receivedSynthesisPath: a.synthesisPath }),
+  },
+};
+NODE
+run_case b8 "$TMP/args-b8.json" "$TMP/stubs-b8.cjs" "$TMP/out-b8.json"
+
+if [ -f "$TMP/out-b8.json" ]; then
+  python3 - "$TMP/out-b8.json" <<PY
+import json, sys
+$by_name_py
+d = json.load(open(sys.argv[1], encoding='utf-8'))
+ok = True
+def check(name, cond, detail=''):
+    global ok
+    if cond:
+        print(f"  ok  B8: {name}")
+    else:
+        ok = False
+        print(f"FAIL  B8: {name}{(' -- ' + detail) if detail else ''}")
+
+check('module did not throw', d['threw'] is None, str(d['threw']))
+bn = by_name(d['wfCalls'])
+falsify = bn.get('falsify', [])
+check('falsify ran exactly twice (drain stopped once deferredIds emptied on round 2) -- NOT once, which was the #743 bug (a single call silently left the second batch ungated)', len(falsify) == 2, str(len(falsify)))
+if len(falsify) == 2:
+    a1 = falsify[0]['args']
+    a2 = falsify[1]['args']
+    check('first call was scoped to the FULL reverifyIds set with regate: true', a1.get('scope') == {'ids': ['urn:mif:concept:x:finding-2', 'urn:mif:concept:x:finding-3']} and a1.get('regate') is True, json.dumps({'scope': a1.get('scope'), 'regate': a1.get('regate')}))
+    check("second call narrowed to EXACTLY the first call's deferredIds (never the full reverifyIds set, which under regate would re-open verification on the finding the drain just gated)", a2.get('scope') == {'ids': ['urn:mif:concept:x:finding-3']}, json.dumps(a2.get('scope')))
+    check('second call still carried regate: true', a2.get('regate') is True, json.dumps(a2.get('regate')))
+
+r = d.get('result') or {}
+check('result.reverifyGate.gated sums BOTH drain iterations (2), proving the caller can now see the full drained total instead of nothing at all', (r.get('reverifyGate') or {}).get('gated') == 2, json.dumps(r.get('reverifyGate')))
+check('fanout never ran (gapDimensions was empty)', len(bn.get('fanout', [])) == 0)
+check('synthesis/projection still ran after the drain completed', (r.get('synthesis') or {}).get('ok') is True and (r.get('projection') or {}).get('ok') is True)
+
+sys.exit(0 if ok else 1)
+PY
+  rc=$?
+  [ "$rc" -eq 0 ] || fail=1
+else
+  note "B8: no out-b8.json produced"
+  fail=1
+fi
+
 if [ "$fail" -eq 0 ]; then
-  note "the pivot branch's composition is proven, structurally and behaviorally, to match the architecture doc exactly: a missing delta throws before any child runs; the regate falsify call carries the documented { scope: { ids: reverifyIds }, regate: true, claimBudget } shape and is genuinely conditional on reverifyIds.length in both directions; the gap-fill fanout is gated on a REAL two-condition guard (gapDimensions.length AND !budgetLow()), proven to block on EITHER condition independently, and runs over exactly the gap dimensions followed by a behaviorally distinct falsifyAll() drain call (scope:'all', separate from the regate call's ids-scope); synthesis always runs and projection is genuinely conditional on synthesis.ok, receiving synthesis's own synthesisPath verbatim; and the final result maps carry/stale to plain lengths, never raw arrays. The gap this eval cannot close -- whether a live research-pivot run's own Reshape/Classify/Plan judgment produces correct gapDimensions/reverifyIds in the first place, and whether a live fanout/synthesis/projection call would really behave as these fixtures assume -- is each already covered by its own dedicated eval (pivot-check.sh, fanout-lane-contract.sh, synthesis-citation-check.sh, projection-supersession-check.sh)."
+  note "the pivot branch's composition is proven, structurally and behaviorally, to match the architecture doc exactly: a missing delta throws before any child runs; the regate falsify pass DRAINS via falsifyAll() with the documented { scope: { ids: reverifyIds }, regate: true } shape (research-harness-template#743) and is genuinely conditional on reverifyIds.length in both directions, narrowing each subsequent drain iteration to the previous call's deferredIds exactly as import mode's #678 fix does, and reporting the drained total through result.reverifyGate so a caller can finally detect a shortfall; the gap-fill fanout is gated on a REAL two-condition guard (gapDimensions.length AND !budgetLow()), proven to block on EITHER condition independently, and runs over exactly the gap dimensions followed by a behaviorally distinct falsifyAll() drain call (scope:'all', separate from the regate call's ids-scope); synthesis always runs and projection is genuinely conditional on synthesis.ok, receiving synthesis's own synthesisPath verbatim; and the final result maps carry/stale to plain lengths, never raw arrays. The gap this eval cannot close -- whether a live research-pivot run's own Reshape/Classify/Plan judgment produces correct gapDimensions/reverifyIds in the first place, and whether a live fanout/synthesis/projection call would really behave as these fixtures assume -- is each already covered by its own dedicated eval (pivot-check.sh, fanout-lane-contract.sh, synthesis-citation-check.sh, projection-supersession-check.sh)."
 else
   echo "research-pipeline-pivot-check: FAILED (see notes above)"
 fi
