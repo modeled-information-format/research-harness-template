@@ -543,12 +543,50 @@ log(`Rendering ${route.plan.length} deliverable(s): ${route.plan.map((p) => `${p
 // (^[a-z][a-z0-9-]*$) — Route is a model call, not code, so its plan[]
 // cannot be trusted to have enforced this itself. Validate BEFORE any use
 // and fail closed rather than silently coercing or proceeding.
+//
+// CHANNEL STRING VALIDATION (research-harness-template#764): the identical
+// reasoning applies to `channel`, which this file's Render phase interpolates
+// into the same two positions — the render-artifact.sh shell-command argument
+// (`bash ${H}/scripts/render-artifact.sh ... ${p.channel} ...` below) and,
+// for mechanism 2 rows, the `Skill(${p.channel}:${skillName})` reference.
+// Unlike genre, channel is a CLOSED set (not an open pack-name pattern): the
+// only real channels this module knows how to render are the ones in
+// ARTIFACT_CHANNELS/SOURCE_DIRECT_CHANNELS/SOURCE_DIRECT_GENRE_CHANNELS above
+// — anything else is either a typo/hallucination or a channel this module has
+// no rendering path for at all, either way not safe to interpolate. Also
+// cross-check mechanism agreement (an artifact-mechanism row naming a
+// source-direct-only channel, or vice versa, is equally a Route mistake that
+// must fail closed here rather than surface only downstream via
+// render-artifact.sh's own exact-string `case` exit or an invocation of a
+// non-existent Skill).
+const KNOWN_CHANNELS = new Set([...ARTIFACT_CHANNELS, ...SOURCE_DIRECT_CHANNELS, ...SOURCE_DIRECT_GENRE_CHANNELS])
 for (const p of route.plan) {
   if (p.genre !== 'general' && p.genre !== '-' && !/^[a-z][a-z0-9-]*$/.test(p.genre)) {
     throw new Error(
       `research-deliverables: route.plan genre "${p.genre}" (channel "${p.channel}") does not match the pack-name pattern ` +
         `harness.config.schema.json enforces (^[a-z][a-z0-9-]*$) — refusing to interpolate an unvalidated genre string into a shell ` +
         `command or Skill() reference.`,
+    )
+  }
+  if (!KNOWN_CHANNELS.has(p.channel)) {
+    throw new Error(
+      `research-deliverables: route.plan channel "${p.channel}" (genre "${p.genre}") is not one of the channels this module can ` +
+        `render (${JSON.stringify([...KNOWN_CHANNELS])}) — refusing to interpolate an unvalidated channel string into a shell ` +
+        `command or Skill() reference.`,
+    )
+  }
+  if (p.mechanism === 'artifact' && !ARTIFACT_CHANNELS.includes(p.channel)) {
+    throw new Error(
+      `research-deliverables: route.plan row claims mechanism="artifact" for channel "${p.channel}", but that channel is not an ` +
+        `artifact-based channel (${JSON.stringify(ARTIFACT_CHANNELS)}) — Route's mechanism/channel pairing is inconsistent, refusing ` +
+        `to render it.`,
+    )
+  }
+  if (p.mechanism === 'source-direct' && !SOURCE_DIRECT_CHANNELS.includes(p.channel) && !SOURCE_DIRECT_GENRE_CHANNELS.includes(p.channel)) {
+    throw new Error(
+      `research-deliverables: route.plan row claims mechanism="source-direct" for channel "${p.channel}", but that channel is not a ` +
+        `source-direct channel (${JSON.stringify([...SOURCE_DIRECT_CHANNELS, ...SOURCE_DIRECT_GENRE_CHANNELS])}) — Route's ` +
+        `mechanism/channel pairing is inconsistent, refusing to render it.`,
     )
   }
 }
