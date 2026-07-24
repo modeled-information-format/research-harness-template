@@ -154,10 +154,11 @@ const pruned = await agent(
     `Attack each: (1) OVERLAP — is it really a subset/restatement of an existing dimension? (2) SCOPE — does the goal's out_of_scope/non_goals exclude it? (3) DECISION-RELEVANCE — would findings on this axis change the goal's decision, or merely be interesting? Reject on any hit, with the specific reason. Approve only what survives all three.`,
   { label: 'add-dim:prune', model: 'sonnet', schema: PRUNE_SCHEMA },
 )
-const approved = proposal.candidates.filter((c) => pruned && pruned.approved.includes(c.id))
+if (!pruned) throw new Error('research-add-dimensions: prune phase failed (no result from skeptic agent)')
+const approved = proposal.candidates.filter((c) => pruned.approved.includes(c.id))
 if (!approved.length) {
   log(`All ${proposal.candidates.length} candidate(s) rejected by the skeptic`)
-  return { added: [], rejected: (pruned && pruned.rejected) || [], goalVersion: null }
+  return { added: [], rejected: pruned.rejected || [], goalVersion: null }
 }
 log(`Adding dimension(s): ${approved.map((c) => c.id).join(', ')}`)
 
@@ -181,7 +182,7 @@ if (!amend || !amend.configPatched) throw new Error('research-add-dimensions: am
 
 return {
   added: amend.added,
-  rejected: (pruned && pruned.rejected) || [],
+  rejected: pruned.rejected || [],
   goalVersion: amend.goalVersion,
   supersedes: amend.supersedes,
   // the orchestrator fans out ONLY the new dimensions next round
