@@ -2,7 +2,7 @@
 id: reference-engine-workflows
 type: semantic
 created: '2026-07-17T20:25:00-04:00'
-modified: '2026-07-22T22:14:09.851Z'
+modified: '2026-07-23T23:26:45.988Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -18,10 +18,10 @@ provenance:
   '@type': Provenance
   agent: claude-code/claude-sonnet-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:1e9e8582-e390-4cc6-bda1-cfe768289fae
+    '@id': urn:mif:activity:claude-code-session:526419e5-77d7-4f96-a34a-22d8d5baa46f
     '@type': prov:Activity
   trustLevel: user_stated
-  agentVersion: 2.1.217
+  agentVersion: 2.1.218
 ---
 
 # Reference: engine workflows
@@ -570,6 +570,17 @@ underlying scripts and never re-derives or supersedes their logic:
   verdict directly — `publish-report`'s own non-negotiable is that the
   verdict must come from a real falsification pass, never be hand-authored,
   and this module does not weaken that rule to save an agent call.
+  **Honest null/"" sentinels on the falsify early-exit
+  (research-harness-template#773):** a step-3 `falsified` verdict stops the
+  pipeline before `render-artifact.sh`/`mif-project.sh` ever run — the only
+  place `frontmatterLevel`/`reportId` are ever actually determined. The
+  schema previously required both unconditionally, forcing the subagent to
+  fabricate a plausible-looking MIF level and `@id` for an artifact that was
+  never rendered. `frontmatterLevel` now types as `['integer', 'null']` and
+  the prompt instructs `frontmatterLevel=null`/`reportId=""` on that exact
+  path — mirroring the same sentinel convention already used for
+  `genreApplied`/`genreSkillInvoked`/`provenanceOutcome`/`provenanceReason`
+  on this identical quarantine path — never a fabricated value.
   **Guard-and-rethrow (research-harness-template#727):** this phase's
   `agent()` call is wrapped in try/catch, the same #720-class exposure Index
   already had — but UNLIKE Index, a throw here is not degraded to a null
