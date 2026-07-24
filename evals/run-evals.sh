@@ -703,7 +703,14 @@ run     "report-mif-good"           scripts/mif-project.sh schemas/samples/repor
 run_neg "report-mif-bad"            scripts/mif-project.sh evals/fixtures/report-bad.md
 run_neg "report-falsified-rejected" scripts/mif-project.sh evals/fixtures/report-falsified.md
 
-# 5a-2. A mistyped --json-out flag (research-harness-template#765) is a hard
+# 5a-2. research-harness-template#762: mif-project.sh's directory
+#       re-resolution checks the cd subshell's exit status instead of
+#       silently continuing with a bogus root-level path when the report's
+#       directory vanishes (removed/renamed/unmounted) between the earlier
+#       existence check and this re-resolution (a TOCTOU race).
+run "mif-project-cd-resolve-check" bash evals/mif-project-cd-resolve-check.sh
+
+# 5a-2b. A mistyped --json-out flag (research-harness-template#765) is a hard
 #       error, not a silently-ignored no-op: the caller must be told the flag
 #       wasn't recognized instead of having the projection quietly skip
 #       writing its output file while still exiting 0.
