@@ -296,6 +296,13 @@ run "projection-report-schema-falsify-exit-check" bash evals/projection-report-s
 # /projection.json instead of failing closed with a named diagnostic.
 run "mif-project-mktemp-check" bash evals/mif-project-mktemp-check.sh
 
+# research-harness-template#752: scripts/mif-project.sh's final
+# `cp "$TMP" "$JSON_OUT"` was unchecked, so a failing cp (missing target
+# directory, full disk, denied permission) silently fell through to the
+# "projects to a valid MIF L3 finding" success message and exited 0 instead
+# of failing closed with a named diagnostic.
+run "mif-project-json-out-cp-check" bash evals/mif-project-json-out-cp-check.sh
+
 # The research-deliverables module has deterministic teeth where its own
 # logic can express it (#573, Epic #544): the module's static pack-taxonomy
 # tables (which genres/methodology packs/source-direct channels/out-of-scope
