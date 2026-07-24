@@ -857,6 +857,10 @@ run     "ontology-review-discovery-not-stamped" bash -c "
 run     "engine-missing-fails-loud"  bash -c "
   out=\$(MIF_RH_CLI=/nonexistent/mif-rh-cli scripts/resolve-ontology.sh evals/fixtures/raw-finding.json 2>&1); rc=\$?;
   [ \$rc -eq 5 ] && printf %s \"\$out\" | grep -q 'install it with scripts/fetch-engine.sh'"
+# #779: a pre-release binary's suffix (-rc1, -alpha, ...) must not be
+# silently discarded by the version-extraction regex — it has to rank BELOW
+# the release of the same X.Y.Z it names, not compare as equal to it.
+run     "engine-version-precedence" bash evals/engine-version-precedence-check.sh
 run     "ontology-vendoring"        bash evals/ontology-vendoring.sh
 run     "sync-registry-ontologies"  bash evals/sync-registry-ontologies.sh
 
