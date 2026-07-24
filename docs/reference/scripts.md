@@ -2,7 +2,7 @@
 id: reference-scripts
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-21T11:15:38.883Z'
+modified: '2026-07-23T23:50:09.585Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -17,12 +17,12 @@ temporal:
 provenance:
   '@type': Provenance
   sourceType: agent_inferred
-  agent: claude-code/claude-fable-5
+  agent: claude-code/claude-sonnet-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:6cffe5d9-0ff6-4850-a402-01fd4a85a0d9
+    '@id': urn:mif:activity:claude-code-session:526419e5-77d7-4f96-a34a-22d8d5baa46f
     '@type': prov:Activity
   trustLevel: user_stated
-  agentVersion: 2.1.216
+  agentVersion: 2.1.218
 ---
 
 # Reference: scripts
@@ -175,6 +175,7 @@ Scripts that verify harness integrity and attestation.
 | Script | Purpose | Key dependency |
 | --- | --- | --- |
 | `scripts/verify.sh` | Harness build gate. Runs accretive gate functions (`gate_mN`) in sequence. Detects template vs instance context. Exits 0 only when all gates pass. | `jq`, `yq`, `ajv`, `ajv-formats` |
+| `scripts/lib/unreadable-probe.sh` | Sourced library, not a standalone script (research-harness-template#777). Pure classification helper for `gate_m27`'s unreadable-file fail-closed probe: `m27_classify_unreadable_probe <bypassed> <rc> <out>` prints `skip` when `chmod 000` didn't actually deny the current process read access (root / another DAC-override-capable process, so the probe's premise doesn't hold), `ok`/`bad` otherwise per the genuine digest-script outcome. No filesystem access itself, so it unit-tests deterministically regardless of which user runs the suite (`evals/gate-m27-root-safe-unreadable-check.sh`). Sourced by `verify.sh`. | none (pure shell) |
 | `scripts/bump-version.sh` | Change-driven version bump (ADR-0010). Moves the release pointer (`harness.config.json`), the marketplace catalog (`.metadata.version`), and inserts the dated `CHANGELOG.md` section; bumps a pack's `plugin.json` + `SKILL.md` + family-doc row only when named with `--pack <component>`. Accepts `patch`/`minor`/`major` or an explicit `X.Y.Z`; `--check` dry-runs; self-verifies. | `jq`, `awk`, `sed` |
 | `scripts/check-version-bump.sh` | CI enforcement for change-driven versioning (ADR-0010, amended). Fails when a changed pack/core-skill did not move its own version (diffed against a base ref, default `origin/main`), or when `harness.config.json`'s release pointer is not strictly ahead of the last git tag release — a per-release invariant, not a per-PR one. Wired as the PR-only `version-bump` CI job. | `git`, `jq` |
 | `scripts/check-workflow-syntax.sh` | Parse-check for Workflow-runtime modules (`.claude/workflows/*.js`, #552). Those modules use the runtime's async-function-body shape (top-level `return`/`await` are legal), so a bare `node --check` rejects a valid module; this checker strips the `export` keyword and compiles the source as an async function body instead, failing loudly (file + error) on genuine syntax errors. Compile-only — nothing executes. Wired into `verify.sh`'s `gate_workflows`; regression eval `evals/workflow-parse-check.sh`. | `node` |

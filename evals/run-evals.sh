@@ -52,6 +52,11 @@ run "stdin-detach" bash evals/stdin-detach.sh
 # marked, per-gate timings are built in, unmatched patterns fail fast.
 run "verify-selector" bash evals/verify-selector.sh
 
+# gate_m14's bypass_cmds loop variable must stay function-scoped (#780): a
+# missing `local` here leaks into the caller once gate_m14 returns, since
+# verify.sh calls every gate in-process ("$gate", never a subshell).
+run "gate-m14-no-var-leak" bash evals/gate-m14-no-var-leak.sh
+
 # gate_m23's 23d loop variable `d` must stay function-scoped (#781): it
 # used to leak into the global scope once gate_m23 returned, which would
 # silently corrupt any later gate reusing an unscoped `for d in ...`/
@@ -247,6 +252,20 @@ run "projection-index-resilience-check" bash evals/projection-index-resilience-c
 # evals use the same brace-matched verbatim-extraction technique.
 run "projection-report-resilience-check" bash evals/projection-report-resilience-check.sh
 run "projection-verify-resilience-check" bash evals/projection-verify-resilience-check.sh
+
+# research-harness-template#773: REPORT_SCHEMA unconditionally required
+# frontmatterLevel/reportId even on the step-3 falsify early-exit path, where
+# render-artifact.sh/mif-project.sh (the only place either value is ever
+# actually determined) never runs -- forcing the subagent to fabricate a
+# plausible-looking MIF level and @id for an artifact that was never
+# rendered. frontmatterLevel now types as ['integer','null'] and the prompt
+# instructs the honest null/"" sentinel on that path (mirroring the existing
+# genreApplied/provenanceOutcome sentinel convention for the identical
+# quarantine path). Proven via a REAL ajv schema validation: the
+# falsify-quarantine payload is accepted by the current (fixed) schema,
+# rejected by the historical pre-fix baseline, and the happy path is
+# untouched.
+run "projection-report-schema-falsify-exit-check" bash evals/projection-report-schema-falsify-exit-check.sh
 
 # research-harness-template#775: scripts/mif-project.sh's `TMPD="$(mktemp -d)"`
 # was unchecked, so a failing mktemp -d silently fell back to the root path
@@ -696,7 +715,14 @@ run     "report-mif-good"           scripts/mif-project.sh schemas/samples/repor
 run_neg "report-mif-bad"            scripts/mif-project.sh evals/fixtures/report-bad.md
 run_neg "report-falsified-rejected" scripts/mif-project.sh evals/fixtures/report-falsified.md
 
-# 5a-2. A mistyped --json-out flag (research-harness-template#765) is a hard
+# 5a-2. research-harness-template#762: mif-project.sh's directory
+#       re-resolution checks the cd subshell's exit status instead of
+#       silently continuing with a bogus root-level path when the report's
+#       directory vanishes (removed/renamed/unmounted) between the earlier
+#       existence check and this re-resolution (a TOCTOU race).
+run "mif-project-cd-resolve-check" bash evals/mif-project-cd-resolve-check.sh
+
+# 5a-2b. A mistyped --json-out flag (research-harness-template#765) is a hard
 #       error, not a silently-ignored no-op: the caller must be told the flag
 #       wasn't recognized instead of having the projection quietly skip
 #       writing its output file while still exiting 0.
@@ -898,6 +924,16 @@ run     "ontology-review-discovery-not-stamped" bash -c "
 run     "engine-missing-fails-loud"  bash -c "
   out=\$(MIF_RH_CLI=/nonexistent/mif-rh-cli scripts/resolve-ontology.sh evals/fixtures/raw-finding.json 2>&1); rc=\$?;
   [ \$rc -eq 5 ] && printf %s \"\$out\" | grep -q 'install it with scripts/fetch-engine.sh'"
+
+# research-harness-template#767: a version-mismatch failure (candidate found,
+# but too old) must name WHICH of engine_bin's three resolution paths
+# ($MIF_RH_CLI override, PATH, <root>/bin/mif-rh-cli) actually supplied the
+# stale candidate, and give that source's real remedy -- "re-run
+# scripts/fetch-engine.sh" is only correct for the repo-local case; telling a
+# user with a stale override or a stale PATH binary to do that is a
+# guaranteed no-op, since fetch-engine.sh only ever writes the repo-local path.
+run "engine-version-mismatch-source-check" bash evals/engine-version-mismatch-source-check.sh
+
 # #779: a pre-release binary's suffix (-rc1, -alpha, ...) must not be
 # silently discarded by the version-extraction regex — it has to rank BELOW
 # the release of the same X.Y.Z it names, not compare as equal to it.
@@ -982,6 +1018,15 @@ run "relationship-targets" bash evals/relationship-targets.sh
 # feature-spec's own headline claim: export -> import into a fresh instance
 # -> export again reproduces a byte-identical manifest digest.
 run "mif-container-nfr-verification" bash evals/mif-container-nfr-verification.sh
+
+# gate_m27's 27f "unreadable file fails closed" check root-safety
+# (research-harness-template#777): chmod 000 doesn't deny root/DAC-override
+# processes read access, so the check's premise can silently not hold. Proves
+# the classification helper (scripts/lib/unreadable-probe.sh) treats a
+# bypassed read as SKIP rather than a false FAIL, while still catching the
+# original swallow-bug defect class, and that the real gate still passes
+# end-to-end for a normal (non-root) run.
+run "gate-m27-root-safe-unreadable-check" bash evals/gate-m27-root-safe-unreadable-check.sh
 
 # Continuous research monitoring (Epic #416, Story #425): dry-run over
 # fixture source data (no live network calls), real pipeline logic --

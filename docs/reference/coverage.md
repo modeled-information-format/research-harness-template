@@ -2,7 +2,7 @@
 id: reference-coverage
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-20T11:51:15.886Z'
+modified: '2026-07-23T23:49:53.330Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -18,10 +18,10 @@ provenance:
   '@type': Provenance
   agent: claude-code/claude-sonnet-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:cc83f20c-2193-42dd-b5b5-72fe80571327
+    '@id': urn:mif:activity:claude-code-session:526419e5-77d7-4f96-a34a-22d8d5baa46f
     '@type': prov:Activity
   trustLevel: user_stated
-  agentVersion: 2.1.215
+  agentVersion: 2.1.218
 ---
 
 # Reference: documentation coverage
@@ -39,8 +39,8 @@ the **discovered** set equals the **documented** set.
 | Core skills | 10 | 10 | `.claude/skills/*/SKILL.md` |
 | Commands | 12 | 12 | `.claude/commands/*.md` |
 | Agents | 7 | 7 | `.claude/agents/*.md` |
-| Scripts | 57 | 57 | `scripts/**` (excludes `__pycache__`); the 24 scripts Epic #416 added moved to `packs/monitoring/continuous-monitor/scripts/**` (research-harness-template#483) and are documented in [packs/monitoring.md](packs/monitoring.md), not counted here |
-| **Total** | **163** | **163** | — |
+| Scripts | 58 | 58 | `scripts/**` (excludes `__pycache__`); the 24 scripts Epic #416 added moved to `packs/monitoring/continuous-monitor/scripts/**` (research-harness-template#483) and are documented in [packs/monitoring.md](packs/monitoring.md), not counted here |
+| **Total** | **164** | **164** | — |
 
 Reproduce the discovered counts:
 
@@ -50,7 +50,7 @@ ls .claude/skills | wc -l        # 10 core skills
 ls .claude/commands/*.md | wc -l # 12 commands
 ls .claude/agents/*.md | wc -l   # 7 agents
 find scripts -type f \( -name '*.sh' -o -name '*.py' -o -name '*.jq' \) \
-  | grep -v __pycache__ | wc -l  # 57 scripts
+  | grep -v __pycache__ | wc -l  # 58 scripts
 ```
 
 Domain ontology packs are vendored on demand (ADR-0012) — `packs/ontologies/`
@@ -168,7 +168,7 @@ All documented in [agents.md](agents.md): `orchestrator`, `dimension-analyst`,
 `falsification-analyst`, `report-synthesizer`, `corpus-synthesizer`,
 `harness-configurator`, `source-chunker`.
 
-## Scripts (57)
+## Scripts (58)
 
 All documented in [scripts.md](scripts.md):
 `assert-graph-mif`,
@@ -181,7 +181,7 @@ All documented in [scripts.md](scripts.md):
 `codegen/gen-models`, `falsify`, `fetch-engine`, `fetch-mif-docs-plugin`,
 `fetch-ontology`, `goal-version`, `import-corpus`, `install-hooks`,
 `install-monitoring-workflows`,
-`lib/container-lock`, `lib/engine`, `lint-goal`, `mif-container-detect-sameas`,
+`lib/container-lock`, `lib/engine`, `lib/unreadable-probe`, `lint-goal`, `mif-container-detect-sameas`,
 `mif-container-digest`, `mif-container-export`, `mif-container-import`,
 `mif-container-migration-eval-bench`, `mif-container-resolve-scope`,
 `mif-project`, `ontology-review`, `pack-toggle`, `reconcile-session`,
@@ -198,5 +198,5 @@ rather than counted in this core-scripts inventory, the same way
 
 ## Assertion
 
-Discovered (163) equals documented (163) across all five categories. No pack,
+Discovered (164) equals documented (164) across all five categories. No pack,
 skill, command, agent, or script is omitted.

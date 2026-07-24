@@ -35,6 +35,8 @@ cd "$(dirname "$0")/.." || exit 2
 # engine-free gates (e.g. gate_workflows) never pays for the engine at all.
 # shellcheck source=scripts/lib/engine.sh
 . scripts/lib/engine.sh
+# shellcheck source=scripts/lib/unreadable-probe.sh
+. scripts/lib/unreadable-probe.sh
 
 # Template vs instance. The distributable template carries copier.yml; an
 # instantiated harness has it stripped at generation. Template-only self-tests
@@ -47,10 +49,12 @@ IS_TEMPLATE=0; [ -f copier.yml ] && IS_TEMPLATE=1
 
 PASS=0
 FAIL=0
-RED=$'\033[31m'; GREEN=$'\033[32m'; DIM=$'\033[2m'; RST=$'\033[0m'
+SKIP=0
+RED=$'\033[31m'; GREEN=$'\033[32m'; DIM=$'\033[2m'; YELLOW=$'\033[33m'; RST=$'\033[0m'
 
 ok()   { PASS=$((PASS+1)); printf '%s  ok %s %s\n' "$GREEN" "$RST" "$1"; }
 bad()  { FAIL=$((FAIL+1)); printf '%sFAIL%s %s\n'   "$RED"   "$RST" "$1"; }
+skip() { SKIP=$((SKIP+1)); printf '%sSKIP%s %s\n'   "$YELLOW" "$RST" "$1"; }
 info() { printf '%s--- %s%s\n' "$DIM" "$1" "$RST"; }
 
 # ajv invocation with the vendored MIF schema closure registered.
@@ -1847,7 +1851,7 @@ gate_m14() {
     'env bash scripts/falsify.sh reports/tA/findings/f.json fx'
     'zsh scripts/falsify.sh reports/tA/findings/f.json fx'
   )
-  local bypass_fail="" cmd_json d_bypass
+  local bypass_fail="" cmd_json d_bypass c
   for c in "${bypass_cmds[@]+"${bypass_cmds[@]}"}"; do
     cmd_json="$(jq -cn --arg c "$c" '{tool_input:{command:$c}}')"
     d_bypass="$(hd "$cmd_json")"
@@ -3190,15 +3194,28 @@ gate_m27() {
   #      must also be a named error, never the malformed "sha256:" (empty hex)
   #      line at exit 0 that a command-substitution-inside-printf swallow bug
   #      previously produced.
-  local out rc
+  #
+  #      chmod 000 does not deny root -- or any other DAC_OVERRIDE-capable
+  #      process, e.g. a root-uid Docker/devcontainer verify.sh run -- the
+  #      ability to read the file (research-harness-template#777). Probe
+  #      readability after chmod 000 and, if it's still readable, the
+  #      fail-closed premise doesn't hold: SKIP the assertion explicitly
+  #      rather than silently invalidating it into a false FAIL against a
+  #      working, unmodified digest script.
+  local out rc bypassed=0
   printf 'x' > "$T/unreadable.txt"; chmod 000 "$T/unreadable.txt"
-  out="$(scripts/mif-container-digest.sh resource "$T/unreadable.txt" 2>/dev/null)"; rc=$?
-  chmod 644 "$T/unreadable.txt"
-  if [ "$rc" -ne 0 ] && [ "$out" != "sha256:" ]; then
-    ok "resource digest fails closed on an unreadable file (permission denied), not a malformed empty digest"
+  [ -r "$T/unreadable.txt" ] && bypassed=1
+  if [ "$bypassed" = "0" ]; then
+    out="$(scripts/mif-container-digest.sh resource "$T/unreadable.txt" 2>/dev/null)"; rc=$?
   else
-    bad "resource digest did not fail closed on an unreadable file (rc=$rc out='$out')"
+    out=""; rc=0
   fi
+  chmod 644 "$T/unreadable.txt"
+  case "$(m27_classify_unreadable_probe "$bypassed" "$rc" "$out")" in
+    skip) skip "resource digest unreadable-file fail-closed check (chmod 000 did not deny read -- running as root or with DAC override; premise does not hold, #777)" ;;
+    ok)   ok "resource digest fails closed on an unreadable file (permission denied), not a malformed empty digest" ;;
+    *)    bad "resource digest did not fail closed on an unreadable file (rc=$rc out='$out')" ;;
+  esac
 
   # 27g. Extra positional arguments are rejected, not silently dropped -- a
   # `resource f1 f2` invocation must not quietly hash only f1.
@@ -5379,9 +5396,11 @@ SCOPE_NOTE=""
 if [ -n "$GATE_PATTERN" ]; then
   SCOPE_NOTE=" [SCOPED RUN: --gates '$GATE_PATTERN' matched ${#SELECTED[@]}/${#GATES[@]} gates — not the full suite]"
 fi
+SKIP_NOTE=""
+[ "$SKIP" -gt 0 ] && SKIP_NOTE=" ($SKIP skipped)"
 if [ "$FAIL" -gt 0 ]; then
-  printf '%sverify.sh: %d passed, %d FAILED%s%s\n' "$RED" "$PASS" "$FAIL" "$RST" "$SCOPE_NOTE"
+  printf '%sverify.sh: %d passed, %d FAILED%s%s%s\n' "$RED" "$PASS" "$FAIL" "$RST" "$SKIP_NOTE" "$SCOPE_NOTE"
   exit 1
 fi
-printf '%sverify.sh: %d passed, 0 failed%s%s\n' "$GREEN" "$PASS" "$RST" "$SCOPE_NOTE"
+printf '%sverify.sh: %d passed, 0 failed%s%s%s\n' "$GREEN" "$PASS" "$RST" "$SKIP_NOTE" "$SCOPE_NOTE"
 exit 0
