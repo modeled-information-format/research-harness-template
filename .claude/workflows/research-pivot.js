@@ -70,10 +70,11 @@
 // over that unaccountably incomplete carry/stale view. Fixed the same way
 // research-falsify.js's write-assertion gap (#659) was: retry each failed
 // batch exactly once (same retry-once idiom), and a batch still null after
-// retry has its ids explicitly captured in `unclassified` — never silently
-// merged away — logged by id, folded into `stale` (so they get RE-GATED
-// rather than vanishing from every bucket), and unioned into the final
-// `reverifyIds` regardless of what the Plan agent itself returns.
+// retry has its ids explicitly captured and returned as `unclassifiedIds`
+// (internally the `unclassified` variable) — never silently merged away —
+// logged by id, folded into `stale` (so they get RE-GATED rather than
+// vanishing from every bucket), and unioned into the final `reverifyIds`
+// regardless of what the Plan agent itself returns.
 //
 // FALSIFY REGATE HOOKUP (confirmed interface alignment, #547): reverifyIds
 // is a plain array of finding @id strings. research-falsify.js's `scope`
