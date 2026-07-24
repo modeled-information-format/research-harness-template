@@ -1306,6 +1306,15 @@ run "copier-tasks-engine-order-check" bash evals/copier-tasks-engine-order-check
 # instead of limping through with a misattributed pack-toggle failure.
 run "gate-m5-mktemp-guard" bash evals/gate-m5-mktemp-guard.sh
 
+# research-harness-template#745: gate_engine_lazy_gating renamed
+# bin/mif-rh-cli aside with a bare `if`/`mv` sequence and no trap-based
+# restore, unlike gate_m29/gate_m30/gate_m31's `trap ... RETURN EXIT`
+# pattern -- an interrupted verify.sh (Ctrl-C, CI job timeout/SIGTERM) left
+# the engine binary permanently renamed aside. Interrupts the real gate
+# mid-flight with SIGTERM and asserts bin/mif-rh-cli is restored, not left
+# renamed.
+run "gate-engine-lazy-gating-trap-restore" bash evals/gate-engine-lazy-gating-trap-restore.sh
+
 # research-harness-template#748: gate_m11's 11j fail-safe check did
 # `engine_bin ... || exit 5` directly in verify.sh's own process, so an
 # engine_bin failure hard-exited the ENTIRE run and silently skipped every
