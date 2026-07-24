@@ -399,6 +399,21 @@ run "deliverables-channel-validation-check" bash evals/deliverables-channel-vali
 # the ambiguous `clean: null`.
 run "deliverables-null-check-repair-check" bash evals/deliverables-null-check-repair-check.sh
 
+# research-harness-template#740: the repair loop's
+# `for (const { a, rv } of refixed)` destructured straight out of each
+# `refixed` entry with no null guard. Per the runtime's documented
+# parallel() contract, a thunk that THROWS (e.g. the 'fix' agent() call
+# dying on a terminal error after retries) makes its own slot in the
+# returned array resolve to `null` rather than rejecting the whole
+# parallel() call — so that destructure threw a TypeError and crashed the
+# entire workflow run, losing every OTHER artifact's already-succeeded
+# fix/recheck in the same repair batch. This eval proves a repair thunk
+# whose fix() call throws is now caught inside the thunk (logging a WARNING
+# and leaving that artifact's prior failing validation recorded) without
+# crashing the run or preventing a sibling artifact in the same batch from
+# being genuinely fixed and re-checked to clean: true.
+run "deliverables-refix-null-repair-check" bash evals/deliverables-refix-null-repair-check.sh
+
 # The research-augment module's Decide phase has deterministic teeth where its
 # own logic can express it (#580, Epic #545, following #578's vendoring and
 # #579's discover-delegation fix): the Assess phase's discover-skill

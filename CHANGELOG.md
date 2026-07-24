@@ -9,6 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`research-deliverables.js`'s repair loop no longer crashes the entire
+  run when a fix attempt itself fails (research-harness-template#740).**
+  `const refixed = await parallel(dirty.map((a) => async () => { ... }))`
+  destructured `{ a, rv }` straight out of each `refixed` entry with no
+  null guard. Per the Workflow-runtime's documented `parallel()` contract, a
+  thunk that throws makes its own slot in the returned array resolve to
+  `null` rather than rejecting the whole `parallel()` call — and the first
+  `agent()` call inside that thunk (the 'fix' call) can throw (a subagent
+  dying on a terminal error after retries is one of `agent()`'s two
+  documented failure modes). `for (const { a, rv } of refixed)` then threw a
+  `TypeError` ("Cannot destructure property `a` of `null`"), crashing the
+  whole workflow run immediately after one artifact's repair failed —
+  losing the already-succeeded fix/recheck results for every OTHER artifact
+  in the same repair batch, and never returning the `{ ok, artifacts,
+  unavailable }` result the caller expects. Each repair thunk now wraps its
+  fix + re-check calls in a `try`/`catch`: a thrown error is caught inside
+  the thunk itself, logs a `WARNING` naming the artifact, and resolves to
+  `{ a, rv: null }` instead of rejecting — leaving that one artifact's prior
+  (failing) validation recorded without taking down the rest of the batch.
+  The `for` loop also now guards against a `null` entry defensively
+  (mirroring the existing `rendered.filter(Boolean)` precedent), in case a
+  future change reintroduces an unguarded throw.
 - **`research-pivot.js`'s Classify phase no longer silently drops a failed
   batch's finding ids from every bucket.** Each element of `batches` becomes
   an independent `agent()` call inside `parallel()`; per the Workflow-runtime's
