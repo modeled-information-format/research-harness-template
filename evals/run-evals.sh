@@ -104,6 +104,12 @@ run "start-error-handling-glob-check" bash evals/start-error-handling-glob-check
 # coverage_per_dimension check permanently unsatisfiable (#676).
 run "goal-writer-findings-path" bash evals/goal-writer-findings-path.sh
 
+# research-goal.js's Context schema must require existingGoalSummary, not just
+# type it as string|null (#766): the Draft prompt unconditionally interpolates
+# it whenever existingGoalPath is truthy, so an omitted-but-schema-valid
+# summary produced a literal "(undefined)" leak into the Draft agent's prompt.
+run "goal-context-summary-required" bash evals/goal-context-summary-required.sh
+
 # The research-goal draft→lint→repair contract has deterministic teeth
 # (#554): scripts/lint-goal.sh FAILS the seeded-invalid fixture (step-shaped
 # check assertion + off-config dimension) that ajv alone accepts, fails
@@ -685,6 +691,29 @@ run_neg "report-falsified-rejected" scripts/mif-project.sh evals/fixtures/report
 #       existence check and this re-resolution (a TOCTOU race).
 run "mif-project-cd-resolve-check" bash evals/mif-project-cd-resolve-check.sh
 
+# 5a-2b. A mistyped --json-out flag (research-harness-template#765) is a hard
+#       error, not a silently-ignored no-op: the caller must be told the flag
+#       wasn't recognized instead of having the projection quietly skip
+#       writing its output file while still exiting 0.
+run_neg "report-mif-json-out-typo-rejected" \
+  scripts/mif-project.sh schemas/samples/report.sample.md --json_out "$TMP/typo-out.json"
+
+# 5a-3. The correctly-spelled flag still honors --json-out end to end.
+run "report-mif-json-out-honored" bash -c '
+  scripts/mif-project.sh schemas/samples/report.sample.md --json-out "'"$TMP"'/good-out.json" &&
+  [ -s "'"$TMP"'/good-out.json" ]'
+
+# 5a-4. --json-out with a missing/empty path is a controlled exit-2 usage error
+#       (prefixed "mif-project: ..."), not bash's own unprefixed exit-1 message
+#       from an unset-parameter expansion (PR #799 Copilot review).
+run_neg "report-mif-json-out-missing-path-rejected" \
+  scripts/mif-project.sh schemas/samples/report.sample.md --json-out
+
+# 5a-5. A trailing argument after a valid --json-out <path> is rejected instead
+#       of being silently ignored (PR #799 Copilot review).
+run_neg "report-mif-trailing-arg-rejected" \
+  scripts/mif-project.sh schemas/samples/report.sample.md --json-out "$TMP/trailing-out.json" --typo
+
 # 5b. The report channel emits a valid L3 report end-to-end (write-then-validate).
 run "report-channel-e2e" bash -c '
   scripts/synthesize-artifact.sh "'"$SF"'" general "'"$TMP"'/r.json" &&
@@ -774,6 +803,14 @@ run "render-artifact-version-increments" bash -c '
 #        checked (set -e is not in effect in render-artifact.sh).
 run "render-artifact-atomic-write" bash evals/render-artifact-atomic-write.sh
 
+# 5b-6c. Two concurrent render-artifact.sh invocations targeting the SAME
+#        $OUT must never both silently succeed with a DUPLICATE version stamp
+#        (issue #776): the whole read-prior-version -> render -> mv critical
+#        section is now serialized per-$OUT via a container-lock-style mkdir
+#        lock, so a losing racer is denied loudly (clear stderr diagnostic,
+#        non-zero exit) rather than corrupting the version counter silently.
+run "render-artifact-concurrent-version-race" bash evals/render-artifact-concurrent-version-race.sh
+
 # 5b-7. backfill-report-slugs.sh only stamps the key actually missing (a file
 #       with slug but no version gets ONLY version added, never a duplicate
 #       slug line), --dry-run reports ONLY the missing key (not both,
@@ -856,6 +893,10 @@ run     "ontology-review-discovery-not-stamped" bash -c "
 run     "engine-missing-fails-loud"  bash -c "
   out=\$(MIF_RH_CLI=/nonexistent/mif-rh-cli scripts/resolve-ontology.sh evals/fixtures/raw-finding.json 2>&1); rc=\$?;
   [ \$rc -eq 5 ] && printf %s \"\$out\" | grep -q 'install it with scripts/fetch-engine.sh'"
+# #779: a pre-release binary's suffix (-rc1, -alpha, ...) must not be
+# silently discarded by the version-extraction regex — it has to rank BELOW
+# the release of the same X.Y.Z it names, not compare as equal to it.
+run     "engine-version-precedence" bash evals/engine-version-precedence-check.sh
 run     "ontology-vendoring"        bash evals/ontology-vendoring.sh
 run     "sync-registry-ontologies"  bash evals/sync-registry-ontologies.sh
 
@@ -1060,6 +1101,13 @@ run "anti-narration-guard-resume" bash -c 'grep -q "Issue #490" .claude/commands
 # every copier copy/update. Static analysis so it can't be masked by CI
 # already having the engine cached before any real _tasks run.
 run "copier-tasks-engine-order-check" bash evals/copier-tasks-engine-order-check.sh
+
+# research-harness-template#778: gate_m5's mktemp -d calls (5c/5d/5d2/5d3/5d4)
+# had no failure guard, so a failed mktemp silently collapsed every "$T/..."
+# path to filesystem root. Shadows mktemp with a stub that always fails and
+# asserts gate_m5 fails closed with an explicit scratch-directory message
+# instead of limping through with a misattributed pack-toggle failure.
+run "gate-m5-mktemp-guard" bash evals/gate-m5-mktemp-guard.sh
 
 echo
 if [ "$FAIL" -gt 0 ]; then
