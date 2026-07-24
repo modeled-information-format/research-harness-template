@@ -130,6 +130,15 @@ rc6=$(printf '%s' "$out" | sed -n 1p)
 [ "$rc6" -eq 0 ] 2>/dev/null || { note "FAIL: setup acquire for mutex test rc=$rc6"; fail=1; }
 touch -t 202001010000 "$D"
 orig_token=$(cat "$D/.owner-token" 2>/dev/null)
+# .owner-token is written best-effort (container-lock.sh's `|| true`); if it
+# were ever missing, both sides of the check below would read as empty and
+# the serialization assertion would pass vacuously without actually proving
+# the lock was untouched. Fail loudly instead of silently trusting an empty
+# comparison.
+if [ -z "$orig_token" ]; then
+  note "FAIL: setup acquire for mutex test produced no .owner-token — cannot assert serialization"
+  fail=1
+fi
 mutex="${D}.steal-mutex"
 mkdir "$mutex"   # simulate racer A already mid-steal, holding the mutex
 (
@@ -140,7 +149,7 @@ mkdir "$mutex"   # simulate racer A already mid-steal, holding the mutex
 ) &
 bg_pid=$!
 sleep 0.3   # give racerB time to be in its retry loop, contending on the mutex
-if [ -d "$D" ] && [ "$(cat "$D/.owner-token" 2>/dev/null)" = "$orig_token" ]; then
+if [ -n "$orig_token" ] && [ -d "$D" ] && [ "$(cat "$D/.owner-token" 2>/dev/null)" = "$orig_token" ]; then
   note "a waiting racer does NOT touch the lock while another racer holds the steal-mutex"
 else
   note "FAIL: the lock was mutated while a different racer held the steal-mutex — serialization broken"; fail=1
