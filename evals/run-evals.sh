@@ -52,6 +52,11 @@ run "stdin-detach" bash evals/stdin-detach.sh
 # marked, per-gate timings are built in, unmatched patterns fail fast.
 run "verify-selector" bash evals/verify-selector.sh
 
+# gate_m14's bypass_cmds loop variable must stay function-scoped (#780): a
+# missing `local` here leaks into the caller once gate_m14 returns, since
+# verify.sh calls every gate in-process ("$gate", never a subshell).
+run "gate-m14-no-var-leak" bash evals/gate-m14-no-var-leak.sh
+
 # gate_m23's 23d loop variable `d` must stay function-scoped (#781): it
 # used to leak into the global scope once gate_m23 returned, which would
 # silently corrupt any later gate reusing an unscoped `for d in ...`/
