@@ -253,6 +253,20 @@ run "projection-index-resilience-check" bash evals/projection-index-resilience-c
 run "projection-report-resilience-check" bash evals/projection-report-resilience-check.sh
 run "projection-verify-resilience-check" bash evals/projection-verify-resilience-check.sh
 
+# research-harness-template#773: REPORT_SCHEMA unconditionally required
+# frontmatterLevel/reportId even on the step-3 falsify early-exit path, where
+# render-artifact.sh/mif-project.sh (the only place either value is ever
+# actually determined) never runs -- forcing the subagent to fabricate a
+# plausible-looking MIF level and @id for an artifact that was never
+# rendered. frontmatterLevel now types as ['integer','null'] and the prompt
+# instructs the honest null/"" sentinel on that path (mirroring the existing
+# genreApplied/provenanceOutcome sentinel convention for the identical
+# quarantine path). Proven via a REAL ajv schema validation: the
+# falsify-quarantine payload is accepted by the current (fixed) schema,
+# rejected by the historical pre-fix baseline, and the happy path is
+# untouched.
+run "projection-report-schema-falsify-exit-check" bash evals/projection-report-schema-falsify-exit-check.sh
+
 # research-harness-template#775: scripts/mif-project.sh's `TMPD="$(mktemp -d)"`
 # was unchecked, so a failing mktemp -d silently fell back to the root path
 # /projection.json instead of failing closed with a named diagnostic.
