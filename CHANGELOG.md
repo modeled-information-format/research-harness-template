@@ -27,6 +27,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (so they get re-gated rather than lost), named in a log line, and unioned
   into the final `reverifyIds` regardless of what the Plan agent itself
   returns (research-harness-template#758).
+- **`evals/falsify-write-failure-gated.sh`'s pre-fix CONTROL check no longer
+  breaks once `origin/main` permanently contains the #747 fix
+  (research-harness-template#824).** The control resolved the pre-fix
+  revision of `research-falsify.js` via `git merge-base HEAD origin/main`,
+  which only means "the commit before the fix landed" transiently, before
+  the fix's own PR (#816) merged — once any branch stays synced with
+  `main` past that point (including `main` itself), the merge-base
+  resolves to a commit that already has the fix, so the control silently
+  stopped testing anything (confirmed failing on a bare `origin/main`
+  checkout and in real CI). Now resolved via a pickaxe search (`git log -S`)
+  for the `#747` marker string the fix introduced, then that commit's own
+  parent — stable regardless of `HEAD`'s relationship to `origin/main`.
 - **`mif-container-import.sh` now rejects a mistyped or unrecognized flag
   instead of silently absorbing it as an extra positional argument
   (research-harness-template#746).** The arg-parsing loop's wildcard branch
