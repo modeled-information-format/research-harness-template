@@ -62,9 +62,9 @@ cat > "$TMP/driver.cjs" <<'NODE'
 'use strict';
 const fs = require('fs');
 
-const [, , wfPath, argsPath, injectedArgPath, injectedRefPath, outPath] = process.argv;
+const [, , wfPath, argsPath, injectedArgPath, injectedRefPath, outPath, injectedEnabledPath] = process.argv;
 if (!wfPath || !argsPath || !injectedArgPath || !injectedRefPath || !outPath) {
-  console.error('usage: driver.cjs <module.js> <argsPath> <injectedArgPath> <injectedRefPath> <outPath>');
+  console.error('usage: driver.cjs <module.js> <argsPath> <injectedArgPath> <injectedRefPath> <outPath> [injectedEnabledPath]');
   process.exit(2);
 }
 
@@ -76,6 +76,11 @@ const fn = new AsyncFunction('args', 'phase', 'agent', 'log', 'workflow', 'paral
 const args = JSON.parse(fs.readFileSync(argsPath, 'utf8'));
 const injectedArg = fs.readFileSync(injectedArgPath, 'utf8');
 const injectedRef = fs.readFileSync(injectedRefPath, 'utf8');
+// Defaults to true (the pre-existing driver behavior) unless a case supplies
+// its own injected genrePackEnabled value — added for research-harness-
+// template#804 (Copilot review) cases 4/5 below, which exercise the
+// genrePackEnabled=false mirror-image mismatch.
+const injectedEnabled = injectedEnabledPath ? fs.readFileSync(injectedEnabledPath, 'utf8').trim() === 'true' : true;
 
 const calls = [];
 const SENTINEL = 'EVAL_SENTINEL_STOP';
@@ -90,7 +95,7 @@ async function agentStub(prompt, opts) {
     // unconstrained-LLM-output shape research-harness-template#757 names:
     // GENRE_SCHEMA has no `pattern`, so nothing in the schema itself stops
     // this from being returned and used verbatim by pre-fix code.
-    return { genreArg: injectedArg, genrePackEnabled: true, genreSkillRef: injectedRef };
+    return { genreArg: injectedArg, genrePackEnabled: injectedEnabled, genreSkillRef: injectedRef };
   }
   throw new Error(SENTINEL);
 }
@@ -123,9 +128,9 @@ const budgetObj = { total: 0, remaining: () => 0 };
 })();
 NODE
 
-run_case() { # run_case <caseName> <argsFile> <injectedArgFile> <injectedRefFile> <outFile>
-  local caseName="$1" argsFile="$2" injectedArgFile="$3" injectedRefFile="$4" outFile="$5"
-  if ! node "$TMP/driver.cjs" "$MODULE" "$argsFile" "$injectedArgFile" "$injectedRefFile" "$outFile" >"$TMP/$caseName-run.err" 2>&1; then
+run_case() { # run_case <caseName> <argsFile> <injectedArgFile> <injectedRefFile> <outFile> [injectedEnabledFile]
+  local caseName="$1" argsFile="$2" injectedArgFile="$3" injectedRefFile="$4" outFile="$5" injectedEnabledFile="${6:-}"
+  if ! node "$TMP/driver.cjs" "$MODULE" "$argsFile" "$injectedArgFile" "$injectedRefFile" "$outFile" "$injectedEnabledFile" >"$TMP/$caseName-run.err" 2>&1; then
     note "$caseName driver invocation itself failed (not a caught throw): $(cat "$TMP/$caseName-run.err")"
     fail=1
     return 1
@@ -199,6 +204,54 @@ if not got or 'EVAL_SENTINEL_STOP' not in got or 'research-harness-template#757'
     ok = False
 else:
     print("  ok  c3 (well-formed genreArg/genreSkillRef): resolution proceeds past validation with no regression")
+sys.exit(0 if ok else 1)
+PY
+  [ $? -eq 0 ] || fail=1
+fi
+
+# ---- Case 4: genrePackEnabled=false but genreArg still names the (disabled)
+# requested genre -> fail-closed throw. Added for research-harness-
+# template#804 (Copilot review): genreArg="$GENRE_VALUE" individually
+# satisfies the pinned-value check (genreArg matches GENRE), so pre-fix code
+# let this genrePackEnabled/genreArg mismatch reach genreStepText's `else`
+# branch while genreArg had already been used against the enabled-looking
+# genre string one step earlier — the mirror image of case 2's #757 gap.
+printf '%s' "$GENRE_VALUE" > "$TMP/injected-arg-mismatch.txt"
+printf '%s' '' > "$TMP/injected-ref-empty.txt"
+printf '%s' 'false' > "$TMP/injected-enabled-false.txt"
+run_case c4 "$TMP/args.json" "$TMP/injected-arg-mismatch.txt" "$TMP/injected-ref-empty.txt" "$TMP/out4.json" "$TMP/injected-enabled-false.txt"
+if [ -f "$TMP/out4.json" ]; then
+  python3 - "$TMP/out4.json" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1], encoding='utf-8'))
+got = d['threw'] and d['threw'].get('message', '')
+ok = True
+if not got or 'research-harness-template#757' not in got:
+    print(f"  FAIL c4: genrePackEnabled=false paired with a genreArg still naming the requested genre did not trigger a fail-closed #757 throw: threw={d['threw']}")
+    ok = False
+else:
+    print("  ok  c4 (genrePackEnabled=false / genreArg mismatch): fail-closed throw fired before further use")
+sys.exit(0 if ok else 1)
+PY
+  [ $? -eq 0 ] || fail=1
+fi
+
+# ---- Case 5: genrePackEnabled=false but genreSkillRef still names the
+# GENRE:GENRE pair -> fail-closed throw (research-harness-template#804).
+printf '%s' 'general' > "$TMP/injected-arg-general.txt"
+printf '%s' "$GENRE_VALUE:$GENRE_VALUE" > "$TMP/injected-ref-mismatch.txt"
+run_case c5 "$TMP/args.json" "$TMP/injected-arg-general.txt" "$TMP/injected-ref-mismatch.txt" "$TMP/out5.json" "$TMP/injected-enabled-false.txt"
+if [ -f "$TMP/out5.json" ]; then
+  python3 - "$TMP/out5.json" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1], encoding='utf-8'))
+got = d['threw'] and d['threw'].get('message', '')
+ok = True
+if not got or 'research-harness-template#757' not in got:
+    print(f"  FAIL c5: genrePackEnabled=false paired with a non-empty genreSkillRef did not trigger a fail-closed #757 throw: threw={d['threw']}")
+    ok = False
+else:
+    print("  ok  c5 (genrePackEnabled=false / genreSkillRef mismatch): fail-closed throw fired before further use")
 sys.exit(0 if ok else 1)
 PY
   [ $? -eq 0 ] || fail=1

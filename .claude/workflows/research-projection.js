@@ -431,6 +431,34 @@ if (genreResolution.genrePackEnabled && genreResolution.genreSkillRef === '') {
       `inconsistent result, refusing to proceed (research-harness-template#757).`,
   )
 }
+// Copilot review, PR #804: the four checks above each validate genreArg and
+// genreSkillRef individually (pattern + pinned-value), and the check just
+// above catches genrePackEnabled=true paired with an empty genreSkillRef —
+// but nothing yet caught the MIRROR-IMAGE inconsistency: genrePackEnabled=
+// false paired with a genreArg/genreSkillRef that still names the disabled
+// genre. Each of genreArg==="${GENRE}" and genreSkillRef==="${GENRE}:${GENRE}"
+// individually satisfies every check above (they match the pinned-value
+// checks), so a genre-resolve response of {genrePackEnabled:false,
+// genreArg:GENRE, genreSkillRef:`${GENRE}:${GENRE}`} would pass validation
+// and reach genreStepText's `else` branch believing the pack is disabled
+// while genreArg had already been interpolated into synthesize-artifact.sh's
+// shell command as the (still-enabled-looking) genre string one step earlier
+// — reintroducing #633's "report claims/applies the wrong genre" failure
+// mode the #757 fix was never asked to close. Fail closed on both
+// directions of the genrePackEnabled mismatch, not just the one above.
+if (!genreResolution.genrePackEnabled && genreResolution.genreArg !== 'general') {
+  throw new Error(
+    `research-projection: genre resolution reported genrePackEnabled=false but genreArg="${genreResolution.genreArg}" ` +
+      `(expected the honest fallback "general") — internally inconsistent result, refusing to proceed ` +
+      `(research-harness-template#757).`,
+  )
+}
+if (!genreResolution.genrePackEnabled && genreResolution.genreSkillRef !== '') {
+  throw new Error(
+    `research-projection: genre resolution reported genrePackEnabled=false but genreSkillRef="${genreResolution.genreSkillRef}" ` +
+      `(expected "") — internally inconsistent result, refusing to proceed (research-harness-template#757).`,
+  )
+}
 
 const genreStepText = genreResolution.genrePackEnabled
   ? `6b. GENRE SKILL APPLICATION (research-harness-template#633): genre "${GENRE}"'s pack is enabled (resolved above) — invoke ` +
