@@ -19,6 +19,11 @@ TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 fail=0
 note() { printf '  run-lock: %s\n' "$1"; }
+# Portable file/dir mtime as an epoch integer — GNU `stat -c %Y` vs BSD/macOS
+# `stat -f %m`. Needed because `date -r <path>` is GNU-only for reading a file's
+# mtime: BSD/macOS `date -r` instead expects an epoch-seconds argument, so
+# `date -r "$path"` silently misbehaves cross-platform (Copilot review, PR #812).
+mtime_epoch() { stat -c %Y "$1" 2>/dev/null || stat -f %m "$1" 2>/dev/null; }
 
 D="$TMP/reports/topic-a"
 
@@ -41,13 +46,14 @@ fi
 # 3. Refresh with the CORRECT token keeps the held lock present, exclusive, and
 #    actually advances its mtime (proving the touch, not just non-removal).
 touch -t 202001010000 "$D/.run-lock"   # backdate so a real touch is observable
+before_mtime3=$(mtime_epoch "$D/.run-lock")
 "$LOCK" refresh "$D" "$TOKA" >/dev/null 2>&1; rc=$?
-mtime_year=$(date -r "$D/.run-lock" +%Y 2>/dev/null || echo "?")
+after_mtime3=$(mtime_epoch "$D/.run-lock")
 "$LOCK" acquire "$D" "runB" >/dev/null 2>&1; acq_rc=$?
-if [ "$rc" -eq 0 ] && [ "$mtime_year" != "2020" ] && [ "$acq_rc" -eq 3 ]; then
+if [ "$rc" -eq 0 ] && [ "$after_mtime3" != "$before_mtime3" ] && [ "$acq_rc" -eq 3 ]; then
   note "refresh with the correct token touches the lock and keeps it exclusive"
 else
-  note "FAIL: refresh(correct token) rc=$rc mtime_year=$mtime_year acquire_rc=$acq_rc"; fail=1
+  note "FAIL: refresh(correct token) rc=$rc before_mtime=$before_mtime3 after_mtime=$after_mtime3 acquire_rc=$acq_rc"; fail=1
 fi
 
 # 4. Release with the CORRECT token frees the topic; a fresh acquire then succeeds.
@@ -93,14 +99,15 @@ else
 fi
 "$LOCK" release "$D" "$TOKSTEAL" 2>/dev/null
 
-# 7. refresh does NOT resurrect a released/stolen lock (no phantom second owner).
+# 7. refresh on a released lock is REFUSED (rc=1, fatal — not a silent no-op) and
+#    does NOT resurrect a phantom second owner.
 TOK7=$("$LOCK" acquire "$D" "owner" 2>/dev/null)
 "$LOCK" release "$D" "$TOK7" 2>/dev/null
-"$LOCK" refresh "$D" "$TOK7" >/dev/null 2>&1
-if [ ! -d "$D/.run-lock" ]; then
-  note "refresh on a released lock is a no-op (does not resurrect a phantom owner)"
+"$LOCK" refresh "$D" "$TOK7" >/dev/null 2>&1; rc7=$?
+if [ "$rc7" -eq 1 ] && [ ! -d "$D/.run-lock" ]; then
+  note "refresh on a released lock is refused (rc=1) and does not resurrect a phantom owner"
 else
-  note "FAIL: refresh resurrected a released lock"; fail=1
+  note "FAIL: refresh on a released lock rc=$rc7 (expected 1) or lock resurrected"; fail=1
 fi
 
 # 8. Two DIFFERENT topics never block each other.
@@ -226,13 +233,14 @@ fi
 TOKA14=$("$LOCK" acquire "$D" "runA" 2>/dev/null)
 TOKB14=$(FORCE=1 "$LOCK" steal "$D" "runB" 2>/dev/null)   # simulates a second run stealing the same path
 touch -t 202001010000 "$D/.run-lock"   # backdate so a wrongful touch would be observable
+before_mtime14=$(mtime_epoch "$D/.run-lock")
 "$LOCK" refresh "$D" "$TOKA14" >/dev/null 2>&1; rc_stale=$?
-mtime_year_stale=$(date -r "$D/.run-lock" +%Y 2>/dev/null || echo "?")
+after_mtime14=$(mtime_epoch "$D/.run-lock")
 "$LOCK" refresh "$D" "$TOKB14" >/dev/null 2>&1; rc_live=$?
-if [ "$rc_stale" -eq 1 ] && [ "$mtime_year_stale" = "2020" ] && [ "$rc_live" -eq 0 ]; then
+if [ "$rc_stale" -eq 1 ] && [ "$after_mtime14" = "$before_mtime14" ] && [ "$rc_live" -eq 0 ]; then
   note "refresh with a STOLEN run's old token is refused (rc=1) and does not touch the lock; the new owner's refresh succeeds"
 else
-  note "FAIL: stolen-token refresh rc=$rc_stale (expected 1) mtime_year=$mtime_year_stale live_refresh_rc=$rc_live (expected 0)"; fail=1
+  note "FAIL: stolen-token refresh rc=$rc_stale (expected 1) mtime before=$before_mtime14 after=$after_mtime14 (expected equal) live_refresh_rc=$rc_live (expected 0)"; fail=1
 fi
 "$LOCK" release "$D" "$TOKB14" 2>/dev/null
 
@@ -258,12 +266,13 @@ fi
 #     forgot to thread the token through must fail loudly, not corrupt.
 TOK16=$("$LOCK" acquire "$D" "runA" 2>/dev/null)
 touch -t 202001010000 "$D/.run-lock"
+before_mtime16=$(mtime_epoch "$D/.run-lock")
 "$LOCK" refresh "$D" >/dev/null 2>&1; rc=$?
-mtime_year16=$(date -r "$D/.run-lock" +%Y 2>/dev/null || echo "?")
-if [ "$rc" -eq 1 ] && [ "$mtime_year16" = "2020" ]; then
+after_mtime16=$(mtime_epoch "$D/.run-lock")
+if [ "$rc" -eq 1 ] && [ "$after_mtime16" = "$before_mtime16" ]; then
   note "refresh with no token argument is refused (rc=1) and does not touch the lock"
 else
-  note "FAIL: refresh with no token rc=$rc (expected 1) mtime_year=$mtime_year16 (expected 2020)"; fail=1
+  note "FAIL: refresh with no token rc=$rc (expected 1) mtime before=$before_mtime16 after=$after_mtime16 (expected equal)"; fail=1
 fi
 "$LOCK" release "$D" "$TOK16" 2>/dev/null
 

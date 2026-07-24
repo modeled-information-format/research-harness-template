@@ -51,10 +51,10 @@
 # Usage:
 #   run-lock.sh acquire <reports_dir> [label]        # exit 0 acquired (or stole stale, prints TOKEN on stdout);
 #                                                     # 3 held by live run / lost steal race; 2 usage
-#   run-lock.sh refresh <reports_dir> <token>        # touch a HELD lock IF <token> still matches; no-op (exit 0)
-#                                                     # if the lock is already gone (never resurrects); exit 1 if
-#                                                     # the token is missing/mismatched (ownership lost — the
-#                                                     # caller MUST treat this as fatal, not log-and-continue)
+#   run-lock.sh refresh <reports_dir> <token>        # touch a HELD lock IF <token> still matches; exit 1 (fatal,
+#                                                     # never resurrects) if the lock is already gone, OR if the
+#                                                     # token is missing/mismatched — either way ownership is lost
+#                                                     # and the caller MUST treat it as fatal, not log-and-continue
 #   run-lock.sh release <reports_dir> [token]        # drop the lock; if [token] is given and mismatched, skip
 #                                                     # removal (does not own it) instead of deleting another run's lock
 #   run-lock.sh steal   <reports_dir> [label]        # force re-acquire (recovery; e.g. operator-driven /resume);
@@ -124,7 +124,17 @@ recent_activity() {
 stamp_owner() {
   printf '%s\n' "$LABEL" > "$LOCK/owner" 2>/dev/null || true
   RUN_LOCK_TOKEN="${LABEL}:$$:$(date +%s%N 2>/dev/null || date +%s):${RANDOM}${RANDOM}"
-  printf '%s\n' "$RUN_LOCK_TOKEN" > "$LOCK/.owner-token" 2>/dev/null || true
+  # Fail CLOSED if the token can't be persisted (disk full, read-only filesystem):
+  # a token that only ever existed in this shell's memory can never be matched by
+  # a later refresh/release CLI invocation (separate process, no shared shell
+  # state — see file header), so an un-persisted "success" here would silently
+  # produce a lock that can never again be safely refreshed or released. Return
+  # non-zero and print nothing; every caller below MUST treat that as acquisition
+  # failure and release the lock it just created rather than leave a stuck,
+  # unusable acquisition behind.
+  if ! printf '%s\n' "$RUN_LOCK_TOKEN" > "$LOCK/.owner-token" 2>/dev/null; then
+    return 1
+  fi
   printf '%s\n' "$RUN_LOCK_TOKEN"
 }
 
@@ -133,7 +143,11 @@ case "$CMD" in
     mkdir -p "$DIR" || { echo "run-lock: cannot create $DIR — lock protocol inactive, refusing to proceed." >&2; exit 2; }
     if mkdir "$LOCK" 2>/dev/null; then   # atomic: succeeds only if no holder existed
       echo "run-lock: acquired ($DIR)" >&2
-      stamp_owner
+      if ! stamp_owner; then
+        echo "run-lock: FAILED to persist ownership token for $DIR (disk full or read-only filesystem?) — releasing the lock rather than leave an un-refreshable/un-releasable acquisition behind." >&2
+        rm -rf "$LOCK"
+        exit 2
+      fi
       exit 0
     fi
     if fresh; then
@@ -146,7 +160,11 @@ case "$CMD" in
     rm -rf "$LOCK"
     if mkdir "$LOCK" 2>/dev/null; then
       echo "run-lock: stole STALE lock on $DIR (previous holder left it >${STALE_MIN}m ago)" >&2
-      stamp_owner
+      if ! stamp_owner; then
+        echo "run-lock: FAILED to persist ownership token for $DIR (disk full or read-only filesystem?) — releasing the lock rather than leave an un-refreshable/un-releasable acquisition behind." >&2
+        rm -rf "$LOCK"
+        exit 2
+      fi
       exit 0
     fi
     echo "run-lock: DENIED — lost the steal race for a stale lock on $DIR (another run is recovering it)." >&2
@@ -230,7 +248,11 @@ case "$CMD" in
     rm -rf "$LOCK" 2>/dev/null
     if mkdir "$LOCK" 2>/dev/null; then
       echo "run-lock: stole lock on $DIR (forced)" >&2
-      stamp_owner
+      if ! stamp_owner; then
+        echo "run-lock: FAILED to persist ownership token for $DIR (disk full or read-only filesystem?) — releasing the lock rather than leave an un-refreshable/un-releasable acquisition behind." >&2
+        rm -rf "$LOCK"
+        exit 3
+      fi
       exit 0
     fi
     echo "run-lock: steal FAILED on $DIR — could not (re)create the lock; topic is NOT locked, do not proceed." >&2
