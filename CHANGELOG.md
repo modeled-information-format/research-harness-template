@@ -9,6 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`scripts/lib/container-lock.sh`'s stale-lock steal path is no longer a
+  TOCTOU race.** `container_lock_acquire`'s reclaim of a STALE lock did a
+  plain `rm -rf` then `mkdir` with no coordination between racers: two
+  concurrent stealers could both observe the same stale lock, and if racer
+  A's sequence (rm-rf, mkdir, stamp) completed before racer B's own rm-rf
+  ran, B's rm-rf deleted A's brand-new live lock out from under it and B's
+  mkdir recreated it as B's own — both acquire calls returned rc=0 while
+  only one racer actually owned what was at `$lock_dir`, defeating mutual
+  exclusion entirely (empirically reproduced: two concurrent processes
+  against one synthetic stale lock both returned rc=0). The destructive
+  reclaim is now serialized behind a separate `mkdir`-based steal-mutex
+  (`$lock_dir.steal-mutex`): only the racer that wins it performs the
+  rm-rf+mkdir, and a racer that loses it waits (self-healing if the mutex
+  itself looks abandoned) and then correctly observes the lock as already
+  freshly held instead of stealing it a second time. Adds
+  `evals/container-lock-test.sh`, including a deterministic proof of the
+  serialization invariant and a real concurrent-race integration check,
+  verified to fail against the pre-fix script and pass against this one
+  (research-harness-template#739).
 - **`research-deliverables.js`'s repair loop no longer crashes the entire
   run when a fix attempt itself fails (research-harness-template#740).**
   `const refixed = await parallel(dirty.map((a) => async () => { ... }))`

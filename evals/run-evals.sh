@@ -769,6 +769,13 @@ run "fetch-mif-docs-plugin-provision" bash evals/fetch-mif-docs-plugin-provision
 #     (prevents the shared-findings/ corruption vector).
 run "run-lock-mutual-exclusion" bash evals/run-lock-test.sh
 
+# 1b1. Container lock (scripts/lib/container-lock.sh, sourced by
+#      mif-container-export.sh/import.sh): the stale-lock steal path must
+#      serialize its destructive rm-rf+re-mkdir reclaim so two concurrent
+#      stealers can never both end up believing they hold the lock
+#      (research-harness-template#739 TOCTOU).
+run "container-lock-mutual-exclusion" bash evals/container-lock-test.sh
+
 # 1b2. Finding publish is collision-safe: two dimension-analysts converging on
 #      the same slug must not silently clobber one another (issue #357).
 run "finding-publish-collision" bash evals/finding-publish-collision.sh
