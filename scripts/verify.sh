@@ -4346,6 +4346,12 @@ gate_m31() {
   # future refactor, an external signal -- could skip, leaving it behind
   # despite restore_state()'s trap claiming to fully restore state).
   local malformed_topic="gate-m31-malformed-test"
+  # Tracks whether any of restore_state()'s own backup-restoring `cp` calls
+  # below failed (issue #750): read (never `local`-redeclared) from inside
+  # restore_state() the same dynamic-scope way $T/$TOPIC_DIR/$had_sameas_proposals
+  # already are, so a failure recorded deep in the function is visible at its
+  # end where the decision to keep or delete "$T" is made.
+  local restore_failed=0
   restore_state() {
     # Every restore below is checked (Copilot review, PR #385) -- same
     # rationale as gate_m29/gate_m30's restore_snapshot(): a restore step
@@ -4353,12 +4359,12 @@ gate_m31() {
     # surface a failed restore instead of silently proceeding as if it
     # succeeded. Every step still runs regardless of an earlier one failing.
     cp "$T/harness.config.json.orig" harness.config.json \
-      || bad "gate_m31 restore_state: failed to restore harness.config.json -- real corpus may be left mutated"
+      || { bad "gate_m31 restore_state: failed to restore harness.config.json -- real corpus may be left mutated"; restore_failed=1; }
     cp "$T/concordance.json.orig" reports/concordance.json \
-      || bad "gate_m31 restore_state: failed to restore reports/concordance.json -- real corpus may be left mutated"
+      || { bad "gate_m31 restore_state: failed to restore reports/concordance.json -- real corpus may be left mutated"; restore_failed=1; }
     if [ "$had_sameas_proposals" -eq 1 ]; then
       cp "$T/concordance-sameas-proposals.json.orig" reports/concordance-sameas-proposals.json \
-        || bad "gate_m31 restore_state: failed to restore reports/concordance-sameas-proposals.json"
+        || { bad "gate_m31 restore_state: failed to restore reports/concordance-sameas-proposals.json"; restore_failed=1; }
     else
       rm -f reports/concordance-sameas-proposals.json
     fi
@@ -4369,7 +4375,16 @@ gate_m31() {
     # same defensive cleanup gate_m29/gate_m30's restore_snapshot() already
     # does for that lock, needed here too now that export shares it.
     rm -rf "$TOPIC_DIR/.container.lock"
-    rm -rf "$T"
+    # issue #750: only delete the backup scratch dir when every restore step
+    # above actually succeeded. Deleting it unconditionally -- the prior
+    # behavior -- destroyed the only copy of the pre-run harness.config.json/
+    # concordance.json originals at the exact moment a failed restore had
+    # already left the real tracked files mutated, with no recovery path.
+    if [ "$restore_failed" -eq 1 ]; then
+      bad "gate_m31 restore_state: a restore step failed above -- preserving backup instead of deleting it so the pre-run harness.config.json/concordance.json originals can still be recovered manually: $T"
+    else
+      rm -rf "$T"
+    fi
     trap - EXIT
   }
   trap restore_state RETURN EXIT
