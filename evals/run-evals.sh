@@ -934,6 +934,25 @@ json.dump({\"topics\": [f\"t{i}\" for i in range(n)], \"verdict_distribution\": 
   [ ! -e "$d/reports/_corpus/README.md" ]
 '
 
+# 5b-4d. build-topic-readme.sh's corpus_build() must fail closed on a
+#        truncated/invalid corpus-map.json, exactly like corpus_check() already
+#        does (research-harness-template#761): before the fix, every jq -r
+#        read in corpus_build() silently returned empty on malformed JSON, so
+#        the script wrote a garbled README (blank counts, empty Topics table)
+#        and still reported "wrote ... (  topics)" with exit 0 instead of
+#        failing. Asserts BOTH the non-zero exit AND that no README was
+#        written — a fail-closed guard that still let the corrupt file land
+#        would be no better than the bug.
+run "build-topic-readme-corpus-build-invalid-json-fails-closed" bash -c '
+  d="'"$TMP"'/badjson-corpus"; mkdir -p "$d/reports/_corpus"
+  printf "%s" "{\"topics\":[\"a\",\"b\"" > "$d/reports/_corpus/corpus-map.json"
+  CLAUDE_PROJECT_DIR="$d" bash scripts/build-topic-readme.sh _corpus >/dev/null 2>&1
+  status=$?
+  [ "$status" -eq 0 ] && exit 1
+  [ -e "$d/reports/_corpus/README.md" ] && exit 1
+  exit 0
+'
+
 # 5b-5. render-artifact.sh stamps `slug:` as a clean repo-root-relative route
 #       even when $OUT is given as an ABSOLUTE path under the repo checkout
 #       (report-synthesizer.md documents this usage via an absolute
