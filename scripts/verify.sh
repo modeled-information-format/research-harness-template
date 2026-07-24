@@ -3497,22 +3497,35 @@ gate_m29() {
     # as if the restore succeeded. Every step still runs regardless (this is
     # best-effort cleanup, not a fail-fast sequence): one failed restore
     # should not skip restoring everything else.
-    rm -rf "$TOPIC_DIR/findings"
-    mkdir -p "$TOPIC_DIR/findings"
+    #
+    # research-harness-template#810 (same defect/fix shape as #754's
+    # gate_m30 fix): a failed restore step must NOT still cause the
+    # unconditional `rm -rf "$T"` below to run -- doing so destroyed the
+    # only backup of the pre-mutation corpus even though the failure was
+    # already detected and reported via `bad`, leaving a user running
+    # verify.sh with real, uncommitted findings no recovery path. Track
+    # whether any restore step failed and only remove $T once every step
+    # has actually succeeded; otherwise leave it in place for manual
+    # inspection/recovery.
+    local restore_failed=0
+    rm -rf "$TOPIC_DIR/findings" \
+      || { bad "gate_m29 restore_snapshot: failed to clear $TOPIC_DIR/findings before restoring it -- real corpus may be left mutated"; restore_failed=1; }
+    mkdir -p "$TOPIC_DIR/findings" \
+      || { bad "gate_m29 restore_snapshot: failed to recreate $TOPIC_DIR/findings before restoring it -- real corpus may be left mutated"; restore_failed=1; }
     cp -r "$T/snapshot/findings/." "$TOPIC_DIR/findings/" \
-      || bad "gate_m29 restore_snapshot: failed to restore $TOPIC_DIR/findings -- real corpus may be left mutated"
+      || { bad "gate_m29 restore_snapshot: failed to restore $TOPIC_DIR/findings -- real corpus may be left mutated"; restore_failed=1; }
     cp "$T/snapshot/README.md" "$TOPIC_DIR/README.md" \
-      || bad "gate_m29 restore_snapshot: failed to restore $TOPIC_DIR/README.md -- real corpus may be left mutated"
+      || { bad "gate_m29 restore_snapshot: failed to restore $TOPIC_DIR/README.md -- real corpus may be left mutated"; restore_failed=1; }
     cp "$T/snapshot/concordance.json" reports/concordance.json \
-      || bad "gate_m29 restore_snapshot: failed to restore reports/concordance.json -- real corpus may be left mutated"
+      || { bad "gate_m29 restore_snapshot: failed to restore reports/concordance.json -- real corpus may be left mutated"; restore_failed=1; }
     if [ "$had_sameas_proposals" -eq 1 ]; then
       cp "$T/snapshot/concordance-sameas-proposals.json" reports/concordance-sameas-proposals.json \
-        || bad "gate_m29 restore_snapshot: failed to restore reports/concordance-sameas-proposals.json"
+        || { bad "gate_m29 restore_snapshot: failed to restore reports/concordance-sameas-proposals.json"; restore_failed=1; }
     else
       rm -f reports/concordance-sameas-proposals.json
     fi
     cp "$T/snapshot/harness.config.json" harness.config.json \
-      || bad "gate_m29 restore_snapshot: failed to restore harness.config.json -- real corpus may be left mutated"
+      || { bad "gate_m29 restore_snapshot: failed to restore harness.config.json -- real corpus may be left mutated"; restore_failed=1; }
     rm -rf "reports/$badontmap_topic"
     rm -f "$TOPIC_DIR/knowledge-graph.json"
     rm -rf "$TOPIC_DIR/.container.lock"
@@ -3522,7 +3535,7 @@ gate_m29() {
     # two synthetic topics.
     if [ -f "$T/container-lock.sh.orig" ]; then
       cp "$T/container-lock.sh.orig" "$CONTAINER_LOCK_LIB" \
-        || bad "gate_m29 restore_snapshot: failed to restore $CONTAINER_LOCK_LIB -- real corpus may be left mutated"
+        || { bad "gate_m29 restore_snapshot: failed to restore $CONTAINER_LOCK_LIB -- real corpus may be left mutated"; restore_failed=1; }
     fi
     rm -rf "reports/$ontlock_topic_full" "reports/$ontlock_topic_subset"
     # 29q (issue #759) instrumentation cleanup: restore the real
@@ -3531,10 +3544,14 @@ gate_m29() {
     # its two synthetic topics.
     if [ -f "$T/mif-container-digest.sh.orig" ]; then
       cp "$T/mif-container-digest.sh.orig" "$CONTAINER_DIGEST_BIN" \
-        || bad "gate_m29 restore_snapshot: failed to restore $CONTAINER_DIGEST_BIN -- real corpus may be left mutated"
+        || { bad "gate_m29 restore_snapshot: failed to restore $CONTAINER_DIGEST_BIN -- real corpus may be left mutated"; restore_failed=1; }
     fi
     rm -rf "reports/$toctou_topic_full" "reports/$toctou_topic_subset"
-    rm -rf "$T"
+    if [ "$restore_failed" -eq 0 ]; then
+      rm -rf "$T"
+    else
+      info "gate_m29 restore_snapshot: leaving backup at $T in place after a failed restore step -- inspect/recover it manually, then remove it"
+    fi
     # Deregister the EXIT copy of this trap once the restore has actually
     # run: EXIT is a last-resort net for a fatal error INSIDE this function
     # (e.g. an unbound-variable abort under this script's own `set -u`,
@@ -4219,6 +4236,49 @@ DIGESTEOF
     ok "ontology-map write branch re-verifies the resource's digest immediately before writing, full-scope and subset-scope alike (#759)"
   else
     bad "ontology-map TOCTOU-recheck regression check failed (#759): full rc=$rc_toctou_full out='$toctou_full_out'; subset rc=$rc_toctou_subset out='$toctou_subset_out'; subset dest unchanged=$([ "$toctou_subset_dest_after" = "$toctou_subset_dest_before" ] && echo yes || echo no)"
+  fi
+
+  # 29r. Regression (research-harness-template#810, same premise as
+  #      gate_m30's #754 regression check): restore_snapshot's own backup
+  #      ($T) must survive a FAILED restore step, not get deleted
+  #      unconditionally. Force one restore `cp` (reports/concordance.json)
+  #      to fail via a permission error, invoke restore_snapshot directly
+  #      with `bad`/`ok`/`info` shadowed to no-ops (so this induced,
+  #      expected failure -- restore_snapshot correctly calling `bad` on it
+  #      -- does not itself count against this gate's real PASS/FAIL
+  #      totals, and its `info` note doesn't leak into the captured output
+  #      this probe checks), and assert $T is still present afterward. The
+  #      permission bit is restored, and gate_m29's own trap-driven
+  #      restore_snapshot (armed at the top of this function) then runs a
+  #      real, unobstructed restore at the true end of the gate, so this
+  #      probe never leaves the corpus or the scratch dir behind.
+  #
+  #      chmod 000 does not deny write to root -- or any other
+  #      DAC_OVERRIDE-capable process, e.g. a root-uid Docker/devcontainer
+  #      verify.sh run -- so the induced restore `cp` would then SUCCEED, $T
+  #      would be deleted, and this probe would false-FAIL against a correct
+  #      fix (research-harness-template#777, same premise as gate 27f/30g).
+  #      Probe writability after chmod 000 and, if the file is still
+  #      writable, SKIP: the induced-failure premise does not hold.
+  chmod 000 reports/concordance.json
+  if [ -w reports/concordance.json ]; then
+    chmod 644 reports/concordance.json
+    skip "restore_snapshot backup-preservation check (chmod 000 did not deny write -- running as root or with DAC override; premise does not hold, #777)"
+  else
+    local t_survives_29r
+    t_survives_29r="$(
+      bad() { :; }
+      ok() { :; }
+      info() { :; }
+      restore_snapshot >/dev/null 2>&1
+      [ -d "$T" ] && echo yes || echo no
+    )"
+    chmod 644 reports/concordance.json
+    if [ "$t_survives_29r" = "yes" ]; then
+      ok "restore_snapshot preserves its own backup ($T) when a restore step fails, instead of deleting it unconditionally"
+    else
+      bad "restore_snapshot deleted its backup ($T) even though a restore step failed -- unrecoverable corpus mutation risk"
+    fi
   fi
 }
 

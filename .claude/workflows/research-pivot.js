@@ -190,7 +190,20 @@ const listing = await agent(
   `List the @id of every finding file under ${RDIR}/findings/ (exclude quarantine/ and archive/ siblings), harness ${H}.`,
   { label: 'pivot:list', model: 'haiku', effort: 'low', schema: LIST_SCHEMA },
 )
-const ids = (listing && listing.findingIds) || []
+// #741: a null listing result (the agent() call errored, or the subagent
+// died on a terminal API error — the same parallel()/agent() failure shape
+// #758 already documents for the Classify batches below) must NOT collapse
+// to ids = [] the way it silently did before this fix. An empty array is
+// indistinguishable from a genuinely empty corpus, so this deserves the
+// SAME fatal guard the Reshape phase already applies to its own output
+// immediately above (`if (!reshape) throw`) — the Listing result is exactly
+// as foundational to correct carry/stale/gap tracking as Reshape's output
+// is to the goal version, and silently defaulting to empty here would mask
+// a topic that in fact holds a substantial corpus on disk, potentially
+// triggering an unnecessary full re-research of dimensions that already had
+// findings.
+if (!listing) throw new Error('research-pivot: listing failed — cannot distinguish a genuinely empty corpus from a failed listing call, refusing to silently proceed as if 0 findings exist (#741)')
+const ids = listing.findingIds || []
 const batches = []
 for (let i = 0; i < ids.length; i += BATCH) batches.push(ids.slice(i, i + BATCH))
 function classifyBatch(batch, bi, isRetry) {

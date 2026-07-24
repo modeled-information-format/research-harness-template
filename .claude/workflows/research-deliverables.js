@@ -717,26 +717,63 @@ if (dirty.length) {
       const problemsText = a.validation
         ? a.validation.problems.map((p) => `- ${p}`).join('\n')
         : '- initial validation could not be completed for this artifact (the Check phase returned no result); re-render and re-validate it from scratch.'
-      await agent(
-        `Fix these validation problems in ${a.outputPath} (harness ${H}) without changing any claim content or citations:\n` +
-          problemsText,
-        { label: `fix:${a.genre}x${a.channel}`, phase: 'Check', model: 'haiku' },
-      )
-      // Re-validate after the fix — a fix is not done until it proves out
-      // against the same check that failed it (write-validate atomicity,
-      // fail-closed; mirrors research-fanout.js's repair -> revalidate
-      // precedent). Without this, `clean` in the returned artifacts[] would
-      // permanently reflect the PRE-fix state even when the fix succeeded.
-      const rv = await agent(
-        checkPrompt(a.outputPath, a.mechanism, a.genre, a.channel),
-        { label: `recheck:${a.genre}x${a.channel}`, phase: 'Check', model: 'haiku', effort: 'low', schema: CHECK_SCHEMA },
-      )
-      return { a, rv }
+      // research-harness-template#740: per the documented parallel()
+      // contract, a thunk that THROWS (rather than resolving) makes its own
+      // slot in the returned array resolve to `null`, not reject the whole
+      // parallel() call. The `agent()` calls below can throw (a subagent
+      // dying on a terminal error after retries is one of agent()'s two
+      // documented failure modes, the other being a null resolution already
+      // handled by the WARNING/recheck fallbacks). Without this try/catch,
+      // a throw here would surface only as a bare `null` in `refixed`, and
+      // the `for (const { a, rv } of refixed)` destructure below would crash
+      // the whole run — losing every OTHER artifact's already-succeeded
+      // fix/recheck in the same batch, not just this one's. Catch it here
+      // instead, so this thunk always resolves to a real `{ a, rv: null }`
+      // object and the failure is contained to just this one artifact.
+      try {
+        await agent(
+          `Fix these validation problems in ${a.outputPath} (harness ${H}) without changing any claim content or citations:\n` +
+            problemsText,
+          { label: `fix:${a.genre}x${a.channel}`, phase: 'Check', model: 'haiku' },
+        )
+        // Re-validate after the fix — a fix is not done until it proves out
+        // against the same check that failed it (write-validate atomicity,
+        // fail-closed; mirrors research-fanout.js's repair -> revalidate
+        // precedent). Without this, `clean` in the returned artifacts[] would
+        // permanently reflect the PRE-fix state even when the fix succeeded.
+        const rv = await agent(
+          checkPrompt(a.outputPath, a.mechanism, a.genre, a.channel),
+          { label: `recheck:${a.genre}x${a.channel}`, phase: 'Check', model: 'haiku', effort: 'low', schema: CHECK_SCHEMA },
+        )
+        return { a, rv }
+      } catch (err) {
+        // A thrown (non-Error) value — e.g. `throw 'boom'` — has no
+        // `.message`; fall back to the thrown value itself (or its own
+        // string form) so the log line is never a bare "undefined".
+        const errText = err instanceof Error ? err.message : String(err)
+        log(`WARNING: repair (fix and/or re-check) threw for ${a.outputPath}: ${errText} — leaving prior (failing) validation recorded`)
+        // Tag this as the thrown case (distinct from a *resolved* `rv: null`,
+        // e.g. a future recheck agent() call that legitimately returns no
+        // result) so the loop below doesn't also log the generic
+        // "re-validation ... produced no result" warning for it — that
+        // warning reads as a null recheck, not a thrown repair, and logging
+        // both for the same failure is duplicate and misleading.
+        return { a, rv: null, threw: true }
+      }
     }),
   )
-  for (const { a, rv } of refixed) {
+  // Defense in depth: even with the try/catch above, treat a `null` entry in
+  // `refixed` (e.g. a future thunk that reintroduces an unguarded throw) as
+  // "no re-validation happened" rather than crashing the destructure —
+  // mirrors the `rendered.filter(Boolean)` precedent a few lines up.
+  for (const entry of refixed) {
+    if (!entry) {
+      log('WARNING: a repair-loop entry resolved to null — leaving its prior (failing) validation recorded')
+      continue
+    }
+    const { a, rv, threw } = entry
     if (rv) a.validation = rv
-    else log(`WARNING: re-validation after fix produced no result for ${a.outputPath} — leaving prior (failing) validation recorded`)
+    else if (!threw) log(`WARNING: re-validation after fix produced no result for ${a.outputPath} — leaving prior (failing) validation recorded`)
   }
 }
 
