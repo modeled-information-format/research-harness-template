@@ -29,7 +29,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   blip, never on local disk), and `container_lock_release` treats a
   missing/empty stamped `.owner-token` as a mismatch (not "no guard needed")
   when the caller supplies a real token, so it never removes a live lock
-  that simply was never stamped (PR #796 review).
+  that simply was never stamped, and its `token` parameter now defaults to
+  empty (`"${2:-}"`) rather than a bare `"$2"` -- a real CI import run hit a
+  `set -u` unbound-variable abort on this exact reference mid-import (every
+  finding already written, `ontology-map.json` and the deliverables never
+  reached), which this default converts into the function's own existing
+  graceful "no ownership token supplied" refusal (PR #796 review).
 
 ## [0.16.38] - 2026-07-23
 

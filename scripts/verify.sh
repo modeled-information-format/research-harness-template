@@ -4380,12 +4380,38 @@ gate_m31() {
     container_lock_release "$UNSTAMPED_LOCK" "some-caller-token" 2>/dev/null
     [ -d "$UNSTAMPED_LOCK" ] || exit 1   # must NOT have been removed
     rm -rf "$UNSTAMPED_LOCK"
+
+    # (c) a call missing its token argument entirely (not merely an empty
+    #     string -- one fewer positional parameter) must hit the graceful
+    #     "no ownership token supplied" refusal, not a `set -u` unbound-
+    #     variable abort. This is what actually broke a real CI import run
+    #     in this PR's own review: `local token="$2"` (no default) aborted
+    #     the whole shell under this file's own `set -uo pipefail` callers
+    #     the moment `$2` was unbound, mid-import, after every finding had
+    #     already been written (PR #796 review, round 2).
+    ARGCOUNT_LOCK="$TOPIC_DIR/.argcount-test.lock"
+    rm -rf "$ARGCOUNT_LOCK"
+    container_lock_acquire "$ARGCOUNT_LOCK" "argcount-test" || exit 1
+    argcount_err="$( ( set -uo pipefail; container_lock_refresh "$ARGCOUNT_LOCK" ) 2>&1 1>/dev/null )"
+    argcount_rc=$?
+    rm -rf "$ARGCOUNT_LOCK"
+    # Both the graceful refusal AND a `set -u` abort exit 1 here (bash's
+    # default non-interactive-shell behavior on an unbound-variable error),
+    # so the exit code alone can't distinguish them -- assert on the actual
+    # stderr text instead: it must be this function's own graceful message,
+    # never a raw "unbound variable" shell abort.
+    [ "$argcount_rc" -eq 1 ] || exit 1
+    case "$argcount_err" in
+      *"unbound variable"*) exit 1 ;;
+      *"no ownership token supplied"*) : ;;
+      *) exit 1 ;;
+    esac
     exit 0
   )
   if [ "$?" -eq 0 ]; then
-    ok "container-lock (PR #796 review): refresh propagates a touch failure instead of swallowing it, and release refuses to remove an unstamped lock when a token is supplied"
+    ok "container-lock (PR #796 review): refresh propagates a touch failure instead of swallowing it, release refuses to remove an unstamped lock when a token is supplied, and a missing token argument is refused gracefully rather than a set -u abort"
   else
-    bad "container-lock (PR #796 review) touch-failure/unstamped-token regression"
+    bad "container-lock (PR #796 review) touch-failure/unstamped-token/missing-arg regression"
   fi
   rm -rf "$TOPIC_DIR/.touchfail-test.lock" "$TOPIC_DIR/.unstamped-test.lock"
 

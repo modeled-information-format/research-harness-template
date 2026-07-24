@@ -172,7 +172,16 @@ _container_lock_stamp() {
 # resurrecting a released/stolen lock would forge a phantom second owner) -- a
 # run that still legitimately owns the topic always has the dir present.
 container_lock_refresh() {
-  local lock_dir="$1" token="$2" current
+  # token defaults to empty (not a bare "$2") so a call missing its second
+  # argument, for whatever reason, hits this function's own graceful "no
+  # ownership token supplied" refusal below instead of a hard `set -u`
+  # unbound-variable abort -- observed reproducibly in a real CI import run
+  # (research-harness-template PR #796 review) where every static call site
+  # in this repo passes both arguments, yet the abort still occurred; the
+  # exact call path was not pinned down, but this default is unconditionally
+  # correct regardless of cause and mirrors container_lock_release's own
+  # "${2:-}" default just below.
+  local lock_dir="$1" token="${2:-}" current
   if [ -z "$token" ]; then
     echo "container-lock: REFUSED to refresh $lock_dir -- no ownership token supplied. Callers must pass the token container_lock_acquire set via CONTAINER_LOCK_TOKEN; refreshing without one cannot distinguish this run's lock from a different run's." >&2
     return 1
