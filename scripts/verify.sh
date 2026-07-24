@@ -4325,20 +4325,33 @@ gate_m30() {
   #      at the top of this function) then runs a real, unobstructed
   #      restore at the true end of the gate, so this probe never leaves
   #      the corpus or the scratch dir behind.
+  #
+  #      chmod 000 does not deny write to root -- or any other
+  #      DAC_OVERRIDE-capable process, e.g. a root-uid Docker/devcontainer
+  #      verify.sh run -- so the induced restore `cp` would then SUCCEED, $T
+  #      would be deleted, and this probe would false-FAIL against a correct
+  #      fix (research-harness-template#777, same premise as gate 27f above).
+  #      Probe writability after chmod 000 and, if the file is still
+  #      writable, SKIP: the induced-failure premise does not hold.
   chmod 000 reports/concordance.json
-  local t_survives
-  t_survives="$(
-    bad() { :; }
-    ok() { :; }
-    info() { :; }
-    restore_snapshot >/dev/null 2>&1
-    [ -d "$T" ] && echo yes || echo no
-  )"
-  chmod 644 reports/concordance.json
-  if [ "$t_survives" = "yes" ]; then
-    ok "restore_snapshot preserves its own backup ($T) when a restore step fails, instead of deleting it unconditionally"
+  if [ -w reports/concordance.json ]; then
+    chmod 644 reports/concordance.json
+    skip "restore_snapshot backup-preservation check (chmod 000 did not deny write -- running as root or with DAC override; premise does not hold, #777)"
   else
-    bad "restore_snapshot deleted its backup ($T) even though a restore step failed -- unrecoverable corpus mutation risk"
+    local t_survives
+    t_survives="$(
+      bad() { :; }
+      ok() { :; }
+      info() { :; }
+      restore_snapshot >/dev/null 2>&1
+      [ -d "$T" ] && echo yes || echo no
+    )"
+    chmod 644 reports/concordance.json
+    if [ "$t_survives" = "yes" ]; then
+      ok "restore_snapshot preserves its own backup ($T) when a restore step fails, instead of deleting it unconditionally"
+    else
+      bad "restore_snapshot deleted its backup ($T) even though a restore step failed -- unrecoverable corpus mutation risk"
+    fi
   fi
 }
 
