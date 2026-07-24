@@ -767,6 +767,14 @@ run "render-artifact-version-increments" bash -c '
 #        checked (set -e is not in effect in render-artifact.sh).
 run "render-artifact-atomic-write" bash evals/render-artifact-atomic-write.sh
 
+# 5b-6c. Two concurrent render-artifact.sh invocations targeting the SAME
+#        $OUT must never both silently succeed with a DUPLICATE version stamp
+#        (issue #776): the whole read-prior-version -> render -> mv critical
+#        section is now serialized per-$OUT via a container-lock-style mkdir
+#        lock, so a losing racer is denied loudly (clear stderr diagnostic,
+#        non-zero exit) rather than corrupting the version counter silently.
+run "render-artifact-concurrent-version-race" bash evals/render-artifact-concurrent-version-race.sh
+
 # 5b-7. backfill-report-slugs.sh only stamps the key actually missing (a file
 #       with slug but no version gets ONLY version added, never a duplicate
 #       slug line), --dry-run reports ONLY the missing key (not both,
