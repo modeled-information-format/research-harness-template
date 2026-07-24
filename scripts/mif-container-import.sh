@@ -109,10 +109,28 @@ POSITIONAL=()
 for arg in "$@"; do
   case "$arg" in
     --dry-run) DRY_RUN=1 ;;
+    # A mistyped/unrecognized flag (e.g. --dryrun, -dry-run) used to fall
+    # through the wildcard branch below into POSITIONAL[] like any ordinary
+    # positional argument -- DRY_RUN silently stayed 0 (its default) and the
+    # script proceeded straight through step 4's real write, contradicting
+    # this script's own "--dry-run: ... report the outcome without writing
+    # anything" contract with zero error or warning (research-harness-
+    # template#746). Anything that LOOKS like an option (leading '-') but
+    # isn't the exact literal --dry-run is now rejected here, before it can
+    # ever reach POSITIONAL[] or the count check below.
+    -*)
+      echo "mif-container-import: unrecognized option: $arg" >&2
+      echo "usage: mif-container-import.sh <container-dir> <topic> [--dry-run]" >&2
+      exit 2
+      ;;
     *) POSITIONAL+=("$arg") ;;
   esac
 done
-[ "${#POSITIONAL[@]}" -ge 2 ] || {
+# Exactly 2 (not merely "at least 2", #746): a genuine typo'd flag is now
+# caught above, but an extra bare positional argument (no leading '-') would
+# otherwise still silently slide into POSITIONAL[2] and be ignored the same
+# way -- closing that adjacent instance of the same silent-acceptance defect.
+[ "${#POSITIONAL[@]}" -eq 2 ] || {
   echo "usage: mif-container-import.sh <container-dir> <topic> [--dry-run]" >&2
   exit 2
 }

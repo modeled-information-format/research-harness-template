@@ -452,6 +452,20 @@ run "pivot-check" bash evals/pivot-check.sh
 # real-corpus-mutation window.
 run "import-check" bash evals/import-check.sh
 
+# research-harness-template#746: a mistyped or unrecognized flag (e.g.
+# --dryrun, -dry-run) fell through the arg-parsing loop's wildcard branch
+# into POSITIONAL[] like an ordinary positional argument -- DRY_RUN silently
+# stayed 0 (its default) and the old "at least 2" positional count check
+# never caught it, so the script proceeded straight through step 4's real
+# write with zero error or warning, contradicting its own documented
+# --dry-run contract. Hermetic (every case exits during arg-parsing, before
+# any directory/manifest resolution, so no real container/topic fixture is
+# needed): a mistyped flag is now rejected with a message naming the bad
+# option (never silently absorbed), an adjacent extra-bare-positional case
+# is rejected too (exact count, not >=2), and the real --dry-run flag plus
+# ordinary 2-arg usage are proven unaffected by the fix.
+run "import-arg-parse-check" bash evals/import-arg-parse-check.sh
+
 # The research-coverage-audit module's Sweep/Critique/Prioritize pipeline has
 # deterministic teeth where its own logic can express it (#597, Epic #549,
 # following #595's vendoring and #596's docs): BACKLOG_SCHEMA's action enum

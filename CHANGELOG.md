@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`mif-container-import.sh` now rejects a mistyped or unrecognized flag
+  instead of silently absorbing it as an extra positional argument
+  (research-harness-template#746).** The arg-parsing loop's wildcard branch
+  previously routed anything that wasn't the exact literal `--dry-run` into
+  `POSITIONAL[]`, and the positional-count check only required *at least* 2
+  entries — so a call like `mif-container-import.sh <dir> <topic> --dryrun`
+  (missing a hyphen) left `DRY_RUN` at its default 0 and the script
+  proceeded straight through step 4's real write with zero error or
+  warning, directly contradicting its own documented `--dry-run` contract.
+  Anything that looks like an option (a leading `-`) but isn't the exact
+  literal `--dry-run` is now rejected with a message naming the bad option,
+  before it can ever reach `POSITIONAL[]`; the count check also tightens
+  from `-ge 2` to `-eq 2` to close the adjacent instance of the same
+  silent-acceptance class (a stray extra bare positional argument).
 - **`container_lock_refresh` (and `container_lock_release`) now verify
   ownership before acting on `reports/<topic>/.container.lock`.**
   `container_lock_acquire` previously stamped only a human-readable `owner`
