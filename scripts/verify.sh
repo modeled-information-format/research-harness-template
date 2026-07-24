@@ -4455,7 +4455,7 @@ gate_m31() {
   jq --arg id "$roundtrip_topic" '.topics += [{id: $id, title: "gate_m31 roundtrip", namespace: ("harness/" + $id), status: "active", ontologies: []}]' \
     harness.config.json > "$T/config-with-roundtrip-topic.json" && cp "$T/config-with-roundtrip-topic.json" harness.config.json
   mkdir -p "reports/$roundtrip_topic/findings"
-  "$IMPORT" "$T/full-export" "$roundtrip_topic" > /dev/null 2>&1
+  local roundtrip_import_out; roundtrip_import_out="$("$IMPORT" "$T/full-export" "$roundtrip_topic" 2>&1)"
   local rc_roundtrip=$?
   local roundtrip_count; roundtrip_count="$(find "reports/$roundtrip_topic/findings" -maxdepth 1 -name '*.json' 2>/dev/null | wc -l | tr -d ' ')"
   local source_ids dest_ids
@@ -4469,7 +4469,11 @@ gate_m31() {
   if [ "$rc_roundtrip" -eq 0 ] && [ "$roundtrip_count" = "$real_finding_count" ] && [ "$source_ids" = "$dest_ids" ] && [ "$ontmap_match" = "yes" ]; then
     ok "export -> import round-trip into a fresh topic reproduces the exact same @id set AND ontology-map.json"
   else
-    bad "round-trip check failed (rc=$rc_roundtrip count=$roundtrip_count/$real_finding_count ids_match=$([ "$source_ids" = "$dest_ids" ] && echo yes || echo no) ontmap_match=$ontmap_match)"
+    # roundtrip_import_out is included on failure only (PR #796 CI
+    # investigation): a bare rc/count/match summary gave no way to tell
+    # WHICH of import.sh's 5 steps actually rejected the import when this
+    # failed reproducibly in CI but not in any local repro attempted.
+    bad "round-trip check failed (rc=$rc_roundtrip count=$roundtrip_count/$real_finding_count ids_match=$([ "$source_ids" = "$dest_ids" ] && echo yes || echo no) ontmap_match=$ontmap_match) -- import output: $roundtrip_import_out"
   fi
 
   # 31f2. The topic's own deliverables (research-harness-template#437) also
