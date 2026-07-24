@@ -9,6 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`container_lock_refresh` (and `container_lock_release`) now verify
+  ownership before acting on `reports/<topic>/.container.lock`.**
+  `container_lock_acquire` previously stamped only a human-readable `owner`
+  label, so a refresh call had no way to tell "the lock I originally
+  acquired" from "a different run's lock that has since replaced mine at the
+  same path" (a stale-lock steal race, or a phase boundary far enough apart
+  for `CONTAINER_LOCK_STALE_MIN` to elapse between refreshes) — it silently
+  extended whichever lock currently occupied the path. `container_lock_acquire`
+  now also stamps a unique per-acquisition token (`CONTAINER_LOCK_TOKEN` /
+  `$lock_dir/.owner-token`); `mif-container-export.sh`/`mif-container-import.sh`
+  capture it and pass it to every later refresh/release call, and a mismatch
+  now aborts the export/import instead of continuing under a false assumption
+  of exclusive access (research-harness-template#763). `container_lock_refresh`
+  also now propagates a PERSISTENT `touch` failure as a fatal nonzero return
+  instead of swallowing it (retrying up to 3x with a brief backoff first --
+  a single-attempt fatal touch reproducibly broke a real, healthy import
+  under CI's once-per-finding refresh cadence on a one-off transient I/O
+  blip, never on local disk), and `container_lock_release` treats a
+  missing/empty stamped `.owner-token` as a mismatch (not "no guard needed")
+  when the caller supplies a real token, so it never removes a live lock
+  that simply was never stamped, and its `token` parameter now defaults to
+  empty (`"${2:-}"`) rather than a bare `"$2"` -- a real CI import run hit a
+  `set -u` unbound-variable abort on this exact reference mid-import (every
+  finding already written, `ontology-map.json` and the deliverables never
+  reached), which this default converts into the function's own existing
+  graceful "no ownership token supplied" refusal (PR #796 review).
 - **`research-deliverables.js`'s `channel` field now gets the same
   injection-validation guard `genre` already had (#764).** The Route phase's
   GENRE STRING VALIDATION guard (#640) checked a caller-controlled

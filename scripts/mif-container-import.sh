@@ -179,6 +179,11 @@ if [ "$lock_rc" -eq 3 ]; then
 elif [ "$lock_rc" -ne 0 ]; then
   fail "failed to create import lock at $LOCK_DIR: ${CONTAINER_LOCK_LAST_ERROR:-mkdir failed for an unknown reason}"
 fi
+# Captured immediately after a successful acquire (research-harness-template#763):
+# every later container_lock_refresh/container_lock_release call for this lock
+# passes LOCK_TOKEN so refresh can detect (and release can avoid stomping on) a
+# lock this run no longer actually owns -- see container-lock.sh's own header.
+LOCK_TOKEN="$CONTAINER_LOCK_TOKEN"
 # One EXIT trap for the whole script (not per-loop-iteration RETURN traps,
 # which never fire in top-level script code -- only in functions/sourced
 # scripts): releases the lock; if step 4's overwrite-in-place path left
@@ -275,7 +280,7 @@ cleanup() {
     echo "mif-container-import: rolled back this run's step-4 writes -- destination corpus restored to its pre-import state (issue #673)" >&2
   fi
   [ -n "$ROLLBACK_DIR" ] && rm -rf "$ROLLBACK_DIR" 2>/dev/null
-  container_lock_release "$LOCK_DIR"
+  container_lock_release "$LOCK_DIR" "$LOCK_TOKEN"
 }
 trap cleanup EXIT
 
@@ -621,7 +626,8 @@ while IFS=$'\t' read -r rpath rdigest rmiftype; do
     *)                           doc_dest="" ;;
   esac
   if [ -n "$doc_dest" ]; then
-    container_lock_refresh "$LOCK_DIR"
+    container_lock_refresh "$LOCK_DIR" "$LOCK_TOKEN" \
+      || fail "lost exclusive access to $LOCK_DIR mid-import -- another run has taken over this topic's lock"
     rfile="$CONTAINER_DIR/$rpath"
     if [ -f "$doc_dest" ]; then
       dest_digest="$(scripts/mif-container-digest.sh resource "$doc_dest" 2>/dev/null)" || dest_digest=""
@@ -655,8 +661,11 @@ while IFS=$'\t' read -r rpath rdigest rmiftype; do
   [ "$rmiftype" = "finding" ] || continue
   # Refresh the lock every iteration (issue #382 review): a topic large
   # enough to genuinely run past CONTAINER_LOCK_STALE_MIN must not have its
-  # own still-live lock misjudged as stale and stolen mid-import.
-  container_lock_refresh "$LOCK_DIR"
+  # own still-live lock misjudged as stale and stolen mid-import. Fatal on
+  # mismatch (issue #763): a mismatched token means another run has already
+  # taken over this lock, so continuing to write here would race it.
+  container_lock_refresh "$LOCK_DIR" "$LOCK_TOKEN" \
+    || fail "lost exclusive access to $LOCK_DIR mid-import -- another run has taken over this topic's lock"
   rfile="$CONTAINER_DIR/$rpath"
   rid="$(jq -r '."@id"' "$rfile")"
   [ -n "$rid" ] && [ "$rid" != "null" ] || fail "resource $rpath has no @id, cannot upsert"

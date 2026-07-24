@@ -4472,20 +4472,24 @@ gate_m31() {
   #      practical to simulate end-to-end here) by backdating the lock past
   #      the window, refreshing it, then confirming it reads as fresh again
   #      -- and that refresh never resurrects an already-released lock
-  #      (mirrors run-lock.sh's own refresh contract).
+  #      (mirrors run-lock.sh's own refresh contract). Uses a real
+  #      container_lock_acquire to obtain a genuine ownership token
+  #      (issue #763's refresh now requires one -- see 31a6 below for the
+  #      ownership-mismatch case this signature change exists to catch).
   (
     # shellcheck source=scripts/lib/container-lock.sh
     . scripts/lib/container-lock.sh
     RL_LOCK="$TOPIC_DIR/.refresh-test.lock"
     rm -rf "$RL_LOCK"
-    mkdir -p "$RL_LOCK"
+    container_lock_acquire "$RL_LOCK" "refresh-test" || exit 1
+    RL_TOKEN="$CONTAINER_LOCK_TOKEN"
     touch -t 200001010000 "$RL_LOCK"
-    container_lock_fresh "$RL_LOCK" && exit 1   # sanity: backdated lock reads stale first
-    container_lock_refresh "$RL_LOCK"
-    container_lock_fresh "$RL_LOCK" || exit 1   # after refresh, reads fresh again
+    container_lock_fresh "$RL_LOCK" && exit 1          # sanity: backdated lock reads stale first
+    container_lock_refresh "$RL_LOCK" "$RL_TOKEN" || exit 1
+    container_lock_fresh "$RL_LOCK" || exit 1          # after refresh, reads fresh again
     rm -rf "$RL_LOCK"
-    container_lock_refresh "$RL_LOCK"           # no-op on a lock that was never created
-    [ ! -e "$RL_LOCK" ] || exit 1               # must not resurrect it
+    container_lock_refresh "$RL_LOCK" "$RL_TOKEN" 2>/dev/null && exit 1   # must fail, not silently no-op, on a lock that's gone
+    [ ! -e "$RL_LOCK" ] || exit 1                      # must not resurrect it
     exit 0
   )
   if [ "$?" -eq 0 ]; then
@@ -4493,7 +4497,129 @@ gate_m31() {
   else
     bad "container-lock (#382 review follow-up) container_lock_refresh regression"
   fi
-  rm -rf "$TOPIC_DIR/.refresh-test.lock"
+
+  # 31a6. Regression test for research-harness-template#763: container_lock_refresh
+  #      (and container_lock_release) must detect a lock this run no longer
+  #      actually owns -- e.g. a different run stole it via the staleness path,
+  #      or reacquired it after this run's own release -- instead of silently
+  #      acting on whatever currently occupies $lock_dir. Simulated directly
+  #      against the sourced library: "run-a" acquires, is stolen out from
+  #      under it by "run-b" (a fresh acquire at the same path, giving it a
+  #      DIFFERENT ownership token), and run-a's own stale token must then be
+  #      refused by both refresh and release -- leaving run-b's lock intact.
+  (
+    # shellcheck source=scripts/lib/container-lock.sh
+    . scripts/lib/container-lock.sh
+    OWN_LOCK="$TOPIC_DIR/.ownership-test.lock"
+    rm -rf "$OWN_LOCK"
+    container_lock_acquire "$OWN_LOCK" "run-a" || exit 1
+    TOK_A="$CONTAINER_LOCK_TOKEN"
+    # Simulate run-a losing the lock to a second run (a steal, or a
+    # release-then-reacquire by someone else) -- a fresh acquire at the same
+    # path stamps a brand-new token.
+    rm -rf "$OWN_LOCK"
+    container_lock_acquire "$OWN_LOCK" "run-b" || exit 1
+    TOK_B="$CONTAINER_LOCK_TOKEN"
+    [ "$TOK_A" != "$TOK_B" ] || exit 1   # sanity: the two acquisitions really differ
+    # run-a's next refresh, using its now-stale token, must be REFUSED --
+    # never silently extend run-b's lock. This is the exact bug #763 reports.
+    container_lock_refresh "$OWN_LOCK" "$TOK_A" 2>/dev/null && exit 1
+    [ -d "$OWN_LOCK" ] || exit 1
+    # A refresh call with NO token at all must also be refused, not treated
+    # as "touch whatever is there".
+    container_lock_refresh "$OWN_LOCK" "" 2>/dev/null && exit 1
+    # run-a's release, using its stale token, must NOT delete run-b's live
+    # lock -- destroying another run's mutual exclusion would be worse than
+    # the original refresh bug, not better.
+    container_lock_release "$OWN_LOCK" "$TOK_A" 2>/dev/null
+    [ -d "$OWN_LOCK" ] || exit 1
+    current_token="$(cat "$OWN_LOCK/.owner-token" 2>/dev/null)"
+    [ "$current_token" = "$TOK_B" ] || exit 1   # still stamped as run-b's, untouched
+    # run-b, using its OWN correct token, refreshes and releases normally.
+    container_lock_refresh "$OWN_LOCK" "$TOK_B" || exit 1
+    container_lock_release "$OWN_LOCK" "$TOK_B"
+    [ ! -e "$OWN_LOCK" ] || exit 1
+    exit 0
+  )
+  if [ "$?" -eq 0 ]; then
+    ok "container-lock (research-harness-template#763): container_lock_refresh/release refuse to act on a lock this run no longer owns, leaving the real (new) owner's lock intact"
+  else
+    bad "container-lock (research-harness-template#763) ownership-check regression"
+  fi
+  rm -rf "$TOPIC_DIR/.refresh-test.lock" "$TOPIC_DIR/.ownership-test.lock"
+
+  # 31a7. Regression test for PR #796 Copilot review: (a) container_lock_refresh
+  #      must propagate a `touch` failure as nonzero instead of swallowing it
+  #      (`|| true`) -- a lock whose mtime silently fails to extend would be
+  #      misjudged as stale and stolen by a concurrent invocation while the
+  #      caller believes it is still safely refreshed; and (b)
+  #      container_lock_release must treat a MISSING/empty stamped
+  #      `.owner-token` as a mismatch when a token is supplied, not as "no
+  #      guard needed" -- otherwise a caller holding a real token could
+  #      `rm -rf` a live lock that simply never got stamped (older lock dir,
+  #      partial stamp, manual lock).
+  (
+    # shellcheck source=scripts/lib/container-lock.sh
+    . scripts/lib/container-lock.sh
+
+    # (a) touch failure must fail the refresh, not swallow it. A file's owner
+    #     can update its own mtime even with write bits stripped (POSIX
+    #     utimes allows the owner regardless of mode), so chmod alone can't
+    #     force `touch` to fail portably here -- shim `touch` on PATH instead
+    #     so this works identically on macOS and Linux CI.
+    TOUCH_LOCK="$TOPIC_DIR/.touchfail-test.lock"
+    rm -rf "$TOUCH_LOCK"
+    container_lock_acquire "$TOUCH_LOCK" "touchfail-test" || exit 1
+    TOUCH_TOKEN="$CONTAINER_LOCK_TOKEN"
+    FAKE_BIN="$(mktemp -d)"
+    printf '#!/bin/sh\nexit 1\n' > "$FAKE_BIN/touch"
+    chmod +x "$FAKE_BIN/touch"
+    ( PATH="$FAKE_BIN:$PATH"; container_lock_refresh "$TOUCH_LOCK" "$TOUCH_TOKEN" ) 2>/dev/null && { rm -rf "$FAKE_BIN" "$TOUCH_LOCK"; exit 1; }
+    rm -rf "$FAKE_BIN" "$TOUCH_LOCK"
+
+    # (b) a lock with no stamped token at all must be treated as a mismatch
+    #     (release skipped) when the caller supplies a real token -- never
+    #     assumed to be "this run's lock, safe to remove" by default.
+    UNSTAMPED_LOCK="$TOPIC_DIR/.unstamped-test.lock"
+    rm -rf "$UNSTAMPED_LOCK"
+    mkdir "$UNSTAMPED_LOCK" || exit 1   # simulate an older/partial lock: no .owner-token written
+    container_lock_release "$UNSTAMPED_LOCK" "some-caller-token" 2>/dev/null
+    [ -d "$UNSTAMPED_LOCK" ] || exit 1   # must NOT have been removed
+    rm -rf "$UNSTAMPED_LOCK"
+
+    # (c) a call missing its token argument entirely (not merely an empty
+    #     string -- one fewer positional parameter) must hit the graceful
+    #     "no ownership token supplied" refusal, not a `set -u` unbound-
+    #     variable abort. This is what actually broke a real CI import run
+    #     in this PR's own review: `local token="$2"` (no default) aborted
+    #     the whole shell under this file's own `set -uo pipefail` callers
+    #     the moment `$2` was unbound, mid-import, after every finding had
+    #     already been written (PR #796 review, round 2).
+    ARGCOUNT_LOCK="$TOPIC_DIR/.argcount-test.lock"
+    rm -rf "$ARGCOUNT_LOCK"
+    container_lock_acquire "$ARGCOUNT_LOCK" "argcount-test" || exit 1
+    argcount_err="$( ( set -uo pipefail; container_lock_refresh "$ARGCOUNT_LOCK" ) 2>&1 1>/dev/null )"
+    argcount_rc=$?
+    rm -rf "$ARGCOUNT_LOCK"
+    # Both the graceful refusal AND a `set -u` abort exit 1 here (bash's
+    # default non-interactive-shell behavior on an unbound-variable error),
+    # so the exit code alone can't distinguish them -- assert on the actual
+    # stderr text instead: it must be this function's own graceful message,
+    # never a raw "unbound variable" shell abort.
+    [ "$argcount_rc" -eq 1 ] || exit 1
+    case "$argcount_err" in
+      *"unbound variable"*) exit 1 ;;
+      *"no ownership token supplied"*) : ;;
+      *) exit 1 ;;
+    esac
+    exit 0
+  )
+  if [ "$?" -eq 0 ]; then
+    ok "container-lock (PR #796 review): refresh propagates a touch failure instead of swallowing it, release refuses to remove an unstamped lock when a token is supplied, and a missing token argument is refused gracefully rather than a set -u abort"
+  else
+    bad "container-lock (PR #796 review) touch-failure/unstamped-token/missing-arg regression"
+  fi
+  rm -rf "$TOPIC_DIR/.touchfail-test.lock" "$TOPIC_DIR/.unstamped-test.lock"
 
   # 31b. The exported manifest validates against schemas/mif-container.schema.json.
   ajv validate --spec=draft2020 --strict=false -c ajv-formats \
@@ -4561,7 +4687,7 @@ gate_m31() {
   jq --arg id "$roundtrip_topic" '.topics += [{id: $id, title: "gate_m31 roundtrip", namespace: ("harness/" + $id), status: "active", ontologies: []}]' \
     harness.config.json > "$T/config-with-roundtrip-topic.json" && cp "$T/config-with-roundtrip-topic.json" harness.config.json
   mkdir -p "reports/$roundtrip_topic/findings"
-  "$IMPORT" "$T/full-export" "$roundtrip_topic" > /dev/null 2>&1
+  local roundtrip_import_out; roundtrip_import_out="$("$IMPORT" "$T/full-export" "$roundtrip_topic" 2>&1)"
   local rc_roundtrip=$?
   local roundtrip_count; roundtrip_count="$(find "reports/$roundtrip_topic/findings" -maxdepth 1 -name '*.json' 2>/dev/null | wc -l | tr -d ' ')"
   local source_ids dest_ids
@@ -4575,7 +4701,11 @@ gate_m31() {
   if [ "$rc_roundtrip" -eq 0 ] && [ "$roundtrip_count" = "$real_finding_count" ] && [ "$source_ids" = "$dest_ids" ] && [ "$ontmap_match" = "yes" ]; then
     ok "export -> import round-trip into a fresh topic reproduces the exact same @id set AND ontology-map.json"
   else
-    bad "round-trip check failed (rc=$rc_roundtrip count=$roundtrip_count/$real_finding_count ids_match=$([ "$source_ids" = "$dest_ids" ] && echo yes || echo no) ontmap_match=$ontmap_match)"
+    # roundtrip_import_out is included on failure only (PR #796 CI
+    # investigation): a bare rc/count/match summary gave no way to tell
+    # WHICH of import.sh's 5 steps actually rejected the import when this
+    # failed reproducibly in CI but not in any local repro attempted.
+    bad "round-trip check failed (rc=$rc_roundtrip count=$roundtrip_count/$real_finding_count ids_match=$([ "$source_ids" = "$dest_ids" ] && echo yes || echo no) ontmap_match=$ontmap_match) -- import output: $roundtrip_import_out"
   fi
 
   # 31f2. The topic's own deliverables (research-harness-template#437) also
