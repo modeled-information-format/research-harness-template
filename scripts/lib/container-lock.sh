@@ -34,6 +34,23 @@
 # whichever lock currently occupies it. container_lock_release's token
 # parameter is optional (back-compat for a caller that never refreshes).
 #
+# Steal-mutex (research-harness-template#739): the ownership token above
+# lets a REFRESHING caller detect that it lost the lock, but it does nothing
+# for the steal itself -- the rm-rf-then-re-mkdir reclaim of a stale lock is
+# NOT atomic. Two racers can both observe the SAME stale $lock_dir and both
+# run rm-rf+mkdir; if racer A's sequence completes (rm-rf, mkdir, stamp)
+# before racer B's own rm-rf runs, B's rm-rf deletes A's brand-new LIVE lock
+# out from under it and B's mkdir then recreates it as B's own -- both
+# acquire calls return rc=0, both callers believe they hold exclusive
+# access, and both write concurrently. container_lock_acquire's steal path
+# now serializes the whole check-stale+rm-rf+mkdir sequence behind a
+# separate mutex directory (`$lock_dir.steal-mutex`, created via `mkdir`,
+# which IS atomic): only the racer that wins the mutex performs the
+# destructive reclaim; every other racer either fails to grab the mutex and
+# waits, or -- once the winner has finished and released it -- re-observes
+# $lock_dir as freshly held and correctly reports "lost the race" instead of
+# stealing it a second time. See _container_lock_steal below.
+#
 # Usage (sourced, not executed):
 #   . "$ROOT/scripts/lib/container-lock.sh"
 #   container_lock_acquire "$LOCK_DIR" "export" || fail "another export/import is in progress for topic '$TOPIC' (lock held: $LOCK_DIR)"
@@ -57,6 +74,18 @@ CONTAINER_LOCK_STALE_MIN="${CONTAINER_LOCK_STALE_MIN:-240}"
 case "$CONTAINER_LOCK_STALE_MIN" in ''|*[!0-9]*) CONTAINER_LOCK_STALE_MIN=240 ;; esac
 [ "$CONTAINER_LOCK_STALE_MIN" -eq 0 ] 2>/dev/null && CONTAINER_LOCK_STALE_MIN=240
 
+# CONTAINER_LOCK_STEAL_MUTEX_STALE_SEC (default 30, seconds not minutes) --
+# staleness window for the steal-mutex itself (research-harness-template#739;
+# see _container_lock_steal). The mutex's critical section is a handful of
+# filesystem calls, normally sub-second; a holder still present after this
+# many seconds was killed mid-steal (an astronomically small window) and is
+# safe to reclaim the same way container/run locks reclaim their own stale
+# holder -- self-healing, one level down, so a crashed stealer cannot wedge
+# every future acquire on this topic forever.
+CONTAINER_LOCK_STEAL_MUTEX_STALE_SEC="${CONTAINER_LOCK_STEAL_MUTEX_STALE_SEC:-30}"
+case "$CONTAINER_LOCK_STEAL_MUTEX_STALE_SEC" in ''|*[!0-9]*) CONTAINER_LOCK_STEAL_MUTEX_STALE_SEC=30 ;; esac
+[ "$CONTAINER_LOCK_STEAL_MUTEX_STALE_SEC" -eq 0 ] 2>/dev/null && CONTAINER_LOCK_STEAL_MUTEX_STALE_SEC=30
+
 # container_lock_fresh <lock_dir> -- true if $lock_dir exists and its
 # directory mtime is within the staleness window. Fails SAFE: if `find`
 # errors, treat the lock as fresh (never mis-steal a live lock because of a
@@ -68,16 +97,18 @@ container_lock_fresh() {
   [ -n "$hit" ]
 }
 
-# container_lock_acquire <lock_dir> [label] -- mkdir-atomic acquire; steals a
-# STALE lock (mtime older than the window) via the same race-safe
-# rm-rf-then-re-mkdir pattern run-lock.sh uses (only one racer's mkdir
-# wins). Writes an `owner` file inside the lock for the diagnostic message.
-# Prints an error to stderr and returns nonzero (3 = held by a live
-# holder/lost the steal race, 1 = mkdir failed for an unrelated reason e.g.
+# container_lock_acquire <lock_dir> [label] -- mkdir-atomic acquire; a STALE
+# lock (mtime older than the window) is reclaimed via _container_lock_steal,
+# which serializes the reclaim behind a mutex so two concurrent stealers can
+# never both win (research-harness-template#739 -- see that function and the
+# file header for why the naive rm-rf-then-re-mkdir sequence alone is NOT
+# race-safe). Writes an `owner` file inside the lock for the diagnostic
+# message. Prints an error to stderr and returns nonzero (3 = held by a live
+# holder/lost the steal race, 1 = an unrelated filesystem failure e.g.
 # missing parent dir or a read-only FS) on denial/failure; the caller
 # decides how to fail (this repo's convention is `fail "$msg"`). On a rc=1
-# failure, also sets CONTAINER_LOCK_LAST_ERROR to the underlying mkdir error
-# text so the caller's own fail() message can include it (the pre-refactor
+# failure, also sets CONTAINER_LOCK_LAST_ERROR to the underlying error text
+# so the caller's own fail() message can include it (the pre-refactor
 # per-script messages embedded this detail inline; this global preserves
 # that without the library needing to know each caller's fail() shape).
 container_lock_acquire() {
@@ -92,39 +123,104 @@ container_lock_acquire() {
       echo "container-lock: DENIED -- another export/import is in progress for this topic (lock held: $lock_dir, held by '$(cat "$lock_dir/owner" 2>/dev/null || echo unknown)'; fresh within ${CONTAINER_LOCK_STALE_MIN}m)." >&2
       return 3
     fi
-    # Steal: rm -rf then re-mkdir, race-safe (only one racer's mkdir wins).
-    # Distinguish that genuine race from an rm/mkdir failure unrelated to
-    # any racer (permissions, read-only FS) -- if rm didn't actually clear
-    # the directory, a follow-up mkdir failure isn't "lost the race", it's
-    # the same underlying error rm just hit, and misreporting it as a race
-    # would hide a real filesystem problem from the caller (review).
-    if ! rm -rf "$lock_dir" 2>/dev/null || [ -e "$lock_dir" ]; then
-      CONTAINER_LOCK_LAST_ERROR="failed to remove stale lock at $lock_dir (permissions or read-only filesystem?)"
-      echo "container-lock: DENIED -- $CONTAINER_LOCK_LAST_ERROR" >&2
-      return 1
-    fi
-    if mkdir "$lock_dir" 2>/dev/null; then
-      _container_lock_stamp "$lock_dir" "$label"
-      echo "container-lock: stole STALE lock (previous holder left it >${CONTAINER_LOCK_STALE_MIN}m ago): $lock_dir" >&2
-      return 0
-    fi
-    # rm confirmed the directory gone, but mkdir still failed -- distinguish
-    # a genuine lost race (a concurrent racer's own mkdir won in between, so
-    # $lock_dir exists again) from an unrelated mkdir failure (ENOSPC, a
-    # transient I/O error, ...) where $lock_dir is STILL absent -- the
-    # latter isn't a race at all and misreporting it as one would hide the
-    # real error from the caller (Copilot review, round 2).
-    if [ -d "$lock_dir" ]; then
-      echo "container-lock: DENIED -- lost the steal race for a stale lock: $lock_dir" >&2
-      return 3
-    fi
-    CONTAINER_LOCK_LAST_ERROR="failed to re-create lock at $lock_dir after removing the stale one (not a race -- the directory is still absent)"
-    echo "container-lock: DENIED -- $CONTAINER_LOCK_LAST_ERROR" >&2
-    return 1
+    _container_lock_steal "$lock_dir" "$label"
+    return $?
   fi
   CONTAINER_LOCK_LAST_ERROR="${lock_err:-mkdir failed for an unknown reason}"
   echo "container-lock: failed to create lock at $lock_dir: $CONTAINER_LOCK_LAST_ERROR" >&2
   return 1
+}
+
+# _container_lock_mtime_epoch <path> -- portable mtime as an epoch integer
+# (GNU `stat -c %Y` vs BSD/macOS `stat -f %m`), used only to age-check the
+# steal-mutex below (seconds granularity; `find -mmin` is minutes-only and
+# not reliably fractional across GNU/BSD, so this avoids that portability
+# gap for the short mutex window).
+_container_lock_mtime_epoch() {
+  stat -c %Y "$1" 2>/dev/null || stat -f %m "$1" 2>/dev/null
+}
+
+# _container_lock_steal <lock_dir> <label> -- reclaim a lock container_lock_acquire
+# has already determined is STALE, with the destructive rm-rf+mkdir sequence
+# serialized behind a separate mutex directory ("$lock_dir.steal-mutex") so
+# two concurrent stealers can never both perform it (research-harness-
+# template#739). `mkdir` is atomic: exactly one racer's `mkdir "$mutex"` can
+# succeed at a time. The racer that wins it re-verifies staleness (time has
+# passed since the caller's own check -- another racer may have already won
+# and finished) and only then does the actual rm-rf+mkdir reclaim. A racer
+# that loses the mutex either waits (bounded retries) or, if the mutex looks
+# abandoned (older than CONTAINER_LOCK_STEAL_MUTEX_STALE_SEC -- its holder
+# was killed mid-steal), reclaims the MUTEX itself the same self-healing way
+# the outer lock reclaims a stale holder, then retries.
+#
+# Returns the same contract container_lock_acquire's old inline steal did:
+# 0 = stole it; 3 = DENIED (lost the race, or a live lock now occupies it);
+# 1 = an unrelated filesystem failure (permissions, read-only FS, ENOSPC).
+_container_lock_steal() {
+  local lock_dir="$1" label="$2" mutex="${lock_dir}.steal-mutex"
+  local attempt mutex_err mutex_mtime now age
+  for attempt in $(seq 1 20); do
+    if mutex_err="$(mkdir "$mutex" 2>&1)"; then
+      # Holding the mutex: re-verify staleness -- another racer may have
+      # already won this exact steal and finished while we were retrying.
+      if container_lock_fresh "$lock_dir"; then
+        rm -rf "$mutex" 2>/dev/null
+        echo "container-lock: DENIED -- lost the steal race for a stale lock: $lock_dir" >&2
+        return 3
+      fi
+      # Distinguish a genuine rm/mkdir failure unrelated to any racer
+      # (permissions, read-only FS) from a lost race below -- if rm didn't
+      # actually clear the directory, a follow-up mkdir failure isn't "lost
+      # the race", it's the same underlying error rm just hit, and
+      # misreporting it as a race would hide a real filesystem problem from
+      # the caller (review, carried over from the pre-mutex implementation).
+      if ! rm -rf "$lock_dir" 2>/dev/null || [ -e "$lock_dir" ]; then
+        CONTAINER_LOCK_LAST_ERROR="failed to remove stale lock at $lock_dir (permissions or read-only filesystem?)"
+        echo "container-lock: DENIED -- $CONTAINER_LOCK_LAST_ERROR" >&2
+        rm -rf "$mutex" 2>/dev/null
+        return 1
+      fi
+      if mkdir "$lock_dir" 2>/dev/null; then
+        _container_lock_stamp "$lock_dir" "$label"
+        echo "container-lock: stole STALE lock (previous holder left it >${CONTAINER_LOCK_STALE_MIN}m ago): $lock_dir" >&2
+        rm -rf "$mutex" 2>/dev/null
+        return 0
+      fi
+      # rm confirmed the directory gone, but our own mkdir still failed --
+      # under the mutex, no OTHER racer can be concurrently reclaiming this
+      # same lock_dir, so this is never "lost the race": it is an unrelated
+      # mkdir failure (ENOSPC, a transient I/O error, ...).
+      CONTAINER_LOCK_LAST_ERROR="failed to re-create lock at $lock_dir after removing the stale one"
+      echo "container-lock: DENIED -- $CONTAINER_LOCK_LAST_ERROR" >&2
+      rm -rf "$mutex" 2>/dev/null
+      return 1
+    fi
+    # Lost the mutex to another racer (or a real fs error creating it).
+    if [ -d "$mutex" ]; then
+      now=$(date +%s 2>/dev/null)
+      mutex_mtime=$(_container_lock_mtime_epoch "$mutex")
+      if [ -n "$now" ] && [ -n "$mutex_mtime" ]; then
+        age=$(( now - mutex_mtime ))
+        if [ "$age" -ge "$CONTAINER_LOCK_STEAL_MUTEX_STALE_SEC" ]; then
+          # Abandoned mutex (its holder was killed mid-steal) -- reclaim it
+          # and retry immediately. rm -rf here is safe even if another
+          # waiter races us to it: mkdir right after is still the sole
+          # atomic arbiter of who proceeds.
+          rm -rf "$mutex" 2>/dev/null
+          continue
+        fi
+      fi
+      sleep 0.05
+      continue
+    fi
+    # mkdir failed and the mutex path still doesn't exist -- not contention,
+    # a real filesystem problem (permissions, read-only FS, missing parent).
+    CONTAINER_LOCK_LAST_ERROR="failed to create steal mutex at $mutex: ${mutex_err:-unknown error}"
+    echo "container-lock: DENIED -- $CONTAINER_LOCK_LAST_ERROR" >&2
+    return 1
+  done
+  echo "container-lock: DENIED -- timed out waiting for the steal mutex on $lock_dir (contended by a concurrent stealer); try again." >&2
+  return 3
 }
 
 # _container_lock_stamp <lock_dir> <label> -- internal helper shared by
