@@ -57,6 +57,7 @@ cleanup() {
   rm -rf "$SAFETY"
   rm -rf "reports/gate-m31-roundtrip-test" "reports/gate-m31-malformed-test"
   [ -n "$LEFTOVER_T" ] && rm -rf "$LEFTOVER_T"
+  [ -n "${SCRATCH:-}" ] && rm -rf "$SCRATCH"
 }
 trap cleanup EXIT
 
