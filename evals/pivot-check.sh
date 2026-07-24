@@ -969,8 +969,71 @@ PY
   [ "$rc" -eq 0 ] || fail=1
 fi
 
+# ============================================================================
+# G: Null-Listing regression (research-harness-template#741). Reshape
+# succeeds normally, but the pivot:list agent() call resolves to null (the
+# same parallel()/agent() documented failure shape #758 already covers for
+# a classify batch). Before the #741 fix, `const ids = (listing &&
+# listing.findingIds) || []` silently collapsed this to ids = [] —
+# indistinguishable from a genuinely empty corpus, masking a topic that may
+# hold a substantial corpus on disk. Asserts the module now throws instead
+# of silently proceeding as if 0 findings exist, and that NEITHER a
+# classify batch NOR the Plan phase is ever reached once listing fails.
+# ============================================================================
+FIX_NULLLIST="$TMP/fixture-nulllist"
+mkdir -p "$FIX_NULLLIST/reports/pivot-eval-nulllist/findings"
+
+cat > "$TMP/stubs-nulllist.cjs" <<'NODE'
+'use strict';
+module.exports = {
+  'pivot:reshape': async () => ({
+    goalVersion: 'gv-pivotevalnull1',
+    supersedes: 'gv-pivotevalnull0',
+    newDimensions: [],
+    droppedDimensions: [],
+    newChecks: [],
+    goalStatement: 'Eval fixture pivot goal for null-listing regression (research-harness-template#741).',
+  }),
+  // Simulate the runtime's documented agent() failure shape (the listing
+  // agent() call errored, or its subagent died on a terminal API error):
+  // return null, matching #758's precedent for a classify batch.
+  'pivot:list': async () => null,
+  'pivot:classify-1': async () => { throw new Error('pivot:classify-1 must NOT be called when listing failed — there is nothing real to classify'); },
+  'pivot:plan': async () => { throw new Error('pivot:plan must NOT be called when listing failed — the module must refuse before ever reaching Plan'); },
+};
+NODE
+
+printf '%s' "{\"harnessDir\":\"$FIX_NULLLIST\",\"topic\":\"pivot-eval-nulllist\",\"delta\":\"Null-listing accounting regression fixture (#741).\"}" > "$TMP/nulllist-args.json"
+run_case nulllist "$TMP/nulllist-args.json" "$TMP/stubs-nulllist.cjs" "$TMP/out-nulllist.json"
+
+if [ -f "$TMP/out-nulllist.json" ]; then
+  python3 - "$TMP/out-nulllist.json" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1], encoding='utf-8'))
+ok = True
+def check(name, cond, detail=''):
+    global ok
+    if cond:
+        print(f"  ok  {name}")
+    else:
+        ok = False
+        print(f"FAIL  {name}{(' -- ' + detail) if detail else ''}")
+
+check('a null listing result made the module THROW rather than silently proceeding as if 0 findings exist (#741)',
+      d['threw'] is not None, str(d['threw']))
+msg = (d.get('threw') or {}).get('message', '')
+check('the thrown message names "listing" as the refused precondition', 'listing' in msg, msg)
+labels = [c['opts']['label'] for c in d['calls']]
+check('only reshape and list were called — the refusal fires before any classify batch or the Plan phase is ever reached',
+      labels == ['pivot:reshape', 'pivot:list'], json.dumps(labels))
+sys.exit(0 if ok else 1)
+PY
+  rc=$?
+  [ "$rc" -eq 0 ] || fail=1
+fi
+
 if [ "$fail" -eq 0 ]; then
-  note "Reshape phase invokes the REAL scripts/goal-version.sh exactly twice (OLD then NEW), never a freehand-narrated hash, and the lineage/hash fixture's supersedes/version match independent fresh recomputations of the real script; the no-delta invocation refuses before any agent() call; a seeded 3-finding corpus classifies to exactly carry/stale/out-of-scope with the quarantined sibling correctly excluded from the listing and every finding file byte-identical on disk before/after (classification never deletes); reverifyIds equals exactly the stale list, and the Plan-agent-failure case falls back to the module's own real fallback expressions; research-falsify.js accepts the pivot fixture's real reverifyIds as scope:{ids:[...]},regate:true without tripping its guard error, proving the two independently-vendored modules' interface actually lines up end to end; and a failed classify batch (#758) is retried exactly once, recovering cleanly when the retry succeeds and — when it still fails — has its ids explicitly captured in unclassifiedIds, folded into stale/reverifyIds, and named in a log line, with carry+stale+outOfScope always accounting for every seeded finding with none missing and none duplicated. The one gap this eval cannot close — whether a live model actually CLASSIFIES/plans the way this fixture's ground truth assumes — is genuine and non-deterministic, documented here rather than faked."
+  note "Reshape phase invokes the REAL scripts/goal-version.sh exactly twice (OLD then NEW), never a freehand-narrated hash, and the lineage/hash fixture's supersedes/version match independent fresh recomputations of the real script; the no-delta invocation refuses before any agent() call; a seeded 3-finding corpus classifies to exactly carry/stale/out-of-scope with the quarantined sibling correctly excluded from the listing and every finding file byte-identical on disk before/after (classification never deletes); reverifyIds equals exactly the stale list, and the Plan-agent-failure case falls back to the module's own real fallback expressions; research-falsify.js accepts the pivot fixture's real reverifyIds as scope:{ids:[...]},regate:true without tripping its guard error, proving the two independently-vendored modules' interface actually lines up end to end; a failed classify batch (#758) is retried exactly once, recovering cleanly when the retry succeeds and — when it still fails — has its ids explicitly captured in unclassifiedIds, folded into stale/reverifyIds, and named in a log line, with carry+stale+outOfScope always accounting for every seeded finding with none missing and none duplicated; and a null Listing result (#741) now makes the module throw rather than silently collapsing to an empty corpus, with neither a classify batch nor the Plan phase ever reached. The one gap this eval cannot close — whether a live model actually CLASSIFIES/plans the way this fixture's ground truth assumes — is genuine and non-deterministic, documented here rather than faked."
 else
   echo "pivot-check: FAILED (see notes above)"
 fi
