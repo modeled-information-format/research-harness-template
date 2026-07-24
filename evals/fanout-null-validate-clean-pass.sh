@@ -213,14 +213,14 @@ by_dim = {p['dimension']: p for p in (r.get('perDimension') or [])}
 check("B. flaky's raw, never-validated finding path does NOT leak into result.findings (pre-fix: 'f-flaky-1.json' appears here even though nothing ever validated it)",
       'f-flaky-1.json' not in (r.get('findings') or []), json.dumps(r.get('findings')))
 
-# C. flaky must not be reported as if it completed normally -- either
-# dropped entirely (this file's existing null-propagation convention), or at
-# minimum never paired with a leaked finding under an honest-looking
-# {valid: null} summary (the "internally inconsistent result" the issue
-# names).
+# C. flaky must be dropped entirely from perDimension (this file's existing
+# null-propagation convention -- see the null-revalidate eval), not retained
+# with an internally inconsistent {valid: null} summary. `!= 0` alone would
+# also pass on that inconsistent-but-undropped shape (null != 0), so require
+# absence outright.
 flaky_entry = by_dim.get('flaky')
-check("C. flaky is not silently reported as succeeded (dropped from perDimension, or at minimum shows no leaked-through findings)",
-      flaky_entry is None or by_dim.get('flaky', {}).get('valid') != 0,
+check("C. flaky is dropped from perDimension entirely (not retained with an inconsistent {valid: null} summary)",
+      flaky_entry is None,
       json.dumps(flaky_entry))
 
 # D. landscape is completely unaffected by flaky's failure.
