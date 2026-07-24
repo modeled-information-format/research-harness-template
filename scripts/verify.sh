@@ -2825,6 +2825,7 @@ JSON
   # 24i. The exit-3 (unreadable map) path prints the SAME /ontology-review unblock footer as
   #      the exit-1 blocker — the operator needs the remediation most when the map can't be read.
   rm -f "$T/reports/edu/ontology-map.json"
+  local m3 rc3
   m3=$(scripts/check-shippable-typing.sh "$T/reports/edu" 2>&1); rc3=$?
   if [ "$rc3" = 3 ] && printf '%s' "$m3" | grep -q "/ontology-review"; then
     ok "the exit-3 (unreadable map) path names the /ontology-review unblock footer"
@@ -2837,6 +2838,7 @@ JSON
   echo '[]' > "$T/reports/edu/ontology-map.json"
   rm -f "$T/reports/edu/findings/f1.json"
   echo '{"title":"no id","extensions":{"harness":{"verification":{"verdict":"survived"}}}}' > "$T/reports/edu/findings/noid.json"
+  local mj rcj
   mj=$(scripts/check-shippable-typing.sh "$T/reports/edu" 2>&1); rcj=$?
   if [ "$rcj" = 1 ] && printf '%s' "$mj" | grep -q "noid.json"; then
     ok "a no-@id shippable finding blocks and names the file (not a bare empty id)"
@@ -2849,6 +2851,7 @@ JSON
   rm -rf "$T/reports/edu/findings"
   echo '[{"finding_id":"urn:mif:concept:x/edu:flat","entity_type":null,"resolved_ontology":null,"basis":"untyped","valid":true}]' > "$T/reports/edu/ontology-map.json"
   echo '{"@id":"urn:mif:concept:x/edu:flat","extensions":{"harness":{"verification":{"verdict":"survived"}}}}' > "$T/reports/edu/finding-flat.json"
+  local rck
   scripts/check-shippable-typing.sh "$T/reports/edu" >/dev/null 2>&1; rck=$?
   if [ "$rck" = 1 ]; then
     ok "a flat-only layout (no findings/ subdir) is gated (exit 1), not rejected with exit 2"
@@ -2881,6 +2884,28 @@ JSON
     ok "reconcile untyped_shippable also counts a discovery-only (unstamped) shippable finding"
   else
     bad "reconcile undercounted a discovery-only shippable finding vs the gate"
+  fi
+
+  # 24n. Regression (#768): m3, rc3, mj, rcj, and rck (used by 24i/24j/24k
+  #      above) must be declared `local`, or they leak into verify.sh's own
+  #      global namespace once gate_m24 returns (GATES runs each gate
+  #      un-subshelled) — a future gate reusing one of these short, generic
+  #      names would then silently inherit gate_m24's last value under
+  #      `set -uo pipefail` instead of starting unset. Introspects the live
+  #      function body via `declare -f` rather than re-invoking gate_m24, so
+  #      it can't recurse into itself.
+  local body24n missing24n v24n
+  body24n="$(declare -f gate_m24)"
+  missing24n=""
+  for v24n in m3 rc3 mj rcj rck; do
+    if ! printf '%s\n' "$body24n" | grep -E '\blocal\b' | grep -wq "$v24n"; then
+      missing24n="$missing24n $v24n"
+    fi
+  done
+  if [ -z "$missing24n" ]; then
+    ok "m3/rc3/mj/rcj/rck are declared local in gate_m24 (no unscoped-global leak, #768)"
+  else
+    bad "gate_m24 leaks unscoped globals — missing 'local' for:$missing24n (#768)"
   fi
 
   rm -rf "$T"
