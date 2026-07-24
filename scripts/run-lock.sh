@@ -26,17 +26,45 @@
 # shortens crash self-heal but risks a long phase aging the lock out mid-run. A live
 # run MUST refresh within this window at every phase boundary or risk being stolen.
 #
+# Ownership token (research-harness-template#798, same defect class #763 fixed in
+# scripts/lib/container-lock.sh's container_lock_refresh): `acquire`/`steal` stamp
+# each successful (re)acquisition with a unique per-acquisition token, written to
+# `$LOCK/.owner-token` AND printed on stdout (diagnostics stay on stderr, unchanged).
+# Unlike container-lock.sh (sourced into one long-lived shell, so an in-memory
+# variable survives from acquire to refresh), this script runs as separate CLI
+# process invocations with no shared shell state — the token has to persist on
+# disk, and every caller MUST capture it from acquire/steal's stdout and pass it
+# back on every later `refresh`/`release` call:
+#   TOKEN=$(scripts/run-lock.sh acquire "$REPORTS_DIR" "label") || exit 3
+#   scripts/run-lock.sh refresh "$REPORTS_DIR" "$TOKEN" || exit 1   # lost ownership -- STOP
+#   scripts/run-lock.sh release "$REPORTS_DIR" "$TOKEN"
+# `refresh` REFUSES (without touching the lock) if the token is missing or no
+# longer matches what is currently stamped there — otherwise a refresh cannot
+# distinguish "the lock I originally acquired" from "a different run's lock that
+# has since replaced mine at this same path" (a stale-lock steal race, or a phase
+# boundary far enough apart for RUN_LOCK_STALE_MIN to elapse between refreshes),
+# and would silently extend whichever lock currently occupies the path. `release`'s
+# token is optional (back-compat for a caller that never refreshes): when given
+# and it does not match, release SKIPS removal rather than destroy a different
+# run's live lock.
+#
 # Usage:
-#   run-lock.sh acquire <reports_dir> [label]   # exit 0 acquired (or stole stale); 3 held by live run / lost steal race; 2 usage
-#   run-lock.sh refresh <reports_dir>           # touch a HELD lock; no-op if it is already gone (never resurrects)
-#   run-lock.sh release <reports_dir>           # drop the lock
-#   run-lock.sh steal   <reports_dir> [label]   # force re-acquire (recovery; e.g. operator-driven /resume)
-#                                                # refuses (exit 3) if findings/ or research-progress.md
-#                                                # were written within RUN_LOCK_STEAL_GUARD_MIN (default 10,
-#                                                # matching start.md/resume.md's own "quiet is normal up to
-#                                                # ~10m" guidance) — override with FORCE=1 once you've
-#                                                # independently confirmed via disk state that the owner is
-#                                                # dead (issue #392)
+#   run-lock.sh acquire <reports_dir> [label]        # exit 0 acquired (or stole stale, prints TOKEN on stdout);
+#                                                     # 3 held by live run / lost steal race; 2 usage
+#   run-lock.sh refresh <reports_dir> <token>        # touch a HELD lock IF <token> still matches; no-op (exit 0)
+#                                                     # if the lock is already gone (never resurrects); exit 1 if
+#                                                     # the token is missing/mismatched (ownership lost — the
+#                                                     # caller MUST treat this as fatal, not log-and-continue)
+#   run-lock.sh release <reports_dir> [token]        # drop the lock; if [token] is given and mismatched, skip
+#                                                     # removal (does not own it) instead of deleting another run's lock
+#   run-lock.sh steal   <reports_dir> [label]        # force re-acquire (recovery; e.g. operator-driven /resume);
+#                                                     # prints a NEW token on stdout on success
+#                                                     # refuses (exit 3) if findings/ or research-progress.md
+#                                                     # were written within RUN_LOCK_STEAL_GUARD_MIN (default 10,
+#                                                     # matching start.md/resume.md's own "quiet is normal up to
+#                                                     # ~10m" guidance) — override with FORCE=1 once you've
+#                                                     # independently confirmed via disk state that the owner is
+#                                                     # dead (issue #392)
 set -uo pipefail
 
 # Sanitize a minutes value: an empty/non-numeric/zero value would make `find -mmin`
@@ -86,14 +114,26 @@ recent_activity() {
   hit=$(find "$1" -maxdepth 1 -mmin "-$GUARD_MIN" 2>/dev/null) || return 0
   [ -n "$hit" ]
 }
-write_owner() { printf '%s\n' "$LABEL" > "$LOCK/owner" 2>/dev/null || true; }
+# stamp_owner — write the human-readable `owner` label (unchanged, used only for the
+# DENIED diagnostic) plus a NEW `.owner-token`: a value unique to THIS acquisition
+# (label + PID + wall-clock + two $RANDOM draws — good enough to tell one acquisition
+# apart from another; not a security credential, this lock has no adversarial holder).
+# Sets RUN_LOCK_TOKEN and prints it on stdout so the caller can capture it immediately
+# after a successful acquire/steal and pass it to every later refresh/release call
+# (research-harness-template#798).
+stamp_owner() {
+  printf '%s\n' "$LABEL" > "$LOCK/owner" 2>/dev/null || true
+  RUN_LOCK_TOKEN="${LABEL}:$$:$(date +%s%N 2>/dev/null || date +%s):${RANDOM}${RANDOM}"
+  printf '%s\n' "$RUN_LOCK_TOKEN" > "$LOCK/.owner-token" 2>/dev/null || true
+  printf '%s\n' "$RUN_LOCK_TOKEN"
+}
 
 case "$CMD" in
   acquire)
     mkdir -p "$DIR" || { echo "run-lock: cannot create $DIR — lock protocol inactive, refusing to proceed." >&2; exit 2; }
     if mkdir "$LOCK" 2>/dev/null; then   # atomic: succeeds only if no holder existed
-      write_owner
       echo "run-lock: acquired ($DIR)" >&2
+      stamp_owner
       exit 0
     fi
     if fresh; then
@@ -105,22 +145,63 @@ case "$CMD" in
     # cannot both win (only one mkdir succeeds; the loser is denied).
     rm -rf "$LOCK"
     if mkdir "$LOCK" 2>/dev/null; then
-      write_owner
       echo "run-lock: stole STALE lock on $DIR (previous holder left it >${STALE_MIN}m ago)" >&2
+      stamp_owner
       exit 0
     fi
     echo "run-lock: DENIED — lost the steal race for a stale lock on $DIR (another run is recovering it)." >&2
     exit 3
     ;;
   refresh)
-    # Touch a HELD lock so it does not age out mid-run. Do NOT recreate a missing
-    # lock: if it is gone, this run released it or another run already stole it, and
-    # resurrecting it would forge a phantom second owner. A run that still legitimately
-    # owns the topic always has the dir present (it acquired it and has not released).
-    [ -d "$LOCK" ] && touch "$LOCK"
-    exit 0
+    # Touch a HELD lock so it does not age out mid-run — but ONLY if <token> (arg 3)
+    # still matches what is currently stamped in $LOCK/.owner-token. Without this check
+    # (the pre-#798 behavior), touching $LOCK unconditionally cannot tell "the lock this
+    # run originally acquired" from "a DIFFERENT run's lock that has since replaced it at
+    # this same path" (a stale-lock steal race, or a phase boundary far enough apart for
+    # RUN_LOCK_STALE_MIN to elapse between refreshes) — it would silently extend
+    # whichever lock happens to occupy $DIR, regardless of who actually holds it (the
+    # same defect class #763 fixed in container_lock_refresh). A missing/mismatched
+    # token means this run LOST ownership; the caller MUST treat that as fatal (STOP),
+    # not a warning to log and keep going.
+    #
+    # Does NOT recreate a missing lock: if it is gone, this run released it or another
+    # run already stole it, and resurrecting it would forge a phantom second owner. A
+    # run that still legitimately owns the topic always has the dir present.
+    TOKEN="${3:-}"
+    if [ -z "$TOKEN" ]; then
+      echo "run-lock: REFUSED to refresh $DIR — no ownership token supplied. Callers must capture the token acquire/steal printed on stdout and pass it to every refresh call; refreshing without one cannot distinguish this run's lock from a different run's." >&2
+      exit 1
+    fi
+    if [ ! -d "$LOCK" ]; then
+      echo "run-lock: LOST ownership of $DIR — the lock is gone (released, or reclaimed by another run); refusing to refresh." >&2
+      exit 1
+    fi
+    CURRENT="$(cat "$LOCK/.owner-token" 2>/dev/null || true)"
+    if [ "$CURRENT" != "$TOKEN" ]; then
+      echo "run-lock: LOST ownership of $DIR — it is now held by a different run (this run's token: '$TOKEN'; currently stamped: '${CURRENT:-<none>}'). Another run stole this lock; refusing to refresh or keep writing under a false assumption of exclusive access." >&2
+      exit 1
+    fi
+    # Retry a transient touch failure before treating it as fatal (mirrors
+    # container_lock_refresh's identical fix, PR #796 review): only a PERSISTENT
+    # failure (permissions, read-only filesystem, disk full) should abort a run.
+    attempt=1
+    while [ "$attempt" -le 3 ]; do
+      touch "$LOCK" 2>/dev/null && exit 0
+      [ "$attempt" -lt 3 ] && sleep 0.05
+      attempt=$((attempt+1))
+    done
+    echo "run-lock: FAILED to refresh $DIR after 3 attempts — touch failed (permissions or read-only filesystem?); the lock's mtime was NOT extended and it may now be judged stale by a concurrent acquirer. Treat this as loss of ownership." >&2
+    exit 1
     ;;
   release)
+    TOKEN="${3:-}"
+    if [ -n "$TOKEN" ] && [ -d "$LOCK" ]; then
+      CURRENT="$(cat "$LOCK/.owner-token" 2>/dev/null || true)"
+      if [ "$CURRENT" != "$TOKEN" ]; then
+        echo "run-lock: SKIPPED release of $DIR — it is currently held by a different run than the one that acquired it (stamped token: '${CURRENT:-<missing>}'); not removing another run's lock." >&2
+        exit 0
+      fi
+    fi
     rm -rf "$LOCK"
     exit 0
     ;;
@@ -148,8 +229,8 @@ case "$CMD" in
     # (mkdir alone already stamps a current mtime; no extra touch needed.)
     rm -rf "$LOCK" 2>/dev/null
     if mkdir "$LOCK" 2>/dev/null; then
-      write_owner
       echo "run-lock: stole lock on $DIR (forced)" >&2
+      stamp_owner
       exit 0
     fi
     echo "run-lock: steal FAILED on $DIR — could not (re)create the lock; topic is NOT locked, do not proceed." >&2

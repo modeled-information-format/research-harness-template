@@ -101,10 +101,15 @@ fire when the acquire snippet's shell exits — before the gate runs — and rel
 lock prematurely.)
 
 ```bash
-if ! scripts/run-lock.sh acquire "$REPORTS_DIR" "falsify"; then
+if ! RUN_LOCK_TOKEN=$(scripts/run-lock.sh acquire "$REPORTS_DIR" "falsify"); then
   echo "Another live run owns $REPORTS_DIR — not gating (it would race the active writer)." >&2
   exit 3
 fi
+# Capture $RUN_LOCK_TOKEN from acquire's stdout and pass it to every later
+# refresh/release call (research-harness-template#798) — run-lock.sh runs as
+# separate CLI invocations, so refresh/release otherwise cannot tell "the lock
+# this run acquired" from a different run's lock that has since replaced it at
+# the same path.
 touch "$REPORTS_DIR/.gate-active"          # opens THIS topic's gate window
 CLAIM_BUDGET={claim_budget}                 # the gate budget passed to each slice (default 50)
 BATCH=$(( CLAIM_BUDGET < 12 ? CLAIM_BUDGET : 12 ))   # a slice must NOT exceed CLAIM_BUDGET or the analyst fail-louds
@@ -119,8 +124,10 @@ ungated(){ for f in "$REPORTS_DIR"/findings/*.json; do [ -e "$f" ] || continue  
 Each round:
 
 1. **Refresh the window and run lock** — `touch "$REPORTS_DIR/.gate-active"` and
-   `scripts/run-lock.sh refresh "$REPORTS_DIR"` so neither marker ages past its freshness bound
-   (`-mmin -240`) during a long multi-slice loop. Then
+   `scripts/run-lock.sh refresh "$REPORTS_DIR" "$RUN_LOCK_TOKEN"` so neither marker ages
+   past its freshness bound (`-mmin -240`) during a long multi-slice loop. **A nonzero
+   exit means this run lost ownership of the lock — STOP the gate immediately** rather
+   than keep writing under a false assumption of exclusive access. Then
    `ungated | head -n "$BATCH" > "$REPORTS_DIR/.gate-batch"`; `REM=$(ungated | wc -l)`.
 2. **If `REM` is 0 the gate is COMPLETE** — break the loop.
 3. Spawn ONE analyst over the slice (`SCOPE: batch:$REPORTS_DIR/.gate-batch`), Phase 2b below.
@@ -223,7 +230,7 @@ finding files on disk (the gate window is closed in Phase 2). **Release the topi
 and confirm both markers are gone so a future gate is not left runnable, then report and stop:
 
 ```bash
-scripts/run-lock.sh release "$REPORTS_DIR"
+scripts/run-lock.sh release "$REPORTS_DIR" "$RUN_LOCK_TOKEN"
 ls "$REPORTS_DIR"/.gate-active "$REPORTS_DIR"/.run-lock 2>/dev/null   # expect: nothing
 ```
 

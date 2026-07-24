@@ -35,6 +35,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   finding already written, `ontology-map.json` and the deliverables never
   reached), which this default converts into the function's own existing
   graceful "no ownership token supplied" refusal (PR #796 review).
+- **`scripts/run-lock.sh refresh`/`release` now verify ownership before
+  acting on `reports/<topic>/.run-lock`** — the same defect class #763 fixed
+  in `container_lock_refresh`, closed here too (research-harness-template#798).
+  `refresh` previously touched `.run-lock` unconditionally with no way to tell
+  "the lock this run originally acquired" from "a different run's lock that
+  has since replaced it at the same path" (a stale-lock steal race, or a
+  phase boundary far enough apart for `RUN_LOCK_STALE_MIN` to elapse between
+  refreshes). Unlike `container-lock.sh` (sourced into one long-lived shell,
+  so an in-memory token survives from acquire to refresh), `run-lock.sh` runs
+  as separate CLI process invocations with no shared shell state — `acquire`/
+  `steal` now stamp each (re)acquisition with a unique token in
+  `$LOCK/.owner-token` and print it on stdout so a caller can capture it
+  (`TOKEN=$(scripts/run-lock.sh acquire "$DIR" "label")`) and pass it to every
+  later `refresh`/`release` call. `refresh` refuses — without touching the
+  lock, and retrying a transient touch failure up to 3x before treating it as
+  fatal — when the token is missing, the lock is gone, or the stamped token no
+  longer matches; a nonzero return is fatal for the caller, never a
+  log-and-continue warning. `release`'s token is optional (back-compat) but
+  skips removal on a mismatch, so it can never delete a different run's live
+  lock. Every caller in `.claude/agents/orchestrator.md` and
+  `.claude/commands/falsify.md` now captures and threads the token through
+  its own acquire/refresh/release calls. Adds regression tests to
+  `evals/run-lock-test.sh` covering the exact steal-then-refresh scenario the
+  issue describes, a mismatched-token release, and a missing-token refresh.
 - **`research-deliverables.js`'s `channel` field now gets the same
   injection-validation guard `genre` already had (#764).** The Route phase's
   GENRE STRING VALIDATION guard (#640) checked a caller-controlled
