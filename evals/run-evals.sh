@@ -905,6 +905,16 @@ run     "ontology-review-discovery-not-stamped" bash -c "
 run     "engine-missing-fails-loud"  bash -c "
   out=\$(MIF_RH_CLI=/nonexistent/mif-rh-cli scripts/resolve-ontology.sh evals/fixtures/raw-finding.json 2>&1); rc=\$?;
   [ \$rc -eq 5 ] && printf %s \"\$out\" | grep -q 'install it with scripts/fetch-engine.sh'"
+
+# research-harness-template#767: a version-mismatch failure (candidate found,
+# but too old) must name WHICH of engine_bin's three resolution paths
+# ($MIF_RH_CLI override, PATH, <root>/bin/mif-rh-cli) actually supplied the
+# stale candidate, and give that source's real remedy -- "re-run
+# scripts/fetch-engine.sh" is only correct for the repo-local case; telling a
+# user with a stale override or a stale PATH binary to do that is a
+# guaranteed no-op, since fetch-engine.sh only ever writes the repo-local path.
+run "engine-version-mismatch-source-check" bash evals/engine-version-mismatch-source-check.sh
+
 # #779: a pre-release binary's suffix (-rc1, -alpha, ...) must not be
 # silently discarded by the version-extraction regex — it has to rank BELOW
 # the release of the same X.Y.Z it names, not compare as equal to it.
