@@ -49,6 +49,51 @@ set -uo pipefail
 
 die() { echo "build-topic-readme: $*" >&2; exit 2; }
 
+# ----- .tmp.$$ staging-file cleanup (research-harness-template#772) -----------
+#
+# Both write paths (corpus_build and build_readme, below) render to a sibling
+# "$OUT.tmp.$$" then `mv` it into place so a crash never leaves a half-written
+# README on disk. But if the process is killed (the PostToolUse rebuild hook
+# hitting its timeout and sending SIGTERM, or a plain Ctrl-C) after the write
+# starts but before the `mv` runs, nothing removed that staging file: the
+# ordinary-failure `|| rm -f` branch never executes on a real signal, so it was
+# left on disk forever and repeated timeouts accumulated an unbounded number of
+# orphaned "README.md.tmp.<pid>" files.
+#
+# Two complementary mechanisms close this:
+#   1. CURRENT_TMP + the traps below: EXIT always cleans up whatever staging
+#      file is currently in flight (covers normal completion, die(), and any
+#      other non-signal exit); INT/TERM clean up too, then re-raise the signal
+#      with its default disposition so the script still terminates exactly as
+#      it would have without the trap (correct exit status, no resuming).
+#   2. sweep_stale_tmp(), called immediately before a fresh write for a given
+#      $OUT: removes any leftover "$OUT.tmp.*" from a PRIOR killed invocation.
+#      This is what bounds the case the traps above cannot cover at all —
+#      SIGKILL is never catchable by any process, on any OS, so a `kill -9`
+#      mid-write can still leave a staging file behind; the next ordinary
+#      invocation for that same $OUT sweeps it before writing its own, so
+#      orphans never accumulate past one extra invocation instead of forever.
+CURRENT_TMP=""
+cleanup_current_tmp() {
+  [ -n "$CURRENT_TMP" ] && rm -f "$CURRENT_TMP"
+}
+trap cleanup_current_tmp EXIT
+on_term_signal() {
+  cleanup_current_tmp
+  trap - EXIT INT TERM
+  kill -"$1" "$$"
+}
+trap 'on_term_signal INT' INT
+trap 'on_term_signal TERM' TERM
+
+sweep_stale_tmp() {
+  local out="$1" f
+  for f in "$out".tmp.*; do
+    [ -e "$f" ] || continue   # literal, unexpanded pattern when nothing matches
+    rm -f "$f"
+  done
+}
+
 # Extract a preserved prose section's body from an existing README (shared by
 # both the per-topic and the _corpus paths). Match the heading tolerantly:
 # normalize a trailing CR (CRLF files) and any trailing whitespace before
@@ -128,7 +173,9 @@ corpus_build() {
   contra_count=$(jq -r '.contradictions | length' "$MAP")
   disproven_count=$(jq -r '.disproven | length' "$MAP")
 
+  sweep_stale_tmp "$OUT"
   local out_tmp="$OUT.tmp.$$"
+  CURRENT_TMP="$out_tmp"
   {
     printf '# Research Corpus Atlas\n\n'
     printf '**Topics:** %s | **Updated:** %s\n' "$topic_count" "$today"
@@ -175,8 +222,9 @@ corpus_build() {
     else
       printf 'Run `scripts/synthesize-corpus.sh` to render the full atlas (Cross-Corpus Insights, entity-reuse detail, contradictions, what was disproven).\n'
     fi
-  } > "$out_tmp" || { rm -f "$out_tmp"; die "failed to write $OUT"; }
-  mv "$out_tmp" "$OUT"
+  } > "$out_tmp" || { rm -f "$out_tmp"; CURRENT_TMP=""; die "failed to write $OUT"; }
+  mv "$out_tmp" "$OUT" || { rm -f "$out_tmp"; CURRENT_TMP=""; die "failed to move $out_tmp to $OUT"; }
+  CURRENT_TMP=""
   echo "wrote $OUT ($topic_count topics)"
 }
 
@@ -574,8 +622,13 @@ mkdir -p "$(dirname "$OUT")"
 # Atomic write: render to a sibling temp then mv into place, so a crash or a
 # SIGKILL (e.g. the PostToolUse rebuild hook hitting its timeout) can never leave
 # a half-written README on disk — the live file is replaced only once it is
-# complete. Matches the repo's `tmp.$$ && mv` idiom.
+# complete. Matches the repo's `tmp.$$ && mv` idiom. sweep_stale_tmp/CURRENT_TMP
+# (top of file) bound the orphaned-staging-file leak on SIGKILL/SIGTERM/SIGINT
+# (research-harness-template#772).
+sweep_stale_tmp "$OUT"
 OUT_TMP="$OUT.tmp.$$"
-build_readme > "$OUT_TMP" || { rm -f "$OUT_TMP"; die "failed to write $OUT"; }
-mv "$OUT_TMP" "$OUT"
+CURRENT_TMP="$OUT_TMP"
+build_readme > "$OUT_TMP" || { rm -f "$OUT_TMP"; CURRENT_TMP=""; die "failed to write $OUT"; }
+mv "$OUT_TMP" "$OUT" || { rm -f "$OUT_TMP"; CURRENT_TMP=""; die "failed to move $OUT_TMP to $OUT"; }
+CURRENT_TMP=""
 echo "wrote $OUT ($COUNT findings, $SOURCES sources)"
