@@ -56,6 +56,17 @@
 #      AND the release-agent call STILL fires exactly once with the correct
 #      token -- proving the window is closed even on the failure path, not
 #      just the happy path.
+#   D. acquire reports ok=true but omits token (the PR#831 Copilot review
+#      finding: LOCK_ACQUIRE_SCHEMA only requires `ok`, so an ok=true
+#      response missing `token` still passes schema validation) -- throws
+#      BEFORE the try/finally is ever entered, with no release-agent call
+#      (nothing was actually acquired with a usable token to release).
+#   E. acquire succeeds, the write loop (pipeline()) THROWS, AND the
+#      release-agent cleanup call in `finally` ALSO throws (the second
+#      PR#831 Copilot review finding: the cleanup call could itself fail
+#      and mask the real gating error) -- the ORIGINAL pipeline() error
+#      must still be the one that propagates out of the span, not the
+#      cleanup error.
 #
 # Structural checks (cheap, no stub execution) additionally prove the
 # per-finding refresh step exists, is positioned BEFORE the write step
@@ -253,6 +264,40 @@ async function caseC() {
   return { threw, releaseCalls, calls };
 }
 
+// D. acquire reports ok=true but no token -- PR#831 Copilot review finding.
+async function caseD() {
+  const calls = [];
+  const agent = async (prompt, opts) => {
+    calls.push({ label: opts.label, prompt });
+    if (opts.label === 'falsify:lock-acquire') return { ok: true };
+    throw new Error('unexpected agent() call: ' + opts.label);
+  };
+  const pipeline = async () => { calls.push({ label: '__pipeline_called__' }); throw new Error('pipeline() must never be called when acquire returned no token'); };
+  let threw = null;
+  try { await runSpan(agent, pipeline, 'reports/t', '.', [{ id: 'f1' }], {}, {}); } catch (e) { threw = e; }
+  const pipelineCalled = calls.some((c) => c.label === '__pipeline_called__');
+  const releaseCalled = calls.some((c) => c.label === 'falsify:lock-release');
+  return { threw, pipelineCalled, releaseCalled, calls };
+}
+
+// E. acquire succeeds, pipeline() throws, AND the release cleanup agent()
+// call in `finally` ALSO throws -- PR#831 Copilot review finding: the
+// original pipeline() error must still be what propagates, not the cleanup
+// error.
+async function caseE() {
+  const calls = [];
+  const agent = async (prompt, opts) => {
+    calls.push({ label: opts.label, prompt });
+    if (opts.label === 'falsify:lock-acquire') return { ok: true, token: 'TOK-E-789' };
+    if (opts.label === 'falsify:lock-release') throw new Error('simulated cleanup-call failure (network blip / model error)');
+    throw new Error('unexpected agent() call: ' + opts.label);
+  };
+  const pipeline = async () => { throw new Error('simulated per-finding failure, ORIGINAL error'); };
+  let threw = null;
+  try { await runSpan(agent, pipeline, 'reports/t', '.', [{ id: 'f1' }], {}, {}); } catch (e) { threw = e; }
+  return { threw, calls };
+}
+
 (async () => {
   let fail = 0;
   const check = (name, cond, detail) => {
@@ -277,6 +322,16 @@ async function caseC() {
   check('C. release-agent call STILL fires exactly once on the failure path', c.releaseCalls.length === 1, `count=${c.releaseCalls.length}`);
   check('C. release prompt on the failure path names the exact acquired token', !!(c.releaseCalls[0] && c.releaseCalls[0].prompt.includes('TOK-C-456')), c.releaseCalls[0] ? c.releaseCalls[0].prompt : 'no release call');
 
+  const d = await caseD();
+  check('D. acquire ok=true with no token throws', !!d.threw, d.threw ? '' : 'did not throw');
+  check('D. thrown error mentions the missing token', !!(d.threw && /token/i.test(d.threw.message)), d.threw ? d.threw.message : '');
+  check('D. pipeline() is never called when acquire returned no token', !d.pipelineCalled, JSON.stringify(d.calls));
+  check('D. no release-agent call is made when acquire returned no token', !d.releaseCalled, JSON.stringify(d.calls));
+
+  const e = await caseE();
+  check('E. the ORIGINAL pipeline() error propagates even when cleanup itself throws', !!(e.threw && /ORIGINAL error/.test(e.threw.message)), e.threw ? e.threw.message : 'did not throw');
+  check('E. the cleanup-call error does NOT mask/replace the original error', !!(e.threw && !/simulated cleanup-call failure/.test(e.threw.message)), e.threw ? e.threw.message : '');
+
   process.exit(fail);
 })();
 NODE
@@ -286,5 +341,5 @@ fi
 
 [ "$fail_behavior" -eq 0 ] || fail=1
 
-[ "$fail" -eq 0 ] && note "the gate window / run lock are acquired before any write (a failed acquire throws before pipeline() ever runs, with no release call since nothing was acquired), refreshed per finding before that finding's write, and released/closed via a finally block on EVERY exit path -- both the normal-completion path and a thrown per-finding failure (proving the window is not left open on a crash) -- with the release call always naming the exact token acquire returned"
+[ "$fail" -eq 0 ] && note "the gate window / run lock are acquired before any write (a failed acquire, or an acquire that omits its token, throws before pipeline() ever runs, with no release call since nothing was acquired), refreshed per finding before that finding's write, and released/closed via a finally block on EVERY exit path -- the normal-completion path, a thrown per-finding failure, and a failure where the release cleanup call itself also throws (the original error still propagates) -- with the release call always naming the exact token acquire returned"
 exit "$fail"

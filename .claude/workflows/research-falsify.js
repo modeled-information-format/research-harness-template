@@ -469,6 +469,19 @@ if (!lockAcquired || !lockAcquired.ok) {
       `directory is the exact documented concurrency-corruption failure scripts/run-lock.sh's own header describes).`,
   )
 }
+// LOCK_ACQUIRE_SCHEMA only requires `ok`, not `token` (an ok=false response
+// legitimately carries no token) — so an ok=true response that accidentally
+// omits it still passes schema validation and LOCK_TOKEN would silently
+// become undefined, making every later refresh/release call below run
+// against an empty token (refresh hard-fails; release may silently no-op),
+// leaving the topic lock/gate window in a bad state. Guard explicitly rather
+// than trusting the schema alone.
+if (!lockAcquired.token) {
+  throw new Error(
+    `research-falsify: lock acquisition for ${RDIR} reported ok=true but returned no token — refusing to proceed ` +
+      `with an empty lock token (every subsequent refresh/release call would silently operate against an unowned lock).`,
+  )
+}
 const LOCK_TOKEN = lockAcquired.token
 
 let gated
@@ -688,16 +701,29 @@ gated = await pipeline(
   // path — the pipeline() call above completing normally, or a per-finding
   // throw (#747/#659, or the lock-refresh loss below) propagating out of it —
   // mirroring falsify.md's own "release the lock on EVERY exit path" Phase 2
-  // contract. Best-effort cleanup: this call never itself throws further, so
-  // a release/rm failure can never mask whatever error (if any) is already
-  // propagating out of the try block.
-  await agent(
-    `Close the falsification gate window and release the topic run lock for ${RDIR} (harness ${H}, token ${LOCK_TOKEN}) — ` +
-      `this runs on every exit path, success or failure. Run: rm -f ${RDIR}/.gate-active ${RDIR}/.gate-batch; then ` +
-      `bash ${H}/scripts/run-lock.sh release ${RDIR} ${LOCK_TOKEN}. Report ok=true once both commands have been run, ` +
-      `regardless of either command's own exit code (this is best-effort cleanup, never a reason to throw further).`,
-    { label: 'falsify:lock-release', phase: 'Gate', model: 'haiku', effort: 'low', schema: LOCK_STATUS_SCHEMA },
-  )
+  // contract. This cleanup call is best-effort: the agent() invocation itself
+  // (a live model call over an untrusted shell command) can still throw or
+  // reject, and if it did so uncaught here it would replace whatever error
+  // (if any) is already propagating out of the try block above — the exact
+  // failure mode this comment used to only assert away rather than actually
+  // prevent. Catch and log instead, so cleanup failure is visible but never
+  // masks the real gating error.
+  try {
+    await agent(
+      `Close the falsification gate window and release the topic run lock for ${RDIR} (harness ${H}, token ${LOCK_TOKEN}) — ` +
+        `this runs on every exit path, success or failure. Run: rm -f ${RDIR}/.gate-active ${RDIR}/.gate-batch; then ` +
+        `bash ${H}/scripts/run-lock.sh release ${RDIR} ${LOCK_TOKEN}. Report ok=true once both commands have been run, ` +
+        `regardless of either command's own exit code (this is best-effort cleanup, never a reason to throw further).`,
+      { label: 'falsify:lock-release', phase: 'Gate', model: 'haiku', effort: 'low', schema: LOCK_STATUS_SCHEMA },
+    )
+  } catch (cleanupErr) {
+    log(
+      `research-falsify: WARNING — lock-release cleanup for ${RDIR} (token ${LOCK_TOKEN}) itself failed/threw: ` +
+        `${cleanupErr && cleanupErr.message ? cleanupErr.message : cleanupErr}. The topic lock/gate window may still ` +
+        `be held; manual cleanup (rm -f ${RDIR}/.gate-active ${RDIR}/.gate-batch; bash ${H}/scripts/run-lock.sh release ${RDIR} ${LOCK_TOKEN}) ` +
+        `may be required. Not rethrown so any real gating error already propagating out of the try block above is preserved.`,
+    )
+  }
 }
 
 phase('Rollup')
