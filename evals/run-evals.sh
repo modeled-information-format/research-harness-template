@@ -173,6 +173,21 @@ run "fanout-repair-disclosure-check" bash evals/fanout-repair-disclosure-check.s
 # propagation convention) rather than silently reported as succeeded.
 run "fanout-null-revalidate-crash" bash evals/fanout-null-revalidate-crash.sh
 
+# research-harness-template#742: the repair-lane stage's guard,
+# `if (!v || !v.validation || !v.validation.invalid.length) return v ? {
+# ...v, repaired: 0 } : v`, folded a validate agent() call resolving to null
+# (the same terminal-failure-after-retries shape #751 fixed for revalidate())
+# into the SAME early-return branch as "validation ran and found zero
+# invalid findings". That let the dimension's raw, never-validated research
+# findingPaths survive results.filter(Boolean) and leak into the run's
+# canonical findings via allPaths's validation-fallback, while the
+# per-dimension summary honestly reported valid: null for the same
+# dimension -- an internally inconsistent result. This eval proves a null
+# validate() result is now dropped (not treated as a clean pass), its raw
+# finding path never leaks into result.findings, and unrelated dimensions
+# are unaffected.
+run "fanout-null-validate-clean-pass" bash evals/fanout-null-validate-clean-pass.sh
+
 # The research-falsify verdict-merge table has deterministic teeth (#562):
 # mergeVotes()'s arithmetic (unanimous, majority-falsified, minority-
 # falsified-contested-escalates, mixed-non-falsified-takes-worst) and the

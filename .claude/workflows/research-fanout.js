@@ -154,7 +154,23 @@ const perDimension = await pipeline(
         ).then((v) => ({ dimension: d, research: r, validation: v }))
       : null,
   (v, d) => {
-    if (!v || !v.validation || !v.validation.invalid.length) return v ? { ...v, repaired: 0 } : v
+    if (!v) return v
+    if (!v.validation) {
+      // research-harness-template#742: validate agent() can legitimately resolve to null
+      // on a terminal failure after retries (the runtime's documented "returns null on
+      // death" contract — same shape #751 already guards against for the REPAIR lane's
+      // revalidate() call below). Treating that identically to "validation ran and found
+      // zero invalid findings" — the previous `!v.validation || !v.validation.invalid.length`
+      // guard folded both into one early return — let this object's RAW, never-validated
+      // research.findingPaths survive `results.filter(Boolean)` and then leak into
+      // `allPaths` via its `r.validation ? ... : r.research.findingPaths` fallback below,
+      // silently violating this file's own FINDING_CONTRACT ("a write is not done until it
+      // validates"). Drop this dimension's results entirely instead, matching the
+      // null-propagation convention already used for a failed research()/revalidate() call.
+      log(`research-fanout: ${d}: validate agent failed (terminal error after retries) — dropping this dimension's results rather than treating it as a clean validation pass`)
+      return null
+    }
+    if (!v.validation.invalid.length) return { ...v, repaired: 0 }
     // research-harness-template#623: the count of findings that arrived
     // schema-invalid or citation-defective BEFORE this repair pass ran —
     // the defect-rate signal a completion check grading only the
@@ -209,7 +225,13 @@ const perDimension = await pipeline(
 )
 
 const results = perDimension.filter(Boolean)
-const allPaths = results.flatMap((r) => (r.validation ? r.validation.validPaths : r.research.findingPaths))
+// research-harness-template#742: every entry surviving `results.filter(Boolean)` above now
+// carries a non-null r.validation by construction (the repair-lane stage either drops a
+// dimension whose validation never ran/never converged, or returns one with validation set —
+// see the null-guard above). No raw research.findingPaths fallback here: if that invariant is
+// ever broken again, this must throw loudly rather than silently re-admitting unvalidated
+// findings into the canonical output.
+const allPaths = results.flatMap((r) => r.validation.validPaths)
 const leads = results.flatMap((r) => r.research.crossDimensionLeads.map((l) => ({ from: r.dimension, lead: l })))
 
 phase('Relate')
