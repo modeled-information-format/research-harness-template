@@ -102,12 +102,29 @@ chmod +x "$FAKE_ROOT/bin/mif-rh-cli"
 out=$(env -u MIF_RH_CLI bash -c '
   cd "'"$ROOT"'" || exit 2
   . "'"$ROOT"'/scripts/lib/engine.sh"
-  # Strip any real mif-rh-cli off PATH so the repo-local fake is what resolves.
+  # Strip any real mif-rh-cli off PATH so the repo-local fake is what
+  # resolves. A directory shadowing mif-rh-cli may also be where the
+  # runner keeps core utilities (awk/grep/head, …) this eval itself
+  # depends on, so dropping the whole directory would make the eval
+  # environment-dependent/flaky for reasons unrelated to the resolution
+  # path under test. Instead, mirror the directory via symlinks and omit
+  # only the mif-rh-cli entry, keeping every other tool resolvable.
   clean_path=""
   IFS=: read -ra dirs <<< "$PATH"
   for d in "${dirs[@]}"; do
-    [ -x "$d/mif-rh-cli" ] && continue
-    clean_path="${clean_path:+$clean_path:}$d"
+    if [ -x "$d/mif-rh-cli" ]; then
+      mirror="'"$TMP"'/pathmirror-$(printf %s "$d" | tr -c "A-Za-z0-9" _)"
+      mkdir -p "$mirror"
+      for f in "$d"/*; do
+        [ -e "$f" ] || continue
+        base="$(basename "$f")"
+        [ "$base" = "mif-rh-cli" ] && continue
+        ln -sf "$f" "$mirror/$base" 2>/dev/null
+      done
+      clean_path="${clean_path:+$clean_path:}$mirror"
+    else
+      clean_path="${clean_path:+$clean_path:}$d"
+    fi
   done
   PATH="$clean_path" engine_bin "'"$FAKE_ROOT"'"
 ' 2>&1); rc=$?
