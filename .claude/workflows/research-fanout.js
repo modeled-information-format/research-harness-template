@@ -180,6 +180,19 @@ const perDimension = await pipeline(
         ),
       )
       .then((rv) => {
+        // research-harness-template#751: agent() can legitimately resolve to null on a
+        // terminal failure after retries (the runtime's documented "returns null on death"
+        // contract — see docs/reference/engine-workflows.md). Dereferencing rv.invalid
+        // unguarded turned that into an uncaught TypeError that propagated out of this
+        // pipeline() stage chain with no try/catch around it, crashing the ENTIRE fanout
+        // run for every dimension — not just this one — and discarding whatever other
+        // dimensions' work had already completed. Follow the same null-propagation
+        // convention the research/validate stages above already use (return null, let
+        // `results.filter(Boolean)` drop this dimension) instead of letting the run die.
+        if (!rv) {
+          log(`research-fanout: ${d}: revalidate agent failed (terminal error after retries) — dropping this dimension's results rather than crashing the run`)
+          return null
+        }
         if (rv.invalid.length)
           throw new Error(
             `research-fanout: ${d}: ${rv.invalid.length} finding(s) still schema-invalid after repair: ` +
