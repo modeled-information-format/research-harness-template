@@ -2,7 +2,7 @@
 id: ai-arch-mif-container-format
 type: semantic
 created: '2026-07-06T17:26:50Z'
-modified: '2026-07-10T00:00:00Z'
+modified: '2026-08-04T23:43:56.566Z'
 namespace: spec/architecture/mif-container-format
 title: 'Architecture: MIF Container -- a Data-Package-style, extensible manifest for research-harness import/export'
 tags:
@@ -25,10 +25,12 @@ temporal:
 provenance:
   '@type': Provenance
   sourceType: agent_inferred
-  trustLevel: high_confidence
+  trustLevel: user_stated
   wasGeneratedBy:
-    '@id': urn:mif:activity:mif-corpus-import-export-research-2026-07-06
+    '@id': urn:mif:activity:claude-code-session:51b3df89-f0ea-4efb-9f66-160be77fa6ca
     '@type': prov:Activity
+  agent: claude-code/claude-sonnet-5
+  agentVersion: 2.1.221
 citations:
   - '@type': Citation
     citationType: specification
@@ -117,6 +119,8 @@ relationships:
     target: /docs/adr/0012-on-demand-ontology-vendoring.md
   - type: relates-to
     target: /docs/adr/0016-engine-only-classification.md
+  - type: superseded-by
+    target: /docs/adr/0017-mif-container-instance-scoped-export-import-format.md
 entity:
   name: MIF Container Architecture
   entity_type: architecture-document

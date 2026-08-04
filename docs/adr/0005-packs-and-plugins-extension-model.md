@@ -143,3 +143,18 @@ manifest edit. The cost is more registry entries, contained by schema-validated
 **Summary:** The `packs[]` control plane, the marketplace manifest, the pack contract schema, and the `packs/` tree all exist and reflect the one-plugin-per-skill model.
 
 **Action Required:** None
+
+### 2026-08-04
+
+**Status:** Compliant, default-enabled set has grown
+
+**Findings:**
+
+| Finding | Files | Assessment |
+| --- | --- | --- |
+| One-plugin-per-skill model still holds | `packs/`, `schemas/pack.schema.json` | compliant |
+| Default-enabled report-genre set grew from 5 to 8 (plus 3 methodology packs, 11 total) | `harness.config.json` `packs[]` | drift from this ADR's original Decision text, not a violation of the extension model itself |
+
+**Summary:** This ADR's Decision text names five default-enabled report genres (`academic`, `briefing`, `engineering`, `exec-summary`, `trend-analysis`). `harness.config.json` `packs[]` now ships 11 packs enabled by default: those five plus `computing-paper`, `market-research-report`, `competitive-quadrant`, and the methodology packs `competitive-analysis`, `market-sizing`, `trend-modeling`. The core decision this ADR records — packs as the only extension surface, one plugin per skill — is unaffected; only the specific default-enabled roster named in the Decision text is stale. Found by a full `mif-docs` `audit-docs` run over `docs/`.
+
+**Action Required:** None for the extension-model decision itself. The default-enabled roster is not re-litigated here (see `docs/reference/packs-and-plugins.md`, `docs/reference/packs/reports.md`, `docs/how-to/adopt-packs.md`, `docs/explanation/pack-structure.md`, and `docs/explanation/reading-the-research.md`, all updated to the current 11-pack set in the same change that added this entry).

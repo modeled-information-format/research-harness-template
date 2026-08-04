@@ -1,6 +1,6 @@
 ---
 id: how-to-import-a-corpus
-type: semantic
+type: procedural
 created: '2026-06-19T17:03:52-04:00'
 modified: '2026-07-12T15:45:42.819Z'
 namespace: docs/how-to

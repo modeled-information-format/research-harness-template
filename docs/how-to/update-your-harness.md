@@ -1,6 +1,6 @@
 ---
 id: how-to-update-your-harness
-type: semantic
+type: procedural
 created: '2026-06-25T07:30:10-04:00'
 modified: '2026-07-21T11:12:43.391Z'
 namespace: docs/how-to

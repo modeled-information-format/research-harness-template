@@ -1,8 +1,8 @@
 ---
 id: how-to-vendor-ontologies-on-demand
-type: semantic
+type: procedural
 created: '2026-06-30T09:56:57-04:00'
-modified: '2026-07-07T20:20:30-04:00'
+modified: '2026-08-04T23:45:39.337Z'
 namespace: docs/how-to
 tags:
   - documentation
@@ -10,6 +10,17 @@ tags:
 title: "Vendor ontologies on demand"
 description: "Fetch a domain ontology from the canonical registry, verify it against its pinned hash, and author-and-contribute a new one when none exists."
 diataxis_type: how-to
+relationships:
+  - type: relates-to
+    target: /docs/adr/0012-on-demand-ontology-vendoring.md
+provenance:
+  '@type': Provenance
+  agent: claude-code/claude-sonnet-5
+  wasGeneratedBy:
+    '@id': urn:mif:activity:claude-code-session:51b3df89-f0ea-4efb-9f66-160be77fa6ca
+    '@type': prov:Activity
+  trustLevel: user_stated
+  agentVersion: 2.1.221
 ---
 
 # Vendor ontologies on demand

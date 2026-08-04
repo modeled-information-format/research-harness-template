@@ -335,7 +335,7 @@ jq '(.ontologies[] | select(.id=="cosmology") | .enabled) |= true' \
 
 ## data-engineering
 
-**Version:** 0.2.0 | **Kind:** ontology
+**Version:** 0.4.0 | **Kind:** ontology
 
 **Source:** [`packs/ontologies/data-engineering/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/ontologies/data-engineering)
 
@@ -674,7 +674,7 @@ jq '(.ontologies[] | select(.id=="heliophysics") | .enabled) |= true' \
 
 ## market-research
 
-**Version:** 0.1.0 | **Kind:** ontology
+**Version:** 0.4.0 | **Kind:** ontology
 
 **Source:** [`packs/ontologies/market-research/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/ontologies/market-research)
 
@@ -893,7 +893,7 @@ jq '(.ontologies[] | select(.id=="non-ionizing-radiation") | .enabled) |= true' 
 
 ## observability
 
-**Version:** 0.1.0 | **Kind:** ontology
+**Version:** 0.4.0 | **Kind:** ontology
 
 **Source:** [`packs/ontologies/observability/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/ontologies/observability)
 
@@ -1183,7 +1183,7 @@ jq '(.ontologies[] | select(.id=="platform-engineering") | .enabled) |= true' \
 
 ## psycholinguistics
 
-**Version:** 0.1.0 | **Kind:** ontology
+**Version:** 0.2.0 | **Kind:** ontology
 
 **Source:** [`packs/ontologies/psycholinguistics/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/ontologies/psycholinguistics)
 
@@ -1251,7 +1251,7 @@ jq '(.ontologies[] | select(.id=="psycholinguistics") | .enabled) |= true' \
 
 ## regenerative-agriculture
 
-**Version:** 0.1.0 | **Kind:** ontology
+**Version:** 0.3.0 | **Kind:** ontology
 
 **Source:** [`packs/ontologies/regenerative-agriculture/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/ontologies/regenerative-agriculture)
 
@@ -1310,7 +1310,7 @@ jq '(.ontologies[] | select(.id=="regenerative-agriculture") | .enabled) |= true
 
 ## regenerative-agriculture-research
 
-**Version:** 0.1.0 | **Kind:** ontology
+**Version:** 0.6.0 | **Kind:** ontology
 
 **Source:** [`packs/ontologies/regenerative-agriculture-research/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/ontologies/regenerative-agriculture-research)
 
@@ -1381,7 +1381,7 @@ jq '(.ontologies[] | select(.id=="regenerative-agriculture-research") | .enabled
 
 ## regulatory-legal
 
-**Version:** 0.1.0 | **Kind:** ontology
+**Version:** 0.3.0 | **Kind:** ontology
 
 **Source:** [`packs/ontologies/regulatory-legal/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/ontologies/regulatory-legal)
 
@@ -1443,7 +1443,7 @@ jq '(.ontologies[] | select(.id=="regulatory-legal") | .enabled) |= true' \
 
 ## scientific
 
-**Version:** 0.1.0 | **Kind:** ontology
+**Version:** 0.3.0 | **Kind:** ontology
 
 **Source:** [`packs/ontologies/scientific/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/ontologies/scientific)
 
@@ -1507,7 +1507,7 @@ jq '(.ontologies[] | select(.id=="scientific") | .enabled) |= true' \
 
 ## software-engineering
 
-**Version:** 0.5.0 | **Kind:** ontology
+**Version:** 0.7.0 | **Kind:** ontology
 
 **Source:** [`packs/ontologies/software-engineering/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/ontologies/software-engineering)
 
@@ -1573,7 +1573,7 @@ jq '(.ontologies[] | select(.id=="software-engineering") | .enabled) |= true' \
 
 ## software-security
 
-**Version:** 0.2.0 | **Kind:** ontology
+**Version:** 0.4.0 | **Kind:** ontology
 
 **Source:** [`packs/ontologies/software-security/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/ontologies/software-security)
 
@@ -1641,7 +1641,7 @@ jq '(.ontologies[] | select(.id=="software-security") | .enabled) |= true' \
 
 ## trend-analysis
 
-**Version:** 0.1.0 | **Kind:** ontology
+**Version:** 0.4.0 | **Kind:** ontology
 
 **Source:** [`packs/ontologies/trend-analysis/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/ontologies/trend-analysis)
 

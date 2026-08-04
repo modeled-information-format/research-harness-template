@@ -2,13 +2,21 @@
 id: explanation-reading-the-research
 type: semantic
 created: '2026-06-28T23:46:18-04:00'
-modified: '2026-06-28T23:46:18-04:00'
+modified: '2026-08-04T23:48:41.771Z'
 namespace: docs/explanation
 tags:
   - documentation
   - explanation
 title: "Explanation: reading the research"
 diataxis_type: explanation
+provenance:
+  '@type': Provenance
+  agent: claude-code/claude-sonnet-5
+  wasGeneratedBy:
+    '@id': urn:mif:activity:claude-code-session:51b3df89-f0ea-4efb-9f66-160be77fa6ca
+    '@type': prov:Activity
+  trustLevel: user_stated
+  agentVersion: 2.1.221
 ---
 
 # Explanation: reading the research
@@ -281,7 +289,9 @@ readable projection:
 
 Each genre re-shapes the *same* surviving findings for a different audience and
 convention. **Enabled by default:** `exec-summary`, `briefing`, `academic`,
-`engineering`, `trend-analysis`. Everything else is **opt-in**.
+`engineering`, `trend-analysis`, `computing-paper`, `market-research-report`,
+`competitive-quadrant`, plus the methodology packs `competitive-analysis`,
+`market-sizing`, and `trend-modeling`. Everything else is **opt-in**.
 
 | Genre | The question it answers | When to read it | Default | In the example |
 | --- | --- | --- | --- | --- |
@@ -290,12 +300,12 @@ convention. **Enabled by default:** `exec-summary`, `briefing`, `academic`,
 | **academic** | How does this read to a scholarly reviewer? | A peer-review-style paper (APA/IMRaD) with a formal bibliography. | on | [view](https://modeled-information-format.github.io/research-harness-template/reports/example-okf-mif-knowledge-spine/report-academic/) |
 | **engineering** | What is the build-vs-buy / architecture call? | A practitioner audience — required comparison table, optional diagrams. | on | [view](https://modeled-information-format.github.io/research-harness-template/reports/example-okf-mif-knowledge-spine/report-engineering/) |
 | **trend-analysis** | Where is this heading, and what should I watch? | Signals, drivers, and 2–4 forward scenarios with a trajectory diagram. | on | [view](https://modeled-information-format.github.io/research-harness-template/reports/example-okf-mif-knowledge-spine/report-trend-analysis/) |
-| **computing-paper** | How does this read for an ACM/IEEE venue? | A systems paper with Related Work and an explicit Evaluation section. | opt-in | [view](https://modeled-information-format.github.io/research-harness-template/reports/example-okf-mif-knowledge-spine/report-computing-paper/) |
-| **market-research-report** | What is the full, disclosed market study? | A complete ESOMAR/ISO 20252-shaped study with sampling and methodology. | opt-in | [view](https://modeled-information-format.github.io/research-harness-template/reports/example-okf-mif-knowledge-spine/report-market-research-report/) |
-| **market-sizing** | How big is the opportunity? | A TAM/SAM/SOM estimate with a named methodology and confidence. | opt-in | [view](https://modeled-information-format.github.io/research-harness-template/reports/example-okf-mif-knowledge-spine/report-market-sizing/) |
-| **competitive-analysis** | Who competes, and how intense is it? | Porter's 5 Forces and a competitor matrix with trajectory indicators. | opt-in | [view](https://modeled-information-format.github.io/research-harness-template/reports/example-okf-mif-knowledge-spine/report-competitive-analysis/) |
-| **competitive-quadrant** | Who leads on vision versus execution? | A two-axis vendor quadrant (Leaders / Challengers / Visionaries / Niche). | opt-in | [view](https://modeled-information-format.github.io/research-harness-template/reports/example-okf-mif-knowledge-spine/report-competitive-quadrant/) |
-| **trend-modeling** | What futures are internally consistent when data is scarce? | Qualitative INC/DEC/CONST scenario enumeration with a transition graph. | opt-in | [view](https://modeled-information-format.github.io/research-harness-template/reports/example-okf-mif-knowledge-spine/report-trend-modeling/) |
+| **computing-paper** | How does this read for an ACM/IEEE venue? | A systems paper with Related Work and an explicit Evaluation section. | on | [view](https://modeled-information-format.github.io/research-harness-template/reports/example-okf-mif-knowledge-spine/report-computing-paper/) |
+| **market-research-report** | What is the full, disclosed market study? | A complete ESOMAR/ISO 20252-shaped study with sampling and methodology. | on | [view](https://modeled-information-format.github.io/research-harness-template/reports/example-okf-mif-knowledge-spine/report-market-research-report/) |
+| **market-sizing** | How big is the opportunity? | A TAM/SAM/SOM estimate with a named methodology and confidence. | on | [view](https://modeled-information-format.github.io/research-harness-template/reports/example-okf-mif-knowledge-spine/report-market-sizing/) |
+| **competitive-analysis** | Who competes, and how intense is it? | Porter's 5 Forces and a competitor matrix with trajectory indicators. | on | [view](https://modeled-information-format.github.io/research-harness-template/reports/example-okf-mif-knowledge-spine/report-competitive-analysis/) |
+| **competitive-quadrant** | Who leads on vision versus execution? | A two-axis vendor quadrant (Leaders / Challengers / Visionaries / Niche). | on | [view](https://modeled-information-format.github.io/research-harness-template/reports/example-okf-mif-knowledge-spine/report-competitive-quadrant/) |
+| **trend-modeling** | What futures are internally consistent when data is scarce? | Qualitative INC/DEC/CONST scenario enumeration with a transition graph. | on | [view](https://modeled-information-format.github.io/research-harness-template/reports/example-okf-mif-knowledge-spine/report-trend-modeling/) |
 
 Beyond these, the harness bundles further **domain genres** — `legal-memo`,
 `nist-sp`, `systematic-review`, `sustainability-report`, `humanities-chicago`,

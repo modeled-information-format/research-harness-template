@@ -1,14 +1,22 @@
 ---
 id: how-to-adopt-packs
-type: semantic
+type: procedural
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-06-26T09:21:24-04:00'
+modified: '2026-08-04T23:46:56.290Z'
 namespace: docs/how-to
 tags:
   - documentation
   - how-to
 title: "How to adopt a pack"
 diataxis_type: how-to
+provenance:
+  '@type': Provenance
+  agent: claude-code/claude-sonnet-5
+  wasGeneratedBy:
+    '@id': urn:mif:activity:claude-code-session:51b3df89-f0ea-4efb-9f66-160be77fa6ca
+    '@type': prov:Activity
+  trustLevel: user_stated
+  agentVersion: 2.1.221
 ---
 
 # How to adopt a pack
@@ -73,9 +81,12 @@ Disabled packs are omitted from both `.claude/settings.local.json` and
 
 ## Defaults
 
-By default the five `reports` genres (`academic`, `briefing`, `engineering`,
-`exec-summary`, `trend-analysis`) are enabled; every other pack is disabled and
-opt-in. The blog channel is a first-class, always-on output and is not a pack.
+By default `harness.config.json` ships 11 enabled packs: 8 `reports` genres
+(`academic`, `briefing`, `computing-paper`, `engineering`, `exec-summary`,
+`market-research-report`, `competitive-quadrant`, `trend-analysis`) plus 3
+methodology packs (`competitive-analysis`, `market-sizing`,
+`trend-modeling`); every other pack is disabled and opt-in. The blog channel
+is a first-class, always-on output and is not a pack.
 
 ## Ontology packs use a different surface
 

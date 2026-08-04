@@ -86,10 +86,10 @@ For control-plane mechanics — enabling, disabling, and listing packs — see
 | kiro-design | genres | genre | Kiro design document, traced to its requirements, for a single feature | none |
 | kiro-tasks | genres | genre | Kiro implementation task list for a single feature | none |
 | feature-spec | genres | genre | GitHub Spec Kit single-capability feature spec for a coding agent | none |
-| diataxis-explanation | genres | genre | Diátaxis explanation — understanding-oriented discussion of the why behind a topic | none |
-| diataxis-how-to | genres | genre | Diátaxis how-to guide — task-oriented recipe for accomplishing one known goal | none |
-| diataxis-reference | genres | genre | Diátaxis reference — dry, exhaustive lookup description of one thing | none |
-| diataxis-tutorial | genres | genre | Diátaxis tutorial — learning-oriented, hands-on lesson for a beginner | none |
+| diataxis-explanation | reports | genre | Diátaxis explanation — understanding-oriented discussion of the why behind a topic | none |
+| diataxis-how-to | reports | genre | Diátaxis how-to guide — task-oriented recipe for accomplishing one known goal | none |
+| diataxis-reference | reports | genre | Diátaxis reference — dry, exhaustive lookup description of one thing | none |
+| diataxis-tutorial | reports | genre | Diátaxis tutorial — learning-oriented, hands-on lesson for a beginner | none |
 | trend-modeling | trend-modeling | methodology | Three-valued logic (INC/DEC/CONST) scenario modeling | @mermaid-js/mermaid-cli (optional) |
 | continuous-monitor | monitoring | methodology | Unattended, scheduled monitoring of external sources for a topic, gated through a mandatory human Editorial Gate | jq, python3, curl, timeout, ajv-cli, git |
 | biology-research-lab | ontologies | ontology | Full research lab lifecycle entity vocabulary | none |

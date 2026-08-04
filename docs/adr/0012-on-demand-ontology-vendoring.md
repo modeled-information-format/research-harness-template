@@ -11,7 +11,7 @@ author: zircote
 project: research-harness-template
 technologies: [Bash, jq, yq, sha256]
 audience: [developers, architects]
-related: [0008-attested-fail-closed-supply-chain.md, 0011-fail-closed-ontology-completeness-gate.md]
+related: [0002-mif-level-3-io-conformance.md, 0008-attested-fail-closed-supply-chain.md, 0011-fail-closed-ontology-completeness-gate.md]
 ---
 
 # ADR-0012: On-demand ontology vendoring from a canonical registry

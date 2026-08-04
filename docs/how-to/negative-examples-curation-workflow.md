@@ -1,6 +1,6 @@
 ---
 id: how-to-negative-examples-curation-workflow
-type: semantic
+type: procedural
 created: '2026-07-07T18:08:52-04:00'
 modified: '2026-07-07T18:08:52-04:00'
 namespace: docs/how-to

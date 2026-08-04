@@ -2,13 +2,26 @@
 id: explanation-classification-engine
 type: semantic
 created: '2026-07-05T00:00:00Z'
-modified: '2026-07-05T00:00:00Z'
+modified: '2026-08-04T23:45:44.294Z'
 namespace: docs/explanation
 tags:
   - documentation
   - explanation
 title: "The classification engine"
 diataxis_type: explanation
+relationships:
+  - type: relates-to
+    target: /docs/adr/0016-engine-only-classification.md
+  - type: relates-to
+    target: /docs/adr/0014-compiled-ontology-engine-cli-and-mcp.md
+provenance:
+  '@type': Provenance
+  agent: claude-code/claude-sonnet-5
+  wasGeneratedBy:
+    '@id': urn:mif:activity:claude-code-session:51b3df89-f0ea-4efb-9f66-160be77fa6ca
+    '@type': prov:Activity
+  trustLevel: user_stated
+  agentVersion: 2.1.221
 ---
 
 # The classification engine

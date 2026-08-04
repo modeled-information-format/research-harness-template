@@ -1,6 +1,6 @@
 ---
 id: how-to-author-json-with-models
-type: semantic
+type: procedural
 created: '2026-06-22T07:15:33-04:00'
 modified: '2026-06-26T09:21:24-04:00'
 namespace: docs/how-to

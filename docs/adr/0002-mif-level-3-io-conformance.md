@@ -11,7 +11,7 @@ author: zircote
 project: research-harness-template
 technologies: [MIF, JSON Schema, W3C-PROV, ajv]
 audience: [developers, architects]
-related: [0004-single-adversarial-falsification-gate.md, 0007-report-channel-canonical-blog-mif-exempt.md]
+related: [0004-single-adversarial-falsification-gate.md, 0007-report-channel-canonical-blog-mif-exempt.md, 0012-on-demand-ontology-vendoring.md]
 ---
 
 # ADR-0002: MIF Level-3 I/O conformance as the harness substrate

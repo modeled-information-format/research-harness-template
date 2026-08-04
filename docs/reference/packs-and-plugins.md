@@ -2,7 +2,7 @@
 id: reference-packs-and-plugins
 type: semantic
 created: '2026-06-23T09:41:01-04:00'
-modified: '2026-07-20T02:05:07.545Z'
+modified: '2026-08-04T23:47:21.147Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -19,10 +19,10 @@ provenance:
   sourceType: agent_inferred
   agent: claude-code/claude-sonnet-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:cc83f20c-2193-42dd-b5b5-72fe80571327
+    '@id': urn:mif:activity:claude-code-session:51b3df89-f0ea-4efb-9f66-160be77fa6ca
     '@type': prov:Activity
   trustLevel: user_stated
-  agentVersion: 2.1.215
+  agentVersion: 2.1.221
 ---
 
 # Reference: packs and plugins
@@ -212,7 +212,11 @@ as any other source.
    and resolved skills, for tooling and the conformance gate (also gitignored).
 
 Disabled plugins appear in neither, so their skills are not active. By default
-the five `reports` genres are enabled; every other plugin is disabled and opt-in.
+`harness.config.json` ships 11 enabled packs: 8 `reports` genres (`academic`,
+`briefing`, `computing-paper`, `engineering`, `exec-summary`,
+`market-research-report`, `competitive-quadrant`, `trend-analysis`) plus 3
+methodology packs (`competitive-analysis`, `market-sizing`,
+`trend-modeling`); every other plugin is disabled and opt-in.
 
 ### Template-managed vs instance-local config
 
@@ -251,9 +255,10 @@ page and `harness.config.json` `packs[]`.
 **Report genres** — deliverable templates ([`packs/reports.md`](packs/reports.md),
 32 plugins, all consumed externally from
 [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)
-— no `packs/reports/` directory; `academic`, `briefing`, `engineering`,
-`exec-summary`, and `trend-analysis` are enabled by default, the rest are
-opt-in): `academic`, `adr`, `arc42-arch-doc`, `briefing`, `c4-model-diagram`,
+— no `packs/reports/` directory; `academic`, `briefing`, `computing-paper`,
+`engineering`, `exec-summary`, `market-research-report`,
+`competitive-quadrant`, and `trend-analysis` are enabled by default, the
+rest are opt-in): `academic`, `adr`, `arc42-arch-doc`, `briefing`, `c4-model-diagram`,
 `changelog`, `clinical-submission`, `competitive-quadrant`,
 `compliance-audit`, `computing-paper`, `diataxis-explanation`,
 `diataxis-how-to`, `diataxis-reference`, `diataxis-tutorial`, `engineering`,

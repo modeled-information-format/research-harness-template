@@ -2,13 +2,18 @@
 id: explanation-mif-io-conformance
 type: semantic
 created: '2026-06-20T06:10:40-04:00'
-modified: '2026-07-13T15:33:35.524Z'
+modified: '2026-08-04T23:46:10.674Z'
 namespace: docs/explanation
 tags:
   - documentation
   - explanation
 title: "MIF I/O conformance"
 diataxis_type: explanation
+relationships:
+  - type: relates-to
+    target: /docs/adr/0002-mif-level-3-io-conformance.md
+  - type: relates-to
+    target: /docs/adr/0018-mif-docs-plugin-as-document-tooling-substrate.md
 temporal:
   '@type': TemporalMetadata
   validFrom: '2026-06-20T06:10:40-04:00'
@@ -19,10 +24,10 @@ provenance:
   sourceType: agent_inferred
   agent: claude-code/claude-sonnet-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:878c53f7-09b4-4f64-bb13-e210d7c2f073
+    '@id': urn:mif:activity:claude-code-session:51b3df89-f0ea-4efb-9f66-160be77fa6ca
     '@type': prov:Activity
   trustLevel: user_stated
-  agentVersion: 2.1.207
+  agentVersion: 2.1.221
 ---
 
 # MIF I/O conformance
