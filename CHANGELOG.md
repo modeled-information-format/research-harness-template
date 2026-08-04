@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.40] - 2026-08-04
+
+### Fixed
+
+- `docs/`: 328 internal links written GitHub-style with a `.md`/`.mdx` suffix,
+  across 60 files, rewritten to resolve under the site's actual trailing-slash
+  Starlight routes. Found by `mif-docs`' `audit-docs` skill's deterministic
+  `link-integrity` check and applied mechanically via
+  `check-doc-links.mjs --write`.
+
 ## [0.16.39] - 2026-07-24
 
 ### Fixed
