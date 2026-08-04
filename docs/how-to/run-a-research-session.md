@@ -51,7 +51,7 @@ arrive via optional channel packs.
 
 In the same phase the orchestrator reconciles the topic's navigation
 `README.md` so its counts, dimensions, key findings, and report table stay
-current — see [Maintain topic READMEs](maintain-topic-readmes.md).
+current — see [Maintain topic READMEs](../maintain-topic-readmes/).
 
 ## Continuity
 

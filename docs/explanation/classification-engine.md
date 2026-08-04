@@ -15,7 +15,7 @@ diataxis_type: explanation
 
 `resolve-ontology.sh` and `ontology-review.sh` keep their names, flags, and
 documented contracts, but since
-[ADR-0016](../adr/0016-engine-only-classification.md) they delegate to a
+[ADR-0016](../../adr/0016-engine-only-classification/) they delegate to a
 compiled binary, `mif-rh-cli`, rather than to a bash-and-`yq`/`jq`/`ajv`
 pipeline. This page explains why a compiled engine replaced the bash pair,
 what boundary it preserves from the earlier design, how the confidence-tier
@@ -28,7 +28,7 @@ The bash pipeline spawned `yq`, `jq`, and `ajv` as separate subprocesses per
 finding. That cost is fixed per invocation and paid once per finding, so it
 scales linearly with corpus size and has no ceiling: a full-corpus review of
 a real, 4296-finding corpus took over twenty minutes
-([ADR-0014](../adr/0014-compiled-ontology-engine-cli-and-mcp.md)). A compiled
+([ADR-0014](../../adr/0014-compiled-ontology-engine-cli-and-mcp/)). A compiled
 engine replaces N subprocess spawns per finding with N in-process
 deserializations inside one long-lived process, which is the dominant source
 of the measured speedup: the same real corpus completed in under a second
@@ -42,7 +42,7 @@ trusted with anything, and that equivalence is proven continuously, not
 assumed once: a parity suite in `modeled-information-format/mif-rs` runs
 library-level and binary-level cases against a pinned checkout of this
 repository on every change to the engine. Before
-[ADR-0016](../adr/0016-engine-only-classification.md), that parity suite was
+[ADR-0016](../../adr/0016-engine-only-classification/), that parity suite was
 a bridge between two coexisting implementations; after it, the bash bodies
 are retired and the suite is a regression net for the one implementation
 that remains. The engine also reloads its catalog, configuration, and
@@ -66,7 +66,7 @@ The harness has always separated two questions that can be proven to
 different degrees: which `entity_type` a finding resembles (classification),
 and whether a stamped type actually resolves against a topic's bound
 ontologies and satisfies its schema (resolution). See
-[ontology conformance](ontology-conformance.md) for the full account of that
+[ontology conformance](../ontology-conformance/) for the full account of that
 split. Classification is agent-mediated and best-effort, whether it comes
 from a content-pattern guess, an agent's own judgment during topic
 onboarding, or now the engine's embedding-based suggestions described below.
@@ -101,7 +101,7 @@ ontologies. Recalibrating as a corpus grows is expected, not a one-time
 setup step.
 
 `auto_classify_eligible` names a confidence band, not a write authorization.
-[ADR-0015](../adr/0015-confidence-tier-consumption-and-scored-suggestion-routing.md)
+[ADR-0015](../../adr/0015-confidence-tier-consumption-and-scored-suggestion-routing/)
 routes every tier's output into a scored suggestion queue
 (`reports/_meta/suggestions/<topic>.json`) that a reviewer works through
 `/ontology-review --enrich`: each entry is confirmed or rejected, never
@@ -149,13 +149,13 @@ point in a session rather than only at the fixed points where the
 deterministic scripts run. That agent-facing reach is exactly why the MCP
 server has no write access to `reports/`: an agent invoking `suggest_type`
 mid-session is asking a question, and the invariant this harness commits to
-([ADR-0011](../adr/0011-fail-closed-ontology-completeness-gate.md)) is that
+([ADR-0011](../../adr/0011-fail-closed-ontology-completeness-gate/)) is that
 a shippable finding ships only with a durable, valid `entity` stamp, proven
 by the deterministic gate. If a query tool could also write, that invariant
 would depend on every agent's discipline never to let a good-looking
 suggestion skip the gate; making the write path structurally unavailable
 removes that dependency instead of documenting around it.
-[ADR-0015](../adr/0015-confidence-tier-consumption-and-scored-suggestion-routing.md)
+[ADR-0015](../../adr/0015-confidence-tier-consumption-and-scored-suggestion-routing/)
 extends the same posture to the scored suggestion queue: routing embedding-
 derived scores through a purpose-built queue, rather than through the
 deterministic review artifact the gate consumes, keeps a model-dependent
@@ -163,12 +163,12 @@ signal outside the gate's input surface entirely.
 
 ## See also
 
-- [The ontological spine](ontological-spine.md), for how a resolved type
+- [The ontological spine](../ontological-spine/), for how a resolved type
   and verdict compose into the cross-topic concordance.
-- [Ontology conformance](ontology-conformance.md), for the full
+- [Ontology conformance](../ontology-conformance/), for the full
   classification-versus-resolution account and the ontology registry the
   engine resolves against.
-- [How to run the classification engine loop](../how-to/run-the-classification-engine-loop.md),
+- [How to run the classification engine loop](../../how-to/run-the-classification-engine-loop/),
   for the operator-facing steps: calibrate, queue suggestions, confirm or
   reject, and mine expansion candidates.
 - ADR-0014, ADR-0015, and ADR-0016, for the decision record behind the

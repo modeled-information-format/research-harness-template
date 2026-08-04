@@ -342,9 +342,9 @@ test/eval surface, not merely a subset.
 
 ## Related Decisions
 
-- [ADR-0001: Four-layer single-repository architecture](0001-four-layer-single-repository-architecture.md) — this decision lives inside the "harness services" layer; the deterministic-engine-vs-agent-layer split this ADR relies on (Option 4's rejection) is that same boundary.
-- [ADR-0011: Fail-closed ontology-completeness gate](0011-fail-closed-ontology-completeness-gate.md) — the compiled engine must not regress this gate's fail-closed contract.
-- [ADR-0012: On-demand ontology vendoring](0012-on-demand-ontology-vendoring.md) — same ontology subsystem; the compiled engine must continue to honor vendored/pinned ontology packs the same way `resolve-ontology.sh` does today.
+- [ADR-0001: Four-layer single-repository architecture](../0001-four-layer-single-repository-architecture/) — this decision lives inside the "harness services" layer; the deterministic-engine-vs-agent-layer split this ADR relies on (Option 4's rejection) is that same boundary.
+- [ADR-0011: Fail-closed ontology-completeness gate](../0011-fail-closed-ontology-completeness-gate/) — the compiled engine must not regress this gate's fail-closed contract.
+- [ADR-0012: On-demand ontology vendoring](../0012-on-demand-ontology-vendoring/) — same ontology subsystem; the compiled engine must continue to honor vendored/pinned ontology packs the same way `resolve-ontology.sh` does today.
 
 ## Links
 

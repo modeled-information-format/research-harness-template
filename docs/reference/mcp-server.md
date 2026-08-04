@@ -33,13 +33,13 @@ sessions: `search`, `suggest_type`, `find_similar`, and `corpus_stats`. It
 has no filesystem write access to `reports/` — every candidate it returns
 is a hypothesis for a human or agent to confirm through
 `/ontology-review --enrich`, never an auto-stamp. For the CLI binary these
-tools wrap, see [engine-cli.md](engine-cli.md).
+tools wrap, see [../engine-cli/](../engine-cli/).
 
 ## Registration
 
 `.mcp.json` at the instance root registers `mif-rh` alongside `mif-mcp`
 (`mif-docs-plugin`'s own document-tooling server — see
-[dependencies.md](dependencies.md) — unrelated to this page's `mif-rh-mcp`,
+[../dependencies/](../dependencies/) — unrelated to this page's `mif-rh-mcp`,
 scoped here for completeness only):
 
 ```json

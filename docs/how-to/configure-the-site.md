@@ -19,12 +19,12 @@ docs site and demonstrates the bundled example report; in an instantiated harnes
 it is your primary local mode of reading research. This guide shows how to choose
 which surface leads, toggle the optional site plugins, and read your reports
 locally. For the underlying control plane, see the `site` block in the
-[configuration reference](../reference/configuration.md) and
-[`site-toggle.sh`](../reference/scripts.md).
+[configuration reference](../../reference/configuration/) and
+[`site-toggle.sh`](../../reference/scripts/).
 
 ## Before you begin
 
-- Have the [core runtime](../reference/dependencies.md) installed (`jq` for the
+- Have the [core runtime](../../reference/dependencies/) installed (`jq` for the
   toggles) plus `node` to build the site (`npm install` once).
 - The one file you edit is `harness.config.json`; the toggles write its `.site`
   block. You never hand-edit `astro.config.mjs` — it reads `.site` at build time.
@@ -39,7 +39,7 @@ npm run dev          # serve with live reload; or: npm run build && npm run prev
 `npm run reports` is an alias for the local reader. A clone is activated
 reports-primary at instantiation (see below), so your reports lead the sidebar. For
 the full step-by-step (the local URL and base path, production preview, and
-troubleshooting), see [How to run and browse the local site](run-the-local-site.md).
+troubleshooting), see [How to run and browse the local site](../run-the-local-site/).
 
 ## Choose the leading surface
 
@@ -76,7 +76,7 @@ deliberately not copied into clones — your first `/start` populates your own t
 
 ## Do it conversationally
 
-The [`/configure`](../reference/commands.md) command is a concierge over all of
+The [`/configure`](../../reference/commands/) command is a concierge over all of
 this: it toggles packs and site features, manages ontologies and topics, and
 re-runs the gates. For example, ask it to "make reports the primary surface and
 turn on image zoom" and it drives the same scripts and validates the result.

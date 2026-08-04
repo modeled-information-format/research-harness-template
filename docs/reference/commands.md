@@ -29,7 +29,7 @@ provenance:
 Commands are slash-command entry points invoked directly in a Claude session.
 All twelve listed here are core (non-pack); they ship with the template.
 
-See [dependencies](dependencies.md) for tool installation requirements.
+See [dependencies](../dependencies/) for tool installation requirements.
 
 ---
 
@@ -84,8 +84,8 @@ The finished `<output-dir>/mif-package.json` is self-validated against
 **Dependencies:** `scripts/mif-container-resolve-scope.sh`,
 `scripts/mif-container-digest.sh`, `schemas/mif-container.schema.json`, `jq`, `ajv`.
 
-**Docs:** [how-to](../how-to/export-and-import-a-topic.md) ·
-[explanation](../explanation/mif-container-format.md).
+**Docs:** [how-to](../../how-to/export-and-import-a-topic/) ·
+[explanation](../../explanation/mif-container-format/).
 
 ---
 
@@ -135,7 +135,7 @@ change it. Computes the content-hash goal version (`gv-<sha256[:12]>`) via
 **Engine counterpart:** `/goal-writer` stays the interactive, user-facing
 path. The engine path a research pipeline composes is the `research-goal`
 Workflow-runtime module (`.claude/workflows/research-goal.js` — see
-[engine workflows](engine-workflows.md)): the same contract (this command's
+[engine workflows](../engine-workflows/)): the same contract (this command's
 manual is its Draft phase's operating manual; `schemas/goal.schema.json`;
 ADR-0006 append-only lineage), returned as a typed, non-interactive result
 with an `ajv` + verifiability-lint gate after every link and a bounded
@@ -185,8 +185,8 @@ there.
 **Dependencies:** `scripts/mif-container-digest.sh`,
 `schemas/mif-container.schema.json`, `schemas/findings.schema.json`, `jq`, `ajv`.
 
-**Docs:** [how-to](../how-to/export-and-import-a-topic.md) ·
-[explanation](../explanation/mif-container-format.md).
+**Docs:** [how-to](../../how-to/export-and-import-a-topic/) ·
+[explanation](../../explanation/mif-container-format/).
 
 ---
 
@@ -226,7 +226,7 @@ Engine-path entry point for a research campaign — the non-interactive
 counterpart to `/start`.
 
 **Purpose:** A thin invocation surface over the vendored workflow-of-workflows,
-[`research-pipeline`](engine-workflows.md#research-pipeline) (Epic #550) — no
+[`research-pipeline`](../engine-workflows/#research-pipeline) (Epic #550) — no
 orchestration logic of its own. Resolves `--topic`/`--mode` and the
 mode-specific arguments (asking the user via `AskUserQuestion` rather than
 invoking the tool when a mode-required argument like `--delta` or
@@ -234,7 +234,7 @@ invoking the tool when a mode-required argument like `--delta` or
 into `.claude/workflows/research-pipeline.js` and reports its typed result
 plainly. Supersedes `/start`'s spawn of the `orchestrator` subagent as the
 primary entry point for a research campaign — see
-[engine-workflows.md's migration note](engine-workflows.md#migration-note-supersedes-starts-orchestrator-spawn-in-place)
+[engine-workflows.md's migration note](../engine-workflows/#migration-note-supersedes-starts-orchestrator-spawn-in-place)
 for what this structurally removes. **Does not delete or disable `/start` or
 `.claude/agents/orchestrator.md`** — both remain the interactive/legacy path
 during migration.
@@ -251,7 +251,7 @@ during migration.
 
 **What it delegates to:** the `research-pipeline` workflow (Workflow tool),
 which itself composes all eleven atomic research workflows — see
-[engine-workflows.md](engine-workflows.md#research-pipeline) for the mode
+[engine-workflows.md](../engine-workflows/#research-pipeline) for the mode
 router and round-loop composition.
 
 **Dependencies:** `.claude/workflows/research-pipeline.js`,
@@ -372,6 +372,6 @@ manifest view.
 
 **Note:** The `topics` skill (invoked as a skill, not a command) adds live
 finding and verdict rollup from `research-index.json`. See
-[core-skills](./core-skills.md#topics).
+[core-skills](../core-skills/#topics).
 
 **Dependencies:** `harness.config.json`.

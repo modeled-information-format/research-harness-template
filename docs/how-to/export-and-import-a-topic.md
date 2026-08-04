@@ -35,7 +35,7 @@ one instantiated harness clone to another (two clones, two orgs, a fork), via
 the MIF Container manifest format (ADR-0017).
 
 > This is **not** the same feature as [importing an existing
-> corpus](import-a-corpus.md). That path brings an external corpus into a
+> corpus](../import-a-corpus/). That path brings an external corpus into a
 > **freshly instantiated, empty** harness once, at setup time. This one moves
 > an already-registered topic between two harnesses that are each already up
 > and running, any number of times, in either direction.
@@ -67,7 +67,7 @@ Subset export — only the findings named in a JSON array of
 
 Add `--closure` to a subset export to pull in anything those ids reference
 that isn't itself in scope, rather than leaving it as a boundary marker (see
-[the explanation doc](../explanation/mif-container-format.md) for what a
+[the explanation doc](../../explanation/mif-container-format/) for what a
 boundary marker is and when you'd want one instead).
 
 Pass `--source-instance <name>` to stamp a stable label for the exporting
@@ -109,7 +109,7 @@ import, never a partial write.
 A finding whose `@id` doesn't exist at the destination yet is written as new.
 One whose `@id` already exists is updated in place, but not by blind
 overwrite — see [the reconciliation
-policy](../explanation/mif-container-format.md#origin-scoped-reconciliation-in-plain-terms)
+policy](../../explanation/mif-container-format/#origin-scoped-reconciliation-in-plain-terms)
 for exactly which fields the destination keeps versus which the incoming
 container overwrites.
 
@@ -141,4 +141,4 @@ is without touching the destination at all.
 For why the format is shaped this way — the manifest fields, the integrity
 model, and exactly what "origin-scoped reconciliation" keeps versus
 overwrites — read [Understanding the MIF Container
-format](../explanation/mif-container-format.md).
+format](../../explanation/mif-container-format/).

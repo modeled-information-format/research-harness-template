@@ -22,9 +22,9 @@ delegate to it; it is hard-required, with no bash fallback. Install it with
 `0.4.0`. Flags below are the binary's own `--help` output.
 
 For the read-only MCP server that exposes a subset of this engine's data to
-Claude Code sessions, see [mcp-server.md](mcp-server.md). For the operator
+Claude Code sessions, see [../mcp-server/](../mcp-server/). For the operator
 workflow across these subcommands, see
-[How to run the classification engine loop](../how-to/run-the-classification-engine-loop.md).
+[How to run the classification engine loop](../../how-to/run-the-classification-engine-loop/).
 
 ## Global options
 
@@ -102,7 +102,7 @@ mif-rh-cli calibrate [OPTIONS]
 
 If no threshold meets `--target-precision`, the command fails loudly rather
 than writing an artifact. The output shape is
-[`CalibrationConfig`](mcp-server.md#confidence-calibrationjson).
+[`CalibrationConfig`](../mcp-server/#confidence-calibrationjson).
 
 ### Curating `negative_examples` from a confusion export
 
@@ -149,7 +149,7 @@ mif-rh-cli suggest-type [OPTIONS] [TEXT]
 | `--record` | Record the query as a tier-3 miss in the search index when its best candidate is `trigger_expansion` (or no candidate exists), feeding `expansion-candidates`. Requires `--finding` (a miss is a property of a finding, not of ad-hoc text). |
 | `--index <INDEX>` | Path to the search index database `--record` writes to. Defaults to `reports/_meta/search-index.sqlite`. |
 
-Each returned candidate is one [`TypeSuggestion`](mcp-server.md#suggest_type).
+Each returned candidate is one [`TypeSuggestion`](../mcp-server/#suggest_type).
 
 ## expansion-candidates
 

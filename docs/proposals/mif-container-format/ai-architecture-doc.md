@@ -124,8 +124,8 @@ entity:
 
 # Architecture: MIF Container -- a Data-Package-style, extensible manifest for research-harness import/export
 
-> **Status: superseded by [ADR-0017](../../adr/0017-mif-container-instance-scoped-export-import-format.md)
-> and [`feature-spec.md`](feature-spec.md).** This document is derived
+> **Status: superseded by [ADR-0017](../../../adr/0017-mif-container-instance-scoped-export-import-format/)
+> and [`feature-spec.md`](../feature-spec/).** This document is derived
 > directly from the `mif-corpus-import-export` research session (60 gated
 > findings, 0 falsified) and its two augment passes -- subset/partial-topic
 > export boundary semantics, and OKF/Frictionless Data Package family prior

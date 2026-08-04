@@ -31,7 +31,7 @@ All scripts shipped with the template core (shell, plus one Python codegen
 helper and one `jq` filter). Most are invoked by agents, commands, and skills,
 but several are run directly by adopters — for example `pack-toggle.sh` to
 enable a pack and `verify.sh` as the conformance gate. `jq` is a near-universal
-dependency; see [dependencies](dependencies.md) for installation.
+dependency; see [dependencies](../dependencies/) for installation.
 
 **Artifact placement.** Scripts must write non-committed (ephemeral or derived)
 artifacts to a `mktemp` path **outside** the project tree — never next to their
@@ -73,9 +73,9 @@ cross-topic concordance.
 ## Engine
 
 Scripts that install and locate the `mif-rh` compiled ontology engine
-(ADR-0016). See [dependencies](dependencies.md) for the `mif-rh-cli` version
-floor, [engine-cli.md](engine-cli.md) for its subcommand surface, and
-[mcp-server.md](mcp-server.md) for the MCP server the same install ships.
+(ADR-0016). See [dependencies](../dependencies/) for the `mif-rh-cli` version
+floor, [../engine-cli/](../engine-cli/) for its subcommand surface, and
+[../mcp-server/](../mcp-server/) for the MCP server the same install ships.
 
 | Script | Purpose | Key dependency |
 | --- | --- | --- |

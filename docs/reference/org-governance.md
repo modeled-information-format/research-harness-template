@@ -64,6 +64,6 @@ shellcheck, sign-and-attest, and verify-gates. The architecture is recorded in t
 [ADR-002: reusable quality-gate architecture](https://github.com/modeled-information-format/.github/blob/main/docs/adr/ADR-002-reusable-quality-gate-architecture.md).
 
 The consumer side of the release policy — verifying a downloaded artifact's attestation — is in
-[How to verify a release artifact](../how-to/verify-a-release.md); the repo's release security
+[How to verify a release artifact](../../how-to/verify-a-release/); the repo's release security
 policy is
 [`SECURITY.md`](https://github.com/modeled-information-format/research-harness-template/blob/main/SECURITY.md).

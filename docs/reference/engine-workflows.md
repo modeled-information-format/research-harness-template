@@ -28,7 +28,7 @@ provenance:
 
 `.claude/workflows/` holds the harness's Workflow-runtime modules — the
 engine-path counterparts to the interactive slash commands in
-[commands](commands.md). A workflow module is composed programmatically (by a
+[commands](../commands/). A workflow module is composed programmatically (by a
 research pipeline or an orchestrating session) and returns a typed result; it
 never converses with the user. Twelve modules ship today: `research-goal`
 (atomic step 1 of the research pipeline, vendored under Epic #539),
@@ -121,7 +121,7 @@ populated `deliverables.genres`/`.channels` is consumed downstream.
 
 ### Positioning: /goal-writer stays the interactive path
 
-[`/goal-writer`](commands.md#goal-writer) remains the interactive,
+[`/goal-writer`](../commands/#goal-writer) remains the interactive,
 user-facing path for authoring and reshaping goals — it elicits, converses,
 and handles `--reshape` in dialogue. `research-goal` is the **engine path**
 a pipeline composes: the same contract (the command's manual is the Draft
@@ -1067,7 +1067,7 @@ text, not carried forward as-is.
 The immutability rule Amend's goal-minting step enforces — a goal is fixed
 per version, and widening the dimension set is an append to that version's
 lineage, never an in-place edit of the live `goal.json` — is
-[ADR-0006: Content-hashed, append-only goal versioning](../adr/0006-content-hashed-append-only-goal-versioning.md).
+[ADR-0006: Content-hashed, append-only goal versioning](../../adr/0006-content-hashed-append-only-goal-versioning/).
 Cited here rather than restated; see that record for the content-hash
 scheme, the `supersedes`/`revision` fields, and the findings-reuse
 rationale. ADR-0006's own status is **`proposed`**, not `accepted` — it
@@ -1250,7 +1250,7 @@ twice.
 The immutability rule Reshape's goal-minting step enforces — a goal is
 fixed per version, and a pivot is an append to that version's lineage,
 never an in-place edit of the live `goal.json` — is
-[ADR-0006: Content-hashed, append-only goal versioning](../adr/0006-content-hashed-append-only-goal-versioning.md).
+[ADR-0006: Content-hashed, append-only goal versioning](../../adr/0006-content-hashed-append-only-goal-versioning/).
 Cited here rather than restated; see that record for the content-hash
 scheme, the `supersedes`/`revision` fields, and the findings-reuse
 rationale. ADR-0006's own status is **`proposed`**, not `accepted`,
@@ -1366,7 +1366,7 @@ class of gap the other four modules' Tasks in this Epic had to close for
 their own (lower-stakes, same-instance) delegated surfaces.
 
 ADR-0017 ([MIF Container: an instance-scoped export/import manifest
-format](../adr/0017-mif-container-instance-scoped-export-import-format.md))
+format](../../adr/0017-mif-container-instance-scoped-export-import-format/))
 governs the container format `mif-container-import.sh` validates against.
 Its status, verified fresh against the record's own frontmatter at
 documentation time rather than inherited from another module's assumption
@@ -1757,7 +1757,7 @@ starts.
 
 ### The `/research` command: the engine's new entry point
 
-[`/research`](commands.md#research) (Epic #550, Task #600) is the thin
+[`/research`](../commands/#research) (Epic #550, Task #600) is the thin
 slash-command invocation surface over this module — exactly one `Workflow`
 tool call per invocation, with no orchestration logic of its own. It resolves
 `--topic`/`--mode` and the mode-specific args documented in this module's own
@@ -1766,7 +1766,7 @@ required arg
 like `--delta`/`--container-dir` is missing), makes the single call, and
 reports the typed result plainly per mode — never re-narrating the run as if
 the command had performed the work itself. `/research` is this engine's new
-entry point; see [commands.md](commands.md#research) for its full argument
+entry point; see [commands.md](../commands/#research) for its full argument
 reference.
 
 ### Migration note: supersedes `/start`'s orchestrator spawn, in place

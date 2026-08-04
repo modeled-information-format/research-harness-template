@@ -15,16 +15,16 @@ diataxis_type: how-to
 
 This guide shows an adopting user how to turn a bundled pack on or off and
 satisfy its prerequisites. For what each pack does and what it needs, see the
-[pack catalog](../reference/packs/index.md); for the model and manifest fields,
-see [packs and plugins](../reference/packs-and-plugins.md).
+[pack catalog](../../reference/packs/); for the model and manifest fields,
+see [packs and plugins](../../reference/packs-and-plugins/).
 
 ## Before you begin
 
-- Have the [core runtime](../reference/dependencies.md) installed (`git`, `jq`,
+- Have the [core runtime](../../reference/dependencies/) installed (`git`, `jq`,
   `yq`, `python3`; plus `node` for the validation toolchain). Every pack relies
   on the core engine.
 - Check whether your target pack needs an extra tool — the catalog and the
-  [dependencies reference](../reference/dependencies.md) list these per pack
+  [dependencies reference](../../reference/dependencies/) list these per pack
   (for example `pandoc` for `pdf`, `gh` for the GitHub channels, `nlm` for
   `notebooklm`). Install the tool first; a pack with a missing tool reports the
   install step and stops rather than erroring.
@@ -83,4 +83,4 @@ This guide covers the skill, channel, and genre plugin packs in
 `harness.config.json` `packs[]`. **Ontology data packs are not toggled with
 `pack-toggle.sh`** — they live in `harness.config.json` `ontologies[]` and are
 enabled and bound to a topic differently. See
-[Ontology packs](../reference/packs/ontologies.md#enabling-and-binding-an-ontology).
+[Ontology packs](../../reference/packs/ontologies/#enabling-and-binding-an-ontology).

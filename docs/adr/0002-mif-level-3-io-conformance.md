@@ -114,8 +114,8 @@ on-demand vendoring from the canonical registry (ADR-0012).
 
 ## Related Decisions
 
-- [ADR-0004: Single adversarial falsification gate](0004-single-adversarial-falsification-gate.md)
-- [ADR-0007: Canonical report channel; blog MIF-exempt](0007-report-channel-canonical-blog-mif-exempt.md)
+- [ADR-0004: Single adversarial falsification gate](../0004-single-adversarial-falsification-gate/)
+- [ADR-0007: Canonical report channel; blog MIF-exempt](../0007-report-channel-canonical-blog-mif-exempt/)
 
 ## Links
 

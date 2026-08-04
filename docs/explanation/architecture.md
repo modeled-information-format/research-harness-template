@@ -42,7 +42,7 @@ A terminology note: "engine" in this four-layer sense names the Claude Code
 plugin layer (agents, commands, skills). This is a different thing from "the
 mif-rh engine," the compiled classification binary described in ADR-0014,
 ADR-0015, ADR-0016, and
-[the classification engine explanation](classification-engine.md); the two
+[the classification engine explanation](../classification-engine/); the two
 share a word, not a component, and neither document renames itself to avoid
 the collision.
 
@@ -58,7 +58,7 @@ the graph first-class instead of tag-derived.
 The spine is not write-only: per-topic synthesis carries each finding's resolved ontology type
 onto its report sections, and the cross-topic **corpus atlas** (`/synthesize-corpus`) projects the
 whole spine — including what was disproven — across every topic. See
-[the ontological spine](ontological-spine.md).
+[the ontological spine](../ontological-spine/).
 
 Where the harness needs a pattern MIF core does not carry (the falsification
 lifecycle, quarantine state, session lineage), it closes the gap **locally** as
@@ -70,7 +70,7 @@ a harness-owned MIF extension under `extensions.harness` — never by forking MI
 The MIF spine above governs findings and the knowledge graph; a parallel,
 complementary substrate governs *document-shaped deliverables* — reports,
 specs, ADRs, and the Diátaxis doc set itself. Since Epic #405
-([ADR-0018](../adr/0018-mif-docs-plugin-as-document-tooling-substrate.md)),
+([ADR-0018](../../adr/0018-mif-docs-plugin-as-document-tooling-substrate/)),
 that substrate is
 [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin),
 not a harness-local mechanism: its `mif-frontmatter`/`mif-validate`/

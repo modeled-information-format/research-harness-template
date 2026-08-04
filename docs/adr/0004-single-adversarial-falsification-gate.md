@@ -111,8 +111,8 @@ is the same assumption that applies to any agent-driven research step.
 
 ## Related Decisions
 
-- [ADR-0002: MIF Level-3 I/O conformance](0002-mif-level-3-io-conformance.md)
-- [ADR-0007: Canonical report channel; blog MIF-exempt](0007-report-channel-canonical-blog-mif-exempt.md)
+- [ADR-0002: MIF Level-3 I/O conformance](../0002-mif-level-3-io-conformance/)
+- [ADR-0007: Canonical report channel; blog MIF-exempt](../0007-report-channel-canonical-blog-mif-exempt/)
 
 ## Links
 

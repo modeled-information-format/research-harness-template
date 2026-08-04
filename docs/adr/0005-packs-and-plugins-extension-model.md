@@ -111,8 +111,8 @@ manifest edit. The cost is more registry entries, contained by schema-validated
 
 ## Related Decisions
 
-- [ADR-0001: Four-layer single-repository architecture](0001-four-layer-single-repository-architecture.md)
-- [ADR-0003: Domain-general, config-declared research dimensions](0003-config-declared-research-dimensions.md)
+- [ADR-0001: Four-layer single-repository architecture](../0001-four-layer-single-repository-architecture/)
+- [ADR-0003: Domain-general, config-declared research dimensions](../0003-config-declared-research-dimensions/)
 
 ## Links
 

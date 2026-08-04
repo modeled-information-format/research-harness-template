@@ -17,7 +17,7 @@ Skills are Claude sub-agents that extend the harness with read-only or
 structured-write capabilities invoked via `/skill-name` in a session.
 All ten listed here are core (non-pack); they ship with the template.
 
-See [dependencies](dependencies.md) for tool installation requirements.
+See [dependencies](../dependencies/) for tool installation requirements.
 
 ---
 
@@ -223,7 +223,7 @@ built separately, with `bin/mif-rh-cli review --build-index`; rebuilding
 `research-index.json` via `build-index.sh` does not build it. If the MCP
 tools are absent or reply index-not-built, the skill falls back to `--lex`
 and says so — the semantic backend is an optional accelerator, never a
-dependency. See [mcp-server.md](mcp-server.md) for the tool contracts.
+dependency. See [../mcp-server/](../mcp-server/) for the tool contracts.
 
 **When it triggers:** Invoked when the user wants to find findings, look up
 what is known about a subject, or asks "what do I have on X", "find findings
@@ -258,6 +258,6 @@ finding and verdict counts from the index.
 **Note:** `topics` exists as both a skill and a command. The skill includes
 finding/verdict rollup from the index; the command (`/topics`) provides a
 simpler manifest-only registry view without index data. See
-[commands](./commands.md#topics).
+[commands](../commands/#topics).
 
 **Dependencies:** `jq`, `harness.config.json`, `research-index.json`.

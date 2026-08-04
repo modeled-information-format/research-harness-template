@@ -25,7 +25,7 @@ sit outside that per-session pipeline: `corpus-synthesizer` is spawned by
 `/synthesize-corpus`, cross-session and cross-topic; `harness-configurator` is
 spawned by `/configure` to edit `harness.config.json` on request.
 
-See [dependencies](dependencies.md) for tool installation requirements.
+See [dependencies](../dependencies/) for tool installation requirements.
 
 ---
 

@@ -26,7 +26,7 @@ The vocabulary is layered in three tiers: the domain-neutral **generic core**
 [`engineering-base`](#engineering-base) (shared engineering supertypes — MIF-compliant,
 opt-in via `extends`, never bound directly) → the bindable **domain packs** below.
 
-For control-plane mechanics see [Packs and Plugins](../packs-and-plugins.md).
+For control-plane mechanics see [Packs and Plugins](../../packs-and-plugins/).
 
 ## Enabling and binding an ontology
 
@@ -43,7 +43,7 @@ apply to them. Enabling an ontology is two steps:
    per-finding classification is handled by `scripts/resolve-ontology.sh`.
 
 `resolve-ontology.sh` is a thin wrapper (ADR-0016) that execs the `mif-rh-cli`
-engine, hard-required (see [dependencies](../dependencies.md)).
+engine, hard-required (see [dependencies](../../dependencies/)).
 
 ---
 

@@ -112,8 +112,8 @@ buys portability of both capability and enforcement.
 
 ## Related Decisions
 
-- [ADR-0002: MIF Level-3 I/O conformance](0002-mif-level-3-io-conformance.md)
-- [ADR-0005: Packs and plugins extension model](0005-packs-and-plugins-extension-model.md)
+- [ADR-0002: MIF Level-3 I/O conformance](../0002-mif-level-3-io-conformance/)
+- [ADR-0005: Packs and plugins extension model](../0005-packs-and-plugins-extension-model/)
 
 ## Links
 

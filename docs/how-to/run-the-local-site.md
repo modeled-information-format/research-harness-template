@@ -16,7 +16,7 @@ diataxis_type: how-to
 A runbook for serving the harness's Astro/Starlight site on your machine and
 reading your reports in a browser. This is the primary local mode of consuming
 research in an instantiated harness. To choose which surface leads or to toggle
-site plugins, see [How to configure the reports site](configure-the-site.md).
+site plugins, see [How to configure the reports site](../configure-the-site/).
 
 ## Before you begin
 
@@ -38,8 +38,8 @@ site plugins, see [How to configure the reports site](configure-the-site.md).
 
 2. The terminal prints a local URL. The site is served under whatever base path
    `harness.config.json` `.site.base` is set to (default `/`, the site root; see
-   [Reference: configuration](../reference/configuration.md) and
-   [ADR-0013](../adr/0013-configurable-site-base-path.md)) — in this template it
+   [Reference: configuration](../../reference/configuration/) and
+   [ADR-0013](../../adr/0013-configurable-site-base-path/)) — in this template it
    is pinned to `/research-harness-template`, so the address to open is:
 
    ```text

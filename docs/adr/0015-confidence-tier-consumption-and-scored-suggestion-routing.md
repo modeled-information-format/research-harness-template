@@ -225,9 +225,9 @@ that the existing gates verify.
 
 ## Related Decisions
 
-- [ADR-0011: Fail-closed ontology-completeness gate](0011-fail-closed-ontology-completeness-gate.md) — the invariant this decision preserves: suggestions are hypotheses; the stamped-vs-discovery gate is never bypassed.
-- [ADR-0012: On-demand ontology vendoring](0012-on-demand-ontology-vendoring.md) — expansion candidates drafted via `author-ontology.sh --from-clusters` still contribute upstream through the vendoring/registry flow.
-- [ADR-0014: Compiled ontology engine as a scoped CLI+MCP proof-of-concept](0014-compiled-ontology-engine-cli-and-mcp.md) — the engine whose `review --suggest` / `calibrate` / `expansion-candidates` surfaces this decision routes.
+- [ADR-0011: Fail-closed ontology-completeness gate](../0011-fail-closed-ontology-completeness-gate/) — the invariant this decision preserves: suggestions are hypotheses; the stamped-vs-discovery gate is never bypassed.
+- [ADR-0012: On-demand ontology vendoring](../0012-on-demand-ontology-vendoring/) — expansion candidates drafted via `author-ontology.sh --from-clusters` still contribute upstream through the vendoring/registry flow.
+- [ADR-0014: Compiled ontology engine as a scoped CLI+MCP proof-of-concept](../0014-compiled-ontology-engine-cli-and-mcp/) — the engine whose `review --suggest` / `calibrate` / `expansion-candidates` surfaces this decision routes.
 
 ## Links
 

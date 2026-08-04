@@ -115,8 +115,8 @@ lineage, scope-resolution pass, and freshness fields are implemented.
 
 ## Related Decisions
 
-- [ADR-0003: Domain-general, config-declared research dimensions](0003-config-declared-research-dimensions.md)
-- [ADR-0004: Single adversarial falsification gate](0004-single-adversarial-falsification-gate.md)
+- [ADR-0003: Domain-general, config-declared research dimensions](../0003-config-declared-research-dimensions/)
+- [ADR-0004: Single adversarial falsification gate](../0004-single-adversarial-falsification-gate/)
 
 ## Links
 

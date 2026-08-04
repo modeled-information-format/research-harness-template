@@ -34,7 +34,7 @@ before it is ever projected into a real MIF finding.
 **Repackaged from core to a pack (research-harness-template#483).** Epic #416 originally
 shipped this as `scripts/monitoring/**`, gated by a bespoke `continuousMonitoring` config
 flag, rather than a `packs/<family>/<skill>/` plugin — a real deviation from
-[Explanation: pack structure](../../explanation/pack-structure.md)'s stated convention.
+[Explanation: pack structure](../../../explanation/pack-structure/)'s stated convention.
 It is now `packs/monitoring/continuous-monitor/`, wired through `harness.config.json`
 `packs[]` like every other pack.
 
@@ -58,7 +58,7 @@ workflows automatically. Their canonical sources ship inside the pack
 `.github/workflows/`, and `verify.sh`'s `gate_monitoring_workflow_sync` holds every
 installed copy byte-identical to its pack source.
 
-For control-plane mechanics see [Packs and Plugins](../packs-and-plugins.md).
+For control-plane mechanics see [Packs and Plugins](../../packs-and-plugins/).
 
 ---
 
@@ -99,7 +99,7 @@ before it becomes a real finding.
 | --- | --- | --- |
 | Orchestration (Phase 1) | `scripts/run-monitoring.sh` | Checks both enablement gates (below), runs Source Connectors under budget, rebuilds concordance/index, scores, writes `recommendations.json`. |
 | Budget enforcement | `scripts/run-with-budget.sh` | Wraps one connector in a hard `timeout`; fails closed, logs to the Continuity Log. |
-| Source Connectors | `scripts/connectors/{arxiv,openalex,crossref,semantic-scholar,pubmed,biorxiv,gdelt,hn}.sh` | Eight keyless clients (documented per-source in [dependencies.md](../dependencies.md#continuous-monitoring-source-apis-optional)). |
+| Source Connectors | `scripts/connectors/{arxiv,openalex,crossref,semantic-scholar,pubmed,biorxiv,gdelt,hn}.sh` | Eight keyless clients (documented per-source in [dependencies.md](../../dependencies/#continuous-monitoring-source-apis-optional)). |
 | Scoring | `scripts/interest-inference.sh` | Scores candidates against the monitored topic's own concordance nodes (`--topic`, #514) plus the topic's queryTerms as a first-class signal; TF-IDF fallback for uncovered topics. |
 | Ranking | `scripts/recommend.sh` | `interest-match` (cross-source merge, momentum ranking with recorded factors, prior-coverage suppression, #523) and `gap-detect` modes; every recommendation carries at least one MIF citation (NFR5), enforced in code. |
 | Digest | `scripts/render-digest.sh` | Renders the versioned per-run digest (`Digest format: v1`, #524) the Editorial Gate reviews: headline, domain/weight, momentum evidence, prior-coverage status, source URLs. |
@@ -123,7 +123,7 @@ rate-limit enhancements, never required.
   nothing for that topic — `scripts/run-monitoring.sh` checks the `packs[]` gate first,
   before ever consulting the per-topic block.
 - Ships disabled; enable with `scripts/pack-toggle.sh continuous-monitor on`, then opt
-  a topic in per [How to enable continuous research monitoring](../../how-to/enable-continuous-monitoring.md).
+  a topic in per [How to enable continuous research monitoring](../../../how-to/enable-continuous-monitoring/).
 - No recommendation reaches `reports/<topic>/findings/` without an explicit Editorial
   Gate accept (NFR6) — undecided is always rejected, never accepted by omission.
 - Scheduling precision is bounded by GitHub Actions' own `schedule:` trigger (ADR-0019)
@@ -149,4 +149,4 @@ scripts/pack-toggle.sh continuous-monitor on
 ```
 
 Then add a `continuousMonitoring` block to the target topic in `harness.config.json` —
-see [How to enable continuous research monitoring](../../how-to/enable-continuous-monitoring.md).
+see [How to enable continuous research monitoring](../../../how-to/enable-continuous-monitoring/).

@@ -50,11 +50,11 @@ entity:
 > records the original design rationale for a Rust engine core. AD-1 (Go
 > versus Rust, deferred below) is now settled: the shipped engine's crate
 > paths, `crates/mif-rh` and `crates/mif-rh-cli` (named in
-> [ADR-0016](../../adr/0016-engine-only-classification.md)), confirm Rust was
+> [ADR-0016](../../../adr/0016-engine-only-classification/)), confirm Rust was
 > the path taken. See `prd.md`'s status note for the full context on the
 > proof-of-concept's completion and the hard cutover. Retained as historical
 > record, not as the current contract. See
-> [the classification engine explanation](../../explanation/classification-engine.md).
+> [the classification engine explanation](../../../explanation/classification-engine/).
 
 ## Summary
 

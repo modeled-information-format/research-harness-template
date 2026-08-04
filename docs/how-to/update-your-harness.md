@@ -103,7 +103,7 @@ three things do not happen automatically.
   `ENGINE_VERSION`, but it does not install the binary itself. Run
   `scripts/fetch-engine.sh` again after every update; it is a no-op if the
   pinned version has not changed. See
-  [Run the classification engine loop](run-the-classification-engine-loop.md).
+  [Run the classification engine loop](../run-the-classification-engine-loop/).
 - **Expect a "registry index sha256 changed" refusal on the first re-vendor
   after an upstream registry change.** If the update landed newer ontology
   core or domain pack versions, `scripts/fetch-ontology.sh` treats the
@@ -111,7 +111,7 @@ three things do not happen automatically.
   moves, naming the fix directly in its own error. This is expected after a
   registry change, not a sign of tampering: clear the `index_sha256` field in
   `ontologies.lock.json`, then re-run the fetch to deliberately re-pin. See
-  [Vendor ontologies on demand](vendor-ontologies-on-demand.md).
+  [Vendor ontologies on demand](../vendor-ontologies-on-demand/).
 
 ## When verification fails
 
@@ -121,7 +121,7 @@ and content-checking it against the pinned commit. So if it still exits non-zero
 the release either is not attested by the trusted release workflow, the expected
 asset was missing, or the release asset's extracted content did not match the
 pinned commit. See
-[update-channel provenance model](../explanation/update-channel-provenance.md).
+[update-channel provenance model](../../explanation/update-channel-provenance/).
 
 ## Why this is the only supported path
 

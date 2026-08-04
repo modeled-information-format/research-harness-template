@@ -120,7 +120,7 @@ plays no role in which field wins per finding.
 ## What this isn't
 
 - **Not the same feature as [importing an existing
-  corpus](../how-to/import-a-corpus.md).** That path is a one-time,
+  corpus](../../how-to/import-a-corpus/).** That path is a one-time,
   first-clone-only adoption of an external corpus into a *freshly
   instantiated, empty* harness. This format moves an already-registered
   topic between two harnesses that are each already running, any number of
@@ -137,7 +137,7 @@ plays no role in which field wins per finding.
 ## Where to go next
 
 Ready to move a topic? The [how-to
-guide](../how-to/export-and-import-a-topic.md) walks the whole export →
+guide](../../how-to/export-and-import-a-topic/) walks the whole export →
 move → import journey. For the full decision record — the options
 considered, the Stories that built each piece — see
-[ADR-0017](../adr/0017-mif-container-instance-scoped-export-import-format.md).
+[ADR-0017](../../adr/0017-mif-container-instance-scoped-export-import-format/).

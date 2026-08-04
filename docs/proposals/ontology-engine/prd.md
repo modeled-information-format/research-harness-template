@@ -51,18 +51,18 @@ entity:
 > Requirements 4 and 5 and the "retiring the bash scripts" non-goal below,
 > which described a non-hard-dependency posture. The proof-of-concept
 > succeeded:
-> [ADR-0014](../../adr/0014-compiled-ontology-engine-cli-and-mcp.md)'s
+> [ADR-0014](../../../adr/0014-compiled-ontology-engine-cli-and-mcp/)'s
 > 2026-07-04 audit measured Milestones M1 through M3 complete, and
-> [ADR-0016](../../adr/0016-engine-only-classification.md), accepted
+> [ADR-0016](../../../adr/0016-engine-only-classification/), accepted
 > 2026-07-05, superseded the non-hard-dependency posture: the engine (shipped
 > as `mif-rh` / `mif-rh-cli` / `mif-rh-mcp` in `modeled-information-format/mif-rs`)
 > is now hard-required, and the bash classification implementations are
 > retired. This document set is retained as the historical record of the
 > proof-of-concept phase, not as the current contract. For the operating
 > model in effect today, see
-> [the classification engine explanation](../../explanation/classification-engine.md)
+> [the classification engine explanation](../../../explanation/classification-engine/)
 > and
-> [how to run the classification engine loop](../../how-to/run-the-classification-engine-loop.md).
+> [how to run the classification engine loop](../../../how-to/run-the-classification-engine-loop/).
 
 ## Problem Statement
 

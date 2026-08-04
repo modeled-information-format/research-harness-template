@@ -35,11 +35,11 @@ their outputs feed the findings corpus that report and channel packs consume.
 **Not `mif-docs-plugin` duplicates** (audited research-harness-template#411): none of
 the five packs below render a document — each produces findings-with-confidence-tiers
 that feed the already-externalized `mif-docs` report genres downstream (e.g.
-`market-research-report`, `competitive-quadrant` — see [Report packs](reports.md)).
+`market-research-report`, `competitive-quadrant` — see [Report packs](../reports/)).
 The Epic #405 deprecation policy (ADR-0018) applies to document-genre duplicates; it
 does not apply here.
 Market-research packs have no *required* external dependencies beyond the core engine. Some packs emit Mermaid diagrams, which you can optionally render with `@mermaid-js/mermaid-cli` (for example in PDF/HTML output).
-For control-plane mechanics see [Packs and Plugins](../packs-and-plugins.md).
+For control-plane mechanics see [Packs and Plugins](../../packs-and-plugins/).
 
 ---
 

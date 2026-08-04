@@ -40,7 +40,7 @@ packs/
 
 There is no `packs/reports/` directory: every report genre (`academic`,
 `engineering`, `exec-summary`, and the rest — see
-[Report packs](../reference/packs/reports.md)) is consumed externally from
+[Report packs](../../reference/packs/reports/)) is consumed externally from
 `mif-docs-plugin` rather than bundled, so the "reports" family has no local
 plugin directory to illustrate here.
 

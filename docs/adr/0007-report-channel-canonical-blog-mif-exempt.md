@@ -116,8 +116,8 @@ exempt surface.
 
 ## Related Decisions
 
-- [ADR-0002: MIF Level-3 I/O conformance](0002-mif-level-3-io-conformance.md)
-- [ADR-0004: Single adversarial falsification gate](0004-single-adversarial-falsification-gate.md)
+- [ADR-0002: MIF Level-3 I/O conformance](../0002-mif-level-3-io-conformance/)
+- [ADR-0004: Single adversarial falsification gate](../0004-single-adversarial-falsification-gate/)
 
 ## Links
 

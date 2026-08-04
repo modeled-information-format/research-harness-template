@@ -39,9 +39,9 @@ This page is the reader's map. It explains **what a research topic produces**,
 **how to move through it**, **how to read a single report**, and **what each
 report genre is for** — so that when you open `reports/<topic>/` you know what
 you are looking at and which file answers your question. For *why* the harness
-is built this way, see [architecture](architecture.md), the
-[living corpus](living-corpus.md), and the [ontological spine](ontological-spine.md);
-for the exhaustive per-pack catalog, see the [pack reference](../reference/packs/index.md).
+is built this way, see [architecture](../architecture/), the
+[living corpus](../living-corpus/), and the [ontological spine](../ontological-spine/);
+for the exhaustive per-pack catalog, see the [pack reference](../../reference/packs/).
 
 ## What a research topic produces — the constituents
 
@@ -70,7 +70,7 @@ read them.
 ## The goal — the contract the research is held to
 
 Before a single finding exists, the harness writes a **`goal.json`** (validated
-by [`schemas/goal.schema.json`](../reference/contracts.md)). It is the one
+by [`schemas/goal.schema.json`](../../reference/contracts/)). It is the one
 artifact that turns a vague ask into a measurable, gated session: the
 orchestrator fans out, falsifies, and synthesizes *until the goal's checks hold
 or its bound is hit*. You rarely write it by hand — the **`/goal-writer`**
@@ -121,8 +121,8 @@ Read it field by field — this is what every research session is steered by:
 > **pack-provided**: enabling a methodology pack adds its dimension *and* the
 > analysis method behind it — `market-research` contributes `competitive`,
 > `customer`, `financial`, `sizing`, and `regulatory`; `trend-modeling`
-> contributes `trend`. See the [configuration reference](../reference/configuration.md)
-> for the `dimensions[]` field, and the [pack catalog](../reference/packs/index.md)
+> contributes `trend`. See the [configuration reference](../../reference/configuration/)
+> for the `dimensions[]` field, and the [pack catalog](../../reference/packs/)
 > for the methodology dimensions.
 
 Two properties make the goal trustworthy rather than decorative:
@@ -134,7 +134,7 @@ Two properties make the goal trustworthy rather than decorative:
   falsification gate per finding, and the citation-integrity gate. The goal
   cannot be declared met by assertion.
 - **Goals are content-hashed and append-only**
-  ([ADR-0006](../adr/0006-content-hashed-append-only-goal-versioning.md)). This
+  ([ADR-0006](../../adr/0006-content-hashed-append-only-goal-versioning/)). This
   run is version **`gv-722bb7b64725`**; every finding pins
   `extensions.harness.gathered_under: "gv-722bb7b64725"`, and the version's
   membership — which findings belong to it, plus any `stale` / `excluded` /
@@ -176,8 +176,8 @@ version, then classifies every existing finding as **carry** (still in scope),
 **gap** (a new check with no evidence yet), or **stale** (needs re-verification),
 so `/start --update` re-researches only the gap and the stale and reuses
 everything that still holds. For the step-by-step, see
-[how to run a research session](../how-to/run-a-research-session.md) and
-[how to evolve a goal](../how-to/evolve-a-goal.md).
+[how to run a research session](../../how-to/run-a-research-session/) and
+[how to evolve a goal](../../how-to/evolve-a-goal/).
 
 ## How to navigate a topic — the navigation hierarchy
 
@@ -254,7 +254,7 @@ are three families, and only some genres are produced by default — the rest ar
 enabled many packs, which is why its reports table is long; a fresh harness
 shows fewer. Each entry below answers *what question it answers* and *when to
 reach for it*, and links to the matching rendered report in the example. The
-[pack reference](../reference/packs/reports.md) carries the full structure,
+[pack reference](../../reference/packs/reports/) carries the full structure,
 constraints, and standards basis of each.
 
 ### Engine outputs — present in every session
@@ -302,8 +302,8 @@ Beyond these, the harness bundles further **domain genres** — `legal-memo`,
 `humanities-mla`, `security-pentest`, `compliance-audit`,
 `regulatory-disclosure`, and `clinical-submission` — each reproducing the
 structure a particular field expects. All are opt-in; the
-[pack reference](../reference/packs/reports.md) documents every one, and
-[how to adopt a pack](../how-to/adopt-packs.md) shows how to turn them on.
+[pack reference](../../reference/packs/reports/) documents every one, and
+[how to adopt a pack](../../how-to/adopt-packs/) shows how to turn them on.
 
 The takeaway: **the genre changes the shape and the audience, never the
 evidence.** Falsified findings are excluded from all of them; weakened and
@@ -323,15 +323,15 @@ evidence does not have to be gathered twice.
 
 That turns prior research into a substrate, not an archive:
 
-- **Find it.** The [`search`](../reference/core-skills.md) skill queries the
+- **Find it.** The [`search`](../../reference/core-skills/) skill queries the
   whole-corpus index by text or by structured filter (dimension, tags, verdict,
-  namespace); [`discover`](../reference/core-skills.md) surfaces clusters, gaps,
-  and stale or weakened findings across every topic; [`lab`](../reference/core-skills.md)
+  namespace); [`discover`](../../reference/core-skills/) surfaces clusters, gaps,
+  and stale or weakened findings across every topic; [`lab`](../../reference/core-skills/)
   lets you reason across topics interactively rather than one at a time.
 - **Link it.** A finding's `relationships[]` and EntityReferences target other
   findings *by URN* — including findings in other topics — so a new topic's claim
   can `derived-from` or `relates-to` evidence already gathered, and the
-  [knowledge graph](../reference/core-skills.md) traverses those edges across
+  [knowledge graph](../../reference/core-skills/) traverses those edges across
   topic boundaries.
 - **Trust it.** A reused finding carries its full provenance with it — citations,
   confidence, `gathered_under` goal version, and current verdict — so you inherit
@@ -339,13 +339,13 @@ That turns prior research into a substrate, not an archive:
   been weakened or falsified by a later gate.
 - **Speak one language.** Cross-topic links are *type-aware*, not string-matched,
   because every finding's entity is typed against a shared
-  [ontological spine — the concordance](ontological-spine.md), detailed next.
+  [ontological spine — the concordance](../ontological-spine/), detailed next.
 
 The practical effect: **each topic you research lowers the cost and raises the
 grounding of the next.** A future study of, say, agent-memory formats can pull
 the OKF + MIF topic's surviving provenance and temporal-modeling findings in as
 already-cited, already-gated evidence instead of re-deriving them. The corpus is
-a [living knowledge spine](living-corpus.md) that appreciates with every session.
+a [living knowledge spine](../living-corpus/) that appreciates with every session.
 
 ### The concordance — the spine that makes the corpus one graph
 
@@ -376,4 +376,4 @@ Without the concordance the corpus would be a pile of silos joined by string
 search; with it, the topics are one coherent, **typed** knowledge graph — and
 that is precisely what lets a finding gathered today be reused, unambiguously, by
 a topic you have not started yet. For the full picture see the
-[ontological spine](ontological-spine.md) and the [living corpus](living-corpus.md).
+[ontological spine](../ontological-spine/) and the [living corpus](../living-corpus/).

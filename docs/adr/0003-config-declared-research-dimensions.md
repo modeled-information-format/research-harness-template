@@ -107,8 +107,8 @@ schema validation of the manifest.
 
 ## Related Decisions
 
-- [ADR-0005: Packs and plugins extension model](0005-packs-and-plugins-extension-model.md)
-- [ADR-0006: Content-hashed, append-only goal versioning](0006-content-hashed-append-only-goal-versioning.md)
+- [ADR-0005: Packs and plugins extension model](../0005-packs-and-plugins-extension-model/)
+- [ADR-0006: Content-hashed, append-only goal versioning](../0006-content-hashed-append-only-goal-versioning/)
 
 ## Links
 

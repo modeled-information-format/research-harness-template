@@ -48,7 +48,7 @@ the trusted build step cannot be swapped by a moved tag.
 ## Prerequisites
 
 - `gh` (GitHub CLI) 2.x or newer, including the `attestation` subcommand —
-  confirm with `gh --version` (see [dependencies](../reference/dependencies.md)).
+  confirm with `gh --version` (see [dependencies](../../reference/dependencies/)).
 - The downloaded artifact file, named
   `research-harness-template-<version>.tar.gz`.
 

@@ -28,7 +28,7 @@ provenance:
 
 > Looking to move a topic between two already-running harnesses instead of
 > bootstrapping a fresh one? That's a different feature —
-> [export and import a topic](export-and-import-a-topic.md) via the MIF
+> [export and import a topic](../export-and-import-a-topic/) via the MIF
 > Container format.
 
 The harness can import an existing research corpus — and, above all, its

@@ -188,9 +188,9 @@ substrate ADR-0002 established is unaffected.
 
 ## Related Decisions
 
-- [ADR-0002: MIF Level-3 I/O conformance as the harness substrate](0002-mif-level-3-io-conformance.md)
-- [ADR-0005: Packs and plugins as the only extension surface](0005-packs-and-plugins-extension-model.md)
-- [ADR-0012: On-demand ontology vendoring from a canonical registry](0012-on-demand-ontology-vendoring.md)
+- [ADR-0002: MIF Level-3 I/O conformance as the harness substrate](../0002-mif-level-3-io-conformance/)
+- [ADR-0005: Packs and plugins as the only extension surface](../0005-packs-and-plugins-extension-model/)
+- [ADR-0012: On-demand ontology vendoring from a canonical registry](../0012-on-demand-ontology-vendoring/)
 
 ## Links
 

@@ -9,10 +9,10 @@ so a clone is self-documenting (design spec §4a, "Diataxis docs — KEEP → bu
 
 | Quadrant | For | Start here |
 | --- | --- | --- |
-| [Tutorials](tutorials/getting-started.md) | Learning by doing | [getting-started.md](tutorials/getting-started.md) |
-| [How-to guides](how-to/run-a-research-session.md) | Achieving a task | [run-a-research-session.md](how-to/run-a-research-session.md), [adopt-packs.md](how-to/adopt-packs.md), [verify-a-release.md](how-to/verify-a-release.md) |
-| [Reference](reference/contracts.md) | Looking up facts | [contracts.md](reference/contracts.md), [dependencies.md](reference/dependencies.md), [coverage.md](reference/coverage.md) |
-| [Explanation](explanation/reading-the-research.md) | Understanding why | [reading-the-research.md](explanation/reading-the-research.md) (start here — what you get & how to read it), [architecture.md](explanation/architecture.md), [pack-structure.md](explanation/pack-structure.md), [living-corpus.md](explanation/living-corpus.md) |
+| [Tutorials](../tutorials/getting-started/) | Learning by doing | [getting-started.md](../tutorials/getting-started/) |
+| [How-to guides](../how-to/run-a-research-session/) | Achieving a task | [run-a-research-session.md](../how-to/run-a-research-session/), [adopt-packs.md](../how-to/adopt-packs/), [verify-a-release.md](../how-to/verify-a-release/) |
+| [Reference](../reference/contracts/) | Looking up facts | [contracts.md](../reference/contracts/), [dependencies.md](../reference/dependencies/), [coverage.md](../reference/coverage/) |
+| [Explanation](../explanation/reading-the-research/) | Understanding why | [reading-the-research.md](../explanation/reading-the-research/) (start here — what you get & how to read it), [architecture.md](../explanation/architecture/), [pack-structure.md](../explanation/pack-structure/), [living-corpus.md](../explanation/living-corpus/) |
 
 ## Adopting the harness
 
@@ -21,12 +21,12 @@ agent, and script, plus what you must install and how to verify a release.
 
 | Page | What it gives you |
 | --- | --- |
-| [Dependencies and requirements](reference/dependencies.md) | Every external tool/runtime, minimum version, install command, and which component needs it |
-| [Documentation coverage](reference/coverage.md) | Audit index proving every pack, skill, command, agent, and script is documented |
-| [Pack catalog](reference/packs/index.md) | Every bundled pack — purpose, dependencies, benefits, and how to enable it |
-| [Core skills](reference/core-skills.md) · [Commands](reference/commands.md) · [Agents](reference/agents.md) · [Scripts](reference/scripts.md) | The non-pack core surface |
-| [How to adopt a pack](how-to/adopt-packs.md) | Enable/disable a pack and satisfy its prerequisites |
-| [How to verify a release](how-to/verify-a-release.md) | Confirm a downloaded artifact with `gh attestation verify` |
+| [Dependencies and requirements](../reference/dependencies/) | Every external tool/runtime, minimum version, install command, and which component needs it |
+| [Documentation coverage](../reference/coverage/) | Audit index proving every pack, skill, command, agent, and script is documented |
+| [Pack catalog](../reference/packs/) | Every bundled pack — purpose, dependencies, benefits, and how to enable it |
+| [Core skills](../reference/core-skills/) · [Commands](../reference/commands/) · [Agents](../reference/agents/) · [Scripts](../reference/scripts/) | The non-pack core surface |
+| [How to adopt a pack](../how-to/adopt-packs/) | Enable/disable a pack and satisfy its prerequisites |
+| [How to verify a release](../how-to/verify-a-release/) | Confirm a downloaded artifact with `gh attestation verify` |
 
 ## Authoring a new doc
 
@@ -52,7 +52,7 @@ After authoring, run `mif-validate --level 1|2|3` (via the `mif-validate`
 skill or `mif-mcp`'s `validate_mif_document` tool) before committing, and
 `mif-provenance stamp` if the session's capture ledger witnessed the write
 (`mifProvenance.capture` is enabled by default in `.claude/settings.json` —
-see [Dependencies and requirements](reference/dependencies.md)).
+see [Dependencies and requirements](../reference/dependencies/)).
 
 Audited 2026-07-12 (research-harness-template#410): every existing
 non-ADR Diátaxis doc already passes `mif-validate --level 1`

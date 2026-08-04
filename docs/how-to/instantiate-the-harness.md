@@ -61,7 +61,7 @@ build-provenance attestation (fail-closed — nothing is applied on a miss), the
 `copier update` pinned to the verified commit. `copier update` uses the recorded
 `.copier-answers.yml` to merge template changes into your instance without clobbering your
 edits (it conflict-marks the one file you hand-edit, `harness.config.json`). See
-[update your harness safely](update-your-harness.md). Do not run `copier update` directly
+[update your harness safely](../update-your-harness/). Do not run `copier update` directly
 — that bypasses the provenance gate.
 
 ## Option B — GitHub "Create repo from template"
@@ -137,7 +137,7 @@ echo 'CLAUDE.local.md' >> .gitignore
 
 ## Next
 
-- [Declare and verify your harness](../tutorials/getting-started.md)
-- [Import an existing corpus](import-a-corpus.md)
-- [Update your harness safely](update-your-harness.md) — why `CLAUDE.md` and other
+- [Declare and verify your harness](../../tutorials/getting-started/)
+- [Import an existing corpus](../import-a-corpus/)
+- [Update your harness safely](../update-your-harness/) — why `CLAUDE.md` and other
   template-managed files are re-applied on update (and `CLAUDE.local.md` is not)

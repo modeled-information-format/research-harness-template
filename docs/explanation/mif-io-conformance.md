@@ -147,4 +147,4 @@ Be precise about the guarantee:
   deterministically gated — an agent could read content without wrapping it, and no
   gate would catch that. This asymmetry is stated plainly rather than implied away.
 
-See [contracts](../reference/contracts.md) for the schemas and scripts.
+See [contracts](../../reference/contracts/) for the schemas and scripts.

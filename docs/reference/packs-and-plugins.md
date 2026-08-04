@@ -30,8 +30,8 @@ provenance:
 This page is the exhaustive reference for the harness's extension surface: the
 plugin shape, the pack taxonomy, the manifest fields, the control plane that
 toggles them, and the bundled inventory. For the rationale behind the model see
-[Explanation: pack structure](../explanation/pack-structure.md) and
-[ADR 0005](../adr/0005-packs-and-plugins-extension-model.md).
+[Explanation: pack structure](../../explanation/pack-structure/) and
+[ADR 0005](../../adr/0005-packs-and-plugins-extension-model/).
 
 ## Model: one plugin per skill
 
@@ -62,28 +62,28 @@ packs/
 on demand from the canonical registry (ADR-0012), materializing under
 `packs/ontologies/<id>/` only once `scripts/fetch-ontology.sh` vendors one — it
 may be absent or empty on a fresh, unvendored clone. See
-[Ontology packs](packs/ontologies.md) and `scripts/fetch-ontology.sh`.
+[Ontology packs](../packs/ontologies/) and `scripts/fetch-ontology.sh`.
 
 There is no `packs/reports/` directory: all 32 report genres are consumed
 externally from `mif-docs-plugin` (SHA-pinned via `harness.config.json`
 `marketplaces[]`) rather than bundled, completing the genre-consolidation
 migration in
 [discussion #228](https://github.com/modeled-information-format/research-harness-template/discussions/228).
-See [Report packs](packs/reports.md) for the full genre-by-genre reference.
+See [Report packs](../packs/reports/) for the full genre-by-genre reference.
 
 There is likewise no `packs/genres/` directory: all 5 spec genres
 (`ai-architecture-doc`, `feature-spec`, `kiro-requirements`, `kiro-design`,
 `kiro-tasks`) are consumed externally from `mif-docs-plugin` the same way,
 per ADR-0018 and
 [research-harness-template#409](https://github.com/modeled-information-format/research-harness-template/issues/409)
-— see [Genre packs](packs/genres.md).
+— see [Genre packs](../packs/genres/).
 
 The harness bundles **17 pack plugins** across four families: 10 channels,
 5 market-research methodologies, 1 trend-modeling methodology, and 1
 monitoring methodology (`continuous-monitor`, research-harness-template#483).
 Report genres (32), spec genres (5), and domain ontologies (23) are all
 consumed externally or vendored on demand rather than bundled — see each
-family's own page for its full inventory. The [Packs reference](packs/index.md) and
+family's own page for its full inventory. The [Packs reference](../packs/) and
 the per-family pages document every one — its use, constraints, and goals.
 
 Each `packs/<family>/<plugin>/` is self-contained: a `.claude-plugin/plugin.json`
@@ -103,11 +103,11 @@ conformance validation, and witnessed-provenance stamping mechanism itself:
   file, independent of which genre (if any) renders it. `.mcp.json` wires
   the `mif-mcp` server; `.claude/settings.json`'s `mifProvenance` key
   enables capture by default. See
-  [Dependencies](dependencies.md#document-tooling-mif-docs-plugin).
+  [Dependencies](../dependencies/#document-tooling-mif-docs-plugin).
 - **`verify.sh`'s `gate_m32`** structurally enforces this floor on every
   tracked document deliverable: MIF Level 1 always, and Level 3
   (unconditionally, no exemptions) on every file that declares a
-  `provenance:` block — see [Scripts](scripts.md).
+  `provenance:` block — see [Scripts](../scripts/).
 - **Scope boundary, unchanged by this Epic:** `mif-docs`'s conformance
   validation is a different, complementary mechanism from the harness-local
   `ajv` schema-conformance gate for findings/knowledge-graph data
@@ -115,7 +115,7 @@ conformance validation, and witnessed-provenance stamping mechanism itself:
   concordance it composes into are not document-shaped and stay outside
   `mif-docs`'s remit entirely.
 
-See [ADR-0018](../adr/0018-mif-docs-plugin-as-document-tooling-substrate.md)
+See [ADR-0018](../../adr/0018-mif-docs-plugin-as-document-tooling-substrate/)
 for the full rationale and the deprecation policy every genre retirement in
 Epic #405 followed.
 
@@ -154,7 +154,7 @@ service body) declares `mif.exempt: true` with a required `mif.reason`, so the
 MIF Level-3 output-conformance gate logs its outputs instead of requiring an L3
 projection. Genre packs are L3 by default and **must not** declare exemption —
 exemption is for orthogonal *formats*, never for genres (see
-[ADR 0007](../adr/0007-report-channel-canonical-blog-mif-exempt.md)).
+[ADR 0007](../../adr/0007-report-channel-canonical-blog-mif-exempt/)).
 
 ## Control plane
 
@@ -244,11 +244,11 @@ from `mif-docs-plugin` (no `packs/reports/` or `packs/genres/` directory
 exists to `ls`), so those two counts instead match each family's reference
 page and `harness.config.json` `packs[]`.
 
-**Channels** — render adapters ([`packs/channels/`](packs/channels.md), 10 plugins):
+**Channels** — render adapters ([`packs/channels/`](../packs/channels/), 10 plugins):
 `ai-spec`, `book`, `diataxis`, `ectd`, `github-discuss`, `github-issues`, `jats`,
 `notebooklm`, `pdf`, `xbrl`.
 
-**Report genres** — deliverable templates ([`packs/reports.md`](packs/reports.md),
+**Report genres** — deliverable templates ([`packs/reports.md`](../packs/reports/),
 32 plugins, all consumed externally from
 [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)
 — no `packs/reports/` directory; `academic`, `briefing`, `engineering`,
@@ -263,27 +263,27 @@ opt-in): `academic`, `adr`, `arc42-arch-doc`, `briefing`, `c4-model-diagram`,
 `sre-runbook`, `sustainability-report`, `systematic-review`, `trend-analysis`.
 
 **Spec genres** — architecture/requirements deliverable templates
-([`packs/genres.md`](packs/genres.md), 5 plugins, all consumed externally from
+([`packs/genres.md`](../packs/genres/), 5 plugins, all consumed externally from
 [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)
 per ADR-0018 — no `packs/genres/` directory):
 `ai-architecture-doc`, `feature-spec`, `kiro-design`, `kiro-requirements`,
 `kiro-tasks`.
 
 **Market-research methodologies** — research dimensions
-([`packs/market-research/`](packs/market-research.md), 5 plugins):
+([`packs/market-research/`](../packs/market-research/), 5 plugins):
 `competitive-analysis`, `customer-research`, `financial-analysis`,
 `market-sizing`, `regulatory-review`.
 
 **Trend-modeling** — three-valued scenario methodology
-([`packs/trend-modeling/`](packs/trend-modeling.md), 1 plugin): `trend-modeling`.
+([`packs/trend-modeling/`](../packs/trend-modeling/), 1 plugin): `trend-modeling`.
 
 **Monitoring** — unattended, scheduled external-source monitoring
-([`packs/monitoring/`](packs/monitoring.md), 1 plugin): `continuous-monitor`.
+([`packs/monitoring/`](../packs/monitoring/), 1 plugin): `continuous-monitor`.
 
 Domain ontologies are not one of the five families above — `packs/ontologies/`
 isn't a bundled directory; it's populated on demand from the canonical
 registry per ADR-0012, with the enabled set declared in `harness.config.json`
-`ontologies[]`; see [Ontology packs](packs/ontologies.md) and
+`ontologies[]`; see [Ontology packs](../packs/ontologies/) and
 `scripts/fetch-ontology.sh`.
 
 The blog channel is a first-class, always-on harness output (not a pack). The

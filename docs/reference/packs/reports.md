@@ -24,7 +24,7 @@ disabled. The additional domain and specialized genres below are **opt-in**: dis
 default and enabled per pack with `scripts/pack-toggle.sh <name> on`. Each opt-in pack's
 header carries this marker.
 
-For control-plane mechanics see [Packs and Plugins](../packs-and-plugins.md).
+For control-plane mechanics see [Packs and Plugins](../../packs-and-plugins/).
 
 ---
 

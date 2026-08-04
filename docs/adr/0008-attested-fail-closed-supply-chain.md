@@ -114,8 +114,8 @@ supply chain.
 
 ## Related Decisions
 
-- [ADR-0001: Four-layer single-repository architecture](0001-four-layer-single-repository-architecture.md)
-- [ADR-0005: Packs and plugins extension model](0005-packs-and-plugins-extension-model.md)
+- [ADR-0001: Four-layer single-repository architecture](../0001-four-layer-single-repository-architecture/)
+- [ADR-0005: Packs and plugins extension model](../0005-packs-and-plugins-extension-model/)
 
 ## Links
 

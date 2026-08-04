@@ -18,7 +18,7 @@ Domain ontologies are fetched from the canonical registry (the `ontologies` repo
 served at `https://mif-spec.dev/ontologies/`) and verified fail-closed against a
 pinned `sha256`. Base layers (`mif-base`, `mif-generic`, `shared-traits`,
 `engineering-base`) ship committed and are never fetched. See
-[ADR-0012](../adr/0012-on-demand-ontology-vendoring.md).
+[ADR-0012](../../adr/0012-on-demand-ontology-vendoring/).
 
 ## Fetch a domain ontology
 
@@ -98,7 +98,7 @@ fetch-ontology: registry index sha256 changed from the pinned value for source <
 
 This is expected the first time you re-vendor after an upstream registry
 change (often following an
-[update to a newer template release](update-your-harness.md)), not evidence
+[update to a newer template release](../update-your-harness/)), not evidence
 of tampering. Confirm the change is legitimate against the `ontologies`
 repo's own history, then clear the `index_sha256` field in
 `ontologies.lock.json` and re-run the fetch to re-pin the new index

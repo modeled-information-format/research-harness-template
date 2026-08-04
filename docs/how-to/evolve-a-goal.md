@@ -17,7 +17,7 @@ Research goals drift — you add a dimension, revise the decision, narrow the sc
 or a source goes out of date. The harness treats the goal as an **append-only
 versioned contract** (SPEC §11): you mint a new version, and the findings you
 already gathered are **reused** across versions rather than re-collected. See
-[the living-corpus model](../explanation/living-corpus.md) for the why.
+[the living-corpus model](../../explanation/living-corpus/) for the why.
 
 ## The two-step flow
 

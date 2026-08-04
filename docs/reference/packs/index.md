@@ -32,7 +32,7 @@ Each pack is a self-contained unit: one plugin per skill, with its own `.claude-
 Ontology packs use `*.ontology.yaml` and `ontology.pack.json` instead of a skill.
 
 For control-plane mechanics — enabling, disabling, and listing packs — see
-[Packs and Plugins](../packs-and-plugins.md).
+[Packs and Plugins](../packs-and-plugins/).
 
 ## Pack inventory
 
@@ -118,10 +118,10 @@ For control-plane mechanics — enabling, disabling, and listing packs — see
 
 ## Family pages
 
-- [Channel packs](channels.md) — output delivery channels (book, diataxis, github-discuss, github-issues, jats, notebooklm, pdf, xbrl, ectd, ai-spec)
-- [Market-research packs](market-research.md) — research methodology dimensions
-- [Report packs](reports.md) — deliverable genre templates
-- [Genre packs](genres.md) — AI-ready, agent-executable specification templates
-- [Trend-modeling pack](trend-modeling.md) — three-valued logic scenario framework
-- [Monitoring pack](monitoring.md) — unattended, scheduled external-source monitoring
-- [Ontology packs](ontologies.md) — domain entity vocabularies
+- [Channel packs](channels/) — output delivery channels (book, diataxis, github-discuss, github-issues, jats, notebooklm, pdf, xbrl, ectd, ai-spec)
+- [Market-research packs](market-research/) — research methodology dimensions
+- [Report packs](reports/) — deliverable genre templates
+- [Genre packs](genres/) — AI-ready, agent-executable specification templates
+- [Trend-modeling pack](trend-modeling/) — three-valued logic scenario framework
+- [Monitoring pack](monitoring/) — unattended, scheduled external-source monitoring
+- [Ontology packs](ontologies/) — domain entity vocabularies

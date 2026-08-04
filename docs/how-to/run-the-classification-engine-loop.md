@@ -18,7 +18,7 @@ confidence-tiered classification cycle against a harness instance:
 calibrate thresholds from the corpus, queue scored type suggestions,
 confirm or reject them, and mine recurring misses into candidate new
 types. The decision record behind these surfaces is
-[ADR-0015](../adr/0015-confidence-tier-consumption-and-scored-suggestion-routing.md);
+[ADR-0015](../../adr/0015-confidence-tier-consumption-and-scored-suggestion-routing/);
 the tier policy itself is MIF ADR-020.
 
 ## Before you begin
@@ -45,7 +45,7 @@ the tier policy itself is MIF ADR-020.
   directory holding `reports/`, `harness.config.json` and
   `.claude/enabled-packs.json`).
 - Vendor your enabled ontology packs first
-  ([vendor ontologies on demand](vendor-ontologies-on-demand.md)); the
+  ([vendor ontologies on demand](../vendor-ontologies-on-demand/)); the
   engine resolves candidate types from the same catalog the scripts
   use.
 - The first embedding run downloads the sentence-transformers model

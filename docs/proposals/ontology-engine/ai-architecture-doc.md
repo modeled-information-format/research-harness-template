@@ -51,13 +51,13 @@ entity:
 > records the original scoped proof-of-concept architecture, including NFR-4
 > below, which described a non-hard-dependency posture. See `prd.md`'s status
 > note for the full context:
-> [ADR-0016](../../adr/0016-engine-only-classification.md), accepted
+> [ADR-0016](../../../adr/0016-engine-only-classification/), accepted
 > 2026-07-05, superseded that posture, and the engine is now hard-required
 > with the bash implementations retired. Retained as historical record, not
 > as the current contract. See
-> [the classification engine explanation](../../explanation/classification-engine.md)
+> [the classification engine explanation](../../../explanation/classification-engine/)
 > and
-> [how to run the classification engine loop](../../how-to/run-the-classification-engine-loop.md).
+> [how to run the classification engine loop](../../../how-to/run-the-classification-engine-loop/).
 
 ## Context
 

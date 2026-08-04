@@ -40,7 +40,7 @@ tracks a trajectory over time for publication; this pack enumerates three-valued
 scenarios from qualitative inputs) — neither duplicates the other, and the Epic #405
 deprecation policy (ADR-0018) does not apply here.
 
-For control-plane mechanics see [Packs and Plugins](../packs-and-plugins.md).
+For control-plane mechanics see [Packs and Plugins](../../packs-and-plugins/).
 
 ---
 

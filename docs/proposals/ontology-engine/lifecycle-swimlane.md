@@ -36,14 +36,14 @@ entity:
 
 > **Status: historical proof-of-concept record (2026-07-01).** This diagram's
 > "in scope" (green) lane described a proposed Rust CLI that, as of
-> [ADR-0016](../../adr/0016-engine-only-classification.md) (accepted
+> [ADR-0016](../../../adr/0016-engine-only-classification/) (accepted
 > 2026-07-05), has shipped and been hard-required: the bash bodies of
 > `resolve-ontology.sh` and `ontology-review.sh` are retired, and both
 > scripts now delegate to the `mif-rh` engine. The "candidate" (amber) lane
 > remains an open, separate generalization decision, undecided as of this
 > writing. See `prd.md`'s status note for the full context. Retained as
 > historical record, not as the current contract. See
-> [the classification engine explanation](../../explanation/classification-engine.md).
+> [the classification engine explanation](../../../explanation/classification-engine/).
 
 Supporting diagram for `docs/adr/0014-compiled-ontology-engine-cli-and-mcp.md`
 and the `docs/proposals/ontology-engine/` doc-set. Traces one topic's full

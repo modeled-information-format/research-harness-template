@@ -26,7 +26,7 @@ wired.
 - `mif-rh-cli` v0.7.0 or newer, the classification engine the build gate's
   ontology checks require (install with `scripts/fetch-engine.sh`, or provide
   it on `PATH` or via `MIF_RH_CLI`; see
-  [ADR-0016](../adr/0016-engine-only-classification.md))
+  [ADR-0016](../../adr/0016-engine-only-classification/))
 
 ## 1. Declare your harness
 
@@ -58,5 +58,5 @@ warns — never suppresses — on the rest.
 
 ## Next
 
-- [Run a research session](../how-to/run-a-research-session.md)
-- [Understand the architecture](../explanation/architecture.md)
+- [Run a research session](../../how-to/run-a-research-session/)
+- [Understand the architecture](../../explanation/architecture/)

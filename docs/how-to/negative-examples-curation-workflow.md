@@ -21,8 +21,8 @@ sharpened, not just a single pair fixed by hand. For the single-pair,
 single-operator mechanics this workflow reuses — what a `negative_examples`
 entry is, why curation is human-only, how a curated entry demotes a
 candidate at runtime — see [How to run the classification engine
-loop](run-the-classification-engine-loop.md#15-curate-negative_examples-from-the-confusion-export)
-and the [`calibrate` reference](../reference/engine-cli.md#calibrate). This
+loop](../run-the-classification-engine-loop/#15-curate-negative_examples-from-the-confusion-export)
+and the [`calibrate` reference](../../reference/engine-cli/#calibrate). This
 guide does not repeat those mechanics; it covers doing them at scale without
 losing the human-curation guarantee ADR-020 requires.
 
@@ -39,7 +39,7 @@ the shipped numbers.
   `scripts/fetch-engine.sh`.
 - Run every command below from the harness instance root.
 - Vendor the ontology packs the corpus targets first ([vendor ontologies on
-  demand](vendor-ontologies-on-demand.md)).
+  demand](../vendor-ontologies-on-demand/)).
 
 ## 1. Regenerate or reuse a stamped reference corpus
 
@@ -189,7 +189,7 @@ mif-rh-cli calibrate --target-precision 0.95 \
 ```
 
 `negative-demotion-v1` is a non-reordering gate (see the [`calibrate`
-reference](../reference/engine-cli.md#calibrate)), so expect
+reference](../../reference/engine-cli/#calibrate)), so expect
 `tier1_floor`/`tier1_margin`/`tier2_floor` and the confusion-pair counts to
 be unchanged from step 2's baseline — that is the expected result, not a
 sign curation had no effect. Measure the actual effect via the demotion

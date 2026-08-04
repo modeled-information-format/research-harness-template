@@ -66,7 +66,7 @@ A pack is a Claude Code plugin. Required: `name`, `version`, `kind` (one of
 plugin's skills. The bundled plugins are listed in
 `.claude-plugin/marketplace.json`.
 
-**One plugin per skill** (see [pack-structure](../explanation/pack-structure.md)):
+**One plugin per skill** (see [pack-structure](../../explanation/pack-structure/)):
 each skill is its own plugin under `packs/<pack>/<skill>/`, so a clone enables
 exactly the skills it wants without adopting a whole pack. The pack directory
 (`packs/channels/`, `packs/market-research/`, …) is a *family container*, not a
@@ -192,4 +192,4 @@ asserts: the schema validates its sample; the build spans topics and validates; 
 conformance fail-closed matrix (good passes; undeclared type / undeclared relationship /
 domain violation each fail); concept nodes are stamped; falsified is flagged-not-excluded;
 cross-topic @id merge; and determinism. See
-[../explanation/ontological-spine.md](../explanation/ontological-spine.md).
+[../../explanation/ontological-spine/](../../explanation/ontological-spine/).

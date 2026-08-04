@@ -36,7 +36,7 @@ handles, no corpus paths).
 Channel packs are **opt-in**: each is disabled by default and enabled with
 `scripts/pack-toggle.sh <name> on`.
 
-For control-plane mechanics see [Packs and Plugins](../packs-and-plugins.md).
+For control-plane mechanics see [Packs and Plugins](../../packs-and-plugins/).
 
 ## Provenance/citation-grounding audit (research-harness-template#412)
 
