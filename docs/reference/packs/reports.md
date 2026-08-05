@@ -2,7 +2,7 @@
 id: reference-packs-reports
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
-modified: '2026-07-20T02:09:37.545Z'
+modified: '2026-08-04T23:47:59.514Z'
 namespace: docs/reference/packs
 tags:
   - documentation
@@ -18,11 +18,13 @@ target audience, altitude, citation style, and required matter. The `report-synt
 skill consumes a genre template, binds surviving findings from the corpus, and the result
 renders through any channel.
 
-The core report packs — `academic`, `briefing`, `engineering`, `exec-summary`, and
-`trend-analysis` — are enabled by default and require no enable command unless explicitly
-disabled. The additional domain and specialized genres below are **opt-in**: disabled by
-default and enabled per pack with `scripts/pack-toggle.sh <name> on`. Each opt-in pack's
-header carries this marker.
+The core report packs — `academic`, `briefing`, `computing-paper`, `engineering`,
+`exec-summary`, `market-research-report`, `competitive-quadrant`, and
+`trend-analysis` — are enabled by default and require no enable command unless
+explicitly disabled. The additional domain and specialized genres below are
+**opt-in**: disabled by default and enabled per pack with
+`scripts/pack-toggle.sh <name> on`. Each opt-in pack's header carries this
+marker.
 
 For control-plane mechanics see [Packs and Plugins](../packs-and-plugins.md).
 
@@ -165,7 +167,7 @@ scripts/pack-toggle.sh briefing on
 
 ## computing-paper
 
-**Kind:** genre | **Disabled by default (opt-in).**
+**Kind:** genre | **Enabled by default.**
 
 **Source:** external — consumed from [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)'s
 `computing-paper` skill (SHA-pinned via `harness.config.json` `marketplaces[]`), not a bundled
@@ -209,7 +211,7 @@ None beyond the core engine.
 
 ### Constraints
 
-- Disabled by default (opt-in); enable with `scripts/pack-toggle.sh computing-paper on`
+- Enabled by default; disable with `scripts/pack-toggle.sh computing-paper off`
 - IEEE numbered citations required; CCS Concepts (ACM Computing Classification System) and keywords/index terms front matter required
 - Verify the current ACM `acmart` and IEEE `IEEEtran` templates live at authoring time — they revise without fanfare
 - Distinct from the `academic` genre (APA/IMRaD); do not overload `academic` for ACM/IEEE computing work
@@ -891,7 +893,7 @@ scripts/pack-toggle.sh security-pentest on
 
 ## market-research-report
 
-**Kind:** genre | **Disabled by default (opt-in).**
+**Kind:** genre | **Enabled by default.**
 
 **Source:** external — consumed from [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)'s
 `market-research-report` skill (SHA-pinned via `harness.config.json` `marketplaces[]`), not a bundled
@@ -956,7 +958,7 @@ None beyond the core engine.
 
 ### Constraints
 
-- Disabled by default (opt-in); enable with `scripts/pack-toggle.sh market-research-report on`
+- Enabled by default; disable with `scripts/pack-toggle.sh market-research-report off`
 - ESOMAR/ICC is an ethics/conduct code, not a format mandate; the structure is conventional practice, not a codified report standard — the report must carry this caveat and must not claim to "conform to the ESOMAR standard"
 - ISO 20252 is under active revision (AI integration, 2024–2026); anchor any ISO 20252 reference to "verify the current edition live"; do not bake an edition in as fact
 - Falsified findings excluded; internal MIF `@id` handles and `urn:mif:` URNs never appear in rendered output
@@ -1144,7 +1146,7 @@ scripts/pack-toggle.sh compliance-audit on
 
 ## competitive-quadrant
 
-**Kind:** genre | **Disabled by default (opt-in).**
+**Kind:** genre | **Enabled by default.**
 
 **Source:** external — consumed from [`mif-docs-plugin`](https://github.com/modeled-information-format/mif-docs-plugin)'s
 `competitive-quadrant` skill (SHA-pinned via `harness.config.json` `marketplaces[]`), not a bundled
@@ -1204,7 +1206,7 @@ None beyond the core engine. Mermaid rendering is optional.
 
 ### Constraints
 
-- Disabled by default (opt-in); enable with `scripts/pack-toggle.sh competitive-quadrant on`
+- Enabled by default; disable with `scripts/pack-toggle.sh competitive-quadrant off`
 - "Magic Quadrant" is a Gartner trademark and proprietary methodology; this genre reproduces a generic two-axis competitive-analysis structure only — it must never claim to be a Gartner Magic Quadrant or imply Gartner endorsement
 - A two-axis quadrant figure is required; every axis score, strength, and caution must trace to a cited finding
 - Mermaid rendering is optional

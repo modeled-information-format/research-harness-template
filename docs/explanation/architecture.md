@@ -2,13 +2,22 @@
 id: explanation-architecture
 type: semantic
 created: '2026-06-19T15:19:39-04:00'
-modified: '2026-07-12T17:05:27.032Z'
+modified: '2026-08-04T23:46:01.663Z'
 namespace: docs/explanation
 tags:
   - documentation
   - explanation
 title: "Explanation: architecture"
 diataxis_type: explanation
+relationships:
+  - type: relates-to
+    target: /docs/adr/0018-mif-docs-plugin-as-document-tooling-substrate.md
+  - type: relates-to
+    target: /docs/adr/0014-compiled-ontology-engine-cli-and-mcp.md
+  - type: relates-to
+    target: /docs/adr/0015-confidence-tier-consumption-and-scored-suggestion-routing.md
+  - type: relates-to
+    target: /docs/adr/0016-engine-only-classification.md
 temporal:
   '@type': TemporalMetadata
   validFrom: '2026-06-19T15:19:39-04:00'
@@ -18,10 +27,10 @@ provenance:
   '@type': Provenance
   agent: claude-code/claude-sonnet-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:ae91b6b6-8d5c-4bea-963d-9e4b7907cf09
+    '@id': urn:mif:activity:claude-code-session:51b3df89-f0ea-4efb-9f66-160be77fa6ca
     '@type': prov:Activity
   trustLevel: user_stated
-  agentVersion: 2.1.207
+  agentVersion: 2.1.221
 ---
 
 # Explanation: architecture

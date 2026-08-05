@@ -2,23 +2,29 @@
 id: explanation-living-corpus
 type: semantic
 created: '2026-06-21T20:20:18-04:00'
-modified: '2026-06-26T09:21:24-04:00'
+modified: '2026-08-05T00:05:24.545Z'
 namespace: docs/explanation
 tags:
   - documentation
   - explanation
 title: "Explanation: the living corpus — goal evolution and finding reuse"
 diataxis_type: explanation
+relationships:
+  - type: relates-to
+    target: /docs/adr/0006-content-hashed-append-only-goal-versioning.md
 ---
 
 # Explanation: the living corpus — goal evolution and finding reuse
 
-> **Status: design proposal, not yet implemented.** This document records the
-> intended model for how a research session's goal evolves over time and how
-> existing findings are reused across goal versions. It is an input to the
-> project's ADRs and to a future design-spec section (proposed **§11**); the
-> harness does not yet behave this way. Where a decision is settled it is marked
-> **Settled**; unresolved choices are collected under [Open questions](#open-questions).
+> **Status: goal versioning, reshape, and membership-aware `/start --update` are
+> implemented and in production use** (`scripts/goal-version.sh`,
+> `scripts/resolve-membership.sh`, `.claude/commands/goal-writer.md`'s
+> `--reshape` flow, `.claude/commands/start.md`'s `--update` mode). This
+> document remains the design record for that mechanism and for the future
+> first-class-hypotheses layer described below, which is not yet implemented.
+> It is an input to the project's ADRs and to a future design-spec section
+> (proposed **§11**). Where a decision is settled it is marked **Settled**;
+> unresolved choices are collected under [Open questions](#open-questions).
 
 Research is not a one-shot. Over the life of a topic the question sharpens: a
 dimension is added, a hypothesis is revised, scope shifts, a completion check
@@ -161,11 +167,14 @@ membership; finding freshness fields; (later) first-class hypotheses.
 
 ## Open questions
 
-1. **Membership authority location.** Per-version members file as authority with a
-   derived `goal_versions[]` mirror on findings (O(1) writes per evolution, no
-   drift), **vs.** the set living natively on each finding (fully self-describing,
-   but N writes per evolution and easier to drift). This changes the schema and
-   the reshape command.
+1. ~~**Membership authority location.**~~ **Settled** (implemented) as the
+   option this document already leaned toward above: the per-version members
+   file (`reports/<topic>/goals/goal-<hash>.members.json`, written by
+   `goal-writer`'s `--reshape` flow) is the authority, and `goal_versions[]`/
+   `stale_in[]` is a derived mirror — re-projected onto the research-index
+   and onto each finding by `build-index.sh` — never hand-authored or
+   treated as a source of truth (`schemas/findings.schema.json`,
+   `scripts/resolve-membership.sh`).
 2. **Reshape delta input.** Passed as **args**
    (`/goal-writer --reshape "drop trajectory, add hypothesis X"` — scriptable,
    fits the autonomous/loop style) **vs.** **elicited** (goal-writer asks). Affects

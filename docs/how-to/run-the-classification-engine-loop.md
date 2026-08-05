@@ -1,6 +1,6 @@
 ---
 id: how-to-run-the-classification-engine-loop
-type: semantic
+type: procedural
 created: '2026-07-04T23:13:57-04:00'
 modified: '2026-07-05T09:29:04-04:00'
 namespace: docs/how-to

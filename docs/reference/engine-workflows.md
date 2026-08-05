@@ -2,7 +2,7 @@
 id: reference-engine-workflows
 type: semantic
 created: '2026-07-17T20:25:00-04:00'
-modified: '2026-07-24T12:15:45.429Z'
+modified: '2026-08-05T00:05:42.610Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -18,10 +18,10 @@ provenance:
   '@type': Provenance
   agent: claude-code/claude-sonnet-5
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:526419e5-77d7-4f96-a34a-22d8d5baa46f
+    '@id': urn:mif:activity:claude-code-session:51b3df89-f0ea-4efb-9f66-160be77fa6ca
     '@type': prov:Activity
   trustLevel: user_stated
-  agentVersion: 2.1.218
+  agentVersion: 2.1.221
 ---
 
 # Reference: engine workflows
@@ -214,14 +214,14 @@ encountered that belongs to a *different* dimension (or to none). The
 analyst records the lead instead of writing a finding outside its pin, and
 the module surfaces the collected leads in its return payload as
 `{from, lead}` pairs. This is a **routing surface** with two named
-consumers: the coverage-audit workflow (atomic action Z, #549, not yet
-vendored) and the add-dimensions workflow
+consumers: the [coverage-audit workflow](#research-coverage-audit) (atomic
+action Z, `research-coverage-audit`) and the add-dimensions workflow
 ([atomic action B, `research-add-dimensions`](#research-add-dimensions),
-vendored under Epic #546). The latter's `leads` arg consumes this payload
-directly — no longer forward-looking, a live integration — while the
-former still only has a documented destination, not a consumer. The old
-engine simply dropped this evidence; the module guarantees it survives the
-round for both consumers to pick up.
+vendored under Epic #546). Both are live consumers: `research-add-dimensions`'
+`leads` arg consumes this payload directly, and `research-coverage-audit`'s
+`homeless-leads` auditor accepts an accumulated `leads` arg of the same
+shape. The old engine simply dropped this evidence; the module guarantees it
+survives the round for both consumers to pick up.
 
 ### Returns
 
@@ -330,22 +330,22 @@ restatement of what the engine already does.
 
 ### Regate: a client-side verification-block reset
 
-The one-round rule has **no engine override**: `already_graded()` in
-`harness_falsify.rs` unconditionally short-circuits any finding already
-carrying `attempted_at`, and the `mif-rh-cli` `Falsify` command takes exactly
-`finding`/`fixture` with no re-verify flag anywhere in the stack — confirmed
-by inspection, not assumed from the reference design. When `regate: true` is
-passed (only together with an explicit `scope.paths`/`scope.ids`), the Gate
-phase clears the stale finding's `extensions.harness.verification` block
-itself — via `jq 'del(.extensions.harness.verification)'`, write-then-`mv`,
-never edit-in-place — **before** re-invoking `falsify.sh`, so the one-round
-check sees a finding with no `attempted_at` and performs a genuine write.
-The verdict write itself still routes exclusively through `falsify.sh`;
-only the pre-condition it checks is reset outside the engine. A follow-up to
-close this gap properly — an explicit `--regate` override in `mif-rh-cli`
-itself, so a caller no longer has to pre-mutate the finding file
-out-of-band — is filed and tracked as
-[`mif-rs#119`](https://github.com/modeled-information-format/mif-rs/issues/119).
+`mif-rh-cli`'s `harness_falsify.rs` now supports a native `regate: bool` field
+on its `Falsify` command (closed via
+[`mif-rs` PR #120](https://github.com/modeled-information-format/mif-rs/pull/120),
+tracked in [`mif-rs#119`](https://github.com/modeled-information-format/mif-rs/issues/119)):
+`already_graded()` is gated by `&& !regate` before short-circuiting a finding
+that already carries `attempted_at`, so the engine itself can bypass the
+one-round rule when asked. `scripts/falsify.sh` does not yet pass `--regate`
+through, so the client-side reset below remains the operative mechanism in
+practice until that wiring lands. When `regate: true` is passed (only
+together with an explicit `scope.paths`/`scope.ids`), the Gate phase clears
+the stale finding's `extensions.harness.verification` block itself — via
+`jq 'del(.extensions.harness.verification)'`, write-then-`mv`, never
+edit-in-place — **before** re-invoking `falsify.sh`, so the one-round check
+sees a finding with no `attempted_at` and performs a genuine write. The
+verdict write itself still routes exclusively through `falsify.sh`; only the
+pre-condition it checks is reset outside the engine.
 
 ### Supersession: mechanism decomposed, epistemics and substrate unchanged
 
@@ -429,8 +429,9 @@ the tree" rule was already followed ad hoc by several scripts
 (`scripts/build-graph-viz.sh`, `scripts/mif-container-export.sh`,
 `research-falsify.js`'s evidence fixture), but each invented its own
 shape and none of them hand off a path to a *later, independent* workflow the
-way synthesis output must hand off to `research-projection` (#543, not yet
-started). `research-synthesis.js` is the first module to need that hand-off,
+way synthesis output must hand off to
+[`research-projection`](#research-projection). `research-synthesis.js` is
+the first module to need that hand-off,
 so it states one explicitly here — a real design decision, not a restatement
 of an existing rule — for `research-projection` (and any future consumer) to
 read rather than re-derive:
@@ -909,7 +910,7 @@ Atomic action A (augment): a pure **decision** workflow — haiku Assess
 computes the per-dimension coverage/verdict/staleness matrix, then sonnet
 Decide judges which dimensions to deepen, with stated reasoning, rejected
 alternatives, and named target checks. It gathers nothing itself: the
-orchestrator (#550, not yet vendored) is what feeds its `deepen[]` plan to
+[orchestrator](#research-pipeline) is what feeds its `deepen[]` plan to
 `research-fanout` (gathering) and `research-falsify` (the gate). Source:
 `.claude/workflows/research-augment.js`.
 
@@ -981,12 +982,12 @@ section and its "Atomic action A — augment" section for the fuller design
 rationale and flowchart.
 
 What is *not* superseded: this module only **decides** — it never gathers
-or gates. The orchestrator (#550, not yet vendored) remains the piece that
+or gates. The [orchestrator](#research-pipeline) remains the piece that
 composes `research-augment`'s `deepen[]` plan into actual `research-fanout`
-(gathering) and `research-falsify` (gate) calls; until it lands,
-`research-augment` is confirmed safe to invoke standalone (no
-live-orchestrator-context dependency), consuming an optional `checkCoverage`/
-`focusHint` when a caller has them.
+(gathering) and `research-falsify` (gate) calls; `research-augment` is also
+confirmed safe to invoke standalone (no live-orchestrator-context
+dependency), consuming an optional `checkCoverage`/`focusHint` when a
+caller has them.
 
 ### Returns
 

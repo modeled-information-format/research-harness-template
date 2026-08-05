@@ -2,7 +2,7 @@
 id: ai-arch-mif-container-format
 type: semantic
 created: '2026-07-06T17:26:50Z'
-modified: '2026-07-10T00:00:00Z'
+modified: '2026-08-05T00:07:13.188Z'
 namespace: spec/architecture/mif-container-format
 title: 'Architecture: MIF Container -- a Data-Package-style, extensible manifest for research-harness import/export'
 tags:
@@ -117,6 +117,8 @@ relationships:
     target: /docs/adr/0012-on-demand-ontology-vendoring.md
   - type: relates-to
     target: /docs/adr/0016-engine-only-classification.md
+  - type: superseded-by
+    target: /docs/adr/0017-mif-container-instance-scoped-export-import-format.md
 entity:
   name: MIF Container Architecture
   entity_type: architecture-document

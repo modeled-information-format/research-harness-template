@@ -1,6 +1,6 @@
 ---
 id: how-to-export-and-import-a-topic
-type: semantic
+type: procedural
 created: '2026-07-12T15:54:17Z'
 modified: '2026-07-12T16:22:34.030Z'
 namespace: docs/how-to

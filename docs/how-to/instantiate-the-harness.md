@@ -1,6 +1,6 @@
 ---
 id: how-to-instantiate-the-harness
-type: semantic
+type: procedural
 created: '2026-06-20T05:36:47-04:00'
 modified: '2026-07-05T10:10:09-04:00'
 namespace: docs/how-to

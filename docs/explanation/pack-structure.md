@@ -2,7 +2,7 @@
 id: explanation-pack-structure
 type: semantic
 created: '2026-06-19T20:44:52-04:00'
-modified: '2026-07-14T02:29:28.000Z'
+modified: '2026-08-04T23:46:46.147Z'
 namespace: docs/explanation
 tags:
   - documentation
@@ -71,8 +71,11 @@ marketplace `source` path and materializes the set into Claude Code's native
 (`<skill>@research-harness`; gitignored, deep-merged with the template-managed
 `.claude/settings.json`). `scripts/pack-toggle.sh <skill> on|off` flips one plugin.
 
-By default the five `reports` genres are enabled; every other plugin is
-disabled and opt-in.
+By default `harness.config.json` ships 11 enabled packs: 8 `reports` genres
+(`academic`, `briefing`, `computing-paper`, `engineering`, `exec-summary`,
+`market-research-report`, `competitive-quadrant`, `trend-analysis`) plus 3
+methodology packs (`competitive-analysis`, `market-sizing`,
+`trend-modeling`); every other plugin is disabled and opt-in.
 
 ## A pack's caller doesn't have to be an interactive session
 

@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.40] - 2026-08-04
+
+### Fixed
+
+- `docs/how-to/*.md` (15 files): frontmatter `type: semantic` corrected to
+  `type: procedural`, matching `mif-docs`' `diataxis-how-to` genre mapping.
+- Default-enabled report-pack claim ("five report genres") corrected across
+  5 docs and one ADR audit entry to the actual current 11-pack default set.
+- Relationship-graph gaps: added 13 missing frontmatter `relationships`/
+  `related` entries across 8 documents where the prose already claimed the
+  edge but the metadata didn't (of the 6 findings that prompted this, 2
+  turned out to be false positives on closer check — see PR #843).
+- `docs/explanation/living-corpus.md`: status corrected — goal versioning,
+  reshape, and membership-aware `/start --update` are shipped, not a design
+  proposal.
+- `docs/reference/packs/index.md`: `diataxis-*` packs' Family column
+  corrected from `genres` to `reports`.
+- `docs/reference/engine-workflows.md`: Regate section and 3 references to
+  closed Epics corrected to reflect shipped state.
+- `docs/reference/packs/ontologies.md`: 11 stale `Version` rows corrected to
+  match each pack's actual `ontology.pack.json` version.
+
+Found by a full `mif-docs` `audit-docs` run over `docs/`.
+
 ## [0.16.39] - 2026-07-24
 
 ### Fixed

@@ -1,6 +1,6 @@
 ---
 id: how-to-evolve-a-goal
-type: semantic
+type: procedural
 created: '2026-06-21T21:11:55-04:00'
 modified: '2026-06-26T09:21:24-04:00'
 namespace: docs/how-to
