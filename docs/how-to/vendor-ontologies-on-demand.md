@@ -13,14 +13,6 @@ diataxis_type: how-to
 relationships:
   - type: relates-to
     target: /docs/adr/0012-on-demand-ontology-vendoring.md
-provenance:
-  '@type': Provenance
-  agent: claude-code/claude-sonnet-5
-  wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:51b3df89-f0ea-4efb-9f66-160be77fa6ca
-    '@type': prov:Activity
-  trustLevel: user_stated
-  agentVersion: 2.1.221
 ---
 
 # Vendor ontologies on demand
