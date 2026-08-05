@@ -2,7 +2,7 @@
 id: ai-arch-mif-container-format
 type: semantic
 created: '2026-07-06T17:26:50Z'
-modified: '2026-08-04T23:43:56.566Z'
+modified: '2026-08-05T00:07:13.188Z'
 namespace: spec/architecture/mif-container-format
 title: 'Architecture: MIF Container -- a Data-Package-style, extensible manifest for research-harness import/export'
 tags:
@@ -25,12 +25,10 @@ temporal:
 provenance:
   '@type': Provenance
   sourceType: agent_inferred
-  trustLevel: user_stated
+  trustLevel: high_confidence
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:51b3df89-f0ea-4efb-9f66-160be77fa6ca
+    '@id': urn:mif:activity:mif-corpus-import-export-research-2026-07-06
     '@type': prov:Activity
-  agent: claude-code/claude-sonnet-5
-  agentVersion: 2.1.221
 citations:
   - '@type': Citation
     citationType: specification

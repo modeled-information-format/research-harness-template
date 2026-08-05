@@ -15,9 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `type: procedural`, matching `mif-docs`' `diataxis-how-to` genre mapping.
 - Default-enabled report-pack claim ("five report genres") corrected across
   5 docs and one ADR audit entry to the actual current 11-pack default set.
-- 6 relationship-graph gaps: added missing frontmatter `relationships`/
-  `related` entries between documents that already claimed the edge in
-  prose but not in metadata.
+- Relationship-graph gaps: added 13 missing frontmatter `relationships`/
+  `related` entries across 8 documents where the prose already claimed the
+  edge but the metadata didn't (of the 6 findings that prompted this, 2
+  turned out to be false positives on closer check — see PR #843).
 - `docs/explanation/living-corpus.md`: status corrected — goal versioning,
   reshape, and membership-aware `/start --update` are shipped, not a design
   proposal.

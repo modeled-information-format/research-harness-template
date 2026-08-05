@@ -2,7 +2,7 @@
 id: reference-engine-workflows
 type: semantic
 created: '2026-07-17T20:25:00-04:00'
-modified: '2026-08-04T23:51:53.094Z'
+modified: '2026-08-05T00:05:42.610Z'
 namespace: docs/reference
 tags:
   - documentation
@@ -217,11 +217,11 @@ the module surfaces the collected leads in its return payload as
 consumers: the [coverage-audit workflow](#research-coverage-audit) (atomic
 action Z, `research-coverage-audit`) and the add-dimensions workflow
 ([atomic action B, `research-add-dimensions`](#research-add-dimensions),
-vendored under Epic #546). The latter's `leads` arg consumes this payload
-directly — no longer forward-looking, a live integration — while the
-former still only has a documented destination, not a consumer. The old
-engine simply dropped this evidence; the module guarantees it survives the
-round for both consumers to pick up.
+vendored under Epic #546). Both are live consumers: `research-add-dimensions`'
+`leads` arg consumes this payload directly, and `research-coverage-audit`'s
+`homeless-leads` auditor accepts an accumulated `leads` arg of the same
+shape. The old engine simply dropped this evidence; the module guarantees it
+survives the round for both consumers to pick up.
 
 ### Returns
 

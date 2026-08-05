@@ -2,7 +2,7 @@
 id: explanation-living-corpus
 type: semantic
 created: '2026-06-21T20:20:18-04:00'
-modified: '2026-08-04T23:45:24.095Z'
+modified: '2026-08-05T00:05:24.545Z'
 namespace: docs/explanation
 tags:
   - documentation
@@ -175,10 +175,14 @@ membership; finding freshness fields; (later) first-class hypotheses.
 
 ## Open questions
 
-1. ~~**Membership authority location.**~~ **Settled** (implemented): the
-   per-version members file (`reports/<topic>/goals/goal-<hash>.members.json`,
-   written by `goal-writer`'s `--reshape` flow) is the authority; a derived
-   `goal_versions[]` mirror on findings was not implemented.
+1. ~~**Membership authority location.**~~ **Settled** (implemented) as the
+   option this document already leaned toward above: the per-version members
+   file (`reports/<topic>/goals/goal-<hash>.members.json`, written by
+   `goal-writer`'s `--reshape` flow) is the authority, and `goal_versions[]`/
+   `stale_in[]` is a derived mirror — re-projected onto the research-index
+   and onto each finding by `build-index.sh` — never hand-authored or
+   treated as a source of truth (`schemas/findings.schema.json`,
+   `scripts/resolve-membership.sh`).
 2. **Reshape delta input.** Passed as **args**
    (`/goal-writer --reshape "drop trajectory, add hypothesis X"` — scriptable,
    fits the autonomous/loop style) **vs.** **elicited** (goal-writer asks). Affects
