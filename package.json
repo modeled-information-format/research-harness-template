@@ -26,7 +26,7 @@
     "starlight-llms-txt": "^0.11.0"
   },
   "overrides": {
-    "js-yaml": "4.3.0",
+    "js-yaml": "4.3.1",
     "starlight-llms-txt": {
       "astro": "$astro"
     },
