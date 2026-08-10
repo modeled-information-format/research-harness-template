@@ -25,9 +25,9 @@ lineage) are closed **locally** under `extensions.harness` — never by forking 
 ## Quality gates (run before reporting any change complete)
 
 CI (`.github/workflows/ci.yml`, on push/PR to `main`) runs these — plus
-setup fetches before them (`fetch-engine.sh`, `fetch-ontology.sh
---all-enabled`, `fetch-mif-docs-plugin.sh`) and separate `version-bump`,
-`pin-check`, and `adr-smadr` jobs. Run the same locally.
+setup fetches before them (`fetch-engine.sh`,
+`fetch-ontology.sh --all-enabled`, `fetch-mif-docs-plugin.sh`) and separate
+`version-bump`, `pin-check`, and `adr-smadr` jobs. Run the same locally.
 
 > **Vendor first (ADR-0012/#224).** Domain ontology packs are NOT bundled — they
 > are vendored on demand. A Copier-instantiated clone vendors them in `_tasks` and
@@ -101,10 +101,10 @@ Runtime stays pure stdlib; the codegen toolchain is dev/build-time only.
    (`start`, `falsify`, `goal-writer`, `resume`, `status`, `topics`,
    `ontology-review`, `configure`, `synthesize-corpus`, `export`, `import`)
    that delegate to them. `.mcp.json` also wires an optional `mif-rh` MCP
-   server over this same engine. (`research.md` and the `.claude/workflows/`
-   scripts it drives are a **retired experiment** — unsupported, slated for
-   removal; do not build on or document against them. `/start` is the engine
-   entry point.)
+   server over this same engine. (`.claude/commands/research.md` and the
+   `.claude/workflows/` scripts it drives are a **retired experiment** —
+   unsupported, slated for removal; do not build on or document against
+   them. `/start` is the engine entry point.)
 2. **Contracts** — `schemas/`: findings, goal, artifact, concordance,
    knowledge-graph, pack, session-state, diataxis-doc, mif-container, the
    three `monitoring-*` schemas, plus `schemas/mif/` and
