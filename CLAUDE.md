@@ -24,8 +24,10 @@ lineage) are closed **locally** under `extensions.harness` — never by forking 
 
 ## Quality gates (run before reporting any change complete)
 
-CI (`.github/workflows/ci.yml`, on push/PR to `main`) runs exactly these. Run the
-same locally.
+CI (`.github/workflows/ci.yml`, on push/PR to `main`) runs these — plus
+setup fetches before them (`fetch-engine.sh`, `fetch-ontology.sh
+--all-enabled`, `fetch-mif-docs-plugin.sh`) and separate `version-bump`,
+`pin-check`, and `adr-smadr` jobs. Run the same locally.
 
 > **Vendor first (ADR-0012/#224).** Domain ontology packs are NOT bundled — they
 > are vendored on demand. A Copier-instantiated clone vendors them in `_tasks` and
@@ -66,8 +68,12 @@ markdownlint-cli2 --config .markdownlint-cli2.jsonc "**/*.md"   # must be 0 erro
   `copier update` change, run **both**.
 - Toolchain: `jq`, `yq`, `ajv-cli` + `ajv-formats`, `markdownlint-cli2`, `copier`,
   `python3`, `mif-rh-cli` (the ontology engine, installed by
-  `scripts/fetch-engine.sh`; CI installs it before `verify.sh`, ADR-0016). No
-  `make`/`npm`/`pyproject` build — scripts are invoked directly.
+  `scripts/fetch-engine.sh`; CI installs it before `verify.sh`, ADR-0016). The
+  harness *gates* have no `make`/`pyproject` build — scripts are invoked
+  directly — but the repo does carry an npm surface: `package.json`'s
+  `postinstall` (`patch-package` + `scripts/install-hooks.sh`) is how git
+  hooks get installed, and the reports site (below) builds with
+  `npm run build`.
 - **Document tooling is `mif-docs-plugin`, not a harness-local mechanism.**
   Frontmatter authoring, MIF conformance validation, and provenance for
   document-shaped deliverables route through `mif-docs-plugin`'s
@@ -93,11 +99,16 @@ Runtime stays pure stdlib; the codegen toolchain is dev/build-time only.
    `falsification-analyst`, `source-chunker`, `report-synthesizer`,
    `harness-configurator`, `corpus-synthesizer`) and the `.claude/commands/`
    (`start`, `falsify`, `goal-writer`, `resume`, `status`, `topics`,
-   `ontology-review`, `configure`, `synthesize-corpus`) that delegate to
-   them. `.mcp.json` also wires an optional `mif-rh` MCP server over this
-   same engine.
-2. **Contracts** — `schemas/`: findings, goal, artifact, concordance, pack,
-   session-state, plus `schemas/mif/` and `harness.config.schema.json`.
+   `ontology-review`, `configure`, `synthesize-corpus`, `export`, `import`)
+   that delegate to them. `.mcp.json` also wires an optional `mif-rh` MCP
+   server over this same engine. (`research.md` and the `.claude/workflows/`
+   scripts it drives are a **retired experiment** — unsupported, slated for
+   removal; do not build on or document against them. `/start` is the engine
+   entry point.)
+2. **Contracts** — `schemas/`: findings, goal, artifact, concordance,
+   knowledge-graph, pack, session-state, diataxis-doc, mif-container, the
+   three `monitoring-*` schemas, plus `schemas/mif/` and
+   `harness.config.schema.json`.
 3. **Harness services** — flat skills in `.claude/skills/` (`search`, `discover`,
    `lab`, `graph`, `topics`, …) operating directly on the MIF substrate.
 4. **Outputs** — the `report` channel is the canonical MIF **Level-3** source of
@@ -153,6 +164,30 @@ concierges a PR upstream. NOTE: the mechanism is shipped; flipping the bundled
 domain packs to a gitignored cache + re-syncing to canonical is a staged
 follow-up (it requires re-enriching the bundled corpus, since canonical migrated
 some entity-type names).
+
+## MIF Container export/import (ADR-0017)
+
+`/export` and `/import` move a topic between harness instances as a single
+**MIF Container** (`schemas/mif-container.schema.json`), driven by the
+`scripts/mif-container-*.sh` family. Export packages a topic's findings,
+graph, and provenance into one instance-scoped artifact; import unpacks it
+into a fresh topic. **Neither ever modifies an existing `reports/<topic>/`
+in place** — that invariant is what makes the format safe to exchange.
+Locking behavior is covered by `evals/container-lock-test.sh`.
+
+## Reports site + monitoring pack
+
+- **The reports site** is the primary consumption surface for an
+  instantiated clone (ADR-0009/0013): Astro/Starlight rendering `reports/`
+  (`astro.config.mjs`, `src/`), built by `.github/workflows/docs.yml` via
+  `npm ci && npm run build`, served locally with `npm run dev`.
+  `scripts/site-toggle.sh primary|plugin` switches the rendering mode.
+- **Monitoring** (ADR-0019) ships as `packs/monitoring/` with its own
+  workflows (`.github/workflows/{monitor,monitor-gate}.yml`, installed into
+  an instance by `scripts/install-monitoring-workflows.sh`), the three
+  `schemas/monitoring-*.schema.json` contracts, and a
+  `gate_monitoring_workflow_sync` verify gate that keeps installed
+  workflows in sync with the pack's shipped copies.
 
 ## Template vs instance
 
@@ -245,8 +280,10 @@ must merge cleanly.
   (build-provenance attestation → pinned-SHA-256 checksum waterfall); every GitHub
   Action `uses:` is pinned to a 40-char SHA (the `pin-check` CI job enforces it).
 - **Enforcement hooks travel with the engine** (`.claude/hooks/`, wired in
-  `.claude/settings.json`): citation-leak gate, research-pipeline reminder, voice
-  check, and the markdown `md_guard` (which never suppresses a diagnostic).
+  `.claude/settings.json`): citation-leak gate, research-pipeline reminder,
+  voice check, output-conformance check, README-reindex check, the falsify
+  gate guard, and the markdown `md_guard` (which never suppresses a
+  diagnostic).
 
 ## Docs
 
