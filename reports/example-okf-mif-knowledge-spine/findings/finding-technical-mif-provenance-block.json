@@ -1,6 +1,9 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
-  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-mif-provenance-block",
+  "@id": "urn:mif:c186c220-fb58-566b-a5c8-de0306a4fa02",
+  "aliases": [
+    "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-mif-provenance-block"
+  ],
   "@type": "Concept",
   "citations": [
     {
@@ -70,7 +73,7 @@
   "relationships": [
     {
       "strength": 0.9,
-      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-okf-informal-provenance",
+      "target": "urn:mif:f5180da5-1007-549f-9279-9387ad4fb46d",
       "type": "derived-from"
     }
   ],

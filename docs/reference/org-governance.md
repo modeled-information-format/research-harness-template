@@ -1,5 +1,5 @@
 ---
-id: reference-org-governance
+id: 650c0428-1ac9-5100-aada-9158fa6babdf
 type: semantic
 created: '2026-06-29T13:48:43-04:00'
 modified: '2026-07-21T11:25:19.747Z'

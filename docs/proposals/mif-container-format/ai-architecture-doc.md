@@ -1,5 +1,5 @@
 ---
-id: ai-arch-mif-container-format
+id: f59610e2-b03d-53d7-99d5-4a066715f3e5
 type: semantic
 created: '2026-07-06T17:26:50Z'
 modified: '2026-08-05T00:07:13.188Z'

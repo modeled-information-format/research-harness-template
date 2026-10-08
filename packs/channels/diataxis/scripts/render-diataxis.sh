@@ -18,8 +18,8 @@
 # All corpus-derived text is sanitized before it reaches a body:
 #   - identity scrub: urn:mif: ids, reports/<topic>/ paths, f_<dim>_<n> handles,
 #     and extensions.harness paths are redacted, so prose carries no
-#     internal-research identity (the page's own urn:mif:doc: frontmatter @id is
-#     its legitimate L1 identity);
+#     internal-research identity (the page's own frontmatter @id is its
+#     legitimate L1 identity);
 #   - structure neutralized: a line-leading '#' in content is escaped so content
 #     cannot inject a second top-level heading; titles are trimmed of stray '#'
 #     and whitespace; link text drops '[]'; citation URLs are angle-bracketed.
@@ -31,7 +31,11 @@
 # not Level 3 — the report channel stays the canonical L3 source of truth and this
 # channel stays mif.exempt.
 #
-# Depends only on jq.  Usage: render-diataxis.sh <findings-dir> <out-dir> [<topic-name>]
+# Page identity (MIF 1.4): urn:mif:<uuid>, uuid5 in the MIF namespace of
+# "doc:<namespace>:<page-slug>" (the org-wide rule; the remainder of the legacy
+# urn:mif:doc:<namespace>:<page-slug> form), so re-rendering a page keeps its id.
+#
+# Depends on jq and python3 (stdlib uuid).  Usage: render-diataxis.sh <findings-dir> <out-dir> [<topic-name>]
 
 set -uo pipefail
 
@@ -63,7 +67,7 @@ while IFS= read -r _d; do [ -n "$_d" ] && DIMS+=("$_d"); done < <(jq -r '[.[].ex
 # blanks never double (MD012) and headings/lists are always surrounded (MD022/032).
 DEF='
   def scrub: tostring
-    | gsub("urn:mif:[a-z]+:[^\\s)\\]]+"; "[internal-ref]")
+    | gsub("urn:mif:[^\\s)\\]]+"; "[internal-ref]")
     | gsub("reports/[a-z0-9][a-z0-9-]*/[A-Za-z0-9_./-]+"; "[internal-ref]")
     | gsub("\\bf_[a-z]+_[0-9]+\\b"; "[internal-ref]")
     | gsub("extensions\\.harness[A-Za-z0-9_.]*"; "[internal-ref]");
@@ -122,7 +126,8 @@ emit() {
   local rel="$1" ctype="$2" dtype="$3" prog="$4"; shift 4
   local out="$OUT/$rel" id idslug tmp
   idslug="$(printf '%s' "$rel" | sed 's#\.md$##; s#/#-#g; s#[^A-Za-z0-9-]#-#g')"
-  id="urn:mif:doc:${NS}:${idslug}"
+  id="urn:mif:$(python3 -c 'import sys, uuid; print(uuid.uuid5(uuid.uuid5(uuid.NAMESPACE_URL, "https://mif-spec.dev"), sys.argv[1]))' "doc:${NS}:${idslug}")" \
+    || { echo "render-diataxis: cannot mint the page id for $rel" >&2; return 1; }
   local dir; dir="$(dirname "$out")"
   mkdir -p "$dir" || { echo "render-diataxis: cannot create dir for $rel" >&2; return 1; }
   # Temp lands in the target dir (not the system temp): the mv is same-filesystem and

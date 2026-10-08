@@ -1,7 +1,7 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
   "@type": "Concept",
-  "@id": "urn:mif:concept:synthesis-eval:unverified-0001",
+  "@id": "urn:mif:868d8725-a6af-5146-8828-d8d490dbfc3d",
   "conceptType": "semantic",
   "namespace": "harness/synthesis-eval-topic",
   "title": "An ungated finding with no verification block at all",

@@ -1,7 +1,7 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
   "@type": "Concept",
-  "@id": "urn:mif:concept:sample:bandwidth-0002",
+  "@id": "urn:mif:57acc61b-a5a8-5932-ae35-745a60ee2a2f",
   "conceptType": "semantic",
   "namespace": "sample/edge-systems",
   "title": "Local preprocessing lowers upstream bandwidth demand",
@@ -38,7 +38,7 @@
   "relationships": [
     {
       "type": "supports",
-      "target": "urn:mif:concept:sample:gateway-0003",
+      "target": "urn:mif:b354d7c3-1d8e-5ab0-a0dc-f7d5b0c543ca",
       "strength": 0.7
     }
   ],

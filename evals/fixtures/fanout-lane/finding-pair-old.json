@@ -1,7 +1,7 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
   "@type": "Concept",
-  "@id": "urn:mif:concept:harness:fanout-eval-pair-old",
+  "@id": "urn:mif:8ab31963-5c73-5dcd-86e6-3460e683c777",
   "conceptType": "semantic",
   "namespace": "harness/fanout-lane-eval",
   "title": "Update-propagating template engines re-apply upstream changes",

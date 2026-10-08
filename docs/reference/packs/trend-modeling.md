@@ -1,5 +1,5 @@
 ---
-id: reference-packs-trend-modeling
+id: e34a956f-23bf-5eda-b196-feed79db5622
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
 modified: '2026-07-12T15:04:47.158Z'

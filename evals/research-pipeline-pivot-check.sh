@@ -267,11 +267,11 @@ module.exports = {
       goalVersion: 'gv-2222222',
       supersedes: 'gv-1111111',
       goalStatement: 'Evaluate defensive use-cases only.',
-      carry: ['urn:mif:concept:x:finding-1', 'urn:mif:concept:x:finding-2', 'urn:mif:concept:x:finding-3'],
-      stale: ['urn:mif:concept:x:finding-4'],
-      outOfScope: ['urn:mif:concept:x:finding-5'],
+      carry: ['urn:mif:31efef68-5a10-5ec8-b1ca-33cbe6042764', 'urn:mif:cbdfffc6-1097-5cba-9f0c-a16d5cc74708', 'urn:mif:1c4970f5-07f8-5171-adea-99e3064494d5'],
+      stale: ['urn:mif:a4f222dc-b94f-54ec-a455-296321c3cab9'],
+      outOfScope: ['urn:mif:24c88afb-1d2e-51bd-8390-0374b3a4c267'],
       gapDimensions: ['defensive-tactics'],
-      reverifyIds: ['urn:mif:concept:x:finding-4'],
+      reverifyIds: ['urn:mif:a4f222dc-b94f-54ec-a455-296321c3cab9'],
     }),
     falsify: async (a) => {
       falsifyCalls += 1;
@@ -279,7 +279,7 @@ module.exports = {
     },
     fanout: async (a) => ({ dimensions: a.dimensions, findings: [], perDimension: (a.dimensions || []).map((d) => ({ dimension: d, written: 1, valid: 1, searches: 2, saturation: 'not saturated' })), crossDimensionLeads: [], related: 0 }),
     synthesis: async () => ({ ok: true, synthesisPath: 'reports/pipeline-eval-topic/synthesis-pivot.json', sections: [], findingsUsed: [], checkCoverage: [], openIssues: [], ungatedFindings: [] }),
-    projection: async (a) => ({ ok: true, reportPath: 'reports/pipeline-eval-topic/report.md', reportId: 'urn:mif:concept:pipeline-eval-topic:report', mifLevel: 3, checksAddressed: [], verificationVerdict: 'survived', readmePath: null, readmeCheckPassed: false, graphRefreshed: false, graphAssertPassed: false, problems: [], _receivedSynthesisPath: a.synthesisPath }),
+    projection: async (a) => ({ ok: true, reportPath: 'reports/pipeline-eval-topic/report.md', reportId: 'urn:mif:c7f61d1b-7a92-5e7c-b15d-7546105829b5', mifLevel: 3, checksAddressed: [], verificationVerdict: 'survived', readmePath: null, readmeCheckPassed: false, graphRefreshed: false, graphAssertPassed: false, problems: [], _receivedSynthesisPath: a.synthesisPath }),
   },
 };
 NODE
@@ -309,7 +309,7 @@ falsify_calls = bn.get('falsify', [])
 check('falsify ran EXACTLY TWICE (one regate call, one falsifyAll() drain call) -- two behaviorally distinct invocations in one run', len(falsify_calls) == 2, str(len(falsify_calls)))
 if len(falsify_calls) >= 1:
     regate_call = falsify_calls[0]['args']
-    check("the FIRST falsify call is the regate call: scope={ids: reverifyIds}, regate:true, claimBudget/queryBudget/lenses all passed through", regate_call.get('scope') == {'ids': ['urn:mif:concept:x:finding-4']} and regate_call.get('regate') is True and regate_call.get('claimBudget') == 40 and regate_call.get('queryBudget') == 12 and regate_call.get('lenses') == 3, json.dumps(regate_call))
+    check("the FIRST falsify call is the regate call: scope={ids: reverifyIds}, regate:true, claimBudget/queryBudget/lenses all passed through", regate_call.get('scope') == {'ids': ['urn:mif:a4f222dc-b94f-54ec-a455-296321c3cab9']} and regate_call.get('regate') is True and regate_call.get('claimBudget') == 40 and regate_call.get('queryBudget') == 12 and regate_call.get('lenses') == 3, json.dumps(regate_call))
 if len(falsify_calls) >= 2:
     drain_call = falsify_calls[1]['args']
     check("the SECOND falsify call is the falsifyAll() drain call: scope='all', distinct from the regate call's ids-scope", drain_call.get('scope') == 'all', json.dumps(drain_call))
@@ -342,11 +342,11 @@ cat > "$TMP/stubs-b3.cjs" <<'NODE'
 'use strict';
 module.exports = {
   wf: {
-    pivot: async () => ({ goalVersion: 'gv-3333333', supersedes: 'gv-2222222', goalStatement: 'Widen scope.', carry: ['urn:mif:concept:x:finding-1'], stale: [], outOfScope: [], gapDimensions: [], reverifyIds: [] }),
+    pivot: async () => ({ goalVersion: 'gv-3333333', supersedes: 'gv-2222222', goalStatement: 'Widen scope.', carry: ['urn:mif:31efef68-5a10-5ec8-b1ca-33cbe6042764'], stale: [], outOfScope: [], gapDimensions: [], reverifyIds: [] }),
     falsify: async () => { throw new Error('falsify must NOT be called — reverifyIds is empty AND gapDimensions is empty (nothing to regate or drain)'); },
     fanout: async () => { throw new Error('fanout must NOT be called — gapDimensions is empty'); },
     synthesis: async () => ({ ok: true, synthesisPath: 'reports/pipeline-eval-topic/synthesis-pivot-nogap.json', sections: [], findingsUsed: [], checkCoverage: [], openIssues: [], ungatedFindings: [] }),
-    projection: async (a) => ({ ok: true, reportPath: 'reports/pipeline-eval-topic/report.md', reportId: 'urn:mif:concept:pipeline-eval-topic:report', mifLevel: 3, checksAddressed: [], verificationVerdict: 'survived', readmePath: null, readmeCheckPassed: false, graphRefreshed: false, graphAssertPassed: false, problems: [], _receivedSynthesisPath: a.synthesisPath }),
+    projection: async (a) => ({ ok: true, reportPath: 'reports/pipeline-eval-topic/report.md', reportId: 'urn:mif:c7f61d1b-7a92-5e7c-b15d-7546105829b5', mifLevel: 3, checksAddressed: [], verificationVerdict: 'survived', readmePath: null, readmeCheckPassed: false, graphRefreshed: false, graphAssertPassed: false, problems: [], _receivedSynthesisPath: a.synthesisPath }),
   },
 };
 NODE
@@ -392,11 +392,11 @@ cat > "$TMP/stubs-b5.cjs" <<'NODE'
 'use strict';
 module.exports = {
   wf: {
-    pivot: async () => ({ goalVersion: 'gv-4444444', supersedes: 'gv-3333333', goalStatement: 'Reprioritize.', carry: ['urn:mif:concept:x:finding-1', 'urn:mif:concept:x:finding-2'], stale: ['urn:mif:concept:x:finding-3'], outOfScope: [], gapDimensions: [], reverifyIds: ['urn:mif:concept:x:finding-3'] }),
+    pivot: async () => ({ goalVersion: 'gv-4444444', supersedes: 'gv-3333333', goalStatement: 'Reprioritize.', carry: ['urn:mif:31efef68-5a10-5ec8-b1ca-33cbe6042764', 'urn:mif:cbdfffc6-1097-5cba-9f0c-a16d5cc74708'], stale: ['urn:mif:1c4970f5-07f8-5171-adea-99e3064494d5'], outOfScope: [], gapDimensions: [], reverifyIds: ['urn:mif:1c4970f5-07f8-5171-adea-99e3064494d5'] }),
     falsify: async (a) => ({ gated: 1, rollup: { survived: 1 }, verdicts: [], deferredIds: [], alreadyVerified: 0 }),
     fanout: async () => { throw new Error('fanout must NOT be called — gapDimensions is empty (only reweighting, no new gaps)'); },
     synthesis: async () => ({ ok: true, synthesisPath: 'reports/pipeline-eval-topic/synthesis-pivot-regateonly.json', sections: [], findingsUsed: [], checkCoverage: [], openIssues: [], ungatedFindings: [] }),
-    projection: async (a) => ({ ok: true, reportPath: 'reports/pipeline-eval-topic/report.md', reportId: 'urn:mif:concept:pipeline-eval-topic:report', mifLevel: 3, checksAddressed: [], verificationVerdict: 'survived', readmePath: null, readmeCheckPassed: false, graphRefreshed: false, graphAssertPassed: false, problems: [], _receivedSynthesisPath: a.synthesisPath }),
+    projection: async (a) => ({ ok: true, reportPath: 'reports/pipeline-eval-topic/report.md', reportId: 'urn:mif:c7f61d1b-7a92-5e7c-b15d-7546105829b5', mifLevel: 3, checksAddressed: [], verificationVerdict: 'survived', readmePath: null, readmeCheckPassed: false, graphRefreshed: false, graphAssertPassed: false, problems: [], _receivedSynthesisPath: a.synthesisPath }),
   },
 };
 NODE
@@ -443,11 +443,11 @@ cat > "$TMP/stubs-b6.cjs" <<'NODE'
 'use strict';
 module.exports = {
   wf: {
-    pivot: async () => ({ goalVersion: 'gv-5555555', supersedes: 'gv-4444444', goalStatement: 'Widen scope under budget pressure.', carry: ['urn:mif:concept:x:finding-1'], stale: [], outOfScope: [], gapDimensions: ['new-angle'], reverifyIds: [] }),
+    pivot: async () => ({ goalVersion: 'gv-5555555', supersedes: 'gv-4444444', goalStatement: 'Widen scope under budget pressure.', carry: ['urn:mif:31efef68-5a10-5ec8-b1ca-33cbe6042764'], stale: [], outOfScope: [], gapDimensions: ['new-angle'], reverifyIds: [] }),
     falsify: async () => { throw new Error('falsify must NOT be called — reverifyIds empty, and the budget floor must block the gap-fill fanout before its own falsifyAll() drain'); },
     fanout: async () => { throw new Error('fanout must NOT be called — budgetLow() is true, the second half of the two-condition guard must block it despite gapDimensions being non-empty'); },
     synthesis: async () => ({ ok: true, synthesisPath: 'reports/pipeline-eval-topic/synthesis-pivot-budgetlow.json', sections: [], findingsUsed: [], checkCoverage: [], openIssues: [], ungatedFindings: [] }),
-    projection: async (a) => ({ ok: true, reportPath: 'reports/pipeline-eval-topic/report.md', reportId: 'urn:mif:concept:pipeline-eval-topic:report', mifLevel: 3, checksAddressed: [], verificationVerdict: 'survived', readmePath: null, readmeCheckPassed: false, graphRefreshed: false, graphAssertPassed: false, problems: [], _receivedSynthesisPath: a.synthesisPath }),
+    projection: async (a) => ({ ok: true, reportPath: 'reports/pipeline-eval-topic/report.md', reportId: 'urn:mif:c7f61d1b-7a92-5e7c-b15d-7546105829b5', mifLevel: 3, checksAddressed: [], verificationVerdict: 'survived', readmePath: null, readmeCheckPassed: false, graphRefreshed: false, graphAssertPassed: false, problems: [], _receivedSynthesisPath: a.synthesisPath }),
   },
   // total is truthy AND remaining() is well under BUDGET_FLOOR (60000) --
   // budgetLow() must read true, blocking the gap-fill fanout.
@@ -559,20 +559,20 @@ module.exports = {
       goalVersion: 'gv-7777777',
       supersedes: 'gv-6666666',
       goalStatement: 'Reclassify stale carry-overs.',
-      carry: ['urn:mif:concept:x:finding-1'],
-      stale: ['urn:mif:concept:x:finding-2', 'urn:mif:concept:x:finding-3'],
+      carry: ['urn:mif:31efef68-5a10-5ec8-b1ca-33cbe6042764'],
+      stale: ['urn:mif:cbdfffc6-1097-5cba-9f0c-a16d5cc74708', 'urn:mif:1c4970f5-07f8-5171-adea-99e3064494d5'],
       outOfScope: [],
       gapDimensions: [],
-      reverifyIds: ['urn:mif:concept:x:finding-2', 'urn:mif:concept:x:finding-3'],
+      reverifyIds: ['urn:mif:cbdfffc6-1097-5cba-9f0c-a16d5cc74708', 'urn:mif:1c4970f5-07f8-5171-adea-99e3064494d5'],
     }),
     falsify: async () => {
       falsifyCalls += 1;
-      if (falsifyCalls === 1) return { gated: 1, rollup: { survived: 1 }, verdicts: [], deferredIds: ['urn:mif:concept:x:finding-3'], alreadyVerified: 0 };
+      if (falsifyCalls === 1) return { gated: 1, rollup: { survived: 1 }, verdicts: [], deferredIds: ['urn:mif:1c4970f5-07f8-5171-adea-99e3064494d5'], alreadyVerified: 0 };
       return { gated: 1, rollup: { survived: 1 }, verdicts: [], deferredIds: [], alreadyVerified: 0 };
     },
     fanout: async () => { throw new Error('fanout must NOT be called — gapDimensions is empty'); },
     synthesis: async () => ({ ok: true, synthesisPath: 'reports/pipeline-eval-topic/synthesis-pivot-drain.json', sections: [], findingsUsed: [], checkCoverage: [], openIssues: [], ungatedFindings: [] }),
-    projection: async (a) => ({ ok: true, reportPath: 'reports/pipeline-eval-topic/report.md', reportId: 'urn:mif:concept:pipeline-eval-topic:report', mifLevel: 3, checksAddressed: [], verificationVerdict: 'survived', readmePath: null, readmeCheckPassed: false, graphRefreshed: false, graphAssertPassed: false, problems: [], _receivedSynthesisPath: a.synthesisPath }),
+    projection: async (a) => ({ ok: true, reportPath: 'reports/pipeline-eval-topic/report.md', reportId: 'urn:mif:c7f61d1b-7a92-5e7c-b15d-7546105829b5', mifLevel: 3, checksAddressed: [], verificationVerdict: 'survived', readmePath: null, readmeCheckPassed: false, graphRefreshed: false, graphAssertPassed: false, problems: [], _receivedSynthesisPath: a.synthesisPath }),
   },
 };
 NODE
@@ -599,8 +599,8 @@ check('falsify ran exactly twice (drain stopped once deferredIds emptied on roun
 if len(falsify) == 2:
     a1 = falsify[0]['args']
     a2 = falsify[1]['args']
-    check('first call was scoped to the FULL reverifyIds set with regate: true', a1.get('scope') == {'ids': ['urn:mif:concept:x:finding-2', 'urn:mif:concept:x:finding-3']} and a1.get('regate') is True, json.dumps({'scope': a1.get('scope'), 'regate': a1.get('regate')}))
-    check("second call narrowed to EXACTLY the first call's deferredIds (never the full reverifyIds set, which under regate would re-open verification on the finding the drain just gated)", a2.get('scope') == {'ids': ['urn:mif:concept:x:finding-3']}, json.dumps(a2.get('scope')))
+    check('first call was scoped to the FULL reverifyIds set with regate: true', a1.get('scope') == {'ids': ['urn:mif:cbdfffc6-1097-5cba-9f0c-a16d5cc74708', 'urn:mif:1c4970f5-07f8-5171-adea-99e3064494d5']} and a1.get('regate') is True, json.dumps({'scope': a1.get('scope'), 'regate': a1.get('regate')}))
+    check("second call narrowed to EXACTLY the first call's deferredIds (never the full reverifyIds set, which under regate would re-open verification on the finding the drain just gated)", a2.get('scope') == {'ids': ['urn:mif:1c4970f5-07f8-5171-adea-99e3064494d5']}, json.dumps(a2.get('scope')))
     check('second call still carried regate: true', a2.get('regate') is True, json.dumps(a2.get('regate')))
 
 r = d.get('result') or {}

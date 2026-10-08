@@ -1,5 +1,5 @@
 ---
-id: explanation-cognitive-triad
+id: 09fb594a-6de9-5b13-bbcd-fa80d51a026b
 type: semantic
 created: '2026-06-30T03:12:58-04:00'
 modified: '2026-06-30T03:12:58-04:00'

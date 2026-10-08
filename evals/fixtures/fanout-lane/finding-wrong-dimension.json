@@ -1,7 +1,7 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
   "@type": "Concept",
-  "@id": "urn:mif:concept:harness:fanout-eval-wrong-dimension",
+  "@id": "urn:mif:0cd48cae-809e-58d7-9f03-ecb7fc9a94d1",
   "conceptType": "semantic",
   "namespace": "harness/fanout-lane-eval",
   "title": "Wrong-dimension-pin finding: schema-valid but pinned outside its lane",

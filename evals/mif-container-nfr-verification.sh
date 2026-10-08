@@ -303,8 +303,8 @@ fi
 # a REAL relationship edge from the bundled topic:
 #   landscape-frictionless-data-packages -> landscape-okf-google-open-knowledge-format
 # =====================================================================
-SRC_ID="urn:mif:concept:harness/$TOPIC:landscape-frictionless-data-packages"
-TGT_ID="urn:mif:concept:harness/$TOPIC:landscape-okf-google-open-knowledge-format"
+SRC_ID="$(scripts/mif-id.sh "concept:harness/$TOPIC:landscape-frictionless-data-packages")"
+TGT_ID="$(scripts/mif-id.sh "concept:harness/$TOPIC:landscape-okf-google-open-knowledge-format")"
 printf '["%s"]\n' "$SRC_ID" > "$T/nfr56-subset-ids.json"
 GRAPH="$T/nfr56-graph.json"
 if ! bash scripts/build-graph.sh "$TOPIC_DIR/findings" "$GRAPH" > /dev/null 2>&1; then

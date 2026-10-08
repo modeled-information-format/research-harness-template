@@ -61,8 +61,8 @@ Entity = TypedDict(
 )
 
 
-EntityReference = TypedDict(
-    "EntityReference",
+EntityReference1 = TypedDict(
+    "EntityReference1",
     {
         "@type": Literal["EntityReference"],
         "entity": Entity,
@@ -169,6 +169,9 @@ class EntityData(TypedDict):
     name: str
     entity_type: NotRequired[str]
     entity_id: NotRequired[str]
+
+
+type EntityReference = EntityReference1
 
 
 OntologyReference = TypedDict(
@@ -285,8 +288,8 @@ Provenance = TypedDict(
 )
 
 
-Mif = TypedDict(
-    "Mif",
+ResearchHarnessFindingMifBacked1 = TypedDict(
+    "ResearchHarnessFindingMifBacked1",
     {
         "@context": str | list[str | dict[str, Any]] | dict[str, Any],
         "@type": Literal["Concept"] | Literal["Memory"] | list[Any],
@@ -319,8 +322,128 @@ Mif = TypedDict(
 )
 
 
-class ResearchHarnessFindingMifBacked(Mif):
+ResearchHarnessFindingMifBacked2 = TypedDict(
+    "ResearchHarnessFindingMifBacked2",
+    {
+        "@context": str | list[str | dict[str, Any]] | dict[str, Any],
+        "@type": Literal["Concept"] | Literal["Memory"] | list[Any],
+        "@id": str,
+        "conceptType": NotRequired[Literal["semantic", "episodic", "procedural"]],
+        "memoryType": Literal["semantic", "episodic", "procedural"],
+        "timestamp": NotRequired[str],
+        "description": NotRequired[str],
+        "content": str,
+        "title": NotRequired[str],
+        "created": str,
+        "modified": NotRequired[str],
+        "ontology": NotRequired[OntologyReference],
+        "entity": NotRequired[EntityData],
+        "namespace": NotRequired[str],
+        "tags": NotRequired[list[str]],
+        "aliases": NotRequired[list[str]],
+        "entities": NotRequired[list[EntityReference]],
+        "relationships": NotRequired[list[Relationship]],
+        "temporal": NotRequired[TemporalMetadata],
+        "provenance": NotRequired[Provenance],
+        "embedding": NotRequired[EmbeddingReference],
+        "citations": NotRequired[list[Citation]],
+        "documents": NotRequired[list[DocumentReference]],
+        "summary": NotRequired[str],
+        "properties": NotRequired[dict[str, str | float | bool | None]],
+        "compressedAt": NotRequired[str],
+        "extensions": NotRequired[dict[str, Any]],
+    },
+)
+
+
+class ResearchHarnessFindingMifBacked3(TypedDict):
     citations: list[Citation]
     temporal: Temporal
     extensions: Extensions
-    modified: str
+    modified: Any
+
+
+class ResearchHarnessFindingMifBacked4(
+    ResearchHarnessFindingMifBacked1, ResearchHarnessFindingMifBacked3
+):
+    pass
+
+
+class ResearchHarnessFindingMifBacked5(
+    ResearchHarnessFindingMifBacked2, ResearchHarnessFindingMifBacked3
+):
+    pass
+
+
+type ResearchHarnessFindingMifBacked = ResearchHarnessFindingMifBacked4 | ResearchHarnessFindingMifBacked5
+
+
+Mif1 = TypedDict(
+    "Mif1",
+    {
+        "@context": str | list[str | dict[str, Any]] | dict[str, Any],
+        "@type": Literal["Concept"] | Literal["Memory"] | list[Any],
+        "@id": str,
+        "conceptType": Literal["semantic", "episodic", "procedural"],
+        "memoryType": NotRequired[Literal["semantic", "episodic", "procedural"]],
+        "timestamp": NotRequired[str],
+        "description": NotRequired[str],
+        "content": str,
+        "title": NotRequired[str],
+        "created": str,
+        "modified": NotRequired[str],
+        "ontology": NotRequired[OntologyReference],
+        "entity": NotRequired[EntityData],
+        "namespace": NotRequired[str],
+        "tags": NotRequired[list[str]],
+        "aliases": NotRequired[list[str]],
+        "entities": NotRequired[list[EntityReference]],
+        "relationships": NotRequired[list[Relationship]],
+        "temporal": NotRequired[TemporalMetadata],
+        "provenance": NotRequired[Provenance],
+        "embedding": NotRequired[EmbeddingReference],
+        "citations": NotRequired[list[Citation]],
+        "documents": NotRequired[list[DocumentReference]],
+        "summary": NotRequired[str],
+        "properties": NotRequired[dict[str, str | float | bool | None]],
+        "compressedAt": NotRequired[str],
+        "extensions": NotRequired[dict[str, Any]],
+    },
+)
+
+
+Mif2 = TypedDict(
+    "Mif2",
+    {
+        "@context": str | list[str | dict[str, Any]] | dict[str, Any],
+        "@type": Literal["Concept"] | Literal["Memory"] | list[Any],
+        "@id": str,
+        "conceptType": NotRequired[Literal["semantic", "episodic", "procedural"]],
+        "memoryType": Literal["semantic", "episodic", "procedural"],
+        "timestamp": NotRequired[str],
+        "description": NotRequired[str],
+        "content": str,
+        "title": NotRequired[str],
+        "created": str,
+        "modified": NotRequired[str],
+        "ontology": NotRequired[OntologyReference],
+        "entity": NotRequired[EntityData],
+        "namespace": NotRequired[str],
+        "tags": NotRequired[list[str]],
+        "aliases": NotRequired[list[str]],
+        "entities": NotRequired[list[EntityReference]],
+        "relationships": NotRequired[list[Relationship]],
+        "temporal": NotRequired[TemporalMetadata],
+        "provenance": NotRequired[Provenance],
+        "embedding": NotRequired[EmbeddingReference],
+        "citations": NotRequired[list[Citation]],
+        "documents": NotRequired[list[DocumentReference]],
+        "summary": NotRequired[str],
+        "properties": NotRequired[dict[str, str | float | bool | None]],
+        "compressedAt": NotRequired[str],
+        "extensions": NotRequired[dict[str, Any]],
+    },
+)
+
+
+type Mif = Mif1 | Mif2

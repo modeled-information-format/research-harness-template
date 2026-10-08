@@ -1,6 +1,9 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
-  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-pricing-business-model-signals",
+  "@id": "urn:mif:6100bcab-9fd4-595d-81c4-6a3b2d2bdb8c",
+  "aliases": [
+    "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-pricing-business-model-signals"
+  ],
   "@type": "Concept",
   "citations": [
     {
@@ -83,12 +86,12 @@
   "relationships": [
     {
       "strength": 0.8,
-      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-km-software-market-sizing",
+      "target": "urn:mif:5fd31483-e5fd-5795-9cfb-cb658020da9c",
       "type": "supports"
     },
     {
       "strength": 0.85,
-      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-open-source-vs-commercial",
+      "target": "urn:mif:2b98b393-e09d-5d57-adcc-4cc3384aa7bc",
       "type": "relates-to"
     }
   ],

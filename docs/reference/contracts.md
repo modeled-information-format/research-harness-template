@@ -1,5 +1,5 @@
 ---
-id: reference-contracts
+id: b19e47a7-f50c-545a-890f-5a8e129b05c8
 type: semantic
 created: '2026-06-19T15:19:39-04:00'
 modified: '2026-07-05T10:10:09-04:00'
@@ -17,9 +17,15 @@ The typed substrate every layer exchanges. All contracts live under `schemas/`.
 
 ## Findings — `schemas/findings.schema.json`
 
-A finding **is** a MIF v1.0 memory unit (design spec §6c). The schema
-`allOf`-extends the real vendored MIF schema (`schemas/mif/mif.schema.json`) with
-two harness-local requirements (§8b):
+A finding is a MIF concept stored as its JSON-LD projection (design spec §6c).
+Its `@id` is a MIF 1.4 concept URN, `urn:mif:<uuid>` — minted with
+`scripts/mif-id.sh concept:<namespace>:<slug>` (the readable structured form may
+be kept in `aliases`) — and its topic lives in the required top-level
+`namespace`. The schema `allOf`-extends the real vendored MIF schema
+(`schemas/mif/mif.schema.json`, MIF 1.4.1, pinned by `schemas/mif/VENDOR.lock`)
+with two harness-local requirements (§8b). A finding carries every MIF Level-3
+field, but a JSON-LD-only file is not by itself a MIF 1.4 Level-1 artifact (Level 1
+requires an OKF bundle of markdown concept files — the report channel below):
 
 - `citations` — a non-empty array of MIF Level 3 citations (citation-integrity).
 - `extensions.harness` — `dimension` (the config-declared dimension) and

@@ -729,13 +729,14 @@ gate_m6() {
   fi
 
   # 6c. Both published outputs are citation-leak clean in the BODY. The doc's own
-  #     urn:mif:blog:/urn:mif:book: frontmatter @id is its legitimate MIF L1 identity
-  #     (not a leak); the body must carry no finding/concept/report identity, corpus
-  #     paths, or harness extension tokens.
+  #     frontmatter @id is its legitimate MIF L1 identity (not a leak); the body must
+  #     carry no finding/concept/report identity, corpus paths, or harness extension
+  #     tokens. MIF 1.4 ids are opaque urn:mif:<uuid>s (no concept:/report: kind to
+  #     key on), so ANY urn:mif: token in the body is a leak.
   local leak="" pf bclose
   for pf in "$T/post.md" "$T/chapter.md"; do
     bclose=$(awk 'NR>1 && $0=="---"{print NR; exit}' "$pf")
-    leak="${leak}$(sed -n "$((bclose+1)),\$p" "$pf" | grep -nE 'f_[a-z]+_[0-9]+|urn:mif:(concept|report):|extensions\.harness|reports/[a-z0-9-]+/(findings|_meta)' || true)"
+    leak="${leak}$(sed -n "$((bclose+1)),\$p" "$pf" | grep -nE 'f_[a-z]+_[0-9]+|urn:mif:|extensions\.harness|reports/[a-z0-9-]+/(findings|_meta)' || true)"
   done
   if [ -z "$leak" ]; then
     ok "both published output bodies are citation-leak clean (no finding/concept/report identity)"
@@ -1080,11 +1081,11 @@ gate_m11() {
   # verification, so valid+gated move together.
   local T RD
   T="$(mktemp -d)"; RD="$T/durability-topic"; mkdir -p "$RD/findings"
-  jq '."@id"="urn:mif:concept:harness/durability-topic:a" | .extensions.harness.dimension="technical"' \
+  jq '."@id"="urn:mif:984d3a27-1371-5e40-b71d-a311e381560d" | .extensions.harness.dimension="technical"' \
     schemas/samples/finding.sample.json > "$RD/findings/finding-a.json"
-  jq '."@id"="urn:mif:concept:harness/durability-topic:b" | .extensions.harness.dimension="landscape"' \
+  jq '."@id"="urn:mif:e5f265b5-b206-52ce-a264-ace211c682dd" | .extensions.harness.dimension="landscape"' \
     schemas/samples/finding.sample.json > "$RD/findings/finding-b.json"
-  jq '."@id"="urn:mif:concept:harness/durability-topic:c" | .extensions.harness.dimension="technical"' \
+  jq '."@id"="urn:mif:00f3d943-ed50-5838-ac4b-2313625c1125" | .extensions.harness.dimension="technical"' \
     evals/fixtures/raw-finding.json > "$RD/findings/finding-c.json"
   printf '{partial' > "$RD/findings/finding-d.json.tmp"
 
@@ -1101,8 +1102,8 @@ gate_m11() {
   # {id,dimension,valid,attempted_at,verdict}. A finding is done iff schema-valid —
   # validity requires verification.verdict, so a valid finding has been gated.
   local doneA doneB shape
-  doneA=$(jq -r '[.findings[] | select(.id|endswith(":a")) | select(.valid)] | length' "$RD/state.json")
-  doneB=$(jq -r '[.findings[] | select(.id|endswith(":b")) | select(.valid)] | length' "$RD/state.json")
+  doneA=$(jq -r '[.findings[] | select(.id == "urn:mif:984d3a27-1371-5e40-b71d-a311e381560d") | select(.valid)] | length' "$RD/state.json")
+  doneB=$(jq -r '[.findings[] | select(.id == "urn:mif:e5f265b5-b206-52ce-a264-ace211c682dd") | select(.valid)] | length' "$RD/state.json")
   shape=$(jq -r '[.findings[] | has("id") and has("dimension") and has("valid") and has("attempted_at") and has("verdict")] | all' "$RD/state.json")
   if [ "$doneA" = 1 ] && [ "$doneB" = 1 ] && [ "$shape" = true ]; then
     ok "gated + valid findings recorded done (per-finding id/dimension/valid/attempted_at/verdict)"
@@ -1145,7 +1146,7 @@ gate_m11() {
   # different write path. A second, DIFFERENT valid finding writing to the same
   # dest-name must be rejected, the original content must survive untouched, and
   # no .wf-staging-* directory should be left behind either way.
-  jq '."@id"="urn:mif:concept:harness/durability-topic:collision"' \
+  jq '."@id"="urn:mif:d11b2a29-4b35-5124-9ebd-d40bad0a2b91"' \
     schemas/samples/finding.sample.json > "$T/finding-collision.json"
   local refused=0 unchanged=0 clean=0
   scripts/write-finding.sh "$T/finding-collision.json" "$T/wf" "finding-ok.json" >/dev/null 2>&1 || refused=1
@@ -1213,7 +1214,7 @@ gate_m11() {
   # 11g (condition 6). A fully-gated session reconciles to an empty plan.
   local RD2 plan
   RD2="$T/done-topic"; mkdir -p "$RD2/findings"
-  jq '."@id"="urn:mif:concept:harness/done-topic:a" | .extensions.harness.dimension="technical"' \
+  jq '."@id"="urn:mif:0d23c4cc-aee7-5c26-85d4-e29b2bf6ae69" | .extensions.harness.dimension="technical"' \
     schemas/samples/finding.sample.json > "$RD2/findings/finding-a.json"
   plan=$(scripts/reconcile-session.sh "$RD2" 2>/dev/null)
   if [ "$plan" = "nothing to do" ]; then
@@ -1240,7 +1241,7 @@ gate_m11() {
   # dimension still needs a replacement.
   local RD3 ftot fdone
   RD3="$T/falsified-topic"; mkdir -p "$RD3/findings"
-  jq '."@id"="urn:mif:concept:harness/falsified-topic:f" | .extensions.harness.dimension="technical" | .extensions.harness.verification.verdict="falsified"' \
+  jq '."@id"="urn:mif:47ef314f-34dd-5266-a07b-32e9cbfd6bf7" | .extensions.harness.dimension="technical" | .extensions.harness.verification.verdict="falsified"' \
     schemas/samples/finding.sample.json > "$RD3/findings/finding-f.json"
   scripts/reconcile-session.sh "$RD3" >/dev/null 2>&1
   ftot=$(jq -r '.dimensions.technical.total' "$RD3/state.json"); fdone=$(jq -r '.dimensions.technical.done' "$RD3/state.json")
@@ -1623,13 +1624,13 @@ JSON
   echo '{"topics":[{"id":"edu","namespace":"x/edu","ontologies":["edu-fixture"]},{"id":"eng","namespace":"x/eng","ontologies":["software-engineering"]}]}' > "$T/cfg.json"
   mkdir -p "$T/reports/edu/findings" "$T/reports/eng/findings"
   cat > "$T/reports/edu/findings/f1.json" <<'JSON'
-{"@id":"urn:mif:concept:x/edu:f1","title":"Algebra textbook","extensions":{"harness":{"dimension":"technical","verification":{"verdict":"survived","verdict_basis":"x"}}},"entity":{"name":"Algebra I","entity_type":"title"},"entities":[{"@type":"EntityReference","entity":{"@id":"urn:mif:entity:prog:math"},"name":"Math Program","entityType":"program"},{"@type":"EntityReference","entity":{"@id":"urn:mif:entity:org:acme"},"name":"Acme","entityType":"organization"}],"relationships":[{"type":"belongs_to","target":"urn:mif:entity:prog:math","strength":1}]}
+{"@id":"urn:mif:195067f3-3f19-5fdf-a0ed-b88898b3bd36","title":"Algebra textbook","extensions":{"harness":{"dimension":"technical","verification":{"verdict":"survived","verdict_basis":"x"}}},"entity":{"name":"Algebra I","entity_type":"title"},"entities":[{"@type":"EntityReference","entity":{"@id":"urn:mif:entity:prog:math"},"name":"Math Program","entityType":"program"},{"@type":"EntityReference","entity":{"@id":"urn:mif:entity:org:acme"},"name":"Acme","entityType":"organization"}],"relationships":[{"type":"belongs_to","target":"urn:mif:entity:prog:math","strength":1}]}
 JSON
   cat > "$T/reports/eng/findings/f1.json" <<'JSON'
-{"@id":"urn:mif:concept:x/eng:f1","title":"Kafka adoption","extensions":{"harness":{"dimension":"technical","verification":{"verdict":"falsified","verdict_basis":"y"}}},"entity":{"name":"Service","entity_type":"component"},"entities":[{"@type":"EntityReference","entity":{"@id":"urn:mif:entity:tech:kafka"},"name":"Kafka","entityType":"technology"},{"@type":"EntityReference","entity":{"@id":"urn:mif:entity:org:acme"},"name":"Acme","entityType":"organization"}],"relationships":[{"type":"depends_on","target":"urn:mif:entity:tech:kafka","strength":1}]}
+{"@id":"urn:mif:c41cb16c-de00-557c-8af0-117044c0d809","title":"Kafka adoption","extensions":{"harness":{"dimension":"technical","verification":{"verdict":"falsified","verdict_basis":"y"}}},"entity":{"name":"Service","entity_type":"component"},"entities":[{"@type":"EntityReference","entity":{"@id":"urn:mif:entity:tech:kafka"},"name":"Kafka","entityType":"technology"},{"@type":"EntityReference","entity":{"@id":"urn:mif:entity:org:acme"},"name":"Acme","entityType":"organization"}],"relationships":[{"type":"depends_on","target":"urn:mif:entity:tech:kafka","strength":1}]}
 JSON
-  echo '[{"finding_id":"urn:mif:concept:x/edu:f1","entity_type":"title","resolved_ontology":"edu-fixture@0.1.0","basis":"declared","valid":true}]' > "$T/reports/edu/ontology-map.json"
-  echo '[{"finding_id":"urn:mif:concept:x/eng:f1","entity_type":"component","resolved_ontology":"engineering-base@0.1.0","basis":"declared","valid":true}]' > "$T/reports/eng/ontology-map.json"
+  echo '[{"finding_id":"urn:mif:195067f3-3f19-5fdf-a0ed-b88898b3bd36","entity_type":"title","resolved_ontology":"edu-fixture@0.1.0","basis":"declared","valid":true}]' > "$T/reports/edu/ontology-map.json"
+  echo '[{"finding_id":"urn:mif:c41cb16c-de00-557c-8af0-117044c0d809","entity_type":"component","resolved_ontology":"engineering-base@0.1.0","basis":"declared","valid":true}]' > "$T/reports/eng/ontology-map.json"
 
   CONFIG="$T/cfg.json" scripts/build-concordance.sh "$T/reports" "$T/concordance.json" >/dev/null 2>&1
   vw() { scripts/validate-concordance.sh "$1" --config "$T/cfg.json" --catalog "$T/cat.json" >/dev/null 2>&1; }
@@ -1654,7 +1655,7 @@ JSON
 
   # 13d. Concept nodes are stamped with their ontology entity_type + verdict.
   local stamp
-  stamp=$(jq -r '.nodes[] | select(.id=="urn:mif:concept:x/edu:f1") | "\(.entityType)|\(.verdict)|\(.ontology)"' "$T/concordance.json")
+  stamp=$(jq -r '.nodes[] | select(.id=="urn:mif:195067f3-3f19-5fdf-a0ed-b88898b3bd36") | "\(.entityType)|\(.verdict)|\(.ontology)"' "$T/concordance.json")
   if [ "$stamp" = "title|survived|edu-fixture@0.1.0" ]; then
     ok "concept nodes are stamped with resolved ontology entity_type + verdict (from ontology-map.json)"
   else
@@ -1663,7 +1664,7 @@ JSON
 
   # 13e. Falsified findings are FLAGGED, not excluded.
   local fals
-  fals=$(jq -r '[.nodes[] | select(.id=="urn:mif:concept:x/eng:f1")] | "\(length)|\(.[0].verdict)|\(.[0].flagged)"' "$T/concordance.json")
+  fals=$(jq -r '[.nodes[] | select(.id=="urn:mif:c41cb16c-de00-557c-8af0-117044c0d809")] | "\(length)|\(.[0].verdict)|\(.[0].flagged)"' "$T/concordance.json")
   if [ "$fals" = "1|falsified|true" ]; then
     ok "a falsified finding is present as a node, verdict=falsified and flagged (not excluded)"
   else
@@ -1708,7 +1709,7 @@ JSON
   # 13i. An unbound topic carrying an unresolved DOMAIN type fails validation, and the
   #      failure NAMES the topic and points to /ontology-review (the remediation path).
   mkdir -p "$T/orphan/orphan-topic/findings"
-  printf '%s\n' '{"@id":"urn:mif:concept:o:f","title":"F","extensions":{"harness":{"verification":{"verdict":"survived"}}},"entities":[{"@type":"EntityReference","entity":{"@id":"urn:mif:entity:t:k"},"name":"K","entityType":"title"}]}' > "$T/orphan/orphan-topic/findings/f.json"
+  printf '%s\n' '{"@id":"urn:mif:ecc453f1-cacd-5d03-8bbc-6f633f4fcacb","title":"F","extensions":{"harness":{"verification":{"verdict":"survived"}}},"entities":[{"@type":"EntityReference","entity":{"@id":"urn:mif:entity:t:k"},"name":"K","entityType":"title"}]}' > "$T/orphan/orphan-topic/findings/f.json"
   echo '{"topics":[{"id":"orphan-topic","namespace":"o/x"}]}' > "$T/orphan-cfg.json"
   scripts/build-concordance.sh "$T/orphan" "$T/orphan.json" >/dev/null 2>&1
   local omsg orc
@@ -1728,7 +1729,7 @@ JSON
   mkdir -p "$T/big/scale/findings"
   local n=400 i
   i=1; while [ "$i" -le "$n" ]; do
-    printf '{"@id":"urn:mif:concept:s:f%d","title":"finding %d","extensions":{"harness":{"verification":{"verdict":"survived"}}},"entities":[{"@type":"EntityReference","entity":{"@id":"urn:mif:entity:org:acme"},"name":"Acme","entityType":"Organization"}]}\n' "$i" "$i" > "$T/big/scale/findings/f$i.json"
+    printf '{"@id":"urn:mif:00000000-0000-5000-8000-%012d","title":"finding %d","extensions":{"harness":{"verification":{"verdict":"survived"}}},"entities":[{"@type":"EntityReference","entity":{"@id":"urn:mif:entity:org:acme"},"name":"Acme","entityType":"Organization"}]}\n' "$i" "$i" > "$T/big/scale/findings/f$i.json"
     i=$((i+1))
   done
   scripts/build-concordance.sh "$T/big" "$T/big1.json" >/dev/null 2>&1
@@ -1778,7 +1779,7 @@ gate_m14() {
   # 14a. A finding with NO evidence-fixture entry was not adversarially tested -> the gate
   #      defaults to `inconclusive`, never a false `survived` (which the one-round rule would
   #      make permanent — the contamination a stray, non-gate invocation caused).
-  printf '{"@id":"urn:mif:concept:t:f1","title":"x"}\n' > "$T/f.json"
+  printf '{"@id":"urn:mif:9fdca22f-8864-5220-8845-fb44a4e0b39c","title":"x"}\n' > "$T/f.json"
   local vd vph; vd=$(scripts/falsify.sh "$T/f.json" 2>/dev/null | jq -r '.extensions.harness.verification.verdict')
   # The placeholder must OMIT attempted_at so the one-round rule does not lock it — a later
   # real gate can still overwrite it (it isn't permanently blocked, just withheld).
@@ -1790,7 +1791,7 @@ gate_m14() {
   fi
 
   # 14b. An EXPLICIT fixture verdict is recorded unchanged.
-  printf '{"urn:mif:concept:t:f1":{"verdict":"survived"}}\n' > "$T/ev.json"
+  printf '{"urn:mif:9fdca22f-8864-5220-8845-fb44a4e0b39c":{"verdict":"survived"}}\n' > "$T/ev.json"
   local vf; vf=$(scripts/falsify.sh "$T/f.json" "$T/ev.json" 2>/dev/null | jq -r '.extensions.harness.verification.verdict')
   if [ "$vf" = "survived" ]; then
     ok "falsify.sh records an explicit fixture verdict unchanged"
@@ -1916,8 +1917,8 @@ gate_m14() {
   #      command eventually reaches still refuses to run. A non-findings
   #      target (a report-finding) is never gated, with no window open at all.
   mkdir -p "$T/reports/tA/findings"
-  printf '{"@id":"urn:mif:concept:t:f2","title":"x"}\n' > "$T/reports/tA/findings/f2.json"
-  printf '{"@id":"urn:mif:concept:t:rf","title":"x"}\n' > "$T/reports/tA/report-finding.json"
+  printf '{"@id":"urn:mif:e832cac3-0e3d-59dd-874f-ea5d613885f7","title":"x"}\n' > "$T/reports/tA/findings/f2.json"
+  printf '{"@id":"urn:mif:3e5214a2-39e6-56bc-91b4-cdf689c8d8d8","title":"x"}\n' > "$T/reports/tA/report-finding.json"
   rm -f "$T/reports/tA/.gate-active"
   local fs_no_window_rc
   scripts/falsify.sh "$T/reports/tA/findings/f2.json" >/dev/null 2>&1; fs_no_window_rc=$?
@@ -1988,7 +1989,7 @@ gate_m14() {
   #      regex scope. A non-report findings/ path must NEVER be gated, with
   #      no window open at all.
   mkdir -p "$T/unrelated/findings"
-  printf '{"@id":"urn:mif:concept:t:uf","title":"x"}\n' > "$T/unrelated/findings/uf.json"
+  printf '{"@id":"urn:mif:5b9ccc65-4f8a-5cdf-9058-ee4a7937fe2b","title":"x"}\n' > "$T/unrelated/findings/uf.json"
   local fs_unrelated_vd
   fs_unrelated_vd=$(scripts/falsify.sh "$T/unrelated/findings/uf.json" 2>/dev/null | jq -r '.extensions.harness.verification.verdict // empty')
   if [ "$fs_unrelated_vd" = "inconclusive" ]; then
@@ -2098,7 +2099,7 @@ gate_m15() {
   #      gathered_under=v2 joins members on re-resolve and CLOSES the gap; then
   #      excluding it (as goal-writer does) PERSISTS — re-resolve does not re-add it
   #      and its dimension returns to the gap. This is the path /start --update walks.
-  jq -n --arg v "$V2" '{"@id":"urn:mif:concept:harness:econ-1","title":"econ","namespace":"harness/tt",
+  jq -n --arg v "$V2" '{"@id":"urn:mif:8af4a9e1-bbb3-5416-b795-1a8ccaaac1f1","title":"econ","namespace":"harness/tt",
     citations:[{"@type":"Citation",citationType:"website",citationRole:"supports",title:"e",url:"https://e.example"}],
     extensions:{harness:{dimension:"economic",
       verification:{verdict:"survived",verdict_basis:"x",attempted_at:(now|todateiso8601)},
@@ -2106,14 +2107,14 @@ gate_m15() {
   CLAUDE_PROJECT_DIR="$P" scripts/resolve-membership.sh tt "$V2" >/dev/null 2>&1
   local M="$P/reports/tt/goals/goal-$V2.members.json" gap_closed econ_in gu
   gap_closed=$(jq -r '.gap_dimensions | join(",")' "$M")
-  econ_in=$(jq '[.members[] | select(. == "urn:mif:concept:harness:econ-1")] | length' "$M")
+  econ_in=$(jq '[.members[] | select(. == "urn:mif:8af4a9e1-bbb3-5416-b795-1a8ccaaac1f1")] | length' "$M")
   gu=$(jq -r '.extensions.harness.gathered_under' "$P/reports/tt/findings/finding-econ.json")
   # Now exclude it as goal-writer would, and re-resolve — exclusion must persist.
-  jq '.members -= ["urn:mif:concept:harness:econ-1"] | .excluded += ["urn:mif:concept:harness:econ-1"]' \
+  jq '.members -= ["urn:mif:8af4a9e1-bbb3-5416-b795-1a8ccaaac1f1"] | .excluded += ["urn:mif:8af4a9e1-bbb3-5416-b795-1a8ccaaac1f1"]' \
     "$M" > "$M.tmp" && mv "$M.tmp" "$M"
   CLAUDE_PROJECT_DIR="$P" scripts/resolve-membership.sh tt "$V2" >/dev/null 2>&1
   local econ_excluded gap_reopened
-  econ_excluded=$(jq '.excluded | index("urn:mif:concept:harness:econ-1") != null' "$M")
+  econ_excluded=$(jq '.excluded | index("urn:mif:8af4a9e1-bbb3-5416-b795-1a8ccaaac1f1") != null' "$M")
   gap_reopened=$(jq -r '.gap_dimensions | join(",")' "$M")
   if [ -z "$gap_closed" ] && [ "$econ_in" = 1 ] && [ "$gu" = "$V2" ] \
      && [ "$econ_excluded" = true ] && [ "$gap_reopened" = economic ]; then
@@ -2133,7 +2134,7 @@ gate_m15() {
 # but NOT the L3 additions (provenance/citations/entities/verdict) that
 # findings.schema.json requires; the report channel stays the canonical L3 source
 # of truth, so the channel remains mif.exempt. The frontmatter holds the doc's own
-# urn:mif:doc: identity; the body prose must carry no internal-research identity.
+# urn:mif:<uuid> identity; the body prose must carry no internal-research identity.
 # ---------------------------------------------------------------------------
 gate_m16() {
   info "Milestone 16 — Diátaxis channel MIF Level-1 frontmatter"
@@ -2247,7 +2248,7 @@ gate_m17() {
 JSON
   _mk_finding() { # _mk_finding <path> <id> <dim> <verdict>
     cat > "$1" <<JSON
-{ "@id": "urn:mif:concept:t:$2", "title": "$2", "summary": "Summary of $2.",
+{ "@id": "$(scripts/mif-id.sh "concept:t:$2")", "title": "$2", "summary": "Summary of $2.",
   "created": "2026-06-01", "tags": ["t"],
   "citations": [ { "url": "https://example.com/$2" } ],
   "extensions": { "harness": { "dimension": "$3",
@@ -2711,9 +2712,9 @@ gate_m24() {
   mkdir -p "$T/reports/edu/findings"
   # A shippable (survived) but UNTYPED finding + its untyped map record.
   cat > "$T/reports/edu/findings/f1.json" <<'JSON'
-{"@id":"urn:mif:concept:x/edu:f1","title":"Untyped survivor","extensions":{"harness":{"dimension":"d","verification":{"verdict":"survived","verdict_basis":"x"}}}}
+{"@id":"urn:mif:195067f3-3f19-5fdf-a0ed-b88898b3bd36","title":"Untyped survivor","extensions":{"harness":{"dimension":"d","verification":{"verdict":"survived","verdict_basis":"x"}}}}
 JSON
-  echo '[{"finding_id":"urn:mif:concept:x/edu:f1","entity_type":null,"resolved_ontology":null,"basis":"untyped","valid":true}]' > "$T/reports/edu/ontology-map.json"
+  echo '[{"finding_id":"urn:mif:195067f3-3f19-5fdf-a0ed-b88898b3bd36","entity_type":null,"resolved_ontology":null,"basis":"untyped","valid":true}]' > "$T/reports/edu/ontology-map.json"
 
   # 24a. An untyped shippable finding BLOCKS synthesis (exit 1) and points to /ontology-review.
   local msg rc
@@ -2731,7 +2732,7 @@ JSON
   #         followup fix closes: previously $r.basis was only checked against
   #         "untyped"/"unresolved", so a discovery-only shippable finding shipped with
   #         no durable ontology stamp.
-  echo '[{"finding_id":"urn:mif:concept:x/edu:f1","entity_type":"title","resolved_ontology":"edu-fixture@0.1.0","basis":"discovery","valid":true}]' > "$T/reports/edu/ontology-map.json"
+  echo '[{"finding_id":"urn:mif:195067f3-3f19-5fdf-a0ed-b88898b3bd36","entity_type":"title","resolved_ontology":"edu-fixture@0.1.0","basis":"discovery","valid":true}]' > "$T/reports/edu/ontology-map.json"
   jq '.extensions.harness.verification.verdict="survived"' "$T/reports/edu/findings/f1.json" > "$T/f.tmp" && mv "$T/f.tmp" "$T/reports/edu/findings/f1.json"
   local dmsg drc
   dmsg=$(scripts/check-shippable-typing.sh "$T/reports/edu" 2>&1); drc=$?
@@ -2740,7 +2741,7 @@ JSON
   else
     bad "discovery-only shippable finding did not block (rc=$drc, msg='$dmsg')"
   fi
-  echo '[{"finding_id":"urn:mif:concept:x/edu:f1","entity_type":null,"resolved_ontology":null,"basis":"untyped","valid":true}]' > "$T/reports/edu/ontology-map.json"
+  echo '[{"finding_id":"urn:mif:195067f3-3f19-5fdf-a0ed-b88898b3bd36","entity_type":null,"resolved_ontology":null,"basis":"untyped","valid":true}]' > "$T/reports/edu/ontology-map.json"
 
   # 24b. The SAME finding FALSIFIED does NOT block (only survived|weakened gate).
   jq '.extensions.harness.verification.verdict="falsified"' "$T/reports/edu/findings/f1.json" > "$T/f.tmp" && mv "$T/f.tmp" "$T/reports/edu/findings/f1.json"
@@ -2764,9 +2765,9 @@ JSON
   echo '{"topics":[{"id":"edu","namespace":"x/edu","ontologies":["edu-fixture"]}]}' > "$T2/cfg.json"
   mkdir -p "$T2/reports/edu/findings"
   cat > "$T2/reports/edu/findings/f1.json" <<'JSON'
-{"@id":"urn:mif:concept:x/edu:f1","title":"Algebra textbook","entity":{"name":"Algebra I","entity_type":"title"},"entities":[{"@type":"EntityReference","entity":{"@id":"urn:mif:entity:prog:math"},"name":"Math","entityType":"program"}],"relationships":[{"type":"belongs_to","target":"urn:mif:entity:prog:math","strength":1}],"extensions":{"harness":{"dimension":"d","verification":{"verdict":"survived","verdict_basis":"x"}}}}
+{"@id":"urn:mif:195067f3-3f19-5fdf-a0ed-b88898b3bd36","title":"Algebra textbook","entity":{"name":"Algebra I","entity_type":"title"},"entities":[{"@type":"EntityReference","entity":{"@id":"urn:mif:entity:prog:math"},"name":"Math","entityType":"program"}],"relationships":[{"type":"belongs_to","target":"urn:mif:entity:prog:math","strength":1}],"extensions":{"harness":{"dimension":"d","verification":{"verdict":"survived","verdict_basis":"x"}}}}
 JSON
-  echo '[{"finding_id":"urn:mif:concept:x/edu:f1","entity_type":"title","resolved_ontology":"edu-fixture@0.1.0","basis":"declared","valid":true}]' > "$T2/reports/edu/ontology-map.json"
+  echo '[{"finding_id":"urn:mif:195067f3-3f19-5fdf-a0ed-b88898b3bd36","entity_type":"title","resolved_ontology":"edu-fixture@0.1.0","basis":"declared","valid":true}]' > "$T2/reports/edu/ontology-map.json"
   scripts/build-concordance.sh "$T2/reports" "$T2/concordance.json" >/dev/null 2>&1
   if scripts/check-shippable-typing.sh "$T2/reports/edu" >/dev/null 2>&1 \
      && [ -f "$T2/concordance.json" ] && ajv_plain schemas/concordance.schema.json "$T2/concordance.json" \
@@ -2795,7 +2796,7 @@ JSON
   #      verdict/type are unknowable. f1 is set falsified (skipped) so the corrupt file is
   #      the only variable under test; the map from 24a still exists so the gate reaches the loop.
   cat > "$T/reports/edu/findings/f1.json" <<'JSON'
-{"@id":"urn:mif:concept:x/edu:f1","title":"falsified","extensions":{"harness":{"verification":{"verdict":"falsified"}}}}
+{"@id":"urn:mif:195067f3-3f19-5fdf-a0ed-b88898b3bd36","title":"falsified","extensions":{"harness":{"verification":{"verdict":"falsified"}}}}
 JSON
   printf '{ not valid json ' > "$T/reports/edu/findings/corrupt.json"
   if ! scripts/check-shippable-typing.sh "$T/reports/edu" >/dev/null 2>&1; then
@@ -2808,7 +2809,7 @@ JSON
   #      vacuously pass. Without the map-parse guard, every per-finding lookup errors to "" so a
   #      shippable survivor would PASS — the exact vacuous-pass class this gate exists to refuse.
   cat > "$T/reports/edu/findings/f1.json" <<'JSON'
-{"@id":"urn:mif:concept:x/edu:f1","title":"survivor","extensions":{"harness":{"verification":{"verdict":"survived"}}}}
+{"@id":"urn:mif:195067f3-3f19-5fdf-a0ed-b88898b3bd36","title":"survivor","extensions":{"harness":{"verification":{"verdict":"survived"}}}}
 JSON
   rm -f "$T/reports/edu/findings/corrupt.json"
   printf '[ { not valid json ' > "$T/reports/edu/ontology-map.json"
@@ -2821,9 +2822,9 @@ JSON
   # 24g. Discovery scans the flat reports/<topic>/finding-*.json layout too (matching
   #      reconcile-session.sh's list_findings) — a flat untyped survivor is gated, not bypassed.
   rm -f "$T/reports/edu/findings/f1.json"
-  echo '[{"finding_id":"urn:mif:concept:x/edu:flat","entity_type":null,"resolved_ontology":null,"basis":"untyped","valid":true}]' > "$T/reports/edu/ontology-map.json"
+  echo '[{"finding_id":"urn:mif:c52c2e8a-5d66-5a50-99cf-df7f238e254e","entity_type":null,"resolved_ontology":null,"basis":"untyped","valid":true}]' > "$T/reports/edu/ontology-map.json"
   cat > "$T/reports/edu/finding-flat.json" <<'JSON'
-{"@id":"urn:mif:concept:x/edu:flat","title":"flat untyped survivor","extensions":{"harness":{"verification":{"verdict":"survived"}}}}
+{"@id":"urn:mif:c52c2e8a-5d66-5a50-99cf-df7f238e254e","title":"flat untyped survivor","extensions":{"harness":{"verification":{"verdict":"survived"}}}}
 JSON
   if ! scripts/check-shippable-typing.sh "$T/reports/edu" >/dev/null 2>&1; then
     ok "a flat reports/<topic>/finding-*.json is gated too (union discovery; cannot bypass)"
@@ -2836,7 +2837,7 @@ JSON
   #      a `type=="array"` guard, not just a parse check, since a non-array errors every lookup.
   echo '{"not":"an array"}' > "$T/reports/edu/ontology-map.json"
   cat > "$T/reports/edu/findings/f1.json" <<'JSON'
-{"@id":"urn:mif:concept:x/edu:f1","title":"survivor","extensions":{"harness":{"verification":{"verdict":"survived"}}}}
+{"@id":"urn:mif:195067f3-3f19-5fdf-a0ed-b88898b3bd36","title":"survivor","extensions":{"harness":{"verification":{"verdict":"survived"}}}}
 JSON
   scripts/check-shippable-typing.sh "$T/reports/edu" >/dev/null 2>&1; rc=$?
   if [ "$rc" = 3 ]; then
@@ -2872,8 +2873,8 @@ JSON
   # 24k. A flat-only layout (reports/<topic>/finding-*.json, NO findings/ subdir) is gated, not
   #      rejected with exit 2 — discovery matches reconcile's list_findings (which needs no findings/).
   rm -rf "$T/reports/edu/findings"
-  echo '[{"finding_id":"urn:mif:concept:x/edu:flat","entity_type":null,"resolved_ontology":null,"basis":"untyped","valid":true}]' > "$T/reports/edu/ontology-map.json"
-  echo '{"@id":"urn:mif:concept:x/edu:flat","extensions":{"harness":{"verification":{"verdict":"survived"}}}}' > "$T/reports/edu/finding-flat.json"
+  echo '[{"finding_id":"urn:mif:c52c2e8a-5d66-5a50-99cf-df7f238e254e","entity_type":null,"resolved_ontology":null,"basis":"untyped","valid":true}]' > "$T/reports/edu/ontology-map.json"
+  echo '{"@id":"urn:mif:c52c2e8a-5d66-5a50-99cf-df7f238e254e","extensions":{"harness":{"verification":{"verdict":"survived"}}}}' > "$T/reports/edu/finding-flat.json"
   local rck
   scripts/check-shippable-typing.sh "$T/reports/edu" >/dev/null 2>&1; rck=$?
   if [ "$rck" = 1 ]; then
@@ -2900,8 +2901,8 @@ JSON
   #      shippable finding — mirrors the gate's 24a-ii fix; a valid==true discovery record
   #      must not read as 0 while the gate itself would block it.
   rm -f "$T/reports/edu/findings/corrupt.json"
-  printf '{"@id":"urn:mif:concept:x/edu:disc","extensions":{"harness":{"verification":{"verdict":"survived"}}}}' > "$T/reports/edu/findings/disc.json"
-  echo '[{"finding_id":"urn:mif:concept:x/edu:disc","entity_type":"title","resolved_ontology":"edu-fixture@0.1.0","basis":"discovery","valid":true}]' > "$T/reports/edu/ontology-map.json"
+  printf '{"@id":"urn:mif:74177789-8394-59bf-bb91-4e2734ab7090","extensions":{"harness":{"verification":{"verdict":"survived"}}}}' > "$T/reports/edu/findings/disc.json"
+  echo '[{"finding_id":"urn:mif:74177789-8394-59bf-bb91-4e2734ab7090","entity_type":"title","resolved_ontology":"edu-fixture@0.1.0","basis":"discovery","valid":true}]' > "$T/reports/edu/ontology-map.json"
   scripts/reconcile-session.sh "$T/reports/edu" >/dev/null 2>&1
   if [ "$(jq -r '.concordance.untyped_shippable' "$T/reports/edu/state.json" 2>/dev/null)" = "1" ]; then
     ok "reconcile untyped_shippable also counts a discovery-only (unstamped) shippable finding"
@@ -2939,13 +2940,13 @@ gate_m25() {
   local T; T="$(mktemp -d)"; mkdir -p "$T/reports"
   cat > "$T/reports/concordance.json" <<'JSON'
 {"@type":"Concordance","nodes":[
- {"id":"urn:mif:concept:a:f1","kind":"concept","label":"Claim one","topics":["a"],"entityType":"concept","ontology":"mif-generic@1.0.0","verdict":"survived","flagged":false},
- {"id":"urn:mif:concept:b:f2","kind":"concept","label":"Disproven claim","topics":["b"],"entityType":"concept","ontology":"mif-generic@1.0.0","verdict":"falsified","flagged":true},
+ {"id":"urn:mif:36db1f7c-49b2-517b-a992-4d3f9a089ab9","kind":"concept","label":"Claim one","topics":["a"],"entityType":"concept","ontology":"mif-generic@1.0.0","verdict":"survived","flagged":false},
+ {"id":"urn:mif:6acfe0da-b3a2-51d9-ba7c-f1011f60c00d","kind":"concept","label":"Disproven claim","topics":["b"],"entityType":"concept","ontology":"mif-generic@1.0.0","verdict":"falsified","flagged":true},
  {"id":"urn:mif:entity:org:acme","kind":"entity","label":"Acme","entityType":"organization","topics":["a","b"]}
 ],"edges":[
- {"source":"urn:mif:concept:a:f1","target":"urn:mif:concept:b:f2","type":"contradicts","via":"relationship","strength":0.7},
- {"source":"urn:mif:concept:a:f1","target":"urn:mif:entity:org:acme","type":"mentions","via":"entity","strength":null},
- {"source":"urn:mif:concept:b:f2","target":"urn:mif:entity:org:acme","type":"mentions","via":"entity","strength":null}
+ {"source":"urn:mif:36db1f7c-49b2-517b-a992-4d3f9a089ab9","target":"urn:mif:6acfe0da-b3a2-51d9-ba7c-f1011f60c00d","type":"contradicts","via":"relationship","strength":0.7},
+ {"source":"urn:mif:36db1f7c-49b2-517b-a992-4d3f9a089ab9","target":"urn:mif:entity:org:acme","type":"mentions","via":"entity","strength":null},
+ {"source":"urn:mif:6acfe0da-b3a2-51d9-ba7c-f1011f60c00d","target":"urn:mif:entity:org:acme","type":"mentions","via":"entity","strength":null}
 ]}
 JSON
   scripts/synthesize-corpus.sh "$T/reports" >/dev/null 2>&1
@@ -3267,10 +3268,10 @@ gate_m28() {
   #      AND the entity/ontology-typed edges) get walked, per the feature-spec
   #      edge case that a marker omitted at either level reproduces the exact
   #      silent-drop failure AD-4 exists to prevent.
-  printf '%s\n' '["urn:mif:concept:harness:kg-cookiecutter-0002","urn:mif:concept:harness:kg-copier-0001","urn:mif:concept:harness:kg-distribution-0003"]' > "$T/full-scope.json"
+  printf '%s\n' '["urn:mif:d763528d-75fe-5cd7-8a0a-c176ecb41e72","urn:mif:0936199d-9082-58c7-a5d3-b2994500b179","urn:mif:45484208-8fbb-55ee-b3a3-0088d9bb2630"]' > "$T/full-scope.json"
   local got
-  got="$("$RESOLVE" "$GRAPH" "$T/full-scope.json" | jq -c '{resourceIds: (.resourceIds|sort), concept_boundaries: [.boundaryReferences[] | select(.target|test("^urn:mif:concept:"))], entity_boundary_count: [.boundaryReferences[] | select(.target|test("^urn:mif:entity:"))] | length}')"
-  if [ "$got" = '{"resourceIds":["urn:mif:concept:harness:kg-cookiecutter-0002","urn:mif:concept:harness:kg-copier-0001","urn:mif:concept:harness:kg-distribution-0003"],"concept_boundaries":[],"entity_boundary_count":4}' ]; then
+  got="$("$RESOLVE" "$GRAPH" "$T/full-scope.json" | jq -c '{resourceIds: (.resourceIds|sort), concept_boundaries: [.boundaryReferences[] | select(.target|test("^urn:mif:entity:")|not)], entity_boundary_count: [.boundaryReferences[] | select(.target|test("^urn:mif:entity:"))] | length}')"
+  if [ "$got" = '{"resourceIds":["urn:mif:0936199d-9082-58c7-a5d3-b2994500b179","urn:mif:45484208-8fbb-55ee-b3a3-0088d9bb2630","urn:mif:d763528d-75fe-5cd7-8a0a-c176ecb41e72"],"concept_boundaries":[],"entity_boundary_count":4}' ]; then
     ok "full scope: all concept relationships satisfied, entity mentions still walked and marked"
   else
     bad "full scope result wrong: $got"
@@ -3279,9 +3280,9 @@ gate_m28() {
   # 28b. Partial scope, no closure: a referenced-but-out-of-scope concept
   #      becomes an explicit boundaryReferences[] entry, never silently
   #      dropped -- resourceIds stays exactly the initial set.
-  printf '%s\n' '["urn:mif:concept:harness:kg-cookiecutter-0002"]' > "$T/partial-scope.json"
-  got="$("$RESOLVE" "$GRAPH" "$T/partial-scope.json" | jq -c '{resourceIds, out_of_scope: [.boundaryReferences[] | select(.reason=="out-of-scope" and (.target|test("^urn:mif:concept:")))]}')"
-  if [ "$got" = '{"resourceIds":["urn:mif:concept:harness:kg-cookiecutter-0002"],"out_of_scope":[{"target":"urn:mif:concept:harness:kg-copier-0001","reason":"out-of-scope"}]}' ]; then
+  printf '%s\n' '["urn:mif:d763528d-75fe-5cd7-8a0a-c176ecb41e72"]' > "$T/partial-scope.json"
+  got="$("$RESOLVE" "$GRAPH" "$T/partial-scope.json" | jq -c '{resourceIds, out_of_scope: [.boundaryReferences[] | select(.reason=="out-of-scope" and (.target|test("^urn:mif:entity:")|not))]}')"
+  if [ "$got" = '{"resourceIds":["urn:mif:d763528d-75fe-5cd7-8a0a-c176ecb41e72"],"out_of_scope":[{"target":"urn:mif:0936199d-9082-58c7-a5d3-b2994500b179","reason":"out-of-scope"}]}' ]; then
     ok "partial scope without closure marks the excluded concept as an out-of-scope boundary reference"
   else
     bad "partial-scope-no-closure result wrong: $got"
@@ -3292,8 +3293,8 @@ gate_m28() {
   #      every concept reachable via relationship edges, so kg-copier-0001 is
   #      now INCLUDED, not marked. Entity mentions are still never closure-
   #      included (not a packageable resource) and remain boundary references.
-  got="$("$RESOLVE" "$GRAPH" "$T/partial-scope.json" --closure | jq -c '{resourceIds: (.resourceIds|sort), concept_boundaries: [.boundaryReferences[] | select(.target|test("^urn:mif:concept:"))]}')"
-  if [ "$got" = '{"resourceIds":["urn:mif:concept:harness:kg-cookiecutter-0002","urn:mif:concept:harness:kg-copier-0001","urn:mif:concept:harness:kg-distribution-0003"],"concept_boundaries":[]}' ]; then
+  got="$("$RESOLVE" "$GRAPH" "$T/partial-scope.json" --closure | jq -c '{resourceIds: (.resourceIds|sort), concept_boundaries: [.boundaryReferences[] | select(.target|test("^urn:mif:entity:")|not)]}')"
+  if [ "$got" = '{"resourceIds":["urn:mif:0936199d-9082-58c7-a5d3-b2994500b179","urn:mif:45484208-8fbb-55ee-b3a3-0088d9bb2630","urn:mif:d763528d-75fe-5cd7-8a0a-c176ecb41e72"],"concept_boundaries":[]}' ]; then
     ok "closure expands scope to every transitively-reachable concept, closure takes precedence over marking (AD-4)"
   else
     bad "closure expansion result wrong: $got"
@@ -3306,15 +3307,49 @@ gate_m28() {
   #      The namespace check MUST run before the node-presence check, or
   #      every cross-topic reference misclassifies as unresolvable (a real
   #      bug this suite caught and fixed during development).
+  #      MIF 1.4 ids are opaque urn:mif:<uuid>s, so a target's namespace comes
+  #      from the --namespaces map (built by the exporter from every topic's
+  #      findings); the legacy urn:mif:concept:<ns>:<slug> form is still read
+  #      for an id the map does not name (a pre-1.4 corpus).
+  printf '%s\n' '{"urn:mif:d763528d-75fe-5cd7-8a0a-c176ecb41e72":"harness/example-topic","urn:mif:0936199d-9082-58c7-a5d3-b2994500b179":"harness/example-topic","urn:mif:c959952d-d105-5677-9343-98bfedce1278":"other-topic"}' > "$T/namespaces.json"
   jq '.edges += [
-        {"source":"urn:mif:concept:harness:kg-cookiecutter-0002","target":"urn:mif:concept:other-topic:some-finding","type":"supports","strength":0.5,"via":"relationship"},
-        {"source":"urn:mif:concept:harness:kg-cookiecutter-0002","target":"urn:mif:concept:harness:does-not-exist","type":"supports","strength":0.5,"via":"relationship"}
+        {"source":"urn:mif:d763528d-75fe-5cd7-8a0a-c176ecb41e72","target":"urn:mif:c959952d-d105-5677-9343-98bfedce1278","type":"supports","strength":0.5,"via":"relationship"},
+        {"source":"urn:mif:d763528d-75fe-5cd7-8a0a-c176ecb41e72","target":"urn:mif:740d3ac5-eced-5bb8-a111-22d647c52399","type":"supports","strength":0.5,"via":"relationship"}
       ]' "$GRAPH" > "$T/graph-edge-cases.json"
-  got="$("$RESOLVE" "$T/graph-edge-cases.json" "$T/partial-scope.json" | jq -c '[.boundaryReferences[] | select(.target=="urn:mif:concept:other-topic:some-finding" or .target=="urn:mif:concept:harness:does-not-exist") | {target, reason}] | sort_by(.target)')"
-  if [ "$got" = '[{"target":"urn:mif:concept:harness:does-not-exist","reason":"unresolvable"},{"target":"urn:mif:concept:other-topic:some-finding","reason":"cross-topic"}]' ]; then
+  got="$("$RESOLVE" "$T/graph-edge-cases.json" "$T/partial-scope.json" --namespaces "$T/namespaces.json" | jq -c '[.boundaryReferences[] | select(.target=="urn:mif:c959952d-d105-5677-9343-98bfedce1278" or .target=="urn:mif:740d3ac5-eced-5bb8-a111-22d647c52399") | {target, reason}] | sort_by(.target)')"
+  if [ "$got" = '[{"target":"urn:mif:740d3ac5-eced-5bb8-a111-22d647c52399","reason":"unresolvable"},{"target":"urn:mif:c959952d-d105-5677-9343-98bfedce1278","reason":"cross-topic"}]' ]; then
     ok "boundary reason classifies a different-namespace target as cross-topic and a same-namespace missing target as unresolvable"
   else
     bad "boundary reason classification wrong: $got"
+  fi
+  # A pre-1.4 (un-migrated) corpus: legacy structured ids on both ends, no
+  # map entry for either -- the namespace embedded in each id still decides.
+  printf '%s\n' '["urn:mif:concept:harness:legacy-a"]' > "$T/legacy-scope.json"
+  jq '.edges += [{"source":"urn:mif:concept:harness:legacy-a","target":"urn:mif:concept:other-topic:legacy-finding","type":"supports","strength":0.5,"via":"relationship"}]' "$GRAPH" > "$T/graph-legacy-target.json"
+  got="$("$RESOLVE" "$T/graph-legacy-target.json" "$T/legacy-scope.json" --namespaces "$T/namespaces.json" | jq -c '.boundaryReferences[] | select(.target=="urn:mif:concept:other-topic:legacy-finding") | .reason')"
+  if [ "$got" = '"cross-topic"' ]; then
+    ok "in a legacy-id corpus, a different-namespace urn:mif:concept:<ns>:<slug> target still classifies cross-topic"
+  else
+    bad "legacy-id namespace fallback wrong: got '$got'"
+  fi
+  # Mixed sources never compare: the topic namespace here comes from the map
+  # (harness/example-topic) while a dangling legacy target only carries an
+  # embedded one (harness) -- same topic, different spelling. It must be
+  # "unresolvable", not a false "cross-topic".
+  jq '.edges += [{"source":"urn:mif:d763528d-75fe-5cd7-8a0a-c176ecb41e72","target":"urn:mif:concept:harness:deleted-finding","type":"supports","strength":0.5,"via":"relationship"}]' "$GRAPH" > "$T/graph-mixed-target.json"
+  got="$("$RESOLVE" "$T/graph-mixed-target.json" "$T/partial-scope.json" --namespaces "$T/namespaces.json" | jq -c '.boundaryReferences[] | select(.target=="urn:mif:concept:harness:deleted-finding") | .reason')"
+  if [ "$got" = '"unresolvable"' ]; then
+    ok "a map-derived topic namespace is never compared with a legacy id's embedded namespace (dangling same-topic legacy target stays unresolvable)"
+  else
+    bad "mixed-source namespace comparison wrong: got '$got'"
+  fi
+  printf '%s\n' '{"urn:mif:d763528d-75fe-5cd7-8a0a-c176ecb41e72":"harness/example-topic"' > "$T/bad-namespaces.json"
+  "$RESOLVE" "$GRAPH" "$T/partial-scope.json" --namespaces "$T/bad-namespaces.json" >/dev/null 2>&1
+  local rc_badns=$?
+  if [ "$rc_badns" -ne 0 ]; then
+    ok "resolver fails closed on a malformed --namespaces map"
+  else
+    bad "resolver accepted a malformed --namespaces map (rc=$rc_badns)"
   fi
 
   # 28f. Zero in-scope findings (a subset selector matching nothing) is valid,
@@ -3382,7 +3417,7 @@ gate_m28() {
   #      vanish. jq's capture() produces ZERO outputs (not null) on a
   #      non-match, which previously dropped the whole map() element; fixed
   #      by switching to scan()'s always-an-array semantics.
-  jq '.edges += [{"source":"urn:mif:concept:harness:kg-cookiecutter-0002","target":"urn:mif:concept:noslug","type":"supports","strength":0.5,"via":"relationship"}]' "$GRAPH" > "$T/graph-malformed-target.json"
+  jq '.edges += [{"source":"urn:mif:d763528d-75fe-5cd7-8a0a-c176ecb41e72","target":"urn:mif:concept:noslug","type":"supports","strength":0.5,"via":"relationship"}]' "$GRAPH" > "$T/graph-malformed-target.json"
   got="$("$RESOLVE" "$T/graph-malformed-target.json" "$T/partial-scope.json" | jq -c '.boundaryReferences[] | select(.target=="urn:mif:concept:noslug")')"
   if [ "$got" = '{"target":"urn:mif:concept:noslug","reason":"unresolvable"}' ]; then
     ok "a malformed-but-concept-prefixed target is classified unresolvable, not silently dropped from boundaryReferences"
@@ -3392,14 +3427,14 @@ gate_m28() {
 
   # 28j. Regression: a malformed FIRST element in the in-scope set must not
   #      poison the topic-namespace inference for the rest of the set. A
-  #      prior version sampled only scope[0]; here scope[0] fails to match
-  #      the concept-id pattern, so the topic namespace must fall back to the
+  #      prior version sampled only scope[0]; here scope[0] has no known
+  #      namespace (not in the map, not a legacy concept id), so the topic namespace must fall back to the
   #      second (well-formed) element instead of "" -- a same-topic target
   #      genuinely out of scope must still classify out-of-scope, not
   #      cross-topic.
-  printf '%s\n' '["not-a-concept-id","urn:mif:concept:harness:kg-cookiecutter-0002"]' > "$T/scope-bad-first.json"
-  got="$("$RESOLVE" "$GRAPH" "$T/scope-bad-first.json" | jq -c '.boundaryReferences[] | select(.target=="urn:mif:concept:harness:kg-copier-0001")')"
-  if [ "$got" = '{"target":"urn:mif:concept:harness:kg-copier-0001","reason":"out-of-scope"}' ]; then
+  printf '%s\n' '["not-a-concept-id","urn:mif:d763528d-75fe-5cd7-8a0a-c176ecb41e72"]' > "$T/scope-bad-first.json"
+  got="$("$RESOLVE" "$GRAPH" "$T/scope-bad-first.json" --namespaces "$T/namespaces.json" | jq -c '.boundaryReferences[] | select(.target=="urn:mif:0936199d-9082-58c7-a5d3-b2994500b179")')"
+  if [ "$got" = '{"target":"urn:mif:0936199d-9082-58c7-a5d3-b2994500b179","reason":"out-of-scope"}' ]; then
     ok "a malformed first in-scope element does not poison topic-namespace inference for the rest of the set"
   else
     bad "bad-first-element regression check failed: got '$got'"
@@ -3409,9 +3444,9 @@ gate_m28() {
   #      in resourceIds even without --closure (the closure path's own
   #      `unique` incidentally covered this before; the non-closure path did
   #      not).
-  printf '%s\n' '["urn:mif:concept:harness:kg-cookiecutter-0002","urn:mif:concept:harness:kg-cookiecutter-0002"]' > "$T/scope-dupes.json"
+  printf '%s\n' '["urn:mif:d763528d-75fe-5cd7-8a0a-c176ecb41e72","urn:mif:d763528d-75fe-5cd7-8a0a-c176ecb41e72"]' > "$T/scope-dupes.json"
   got="$("$RESOLVE" "$GRAPH" "$T/scope-dupes.json" | jq -c '.resourceIds')"
-  if [ "$got" = '["urn:mif:concept:harness:kg-cookiecutter-0002"]' ]; then
+  if [ "$got" = '["urn:mif:d763528d-75fe-5cd7-8a0a-c176ecb41e72"]' ]; then
     ok "duplicate ids in the in-scope input are deduplicated in resourceIds, with or without --closure"
   else
     bad "dedup regression check failed: got '$got'"
@@ -3662,7 +3697,7 @@ gate_m29() {
   # 29f. A brand-new @id is written as a new finding file, and 29g. a
   #      re-import of that SAME @id with different content overwrites in
   #      place -- never a duplicate file (NFR-4, "safely re-runnable").
-  local new_id="urn:mif:concept:harness/example-okf-mif-knowledge-spine:gate-m29-synthetic"
+  local new_id="urn:mif:bf75f10b-8977-5eba-8527-a61016ffa7e9"
   jq --arg id "$new_id" '."@id" = $id' "$seed_finding" > "$T/new-finding.json"
   local new_digest; new_digest="$(scripts/mif-container-digest.sh resource "$T/new-finding.json")"
   local new_manifest_digest; new_manifest_digest="$(printf '%s\n' "$new_digest" | scripts/mif-container-digest.sh manifest)"
@@ -3688,25 +3723,27 @@ gate_m29() {
     bad "overwrite-in-place check failed: $got (file_count=$new_file_count, summary=$updated_summary)"
   fi
 
-  # 29h. Regression: an @id containing regex-special characters (schema-legal
-  #      -- schemas/mif/mif.schema.json only constrains @id to a "^urn:mif:"
-  #      prefix) must be matched LITERALLY, not as a BRE pattern. An earlier
-  #      version interpolated $rid unescaped into a bare `grep` pattern,
-  #      which could match the wrong existing finding or fail to match its
-  #      own. Re-importing the SAME special-char @id unchanged must still be
-  #      a true no-op (proves the literal match finds itself correctly, not
-  #      just that it avoids false positives).
+  # 29h. Regression: an @id containing regex-special characters must never be
+  #      matched as a pattern. An earlier version interpolated $rid unescaped
+  #      into a bare `grep` pattern, which could match the wrong existing
+  #      finding or fail to match its own. MIF 1.4 closed the input side: a
+  #      concept @id must be urn:mif:<uuid> (schemas/mif/mif.schema.json), so
+  #      such an id is no longer schema-legal at all -- the import must REJECT
+  #      it at pre-write validation and write nothing, rather than reach the
+  #      @id lookup with it. (The lookup itself stays literal: see 29l's
+  #      compact-JSON @id match, which exercises the same fixed-string path.)
   local special_id="urn:mif:concept:harness/example-okf-mif-knowledge-spine:gate-m29-special.chars[test]"
   jq --arg id "$special_id" '."@id" = $id' "$seed_finding" > "$T/special-finding.json"
   local special_digest; special_digest="$(scripts/mif-container-digest.sh resource "$T/special-finding.json")"
   local special_manifest_digest; special_manifest_digest="$(printf '%s\n' "$special_digest" | scripts/mif-container-digest.sh manifest)"
   build_container "$T/c-special" "$T/special-finding.json" "$special_digest" "$special_manifest_digest" "1.0.0" "special-finding.json"
-  "$IMPORT" "$T/c-special" "$TOPIC" >/dev/null 2>&1
   got="$("$IMPORT" "$T/c-special" "$TOPIC" 2>&1)"
-  if printf '%s' "$got" | grep -q "0 written, 1 already up to date"; then
-    ok "an @id containing regex-special characters is matched literally (idempotent no-op on re-import)"
+  local rc_special=$?
+  if [ "$rc_special" -ne 0 ] && printf '%s' "$got" | grep -q "special-finding.json" \
+     && [ ! -e "$TOPIC_DIR/findings/special-finding.json" ]; then
+    ok "an @id with regex-special characters (not a MIF 1.4 urn:mif:<uuid>) is rejected at pre-write validation, nothing written"
   else
-    bad "special-char @id regression check failed: $got"
+    bad "special-char @id regression check failed (rc=$rc_special): $got"
   fi
 
   # 29i. Regression: bulk pre-validation (step 2) rejects a multi-resource
@@ -3718,8 +3755,8 @@ gate_m29() {
   #      written -- a real partial write all 5 review passes converged on.
   mkdir -p "$T/c-multi"
   cp "$seed_finding" "$T/c-multi/good.json"
-  jq --arg id "urn:mif:concept:harness/example-okf-mif-knowledge-spine:gate-m29-multi-good" '."@id" = $id' "$seed_finding" > "$T/c-multi/good-tmp.json" && mv "$T/c-multi/good-tmp.json" "$T/c-multi/good.json"
-  echo '{"@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:gate-m29-multi-bad", "notAValidFinding": true}' > "$T/c-multi/bad.json"
+  jq --arg id "urn:mif:a55f7539-815a-5062-a8c6-690b99485421" '."@id" = $id' "$seed_finding" > "$T/c-multi/good-tmp.json" && mv "$T/c-multi/good-tmp.json" "$T/c-multi/good.json"
+  echo '{"@id": "urn:mif:75760d34-4dba-545d-8d8d-af524c00c2bf", "notAValidFinding": true}' > "$T/c-multi/bad.json"
   local multi_good_digest; multi_good_digest="$(scripts/mif-container-digest.sh resource "$T/c-multi/good.json")"
   local multi_bad_digest; multi_bad_digest="$(scripts/mif-container-digest.sh resource "$T/c-multi/bad.json")"
   local multi_manifest_digest; multi_manifest_digest="$(printf '%s\n%s\n' "$multi_good_digest" "$multi_bad_digest" | scripts/mif-container-digest.sh manifest)"
@@ -3792,7 +3829,7 @@ gate_m29() {
   mkdir -p "reports/$badontmap_topic/findings"
   echo '{"not": "an array"}' > "reports/$badontmap_topic/ontology-map.json"
   mkdir -p "$T/c-badontmap"
-  local badontmap_finding_id="urn:mif:concept:harness/$badontmap_topic:good"
+  local badontmap_finding_id; badontmap_finding_id="$(scripts/mif-id.sh "concept:harness/$badontmap_topic:good")"
   jq --arg id "$badontmap_finding_id" '."@id" = $id' "$seed_finding" > "$T/c-badontmap/good.json"
   echo '[{"finding_id": "'"$badontmap_finding_id"'", "entity_type": "technology", "resolved_ontology": "mif-generic@1.0.0", "basis": "declared", "valid": true}]' > "$T/c-badontmap/ontology-map.json"
   local badontmap_good_digest badontmap_ontmap_digest badontmap_manifest_digest
@@ -3891,14 +3928,14 @@ gate_m29() {
   #      overwrite survived. After: REJECTED and the corpus is byte-identical
   #      to its pre-import state.
   local collide_file="$TOPIC_DIR/findings/gate-m29-673-collide.json"
-  jq --arg id "urn:mif:concept:harness/example-okf-mif-knowledge-spine:gate-m29-673-collide-existing" '."@id" = $id' \
+  jq --arg id "urn:mif:4a57764a-a49d-5166-9afc-505fccef9c79" '."@id" = $id' \
     "$seed_finding" > "$collide_file" \
     || bad "gate_m29 29n: failed to seed the pre-existing collision file"
   mkdir -p "$T/c-rollback"
-  jq --arg id "urn:mif:concept:harness/example-okf-mif-knowledge-spine:gate-m29-673-a" '."@id" = $id' \
+  jq --arg id "urn:mif:2ba9ee3b-83b2-5166-bd74-dc2956ac246b" '."@id" = $id' \
     "$seed_finding" > "$T/c-rollback/gate-m29-673-a.json"
   jq '.summary = "gate_m29 issue-673 overwrite probe"' "$seed_finding" > "$T/c-rollback/gate-m29-673-seed-overwrite.json"
-  jq --arg id "urn:mif:concept:harness/example-okf-mif-knowledge-spine:gate-m29-673-b" '."@id" = $id' \
+  jq --arg id "urn:mif:94b59ece-a98a-5bc5-bfa0-16dba3967800" '."@id" = $id' \
     "$seed_finding" > "$T/c-rollback/gate-m29-673-collide.json"
   local rb_a_digest rb_ow_digest rb_b_digest rb_manifest_digest
   rb_a_digest="$(scripts/mif-container-digest.sh resource "$T/c-rollback/gate-m29-673-a.json")"
@@ -3947,13 +3984,13 @@ gate_m29() {
   #      (true pre-import) backup, leaving the corpus in an intermediate
   #      state while still printing "rolled back".
   local collide718="$TOPIC_DIR/findings/gate-m29-718-collide.json"
-  jq --arg id "urn:mif:concept:harness/example-okf-mif-knowledge-spine:gate-m29-718-collide-existing" '."@id" = $id' \
+  jq --arg id "urn:mif:efd85cbe-d8fe-5816-8dc9-b9aadcb7e6bd" '."@id" = $id' \
     "$seed_finding" > "$collide718" \
     || bad "gate_m29 29o: failed to seed the pre-existing collision file"
   mkdir -p "$T/c-dup-rollback"
   jq '.summary = "gate_m29 pr-718 duplicate overwrite probe A"' "$seed_finding" > "$T/c-dup-rollback/gate-m29-718-ow-a.json"
   jq '.summary = "gate_m29 pr-718 duplicate overwrite probe B"' "$seed_finding" > "$T/c-dup-rollback/gate-m29-718-ow-b.json"
-  jq --arg id "urn:mif:concept:harness/example-okf-mif-knowledge-spine:gate-m29-718-b" '."@id" = $id' \
+  jq --arg id "urn:mif:ed5271e4-c52d-5b89-b911-2a2367ea3382" '."@id" = $id' \
     "$seed_finding" > "$T/c-dup-rollback/gate-m29-718-collide.json"
   local dup_a_digest dup_b_digest dup_c_digest dup_manifest_digest
   dup_a_digest="$(scripts/mif-container-digest.sh resource "$T/c-dup-rollback/gate-m29-718-ow-a.json")"
@@ -4020,14 +4057,14 @@ gate_m29() {
   # own, so without a pre-seeded one the whole import would REJECT on a
   # "no findings found" build-graph failure unrelated to this test's actual
   # subject (the lock refresh), producing a false failure below.
-  jq --arg id "urn:mif:concept:harness/$ontlock_topic_full:seed" '."@id" = $id' \
+  jq --arg id "$(scripts/mif-id.sh "concept:harness/$ontlock_topic_full:seed")" '."@id" = $id' \
     "$seed_finding" > "reports/$ontlock_topic_full/findings/seed.json"
-  jq --arg id "urn:mif:concept:harness/$ontlock_topic_subset:seed" '."@id" = $id' \
+  jq --arg id "$(scripts/mif-id.sh "concept:harness/$ontlock_topic_subset:seed")" '."@id" = $id' \
     "$seed_finding" > "reports/$ontlock_topic_subset/findings/seed.json"
   # The subset destination pre-exists with one entry NOT in the incoming
   # resource -- makes the merge branch's jq -s pass genuinely do work rather
   # than short-circuiting on a same-content cmp -s skip.
-  echo '[{"finding_id":"urn:mif:concept:harness/'"$ontlock_topic_subset"':pre-existing","entity_type":"technology","resolved_ontology":"mif-generic@1.0.0","basis":"declared","valid":true}]' \
+  echo '[{"finding_id":"'"$(scripts/mif-id.sh "concept:harness/$ontlock_topic_subset:pre-existing")"'","entity_type":"technology","resolved_ontology":"mif-generic@1.0.0","basis":"declared","valid":true}]' \
     > "reports/$ontlock_topic_subset/ontology-map.json"
 
   # Both steps below are fail-fast (Copilot review, PR #788), unlike the
@@ -4077,13 +4114,13 @@ LOCKEOF
   }' > "$T/c-ontlock-full/mif-package.json"
 
   mkdir -p "$T/c-ontlock-subset"
-  echo '[{"finding_id":"urn:mif:concept:harness/'"$ontlock_topic_subset"':incoming","entity_type":"technology","resolved_ontology":"mif-generic@1.0.0","basis":"declared","valid":true}]' \
+  echo '[{"finding_id":"'"$(scripts/mif-id.sh "concept:harness/$ontlock_topic_subset:incoming")"'","entity_type":"technology","resolved_ontology":"mif-generic@1.0.0","basis":"declared","valid":true}]' \
     > "$T/c-ontlock-subset/ontology-map.json"
   local ontlock_subset_digest ontlock_subset_manifest_digest
   ontlock_subset_digest="$(scripts/mif-container-digest.sh resource "$T/c-ontlock-subset/ontology-map.json")"
   ontlock_subset_manifest_digest="$(printf '%s\n' "$ontlock_subset_digest" | scripts/mif-container-digest.sh manifest)"
   jq -n --arg d "$ontlock_subset_digest" --arg md "$ontlock_subset_manifest_digest" --arg topic "$ontlock_topic_subset" \
-    --arg selector "[\"urn:mif:concept:harness/$ontlock_topic_subset:incoming\"]" '{
+    --arg selector "[\"$(scripts/mif-id.sh "concept:harness/$ontlock_topic_subset:incoming")\"]" '{
     profile: "https://research-harness.dev/schema/mif-container/v1",
     sourceInstance: {namespace: "gate-m29-test", corpusUrl: null},
     exportScope: {type: "subset", topic: $topic, selector: $selector, generatedAt: "2026-07-10T00:00:00Z"},
@@ -4135,7 +4172,7 @@ LOCKEOF
   local toctou_subset_ontmap="$T/c-toctou-subset/ontology-map.json"
   mkdir -p "$T/c-toctou-full" "$T/c-toctou-subset"
   echo '[]' > "$toctou_full_ontmap"
-  echo '[{"finding_id":"urn:mif:concept:harness/'"$toctou_topic_subset"':incoming","entity_type":"technology","resolved_ontology":"mif-generic@1.0.0","basis":"declared","valid":true}]' \
+  echo '[{"finding_id":"'"$(scripts/mif-id.sh "concept:harness/$toctou_topic_subset:incoming")"'","entity_type":"technology","resolved_ontology":"mif-generic@1.0.0","basis":"declared","valid":true}]' \
     > "$toctou_subset_ontmap"
   # Real digests, computed BEFORE the digest script is instrumented below --
   # these are the manifest's declared (correct) values throughout.
@@ -4156,7 +4193,7 @@ LOCKEOF
     createdAt: "2026-07-10T00:00:00Z"
   }' > "$T/c-toctou-full/mif-package.json"
   jq -n --arg d "$toctou_subset_digest" --arg md "$toctou_subset_manifest_digest" --arg topic "$toctou_topic_subset" \
-    --arg selector "[\"urn:mif:concept:harness/$toctou_topic_subset:incoming\"]" '{
+    --arg selector "[\"$(scripts/mif-id.sh "concept:harness/$toctou_topic_subset:incoming")\"]" '{
     profile: "https://research-harness.dev/schema/mif-container/v1",
     sourceInstance: {namespace: "gate-m29-test", corpusUrl: null},
     exportScope: {type: "subset", topic: $topic, selector: $selector, generatedAt: "2026-07-10T00:00:00Z"},
@@ -4172,9 +4209,9 @@ LOCKEOF
       {id: $s, title: "gate_m29 759 toctou subset-scope test", namespace: ("harness/" + $s), status: "active", ontologies: []}
     ]' harness.config.json > "$T/config-with-toctou-topics.json" && cp "$T/config-with-toctou-topics.json" harness.config.json
   mkdir -p "reports/$toctou_topic_full/findings" "reports/$toctou_topic_subset/findings"
-  jq --arg id "urn:mif:concept:harness/$toctou_topic_full:seed" '."@id" = $id' \
+  jq --arg id "$(scripts/mif-id.sh "concept:harness/$toctou_topic_full:seed")" '."@id" = $id' \
     "$seed_finding" > "reports/$toctou_topic_full/findings/seed.json"
-  jq --arg id "urn:mif:concept:harness/$toctou_topic_subset:seed" '."@id" = $id' \
+  jq --arg id "$(scripts/mif-id.sh "concept:harness/$toctou_topic_subset:seed")" '."@id" = $id' \
     "$seed_finding" > "reports/$toctou_topic_subset/findings/seed.json"
   # The subset destination pre-exists with content DIFFERENT from the
   # incoming resource, both so the merge branch does real work (not a
@@ -4182,7 +4219,7 @@ LOCKEOF
   # anyway" can't masquerade as this test passing: if the fix were absent
   # (or broken) this pre-existing content would get overwritten/merged with
   # the incoming (untrusted-by-the-recheck) bytes.
-  echo '[{"finding_id":"urn:mif:concept:harness/'"$toctou_topic_subset"':pre-existing","entity_type":"technology","resolved_ontology":"mif-generic@1.0.0","basis":"declared","valid":true}]' \
+  echo '[{"finding_id":"'"$(scripts/mif-id.sh "concept:harness/$toctou_topic_subset:pre-existing")"'","entity_type":"technology","resolved_ontology":"mif-generic@1.0.0","basis":"declared","valid":true}]' \
     > "reports/$toctou_topic_subset/ontology-map.json"
   local toctou_subset_dest_before
   toctou_subset_dest_before="$(scripts/mif-container-digest.sh resource "reports/$toctou_topic_subset/ontology-map.json")"
@@ -4429,7 +4466,7 @@ gate_m30() {
   #      surfaces a proposal in reports/concordance-sameas-proposals.json --
   #      it must NOT rewrite either @id or merge anything.
   local seed_title; seed_title="$(jq -r '.title' "$seed_finding")"
-  local dup_id="urn:mif:concept:harness/${TOPIC}:gate-m30-sameas-synthetic"
+  local dup_id; dup_id="$(scripts/mif-id.sh "concept:harness/${TOPIC}:gate-m30-sameas-synthetic")"
   mkdir -p "$T/c-dup"
   jq --arg id "$dup_id" --arg t "  $seed_title  " '."@id" = $id | .title = $t' "$seed_finding" > "$T/c-dup/dup-finding.json"
   local dup_digest; dup_digest="$(scripts/mif-container-digest.sh resource "$T/c-dup/dup-finding.json")"
@@ -4493,7 +4530,7 @@ gate_m30() {
   cp "$seed_finding" "$T/c-corrupt/corrupt-target.json"
   jq --arg id "$corrupt_id" '."@id" = $id | .summary = "gate-m30 corrupt-destination regression: incoming side is valid"' "$seed_finding" > "$T/c-corrupt/corrupt-target-tmp.json" && mv "$T/c-corrupt/corrupt-target-tmp.json" "$T/c-corrupt/corrupt-target.json"
   local corrupt_incoming_real_digest; corrupt_incoming_real_digest="$(scripts/mif-container-digest.sh resource "$T/c-corrupt/corrupt-target.json")"
-  local other_new_id="urn:mif:concept:harness/${TOPIC}:gate-m30-corrupt-independent-new"
+  local other_new_id; other_new_id="$(scripts/mif-id.sh "concept:harness/${TOPIC}:gate-m30-corrupt-independent-new")"
   jq --arg id "$other_new_id" '."@id" = $id' "$seed_finding" > "$T/c-corrupt/independent-new.json"
   local other_new_digest; other_new_digest="$(scripts/mif-container-digest.sh resource "$T/c-corrupt/independent-new.json")"
   local corrupt_manifest_digest; corrupt_manifest_digest="$(printf '%s\n%s\n' "$corrupt_incoming_real_digest" "$other_new_digest" | scripts/mif-container-digest.sh manifest)"
@@ -5269,6 +5306,26 @@ gate_m32() {
   fi
 }
 
+gate_mif_vendor() {
+  info "Vendored MIF schemas match their pinned release (schemas/mif/VENDOR.lock)"
+  # schemas/mif/ is vendored verbatim from one MIF release (VENDOR.lock names
+  # it and pins every file's sha256). A hand-edit or a partial re-vendor would
+  # silently validate findings against a schema no MIF release ever shipped.
+  # Offline here; CI's mif-vendor-check job adds --remote, which also proves
+  # the pinned release is actually published on mif-spec.dev.
+  local out
+  if ! command -v node >/dev/null 2>&1; then
+    bad "gate_mif_vendor: node is required to run scripts/mif-vendor-check.mjs but is not on PATH"
+    return
+  fi
+  if out="$(node scripts/mif-vendor-check.mjs 2>&1)"; then
+    ok "$out"
+  else
+    bad "vendored MIF schemas drifted from schemas/mif/VENDOR.lock (scripts/mif-vendor-check.mjs)"
+    printf '%s\n' "$out" | sed 's/^/      /' >&2
+  fi
+}
+
 gate_ontology_lock() {
   info "Ontology vendoring — pinned-lock integrity (ADR-0012)"
   # On-demand vendored domain ontologies must match their pinned sha256 (no local
@@ -5806,7 +5863,7 @@ gate_engine_lazy_gating() {
 # ---------------------------------------------------------------------------
 # Gate registry — each milestone appends its function name here.
 # ---------------------------------------------------------------------------
-GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18 gate_m19 gate_m20 gate_m21 gate_m22 gate_m23 gate_m24 gate_m25 gate_m26 gate_m27 gate_m28 gate_m29 gate_m30 gate_m31 gate_m32 gate_ontology_lock gate_versions gate_changelog_links gate_milestone_docs gate_is_template_guard_hygiene gate_monitoring_workflow_sync gate_workflows gate_engine_lazy_gating)
+GATES=(gate_m1 gate_m2 gate_m3 gate_m4 gate_m5 gate_m6 gate_m7 gate_m8 gate_m9 gate_m10 gate_m11 gate_m12 gate_m13 gate_m14 gate_m15 gate_m16 gate_m17 gate_m18 gate_m19 gate_m20 gate_m21 gate_m22 gate_m23 gate_m24 gate_m25 gate_m26 gate_m27 gate_m28 gate_m29 gate_m30 gate_m31 gate_m32 gate_mif_vendor gate_ontology_lock gate_versions gate_changelog_links gate_milestone_docs gate_is_template_guard_hygiene gate_monitoring_workflow_sync gate_workflows gate_engine_lazy_gating)
 
 # Gate selection + profiling (#531) -- the pre-push gate is only as valuable
 # as it is runnable, so local iteration gets a scoped fast path and the

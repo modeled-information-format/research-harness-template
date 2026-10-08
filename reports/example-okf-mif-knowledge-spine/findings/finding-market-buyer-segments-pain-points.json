@@ -1,6 +1,9 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
-  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-buyer-segments-pain-points",
+  "@id": "urn:mif:ed129ca6-e182-5666-8bcb-aa5d844c7ff8",
+  "aliases": [
+    "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-buyer-segments-pain-points"
+  ],
   "@type": "Concept",
   "citations": [
     {
@@ -91,12 +94,12 @@
   "relationships": [
     {
       "strength": 0.85,
-      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-km-software-market-sizing",
+      "target": "urn:mif:5fd31483-e5fd-5795-9cfb-cb658020da9c",
       "type": "relates-to"
     },
     {
       "strength": 0.8,
-      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-ai-demand-structured-provenance",
+      "target": "urn:mif:7290e549-44e6-55f5-b79e-b3d706436add",
       "type": "supports"
     }
   ],

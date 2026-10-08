@@ -1,6 +1,9 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
-  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-json-ld-yaml-ld-comparator",
+  "@id": "urn:mif:97a6f1ee-f84d-5960-b66a-cd0910d3be03",
+  "aliases": [
+    "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-json-ld-yaml-ld-comparator"
+  ],
   "@type": "Concept",
   "citations": [
     {
@@ -57,7 +60,7 @@
   "relationships": [
     {
       "strength": 0.75,
-      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-okf-mif-layering-mechanics",
+      "target": "urn:mif:6c23b125-e139-5d04-987c-24a8179a07c3",
       "type": "relates-to"
     }
   ],

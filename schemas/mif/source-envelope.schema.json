@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://research-harness.dev/schema/source-envelope.schema.json",
   "title": "MIF Source Envelope (inbound boundary)",
-  "description": "A raw ingested source normalized into a MIF v1.0 memory unit at the ingestion boundary (SPEC §10, inbound conformance). The base $ref points at the REAL vendored MIF schema (schemas/mif/mif.schema.json); this file only adds, never overrides. Harness-local requirements: a provenance block carrying a sourceType (W3C-PROV, the non-negotiable inbound invariant mirrored from import-corpus.sh), and extensions.harness.source carrying the fetch metadata (url, fetchedAt, contentType). Validated with the same ajv MIF closure as findings.",
+  "description": "A raw ingested source normalized into a MIF concept (MIF 1.4.1; @id urn:mif:<uuid> minted from source:<namespace>:<slug>) at the ingestion boundary (SPEC §10, inbound conformance). The base $ref points at the REAL vendored MIF schema (schemas/mif/mif.schema.json); this file only adds, never overrides. Harness-local requirements: a provenance block carrying a sourceType (W3C-PROV, the non-negotiable inbound invariant mirrored from import-corpus.sh), and extensions.harness.source carrying the fetch metadata (url, fetchedAt, contentType). Validated with the same ajv MIF closure as findings.",
   "allOf": [
     { "$ref": "https://mif-spec.dev/schema/mif.schema.json" },
     {

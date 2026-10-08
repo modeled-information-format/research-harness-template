@@ -250,7 +250,7 @@ cat > "$TMP/stubs-b2.cjs" <<'NODE'
 'use strict';
 module.exports = {
   wf: {
-    import: async () => ({ ok: false, stage: 'review', detail: { blockers: ['collision on urn:mif:concept:x:finding-3'] } }),
+    import: async () => ({ ok: false, stage: 'review', detail: { blockers: ['collision on urn:mif:1c4970f5-07f8-5171-adea-99e3064494d5'] } }),
     falsify: async () => { throw new Error('falsify must NOT be called — imp.ok is false, the gate failed'); },
     synthesis: async () => { throw new Error('synthesis must NOT be called — imp.ok is false, the gate failed'); },
     projection: async () => { throw new Error('projection must NOT be called — imp.ok is false, the gate failed'); },
@@ -282,7 +282,7 @@ check('trustImportedVerdicts passed through unchanged', call_args.get('trustImpo
 
 r = d.get('result') or {}
 check("result.mode is 'import'", r.get('mode') == 'import', str(r.get('mode')))
-check('result.imported is the WHOLE failed import result object (not just a boolean/count)', r.get('imported') == {'ok': False, 'stage': 'review', 'detail': {'blockers': ['collision on urn:mif:concept:x:finding-3']}}, json.dumps(r.get('imported')))
+check('result.imported is the WHOLE failed import result object (not just a boolean/count)', r.get('imported') == {'ok': False, 'stage': 'review', 'detail': {'blockers': ['collision on urn:mif:1c4970f5-07f8-5171-adea-99e3064494d5']}}, json.dumps(r.get('imported')))
 check('result has no gate/synthesis/projection keys from a run that never happened', 'gate' not in r and 'synthesis' not in r and 'projection' not in r, json.dumps(list(r.keys())))
 
 sys.exit(0 if ok else 1)
@@ -303,10 +303,10 @@ cat > "$TMP/stubs-b4.cjs" <<'NODE'
 'use strict';
 module.exports = {
   wf: {
-    import: async () => ({ ok: true, imported: ['urn:mif:concept:x:finding-1', 'urn:mif:concept:x:finding-2'], needsGating: ['urn:mif:concept:x:finding-1'], trustedForeignVerdicts: [], collisionsChecked: 0 }),
+    import: async () => ({ ok: true, imported: ['urn:mif:31efef68-5a10-5ec8-b1ca-33cbe6042764', 'urn:mif:cbdfffc6-1097-5cba-9f0c-a16d5cc74708'], needsGating: ['urn:mif:31efef68-5a10-5ec8-b1ca-33cbe6042764'], trustedForeignVerdicts: [], collisionsChecked: 0 }),
     falsify: async () => ({ gated: 1, rollup: { survived: 1 }, verdicts: [], deferredIds: [], alreadyVerified: 0 }),
     synthesis: async () => ({ ok: true, synthesisPath: 'reports/pipeline-eval-topic/synthesis-import.json', sections: [], findingsUsed: [], checkCoverage: [], openIssues: [], ungatedFindings: [] }),
-    projection: async (a) => ({ ok: true, reportPath: 'reports/pipeline-eval-topic/report.md', reportId: 'urn:mif:concept:pipeline-eval-topic:report', mifLevel: 3, checksAddressed: [], verificationVerdict: 'survived', readmePath: null, readmeCheckPassed: false, graphRefreshed: false, graphAssertPassed: false, problems: [], _receivedSynthesisPath: a.synthesisPath }),
+    projection: async (a) => ({ ok: true, reportPath: 'reports/pipeline-eval-topic/report.md', reportId: 'urn:mif:c7f61d1b-7a92-5e7c-b15d-7546105829b5', mifLevel: 3, checksAddressed: [], verificationVerdict: 'survived', readmePath: null, readmeCheckPassed: false, graphRefreshed: false, graphAssertPassed: false, problems: [], _receivedSynthesisPath: a.synthesisPath }),
   },
 };
 NODE
@@ -331,7 +331,7 @@ bn = by_name(d['wfCalls'])
 check('import ran exactly once', len(bn.get('import', [])) == 1)
 check('falsify ran (needsGating was non-empty)', len(bn.get('falsify', [])) >= 1, str(len(bn.get('falsify', []))))
 falsify_args = (bn.get('falsify') or [{}])[0].get('args') or {}
-check("falsify was scoped to EXACTLY needsGating's ids, not 'all' (#678)", falsify_args.get('scope') == {'ids': ['urn:mif:concept:x:finding-1']}, json.dumps(falsify_args.get('scope')))
+check("falsify was scoped to EXACTLY needsGating's ids, not 'all' (#678)", falsify_args.get('scope') == {'ids': ['urn:mif:31efef68-5a10-5ec8-b1ca-33cbe6042764']}, json.dumps(falsify_args.get('scope')))
 check('falsify carried regate: true (#678 -- foreign attempted_at blocks must be re-opened, not one-round-skipped)', falsify_args.get('regate') is True, json.dumps(falsify_args.get('regate')))
 check('synthesis ran exactly once', len(bn.get('synthesis', [])) == 1)
 check('projection ran exactly once', len(bn.get('projection', [])) == 1)
@@ -362,10 +362,10 @@ cat > "$TMP/stubs-b5.cjs" <<'NODE'
 'use strict';
 module.exports = {
   wf: {
-    import: async () => ({ ok: true, imported: ['urn:mif:concept:x:finding-9'], needsGating: [], trustedForeignVerdicts: ['urn:mif:concept:x:finding-9'], collisionsChecked: 0 }),
+    import: async () => ({ ok: true, imported: ['urn:mif:12d1f80b-61f9-5e94-819d-5dff4e015e1b'], needsGating: [], trustedForeignVerdicts: ['urn:mif:12d1f80b-61f9-5e94-819d-5dff4e015e1b'], collisionsChecked: 0 }),
     falsify: async () => { throw new Error('falsify must NOT be called — needsGating is empty, nothing to gate'); },
     synthesis: async () => ({ ok: true, synthesisPath: 'reports/pipeline-eval-topic/synthesis-import-nogate.json', sections: [], findingsUsed: [], checkCoverage: [], openIssues: [], ungatedFindings: [] }),
-    projection: async (a) => ({ ok: true, reportPath: 'reports/pipeline-eval-topic/report.md', reportId: 'urn:mif:concept:pipeline-eval-topic:report', mifLevel: 3, checksAddressed: [], verificationVerdict: 'survived', readmePath: null, readmeCheckPassed: false, graphRefreshed: false, graphAssertPassed: false, problems: [], _receivedSynthesisPath: a.synthesisPath }),
+    projection: async (a) => ({ ok: true, reportPath: 'reports/pipeline-eval-topic/report.md', reportId: 'urn:mif:c7f61d1b-7a92-5e7c-b15d-7546105829b5', mifLevel: 3, checksAddressed: [], verificationVerdict: 'survived', readmePath: null, readmeCheckPassed: false, graphRefreshed: false, graphAssertPassed: false, problems: [], _receivedSynthesisPath: a.synthesisPath }),
   },
 };
 NODE
@@ -463,14 +463,14 @@ cat > "$TMP/stubs-b7.cjs" <<'NODE'
 let falsifyCalls = 0;
 module.exports = {
   wf: {
-    import: async () => ({ ok: true, imported: ['urn:mif:concept:x:finding-1', 'urn:mif:concept:x:finding-2', 'urn:mif:concept:x:finding-3'], needsGating: ['urn:mif:concept:x:finding-1', 'urn:mif:concept:x:finding-2', 'urn:mif:concept:x:finding-3'], trustedForeignVerdicts: [], collisionsChecked: 0 }),
+    import: async () => ({ ok: true, imported: ['urn:mif:31efef68-5a10-5ec8-b1ca-33cbe6042764', 'urn:mif:cbdfffc6-1097-5cba-9f0c-a16d5cc74708', 'urn:mif:1c4970f5-07f8-5171-adea-99e3064494d5'], needsGating: ['urn:mif:31efef68-5a10-5ec8-b1ca-33cbe6042764', 'urn:mif:cbdfffc6-1097-5cba-9f0c-a16d5cc74708', 'urn:mif:1c4970f5-07f8-5171-adea-99e3064494d5'], trustedForeignVerdicts: [], collisionsChecked: 0 }),
     falsify: async () => {
       falsifyCalls += 1;
-      if (falsifyCalls === 1) return { gated: 1, rollup: { survived: 1 }, verdicts: [], deferredIds: ['urn:mif:concept:x:finding-2', 'urn:mif:concept:x:finding-3'], alreadyVerified: 0 };
+      if (falsifyCalls === 1) return { gated: 1, rollup: { survived: 1 }, verdicts: [], deferredIds: ['urn:mif:cbdfffc6-1097-5cba-9f0c-a16d5cc74708', 'urn:mif:1c4970f5-07f8-5171-adea-99e3064494d5'], alreadyVerified: 0 };
       return { gated: 2, rollup: { survived: 2 }, verdicts: [], deferredIds: [], alreadyVerified: 0 };
     },
     synthesis: async () => ({ ok: true, synthesisPath: 'reports/pipeline-eval-topic/synthesis-import-drain.json', sections: [], findingsUsed: [], checkCoverage: [], openIssues: [], ungatedFindings: [] }),
-    projection: async (a) => ({ ok: true, reportPath: 'reports/pipeline-eval-topic/report.md', reportId: 'urn:mif:concept:pipeline-eval-topic:report', mifLevel: 3, checksAddressed: [], verificationVerdict: 'survived', readmePath: null, readmeCheckPassed: false, graphRefreshed: false, graphAssertPassed: false, problems: [], _receivedSynthesisPath: a.synthesisPath }),
+    projection: async (a) => ({ ok: true, reportPath: 'reports/pipeline-eval-topic/report.md', reportId: 'urn:mif:c7f61d1b-7a92-5e7c-b15d-7546105829b5', mifLevel: 3, checksAddressed: [], verificationVerdict: 'survived', readmePath: null, readmeCheckPassed: false, graphRefreshed: false, graphAssertPassed: false, problems: [], _receivedSynthesisPath: a.synthesisPath }),
   },
 };
 NODE
@@ -497,8 +497,8 @@ check('falsify ran exactly twice (drain stopped when deferredIds emptied)', len(
 if len(falsify) == 2:
     a1 = falsify[0]['args']
     a2 = falsify[1]['args']
-    check('first call was scoped to the FULL needsGating set with regate: true', a1.get('scope') == {'ids': ['urn:mif:concept:x:finding-1', 'urn:mif:concept:x:finding-2', 'urn:mif:concept:x:finding-3']} and a1.get('regate') is True, json.dumps({'scope': a1.get('scope'), 'regate': a1.get('regate')}))
-    check("second call narrowed to EXACTLY the first call's deferredIds (never the full needsGating set)", a2.get('scope') == {'ids': ['urn:mif:concept:x:finding-2', 'urn:mif:concept:x:finding-3']}, json.dumps(a2.get('scope')))
+    check('first call was scoped to the FULL needsGating set with regate: true', a1.get('scope') == {'ids': ['urn:mif:31efef68-5a10-5ec8-b1ca-33cbe6042764', 'urn:mif:cbdfffc6-1097-5cba-9f0c-a16d5cc74708', 'urn:mif:1c4970f5-07f8-5171-adea-99e3064494d5']} and a1.get('regate') is True, json.dumps({'scope': a1.get('scope'), 'regate': a1.get('regate')}))
+    check("second call narrowed to EXACTLY the first call's deferredIds (never the full needsGating set)", a2.get('scope') == {'ids': ['urn:mif:cbdfffc6-1097-5cba-9f0c-a16d5cc74708', 'urn:mif:1c4970f5-07f8-5171-adea-99e3064494d5']}, json.dumps(a2.get('scope')))
     check('second call still carried regate: true', a2.get('regate') is True, json.dumps(a2.get('regate')))
 
 r = d.get('result') or {}

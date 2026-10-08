@@ -52,7 +52,7 @@
     },
     {
       "id": 2,
-      "prompt": "Run /lab --seed urn:mif:concept:harness:kg-copier-0001 against the sample corpus at $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/. Walk the finding's direct neighborhood: traverse all outgoing and incoming typed edges (supports, contradicts, derived-from, mentions). For each neighbor concept, resolve it to its finding title and content. Write your complete traversal report — seed details, outgoing edges with targets, incoming edges with sources, and neighbor finding content — to lab.md.",
+      "prompt": "Run /lab --seed urn:mif:0936199d-9082-58c7-a5d3-b2994500b179 against the sample corpus at $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/. Walk the finding's direct neighborhood: traverse all outgoing and incoming typed edges (supports, contradicts, derived-from, mentions). For each neighbor concept, resolve it to its finding title and content. Write your complete traversal report — seed details, outgoing edges with targets, incoming edges with sources, and neighbor finding content — to lab.md.",
       "expected_output": "A lab.md file containing a graph traversal report for kg-copier-0001, naming: (1) the outgoing 'supports' edge to kg-distribution-0003, (2) the incoming 'contradicts' edge from kg-cookiecutter-0002, (3) the incoming 'derived-from' edge from kg-distribution-0003, and the content/title of each neighbor finding.",
       "files": [],
       "deterministic_checks": [

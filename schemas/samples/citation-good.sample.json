@@ -1,7 +1,10 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
   "@type": "Concept",
-  "@id": "urn:mif:concept:harness:citation-good-0001",
+  "@id": "urn:mif:ef9877b9-b66b-5133-b19a-e429ca29d599",
+  "aliases": [
+    "urn:mif:concept:harness:citation-good-0001"
+  ],
   "conceptType": "semantic",
   "title": "STORM multi-perspective fan-out outperforms single-pass RAG",
   "content": "Fan-out across multiple perspectives before synthesis improves organization (~25%) and coverage (~10%) over single-pass retrieval-augmented generation.",

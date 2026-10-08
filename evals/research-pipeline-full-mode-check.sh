@@ -315,7 +315,7 @@ module.exports = {
     'coverage-audit': async () => ({ backlog: [{ action: 'augment', target: 'landscape_check', why: 'landscape_check still rests on thin evidence', priority: 1 }], summary: 'landscape_check needs deepening', rawItems: [], uncoveredAngles: [] }),
     augment: async () => ({ deepen: [{ dimension: 'landscape', depth: 'standard', rationale: 'landscape_check unmet after round 1' }], rejected: [], reasoning: 'landscape needs one more deepening pass', matrix: [] }),
     'add-dimensions': async () => { throw new Error('add-dimensions must NOT be called in this fixture (no backlog item requests it)'); },
-    projection: async (a) => ({ ok: true, reportPath: 'reports/pipeline-eval-topic/report.md', reportId: 'urn:mif:concept:pipeline-eval-topic:report', mifLevel: 3, checksAddressed: ['technical_check', 'landscape_check'], verificationVerdict: 'survived', readmePath: null, readmeCheckPassed: false, graphRefreshed: false, graphAssertPassed: false, problems: [], _receivedSynthesisPath: a.synthesisPath }),
+    projection: async (a) => ({ ok: true, reportPath: 'reports/pipeline-eval-topic/report.md', reportId: 'urn:mif:c7f61d1b-7a92-5e7c-b15d-7546105829b5', mifLevel: 3, checksAddressed: ['technical_check', 'landscape_check'], verificationVerdict: 'survived', readmePath: null, readmeCheckPassed: false, graphRefreshed: false, graphAssertPassed: false, problems: [], _receivedSynthesisPath: a.synthesisPath }),
   },
   completionCheck: (roundNo) => {
     if (roundNo === 1) return { met: [{ id: 'technical_check', evidence: 'technical_check verify command exited 0 against 3 survived findings' }], unmet: [{ id: 'landscape_check', why: 'only one comparable prior-art finding on disk so far' }], boundHit: false };
@@ -401,7 +401,7 @@ module.exports = {
     'coverage-audit': async () => ({ backlog: [{ action: 'augment', target: 'landscape_check', why: 'still thin', priority: 1 }], summary: 'landscape_check needs deepening', rawItems: [], uncoveredAngles: [] }),
     augment: async () => ({ deepen: [{ dimension: 'landscape', depth: 'standard', rationale: 'keep deepening landscape' }], rejected: [], reasoning: 'there is always more to deepen in this fixture', matrix: [] }),
     'add-dimensions': async () => { throw new Error('add-dimensions must NOT be called in this fixture'); },
-    projection: async (a) => ({ ok: true, reportPath: 'reports/pipeline-eval-topic/report.md', reportId: 'urn:mif:concept:pipeline-eval-topic:report', mifLevel: 3, checksAddressed: [], verificationVerdict: 'survived', readmePath: null, readmeCheckPassed: false, graphRefreshed: false, graphAssertPassed: false, problems: [], _receivedSynthesisPath: a.synthesisPath }),
+    projection: async (a) => ({ ok: true, reportPath: 'reports/pipeline-eval-topic/report.md', reportId: 'urn:mif:c7f61d1b-7a92-5e7c-b15d-7546105829b5', mifLevel: 3, checksAddressed: [], verificationVerdict: 'survived', readmePath: null, readmeCheckPassed: false, graphRefreshed: false, graphAssertPassed: false, problems: [], _receivedSynthesisPath: a.synthesisPath }),
   },
   completionCheck: () => ({ met: [{ id: 'technical_check', evidence: 'partial' }], unmet: [{ id: 'landscape_check', why: 'never satisfied in this fixture -- proving the STOP is maxRounds, not the evaluator' }], boundHit: false }),
 };
@@ -468,7 +468,7 @@ module.exports = {
     'coverage-audit': async () => ({ backlog: [{ action: 'manual', target: 'nothing routable', why: 'no routable defect found', priority: 4 }], summary: 'nothing routable found', rawItems: [], uncoveredAngles: [] }),
     augment: async () => ({ deepen: [], rejected: [], reasoning: '$REASONING_TEXT', matrix: [] }),
     'add-dimensions': async () => { throw new Error('add-dimensions must NOT be called in this fixture'); },
-    projection: async (a) => ({ ok: true, reportPath: 'reports/pipeline-eval-topic/report.md', reportId: 'urn:mif:concept:pipeline-eval-topic:report', mifLevel: 3, checksAddressed: [], verificationVerdict: 'weakened', readmePath: null, readmeCheckPassed: false, graphRefreshed: false, graphAssertPassed: false, problems: [], _receivedSynthesisPath: a.synthesisPath }),
+    projection: async (a) => ({ ok: true, reportPath: 'reports/pipeline-eval-topic/report.md', reportId: 'urn:mif:c7f61d1b-7a92-5e7c-b15d-7546105829b5', mifLevel: 3, checksAddressed: [], verificationVerdict: 'weakened', readmePath: null, readmeCheckPassed: false, graphRefreshed: false, graphAssertPassed: false, problems: [], _receivedSynthesisPath: a.synthesisPath }),
   },
   completionCheck: () => ({ met: [], unmet: [{ id: 'landscape_check', why: 'no comparable prior art found yet' }], boundHit: false }),
 };
@@ -541,7 +541,7 @@ module.exports = {
     'coverage-audit': async () => { throw new Error('coverage-audit must NOT be called -- boundHit short-circuits before the adaptation phase'); },
     augment: async () => { throw new Error('augment must NOT be called -- boundHit short-circuits before the adaptation phase'); },
     'add-dimensions': async () => { throw new Error('add-dimensions must NOT be called'); },
-    projection: async (a) => ({ ok: true, reportPath: 'reports/pipeline-eval-topic/report.md', reportId: 'urn:mif:concept:pipeline-eval-topic:report', mifLevel: 3, checksAddressed: [], verificationVerdict: 'weakened', readmePath: null, readmeCheckPassed: false, graphRefreshed: false, graphAssertPassed: false, problems: [], _receivedSynthesisPath: a.synthesisPath }),
+    projection: async (a) => ({ ok: true, reportPath: 'reports/pipeline-eval-topic/report.md', reportId: 'urn:mif:c7f61d1b-7a92-5e7c-b15d-7546105829b5', mifLevel: 3, checksAddressed: [], verificationVerdict: 'weakened', readmePath: null, readmeCheckPassed: false, graphRefreshed: false, graphAssertPassed: false, problems: [], _receivedSynthesisPath: a.synthesisPath }),
   },
   completionCheck: () => ({ met: [], unmet: [{ id: 'landscape_check', why: 'goal declares a hard round bound that this run has now reached' }], boundHit: true }),
 };

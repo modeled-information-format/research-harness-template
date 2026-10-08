@@ -3,7 +3,9 @@ slug: reports/example-okf-mif-knowledge-spine/synthesis-okf-mif-knowledge-spine
 version: 1
 "@context": "https://mif-spec.dev/context/v1.jsonld"
 "@type": "Concept"
-"@id": "urn:mif:blog:harness/example-okf-mif-knowledge-spine:synthesis"
+"@id": "urn:mif:94edd096-103a-532a-9b71-da09c95bde65"
+aliases:
+  - urn:mif:blog:harness/example-okf-mif-knowledge-spine:synthesis
 conceptType: semantic
 genre: blog
 channel: blog
@@ -20,8 +22,9 @@ verdict_breakdown: { survived: 31, weakened: 5, falsified: 0 }
 *A decision synthesis over 36 falsification-gated findings (31 survived, 5 weakened, 0 falsified) spanning four dimensions: technical feasibility, landscape differentiation, adoption trajectory, and market.*
 
 > **Traceability.** Bracketed tokens such as `[technical-okf-core-data-model]` are
-> finding `@id` slugs under
-> `urn:mif:concept:harness/example-okf-mif-knowledge-spine:`. Every claim below
+> finding slugs; each finding's `@id` is the `urn:mif:<uuid>` minted from
+> `concept:harness/example-okf-mif-knowledge-spine:<slug>` (its `aliases` keeps
+> that structured form). Every claim below
 > traces to the named finding(s); load-bearing external numbers also carry their
 > primary-source URL. Findings marked **(weakened)** carry a specific corrected or
 > unverified claim, called out where it matters.

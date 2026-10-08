@@ -1,5 +1,5 @@
 ---
-id: how-to-export-and-import-a-topic
+id: ba7a8260-bee6-5293-9115-a2cb9d8e6825
 type: procedural
 created: '2026-07-12T15:54:17Z'
 modified: '2026-07-12T16:22:34.030Z'
@@ -58,8 +58,8 @@ Full export — every finding in the topic:
 /export <topic> <output-dir>
 ```
 
-Subset export — only the findings named in a JSON array of
-`urn:mif:concept:...` ids:
+Subset export — only the findings named in a JSON array of finding `@id`s
+(`urn:mif:<uuid>`):
 
 ```text
 /export <topic> <output-dir> --subset <in-scope-ids.json>

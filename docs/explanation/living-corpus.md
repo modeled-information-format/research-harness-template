@@ -1,5 +1,5 @@
 ---
-id: explanation-living-corpus
+id: 599447ec-8a41-5b2a-87f7-5ba04a4956e5
 type: semantic
 created: '2026-06-21T20:20:18-04:00'
 modified: '2026-08-05T00:05:24.545Z'

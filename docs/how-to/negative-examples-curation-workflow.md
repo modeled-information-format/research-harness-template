@@ -1,5 +1,5 @@
 ---
-id: how-to-negative-examples-curation-workflow
+id: 3e2a8688-f97b-55b8-9abd-c34b1e2b6a30
 type: procedural
 created: '2026-07-07T18:08:52-04:00'
 modified: '2026-07-07T18:08:52-04:00'

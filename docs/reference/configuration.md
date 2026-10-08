@@ -1,5 +1,5 @@
 ---
-id: reference-configuration
+id: 1a764121-24cd-5fec-b13c-fe42af302bd5
 type: semantic
 created: '2026-06-28T03:52:14-04:00'
 modified: '2026-07-05T10:10:48-04:00'

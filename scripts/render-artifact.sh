@@ -38,6 +38,8 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT" || exit 2
 # shellcheck source=scripts/lib/engine.sh
 . "$ROOT/scripts/lib/engine.sh"
+# shellcheck source=scripts/lib/mif-id.sh
+. "$ROOT/scripts/lib/mif-id.sh"
 ENGINE="$(engine_bin "$ROOT")" || exit 5
 # shellcheck source=scripts/lib/container-lock.sh
 . "$ROOT/scripts/lib/container-lock.sh"
@@ -182,6 +184,14 @@ case "$CHANNEL" in
     # own `date -u` output, but VALID_FROM can carry forward a PRIOR render's
     # value (read via --front-matter=extract above), so it must never be
     # trusted as safe-to-interpolate shell/yq syntax.
+    # MIF 1.4 id shim (scripts/lib/mif-id.sh): the pinned engine composes
+    # urn:mif:report:<ns>:<slug>; rewrite it to the urn:mif:<uuid> id
+    # mif-rs#164 mints (legacy id kept in aliases) before the L3 projection
+    # check below validates it against the vendored MIF 1.4 schema.
+    if ! mif_fm_migrate_id "$RTMP"; then
+      echo "render: failed to assign the MIF 1.4 report id in $RTMP frontmatter" >&2
+      exit 1
+    fi
     if ! CREATED="$CREATED" VALID_FROM="$VALID_FROM" yq --front-matter=process -i \
           '.modified = strenv(CREATED) | .temporal["@type"] = "TemporalMetadata" | .temporal.validFrom = strenv(VALID_FROM)' \
           "$RTMP"; then
@@ -222,6 +232,10 @@ case "$CHANNEL" in
     BTMP="$BTMPD/$CHANNEL.md"
     if ! "$ENGINE" "${RENDER_ARGS[@]+"${RENDER_ARGS[@]}"}" "$BTMP" >/dev/null; then
       echo "render: composing the $CHANNEL output failed (nothing written to $OUT)" >&2
+      exit 1
+    fi
+    if ! mif_fm_migrate_id "$BTMP"; then
+      echo "render: failed to assign the MIF 1.4 $CHANNEL id (nothing written to $OUT)" >&2
       exit 1
     fi
     mkdir -p "$(dirname "$OUT")"

@@ -8,11 +8,11 @@
       "files": [
         {
           "path": "findings/finding-revenue.json",
-          "content": "{\"@context\":\"https://mif-spec.dev/schema/context.jsonld\",\"@type\":\"Concept\",\"@id\":\"urn:mif:concept:harness:f_technical_1\",\"conceptType\":\"semantic\",\"title\":\"Net income for fiscal 2025 was 5.2 million USD\",\"content\":\"The registrant reported net income of 5,200,000 USD for the fiscal year ended 2025-12-31.\",\"created\":\"2026-06-22T00:00:00Z\",\"namespace\":\"harness/eval\",\"citations\":[{\"@type\":\"Citation\",\"citationType\":\"documentation\",\"citationRole\":\"supports\",\"title\":\"SEC EDGAR filing\",\"url\":\"https://www.sec.gov/edgar\"}],\"extensions\":{\"harness\":{\"dimension\":\"technical\",\"verification\":{\"verdict\":\"survived\",\"verdict_basis\":\"Disconfirming search found no credible refutation.\"}}}}\n"
+          "content": "{\"@context\":\"https://mif-spec.dev/schema/context.jsonld\",\"@type\":\"Concept\",\"@id\":\"urn:mif:67f69778-79ca-594d-b85c-5527dec22de8\",\"conceptType\":\"semantic\",\"title\":\"Net income for fiscal 2025 was 5.2 million USD\",\"content\":\"The registrant reported net income of 5,200,000 USD for the fiscal year ended 2025-12-31.\",\"created\":\"2026-06-22T00:00:00Z\",\"namespace\":\"harness/eval\",\"citations\":[{\"@type\":\"Citation\",\"citationType\":\"documentation\",\"citationRole\":\"supports\",\"title\":\"SEC EDGAR filing\",\"url\":\"https://www.sec.gov/edgar\"}],\"extensions\":{\"harness\":{\"dimension\":\"technical\",\"verification\":{\"verdict\":\"survived\",\"verdict_basis\":\"Disconfirming search found no credible refutation.\"}}}}\n"
         },
         {
           "path": "findings/finding-entity.json",
-          "content": "{\"@context\":\"https://mif-spec.dev/schema/context.jsonld\",\"@type\":\"Concept\",\"@id\":\"urn:mif:concept:harness:f_landscape_2\",\"conceptType\":\"semantic\",\"title\":\"Registrant is Example Corp\",\"content\":\"The reporting entity is Example Corp, CIK 0000320193.\",\"created\":\"2026-06-22T00:00:00Z\",\"namespace\":\"harness/eval\",\"citations\":[{\"@type\":\"Citation\",\"citationType\":\"documentation\",\"citationRole\":\"supports\",\"title\":\"Inline XBRL 1.1 specification\",\"url\":\"https://specifications.xbrl.org/work-product-index-inline-xbrl-inline-xbrl-1.1.html\"}],\"extensions\":{\"harness\":{\"dimension\":\"landscape\",\"verification\":{\"verdict\":\"survived\",\"verdict_basis\":\"Disconfirming search found no credible refutation.\"}}}}\n"
+          "content": "{\"@context\":\"https://mif-spec.dev/schema/context.jsonld\",\"@type\":\"Concept\",\"@id\":\"urn:mif:abdb71df-b704-5cd1-9cfb-8f1a7e37d08f\",\"conceptType\":\"semantic\",\"title\":\"Registrant is Example Corp\",\"content\":\"The reporting entity is Example Corp, CIK 0000320193.\",\"created\":\"2026-06-22T00:00:00Z\",\"namespace\":\"harness/eval\",\"citations\":[{\"@type\":\"Citation\",\"citationType\":\"documentation\",\"citationRole\":\"supports\",\"title\":\"Inline XBRL 1.1 specification\",\"url\":\"https://specifications.xbrl.org/work-product-index-inline-xbrl-inline-xbrl-1.1.html\"}],\"extensions\":{\"harness\":{\"dimension\":\"landscape\",\"verification\":{\"verdict\":\"survived\",\"verdict_basis\":\"Disconfirming search found no credible refutation.\"}}}}\n"
         }
       ],
       "deterministic_checks": [
@@ -54,8 +54,8 @@
         {
           "type": "regex_not_match",
           "file": "disclosure.xhtml",
-          "pattern": "urn:mif:(concept|report):",
-          "description": "No internal finding/concept identity leaks into the inline XBRL document"
+          "pattern": "urn:mif:(67f69778-79ca-594d-b85c-5527dec22de8|abdb71df-b704-5cd1-9cfb-8f1a7e37d08f)",
+          "description": "No finding @id (this eval's fixture findings) leaks into the inline XBRL document"
         },
         {
           "type": "regex_not_match",
@@ -79,7 +79,7 @@
       "files": [
         {
           "path": "findings/finding-name.json",
-          "content": "{\"@context\":\"https://mif-spec.dev/schema/context.jsonld\",\"@type\":\"Concept\",\"@id\":\"urn:mif:concept:harness:f_technical_3\",\"conceptType\":\"semantic\",\"title\":\"Registrant name is Example Corp\",\"content\":\"The reporting entity name disclosed for the period is Example Corp.\",\"created\":\"2026-06-22T00:00:00Z\",\"namespace\":\"harness/eval\",\"citations\":[{\"@type\":\"Citation\",\"citationType\":\"website\",\"citationRole\":\"supports\",\"title\":\"Source\",\"url\":\"https://www.sec.gov/edgar\"}],\"extensions\":{\"harness\":{\"dimension\":\"technical\",\"verification\":{\"verdict\":\"survived\",\"verdict_basis\":\"Disconfirming search found no credible refutation.\"}}}}\n"
+          "content": "{\"@context\":\"https://mif-spec.dev/schema/context.jsonld\",\"@type\":\"Concept\",\"@id\":\"urn:mif:15f8e22a-28bd-55b5-9445-02484e4451f0\",\"conceptType\":\"semantic\",\"title\":\"Registrant name is Example Corp\",\"content\":\"The reporting entity name disclosed for the period is Example Corp.\",\"created\":\"2026-06-22T00:00:00Z\",\"namespace\":\"harness/eval\",\"citations\":[{\"@type\":\"Citation\",\"citationType\":\"website\",\"citationRole\":\"supports\",\"title\":\"Source\",\"url\":\"https://www.sec.gov/edgar\"}],\"extensions\":{\"harness\":{\"dimension\":\"technical\",\"verification\":{\"verdict\":\"survived\",\"verdict_basis\":\"Disconfirming search found no credible refutation.\"}}}}\n"
         }
       ],
       "deterministic_checks": [
@@ -109,8 +109,8 @@
         {
           "type": "regex_not_match",
           "file": "disclosure.xhtml",
-          "pattern": "urn:mif:(concept|report):",
-          "description": "No internal finding/concept identity leaks into the inline XBRL document"
+          "pattern": "urn:mif:(15f8e22a-28bd-55b5-9445-02484e4451f0)",
+          "description": "No finding @id (this eval's fixture findings) leaks into the inline XBRL document"
         },
         {
           "type": "regex_not_match",
@@ -130,15 +130,15 @@
     {
       "id": 3,
       "prompt": "Render the surviving findings in ./findings to inline XBRL at ./disclosure.xhtml. The falsified finding must NOT be emitted. Stamp the topic's MIF Level-1 identity into the XHTML head, not the visible body, and verify the document is well-formed.",
-      "expected_output": "The skill skips the falsified finding, tags the surviving numeric finding as an ix:nonFraction fact with a contextRef and unitRef bound to declared context/unit, and places the urn:mif:xbrl: identity in the XHTML head metadata only — the visible body carries no urn:mif:concept/report id or f_<dim>_<n> handle.",
+      "expected_output": "The skill skips the falsified finding, tags the surviving numeric finding as an ix:nonFraction fact with a contextRef and unitRef bound to declared context/unit, and places its urn:mif:<uuid> identity in the XHTML head metadata only — the visible body carries no urn:mif:concept/report id or f_<dim>_<n> handle.",
       "files": [
         {
           "path": "findings/finding-assets.json",
-          "content": "{\"@context\":\"https://mif-spec.dev/schema/context.jsonld\",\"@type\":\"Concept\",\"@id\":\"urn:mif:concept:harness:f_technical_4\",\"conceptType\":\"semantic\",\"title\":\"Total assets were 12.4 million USD\",\"content\":\"Total assets at period end were 12,400,000 USD.\",\"created\":\"2026-06-22T00:00:00Z\",\"namespace\":\"harness/eval\",\"citations\":[{\"@type\":\"Citation\",\"citationType\":\"documentation\",\"citationRole\":\"supports\",\"title\":\"SEC EDGAR filing\",\"url\":\"https://www.sec.gov/edgar\"}],\"extensions\":{\"harness\":{\"dimension\":\"technical\",\"verification\":{\"verdict\":\"survived\",\"verdict_basis\":\"Disconfirming search found no credible refutation.\"}}}}\n"
+          "content": "{\"@context\":\"https://mif-spec.dev/schema/context.jsonld\",\"@type\":\"Concept\",\"@id\":\"urn:mif:f031e873-ec76-55fc-a05e-83c243db36ab\",\"conceptType\":\"semantic\",\"title\":\"Total assets were 12.4 million USD\",\"content\":\"Total assets at period end were 12,400,000 USD.\",\"created\":\"2026-06-22T00:00:00Z\",\"namespace\":\"harness/eval\",\"citations\":[{\"@type\":\"Citation\",\"citationType\":\"documentation\",\"citationRole\":\"supports\",\"title\":\"SEC EDGAR filing\",\"url\":\"https://www.sec.gov/edgar\"}],\"extensions\":{\"harness\":{\"dimension\":\"technical\",\"verification\":{\"verdict\":\"survived\",\"verdict_basis\":\"Disconfirming search found no credible refutation.\"}}}}\n"
         },
         {
           "path": "findings/finding-falsified.json",
-          "content": "{\"@context\":\"https://mif-spec.dev/schema/context.jsonld\",\"@type\":\"Concept\",\"@id\":\"urn:mif:concept:harness:f_landscape_5\",\"conceptType\":\"semantic\",\"title\":\"A refuted figure\",\"content\":\"A claim that did not survive adversarial verification.\",\"created\":\"2026-06-22T00:00:00Z\",\"namespace\":\"harness/eval\",\"citations\":[{\"@type\":\"Citation\",\"citationType\":\"website\",\"citationRole\":\"supports\",\"title\":\"Source\",\"url\":\"https://example.com/refuted\"}],\"extensions\":{\"harness\":{\"dimension\":\"landscape\",\"verification\":{\"verdict\":\"falsified\",\"verdict_basis\":\"A credible primary source refuted the claim.\"}}}}\n"
+          "content": "{\"@context\":\"https://mif-spec.dev/schema/context.jsonld\",\"@type\":\"Concept\",\"@id\":\"urn:mif:ee9741a9-e047-5947-b24a-1f95b9e63355\",\"conceptType\":\"semantic\",\"title\":\"A refuted figure\",\"content\":\"A claim that did not survive adversarial verification.\",\"created\":\"2026-06-22T00:00:00Z\",\"namespace\":\"harness/eval\",\"citations\":[{\"@type\":\"Citation\",\"citationType\":\"website\",\"citationRole\":\"supports\",\"title\":\"Source\",\"url\":\"https://example.com/refuted\"}],\"extensions\":{\"harness\":{\"dimension\":\"landscape\",\"verification\":{\"verdict\":\"falsified\",\"verdict_basis\":\"A credible primary source refuted the claim.\"}}}}\n"
         }
       ],
       "deterministic_checks": [
@@ -156,8 +156,8 @@
         {
           "type": "regex_match",
           "file": "disclosure.xhtml",
-          "pattern": "urn:mif:xbrl:",
-          "description": "The MIF L1 identity is stamped in the document head"
+          "pattern": "<meta\\s+name=\"dc\\.identifier\"\\s+content=\"urn:mif:[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\"",
+          "description": "The MIF identity (a MIF 1.4 urn:mif:<uuid>) is stamped in the document head"
         },
         {
           "type": "regex_not_match",
@@ -168,8 +168,8 @@
         {
           "type": "regex_not_match",
           "file": "disclosure.xhtml",
-          "pattern": "urn:mif:(concept|report):",
-          "description": "No internal finding/concept identity leaks into the inline XBRL document"
+          "pattern": "urn:mif:(ee9741a9-e047-5947-b24a-1f95b9e63355|f031e873-ec76-55fc-a05e-83c243db36ab)",
+          "description": "No finding @id (this eval's fixture findings) leaks into the inline XBRL document"
         },
         {
           "type": "regex_not_match",
@@ -182,7 +182,7 @@
         {
           "description": "Only surviving findings are tagged; the MIF identity rides in the head",
           "check": "transcript",
-          "criteria": "The response/transcript shows the skill filtering verdict==falsified and placing the urn:mif:xbrl: identity in the XHTML head metadata, not the visible body"
+          "criteria": "The response/transcript shows the skill filtering verdict==falsified and placing its urn:mif:<uuid> identity in the XHTML head metadata, not the visible body"
         }
       ]
     }

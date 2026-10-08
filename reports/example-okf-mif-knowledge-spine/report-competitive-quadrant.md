@@ -3,7 +3,9 @@ slug: reports/example-okf-mif-knowledge-spine/report-competitive-quadrant
 version: 1
 '@context': https://mif-spec.dev/schema/context.jsonld
 '@type': Concept
-'@id': urn:mif:report:harness/example-okf-mif-knowledge-spine:report-competitive-quadrant
+'@id': urn:mif:f2c2cc5d-7daa-5c0d-abb9-6e145ca6a8e7
+aliases:
+  - urn:mif:report:harness/example-okf-mif-knowledge-spine:report-competitive-quadrant
 conceptType: semantic
 namespace: harness/example-okf-mif-knowledge-spine
 title: 'Competitive Quadrant: Structured-vs-Accessible Knowledge Formats'

@@ -175,12 +175,12 @@ cat > "$RDIR/research-index.json" <<'EOF'
   "@type": "ResearchIndex",
   "count": 6,
   "findings": [
-    {"id": "urn:mif:concept:eval:thin-0001", "dimension": "thin-dim", "verdict": "falsified"},
-    {"id": "urn:mif:concept:eval:sat-0001", "dimension": "saturated-dim", "verdict": "survived"},
-    {"id": "urn:mif:concept:eval:sat-0002", "dimension": "saturated-dim", "verdict": "survived"},
-    {"id": "urn:mif:concept:eval:sat-0003", "dimension": "saturated-dim", "verdict": "survived"},
-    {"id": "urn:mif:concept:eval:sat-0004", "dimension": "saturated-dim", "verdict": "survived"},
-    {"id": "urn:mif:concept:eval:sat-0005", "dimension": "saturated-dim", "verdict": "weakened"}
+    {"id": "urn:mif:0d2161fb-1d0c-5d45-9bc9-297d98b6d6ab", "dimension": "thin-dim", "verdict": "falsified"},
+    {"id": "urn:mif:51ef6dc5-3fc1-55ce-91e1-f66ae929a502", "dimension": "saturated-dim", "verdict": "survived"},
+    {"id": "urn:mif:3af2361d-5b8b-5e86-af3c-eadb3066e802", "dimension": "saturated-dim", "verdict": "survived"},
+    {"id": "urn:mif:adbc40dc-fef9-552c-80c8-cc798ff82b42", "dimension": "saturated-dim", "verdict": "survived"},
+    {"id": "urn:mif:850ae02b-d3b1-572c-986f-877853d64fa6", "dimension": "saturated-dim", "verdict": "survived"},
+    {"id": "urn:mif:d0ad9184-4c78-593e-a67f-3b829b591151", "dimension": "saturated-dim", "verdict": "weakened"}
   ]
 }
 EOF

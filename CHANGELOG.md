@@ -7,6 +7,75 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Part of the coordinated MIF specification 1.4.1 release.
+
+### Changed
+
+- **Vendored MIF schemas re-vendored from MIF 1.4.1** (`schemas/mif/`):
+  `mif.schema.json` (was 1.3.0-era) and `context.jsonld` (was 1.2.x) now match
+  the 1.4.1 release byte for byte. A concept `@id` must be `urn:mif:<uuid>`, and
+  `conceptType` is no longer required on its own (`conceptType` or
+  `memoryType`). `lib/harness_models/` regenerated to match.
+- **MIF 1.4 concept ids.** Every id the harness mints is now `urn:mif:<uuid>`,
+  using the org-wide rule shared with mif-rs: uuid5, in the namespace
+  `uuid5(NAMESPACE_URL, "https://mif-spec.dev")`, of the remainder of the old
+  structured id (`concept:<ns>:<slug>`, `source:`, `report:`, `blog:`, `book:`,
+  `doc:`). New `scripts/mif-id.sh` (over `scripts/lib/mif_id.py`) mints it; the
+  dimension-analyst, source-chunker, report-synthesizer, channel packs, the
+  Diátaxis renderer, and the monitoring pack's finding projection use it.
+  Reserved non-concept URNs (`urn:mif:entity:` and friends) are unchanged.
+- **Committed corpus, samples, and fixtures migrated** with the new
+  `scripts/migrate-mif-ids.py` (a pure function of the old id, so every
+  cross-file reference stays intact). Migrated top-level concepts keep their old
+  id in `aliases`. The MIF documents under `docs/` (bare-slug `id`s) and the
+  example corpus's deliverables now carry UUID ids, so all 74 documents
+  `verify.sh`'s `gate_m32` checks pass again (it was red on `main`).
+- **Instances with a pre-1.4 corpus.** After the update, findings with
+  structured ids no longer validate. To keep `/resume` from treating every
+  completed finding as unfinished and re-researching it,
+  `scripts/reconcile-session.sh` now refuses such a corpus (exit 4) and names
+  the one-time migration, which is documented in
+  `docs/how-to/update-your-harness.md`. `/import` names a legacy container's
+  ids in its refusal.
+- **Engine compatibility shim.** The pinned mif-rh-cli still composes legacy ids
+  for source envelopes and rendered reports/blogs/books. `wrap-source.sh` and
+  `render-artifact.sh` now rewrite them to the id mif-rs#164 mints (legacy id in
+  `aliases`) and validate the result against the real vendored schema
+  (`scripts/lib/mif-id.sh`). Once an engine release with that change is pinned,
+  the shim is a no-op.
+- **Container export no longer parses topics out of ids.**
+  `mif-container-resolve-scope.sh` takes a `--namespaces` `@id` → `namespace`
+  map, which `mif-container-export.sh` builds from every topic's findings. A
+  legacy `urn:mif:concept:<ns>:<slug>` id still falls back to its embedded
+  namespace. `mif-container-migration-eval-bench.sh` mints UUID ids.
+- **Conformance claims corrected.** MIF 1.4 Level 1 requires an OKF bundle of
+  markdown concept files. The docs now describe finding files as JSON-LD
+  projections that carry every Level-3 field, not as Level-3 artifacts on their
+  own (`docs/explanation/mif-io-conformance.md`, `contracts.md`,
+  `architecture.md`, README, CLAUDE.md).
+- Leak checks that keyed on `urn:mif:concept:`/`urn:mif:report:` now catch any
+  `urn:mif:` id in a published body (verify `gate_m6`, Diátaxis scrub) or the
+  specific fixture finding ids (pack and skill evals).
+- Component versions bumped for the changed packs (book, diataxis, ectd, jats,
+  notebooklm, pdf, xbrl, continuous-monitor) and core skills (discover, graph,
+  lab, publish-blog, publish-report).
+
+### Added
+
+- `schemas/mif/VENDOR.lock` pins the vendored schemas to MIF 1.4.1 (per-file
+  sha256). `scripts/mif-vendor-check.mjs` checks them: offline in `verify.sh`
+  (`gate_mif_vendor`), and with `--remote` against
+  `https://mif-spec.dev/schema/1.4.1/` in the new `mif-vendor-check` CI job,
+  which fails whenever the pin names a MIF release that is not published.
+
+### Security
+
+- Cleared the `sca / osv-scanner` findings on `main` with in-range updates:
+  astro 7.3.8 (floor raised to `^7.2.8` for GHSA-26w7-cxv4-gfx2), devalue,
+  dompurify, http-cache-semantics, js-yaml 4.3.2 (override), sharp, smol-toml,
+  source-map-js. The three advisories with no in-range fix (braces, katex,
+  postcss-selector-parser) are recorded with reasons in `osv-scanner.toml`.
+
 ## [0.16.40] - 2026-08-04
 
 ### Fixed

@@ -1,6 +1,9 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
-  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-mif-formal-ontology",
+  "@id": "urn:mif:5b26c179-df0a-5515-9a01-2e1f7301e1ad",
+  "aliases": [
+    "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-mif-formal-ontology"
+  ],
   "@type": "Concept",
   "citations": [
     {
@@ -62,12 +65,12 @@
   "relationships": [
     {
       "strength": 0.85,
-      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-okf-core-data-model",
+      "target": "urn:mif:90456a52-7f8b-5159-aeb7-9e0b9207e004",
       "type": "derived-from"
     },
     {
       "strength": 0.75,
-      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-mif-typed-relationships",
+      "target": "urn:mif:d78e35bb-84fd-5c74-9b62-68cf4f7687f2",
       "type": "supports"
     }
   ],

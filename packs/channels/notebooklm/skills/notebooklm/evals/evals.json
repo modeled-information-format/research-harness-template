@@ -8,11 +8,11 @@
       "files": [
         {
           "path": "findings/finding-copier.json",
-          "content": "{\"@context\":\"https://mif-spec.dev/schema/context.jsonld\",\"@type\":\"Concept\",\"@id\":\"urn:mif:concept:harness:f-copier\",\"conceptType\":\"semantic\",\"title\":\"Copier provides update propagation to instantiated projects\",\"content\":\"Copier re-applies later template changes to an already-instantiated project via a three-way merge.\",\"created\":\"2026-06-22T00:00:00Z\",\"namespace\":\"harness/eval\",\"citations\":[{\"@type\":\"Citation\",\"citationType\":\"documentation\",\"citationRole\":\"supports\",\"title\":\"Copier — Updating a project\",\"url\":\"https://copier.readthedocs.io/en/stable/updating/\"}],\"extensions\":{\"harness\":{\"dimension\":\"technical\",\"verification\":{\"verdict\":\"survived\",\"verdict_basis\":\"Disconfirming search found no credible refutation.\"}}}}\n"
+          "content": "{\"@context\":\"https://mif-spec.dev/schema/context.jsonld\",\"@type\":\"Concept\",\"@id\":\"urn:mif:516230e2-a864-5fef-a08d-29d3173d5d6a\",\"conceptType\":\"semantic\",\"title\":\"Copier provides update propagation to instantiated projects\",\"content\":\"Copier re-applies later template changes to an already-instantiated project via a three-way merge.\",\"created\":\"2026-06-22T00:00:00Z\",\"namespace\":\"harness/eval\",\"citations\":[{\"@type\":\"Citation\",\"citationType\":\"documentation\",\"citationRole\":\"supports\",\"title\":\"Copier — Updating a project\",\"url\":\"https://copier.readthedocs.io/en/stable/updating/\"}],\"extensions\":{\"harness\":{\"dimension\":\"technical\",\"verification\":{\"verdict\":\"survived\",\"verdict_basis\":\"Disconfirming search found no credible refutation.\"}}}}\n"
         },
         {
           "path": "findings/finding-cookiecutter.json",
-          "content": "{\"@context\":\"https://mif-spec.dev/schema/context.jsonld\",\"@type\":\"Concept\",\"@id\":\"urn:mif:concept:harness:f-cc\",\"conceptType\":\"semantic\",\"title\":\"Cookiecutter is a one-time snapshot with no upstream path\",\"content\":\"Cookiecutter generates a project once; there is no supported mechanism to re-apply later template changes.\",\"created\":\"2026-06-22T00:00:00Z\",\"namespace\":\"harness/eval\",\"citations\":[{\"@type\":\"Citation\",\"citationType\":\"documentation\",\"citationRole\":\"supports\",\"title\":\"Cookiecutter docs\",\"url\":\"https://cookiecutter.readthedocs.io/\"}],\"extensions\":{\"harness\":{\"dimension\":\"landscape\",\"verification\":{\"verdict\":\"survived\",\"verdict_basis\":\"Disconfirming search found no credible refutation.\"}}}}\n"
+          "content": "{\"@context\":\"https://mif-spec.dev/schema/context.jsonld\",\"@type\":\"Concept\",\"@id\":\"urn:mif:2618881a-ce37-5e3a-9d6a-ce0c3286cd10\",\"conceptType\":\"semantic\",\"title\":\"Cookiecutter is a one-time snapshot with no upstream path\",\"content\":\"Cookiecutter generates a project once; there is no supported mechanism to re-apply later template changes.\",\"created\":\"2026-06-22T00:00:00Z\",\"namespace\":\"harness/eval\",\"citations\":[{\"@type\":\"Citation\",\"citationType\":\"documentation\",\"citationRole\":\"supports\",\"title\":\"Cookiecutter docs\",\"url\":\"https://cookiecutter.readthedocs.io/\"}],\"extensions\":{\"harness\":{\"dimension\":\"landscape\",\"verification\":{\"verdict\":\"survived\",\"verdict_basis\":\"Disconfirming search found no credible refutation.\"}}}}\n"
         }
       ],
       "deterministic_checks": [
@@ -43,11 +43,11 @@
     {
       "id": 2,
       "prompt": "Generate notebooklm assets from the findings in ./findings, audio only (--only audio).",
-      "expected_output": "The skill loads the findings, restricts its plan to a single audio asset, and degrades gracefully when nlm is absent. No internal-research identity (the findings' urn:mif:concept: @ids, f_<dim>_<n> handles) appears in any output, focus string, findings digest, or transcript — only the claims and public citation URLs are used.",
+      "expected_output": "The skill loads the findings, restricts its plan to a single audio asset, and degrades gracefully when nlm is absent. No internal-research identity (the findings' urn:mif: @ids, f_<dim>_<n> handles) appears in any output, focus string, findings digest, or transcript — only the claims and public citation URLs are used.",
       "files": [
         {
           "path": "findings/finding-1.json",
-          "content": "{\"@context\":\"https://mif-spec.dev/schema/context.jsonld\",\"@type\":\"Concept\",\"@id\":\"urn:mif:concept:harness:f_technical_3\",\"conceptType\":\"semantic\",\"title\":\"Post-quantum migration has a 5-7 year window\",\"content\":\"NIST finalized its first post-quantum standards in 2024; harvest-now decrypt-later attacks are underway.\",\"created\":\"2026-06-22T00:00:00Z\",\"namespace\":\"harness/eval\",\"citations\":[{\"@type\":\"Citation\",\"citationType\":\"documentation\",\"citationRole\":\"supports\",\"title\":\"NIST PQC\",\"url\":\"https://csrc.nist.gov/projects/post-quantum-cryptography\"}],\"extensions\":{\"harness\":{\"dimension\":\"technical\",\"verification\":{\"verdict\":\"survived\",\"verdict_basis\":\"Disconfirming search found no credible refutation.\"}}}}\n"
+          "content": "{\"@context\":\"https://mif-spec.dev/schema/context.jsonld\",\"@type\":\"Concept\",\"@id\":\"urn:mif:15f8e22a-28bd-55b5-9445-02484e4451f0\",\"conceptType\":\"semantic\",\"title\":\"Post-quantum migration has a 5-7 year window\",\"content\":\"NIST finalized its first post-quantum standards in 2024; harvest-now decrypt-later attacks are underway.\",\"created\":\"2026-06-22T00:00:00Z\",\"namespace\":\"harness/eval\",\"citations\":[{\"@type\":\"Citation\",\"citationType\":\"documentation\",\"citationRole\":\"supports\",\"title\":\"NIST PQC\",\"url\":\"https://csrc.nist.gov/projects/post-quantum-cryptography\"}],\"extensions\":{\"harness\":{\"dimension\":\"technical\",\"verification\":{\"verdict\":\"survived\",\"verdict_basis\":\"Disconfirming search found no credible refutation.\"}}}}\n"
         }
       ],
       "deterministic_checks": [
@@ -71,7 +71,7 @@
         {
           "description": "No internal-research identity leaks into the response",
           "check": "transcript",
-          "criteria": "The response contains no 'urn:mif:concept:' / 'urn:mif:report:' strings and no 'f_<word>_<digit>' finding handles — only the claims and public citation URLs are used"
+          "criteria": "The response contains no 'urn:mif:' ids and no 'f_<word>_<digit>' finding handles — only the claims and public citation URLs are used"
         }
       ]
     }

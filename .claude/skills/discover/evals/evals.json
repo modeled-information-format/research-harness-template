@@ -288,8 +288,8 @@
     },
     {
       "id": 6,
-      "prompt": "Verify that verdict-based stale detection fires correctly when a weakened finding exists. First create directory ./stale-test-findings/ and copy $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings/finding-copier.json there as `finding-survived.json`. Then write a second MIF finding to ./stale-test-findings/finding-weakened.json with: `@id` = `urn:mif:concept:harness:kg-weakened-test`, `title` = `Test weakened finding`, `created` = `2025-01-15T12:00:00Z`, `namespace` = `harness/test`, `extensions.harness.dimension` = `technical`, `extensions.harness.verification.verdict` = `weakened`, `extensions.harness.verification.verdict_basis` = `Evidence partially refuted by counter-source`, and empty `entities`, `citations`, `tags` arrays (follow the schema from finding-copier.json for all other required fields). Build the index: `bash $CLAUDE_PROJECT_DIR/scripts/build-index.sh ./stale-test-findings ./stale-test-index.json`. Run the stale analysis against `./stale-test-index.json` and the finding files in `./stale-test-findings/`. Write structured output to `stale-weakened.json` as `{\"verdict_stale\": [{\"id\": \"...\", \"title\": \"...\", \"verdict\": \"...\", \"verdict_basis\": \"...\"}], \"age_stale\": [{\"id\": \"...\", \"created\": \"...\"}]}` and a readable report to `stale-weakened.md`.",
-      "expected_output": "stale-weakened.json with verdict_stale containing exactly 1 entry — urn:mif:concept:harness:kg-weakened-test — and the survived copier finding absent from verdict_stale. The age_stale list shows 2025-01-15 as an older date than 2026-06-19.",
+      "prompt": "Verify that verdict-based stale detection fires correctly when a weakened finding exists. First create directory ./stale-test-findings/ and copy $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings/finding-copier.json there as `finding-survived.json`. Then write a second MIF finding to ./stale-test-findings/finding-weakened.json with: `@id` = `urn:mif:03d5180a-ebf9-5e3b-9364-2ad7fcda77c5`, `title` = `Test weakened finding`, `created` = `2025-01-15T12:00:00Z`, `namespace` = `harness/test`, `extensions.harness.dimension` = `technical`, `extensions.harness.verification.verdict` = `weakened`, `extensions.harness.verification.verdict_basis` = `Evidence partially refuted by counter-source`, and empty `entities`, `citations`, `tags` arrays (follow the schema from finding-copier.json for all other required fields). Build the index: `bash $CLAUDE_PROJECT_DIR/scripts/build-index.sh ./stale-test-findings ./stale-test-index.json`. Run the stale analysis against `./stale-test-index.json` and the finding files in `./stale-test-findings/`. Write structured output to `stale-weakened.json` as `{\"verdict_stale\": [{\"id\": \"...\", \"title\": \"...\", \"verdict\": \"...\", \"verdict_basis\": \"...\"}], \"age_stale\": [{\"id\": \"...\", \"created\": \"...\"}]}` and a readable report to `stale-weakened.md`.",
+      "expected_output": "stale-weakened.json with verdict_stale containing exactly 1 entry — urn:mif:03d5180a-ebf9-5e3b-9364-2ad7fcda77c5 — and the survived copier finding absent from verdict_stale. The age_stale list shows 2025-01-15 as an older date than 2026-06-19.",
       "files": [],
       "deterministic_checks": [
         {
@@ -319,7 +319,7 @@
         },
         {
           "type": "shell_command",
-          "command": "jq -e '.verdict_stale[0].id == \"urn:mif:concept:harness:kg-weakened-test\"' stale-weakened.json",
+          "command": "jq -e '.verdict_stale[0].id == \"urn:mif:03d5180a-ebf9-5e3b-9364-2ad7fcda77c5\"' stale-weakened.json",
           "description": "the stale entry ID matches the manufactured weakened finding, not the survived copier"
         },
         {
@@ -336,7 +336,7 @@
         }
       ],
       "expectations": [
-        "urn:mif:concept:harness:kg-weakened-test is flagged in the verdict-stale section with its verdict_basis ('Evidence partially refuted by counter-source') and a /update or /falsify recommendation.",
+        "urn:mif:03d5180a-ebf9-5e3b-9364-2ad7fcda77c5 is flagged in the verdict-stale section with its verdict_basis ('Evidence partially refuted by counter-source') and a /update or /falsify recommendation.",
         "The survived copier finding does NOT appear in verdict_stale — only the weakened finding is verdict-stale.",
         "The age list shows 2025-01-15 as older than 2026-06-19, identifying the weakened finding as the most urgently stale."
       ]

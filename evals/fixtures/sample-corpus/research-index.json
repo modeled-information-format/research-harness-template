@@ -3,7 +3,7 @@
   "count": 3,
   "findings": [
     {
-      "id": "urn:mif:concept:sample:bandwidth-0002",
+      "id": "urn:mif:57acc61b-a5a8-5932-ae35-745a60ee2a2f",
       "title": "Local preprocessing lowers upstream bandwidth demand",
       "namespace": "sample/edge-systems",
       "dimension": "technical",
@@ -15,7 +15,7 @@
       "citations": 1
     },
     {
-      "id": "urn:mif:concept:sample:edge-compute-0001",
+      "id": "urn:mif:85700f43-7a90-58a5-99bb-42b60f569e99",
       "title": "Edge compute reduces round-trip latency for local inference",
       "namespace": "sample/edge-systems",
       "dimension": "technical",
@@ -28,7 +28,7 @@
       "citations": 1
     },
     {
-      "id": "urn:mif:concept:sample:gateway-0003",
+      "id": "urn:mif:b354d7c3-1d8e-5ab0-a0dc-f7d5b0c543ca",
       "title": "An edge gateway is the consolidation point for local compute and uplink",
       "namespace": "sample/edge-systems",
       "dimension": "technical",

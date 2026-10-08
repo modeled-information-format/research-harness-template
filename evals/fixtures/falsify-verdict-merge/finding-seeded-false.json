@@ -1,7 +1,7 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
   "@type": "Concept",
-  "@id": "urn:mif:concept:falsify-eval:seeded-false-0001",
+  "@id": "urn:mif:a439fecc-5ed5-5fc6-9acd-cf342b4e7780",
   "conceptType": "semantic",
   "namespace": "harness/falsify-eval-topic",
   "title": "A deliberately false claim seeded for the falsify-verdict-merge eval",

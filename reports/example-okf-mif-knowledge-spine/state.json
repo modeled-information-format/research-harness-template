@@ -35,252 +35,252 @@
     {
       "attempted_at": "2026-06-28T11:42:12Z",
       "dimension": "landscape",
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-frictionless-data-packages",
+      "id": "urn:mif:d474612e-e44b-5760-94e3-c90c16190917",
       "valid": true,
       "verdict": "survived"
     },
     {
       "attempted_at": "2026-06-28T11:42:12Z",
       "dimension": "landscape",
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-json-ld-schema-org-linked-data",
+      "id": "urn:mif:78aede18-2c95-52ba-9f08-f256a3abbbf0",
       "valid": true,
       "verdict": "survived"
     },
     {
       "attempted_at": "2026-06-28T11:42:12Z",
       "dimension": "landscape",
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-okf-google-open-knowledge-format",
+      "id": "urn:mif:3150363d-ce93-5294-b97a-d105409dfbae",
       "valid": true,
       "verdict": "survived"
     },
     {
       "attempted_at": "2026-06-28T11:42:12Z",
       "dimension": "landscape",
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-pkm-tools-obsidian-logseq-roam",
+      "id": "urn:mif:312ac457-bda5-59df-8952-22854ba37e56",
       "valid": true,
       "verdict": "survived"
     },
     {
       "attempted_at": "2026-06-28T11:42:12Z",
       "dimension": "landscape",
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-prov-o-provenance-alternative",
+      "id": "urn:mif:76adb74a-a33f-5a0c-a14e-c0a11605ce03",
       "valid": true,
       "verdict": "survived"
     },
     {
       "attempted_at": "2026-06-28T11:42:12Z",
       "dimension": "landscape",
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-rdf-owl-semantic-alternative",
+      "id": "urn:mif:f62797e1-f125-5283-91c4-0d8aa9df7181",
       "valid": true,
       "verdict": "survived"
     },
     {
       "attempted_at": "2026-06-28T11:42:12Z",
       "dimension": "landscape",
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-skos-taxonomy-thesaurus-standard",
+      "id": "urn:mif:b2a19416-8d9d-5499-aad9-35acee4eef4e",
       "valid": true,
       "verdict": "survived"
     },
     {
       "attempted_at": "2026-06-28T11:42:12Z",
       "dimension": "market",
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-ai-demand-structured-provenance",
+      "id": "urn:mif:7290e549-44e6-55f5-b79e-b3d706436add",
       "valid": true,
       "verdict": "weakened"
     },
     {
       "attempted_at": "2026-06-28T11:42:12Z",
       "dimension": "market",
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-buyer-segments-pain-points",
+      "id": "urn:mif:ed129ca6-e182-5666-8bcb-aa5d844c7ff8",
       "valid": true,
       "verdict": "weakened"
     },
     {
       "attempted_at": "2026-06-28T11:42:12Z",
       "dimension": "market",
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-competitive-positioning",
+      "id": "urn:mif:baa46af6-e5aa-54e6-9a67-879a3343739d",
       "valid": true,
       "verdict": "survived"
     },
     {
       "attempted_at": "2026-06-28T11:42:12Z",
       "dimension": "market",
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-institutional-memory-loss-pain",
+      "id": "urn:mif:e71b5f21-a101-5bd1-8e5d-49a37ac5b835",
       "valid": true,
       "verdict": "survived"
     },
     {
       "attempted_at": "2026-06-28T11:42:12Z",
       "dimension": "market",
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-km-software-market-sizing",
+      "id": "urn:mif:5fd31483-e5fd-5795-9cfb-cb658020da9c",
       "valid": true,
       "verdict": "survived"
     },
     {
       "attempted_at": "2026-06-28T11:54:01Z",
       "dimension": "market",
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-okf-nascency-and-risk",
+      "id": "urn:mif:5162bbee-34d5-5762-a689-fc56579adb86",
       "valid": true,
       "verdict": "survived"
     },
     {
       "attempted_at": "2026-06-28T11:54:01Z",
       "dimension": "market",
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-open-source-vs-commercial",
+      "id": "urn:mif:2b98b393-e09d-5d57-adcc-4cc3384aa7bc",
       "valid": true,
       "verdict": "weakened"
     },
     {
       "attempted_at": "2026-06-28T11:54:01Z",
       "dimension": "market",
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-pricing-business-model-signals",
+      "id": "urn:mif:6100bcab-9fd4-595d-81c4-6a3b2d2bdb8c",
       "valid": true,
       "verdict": "weakened"
     },
     {
       "attempted_at": "2026-06-28T11:54:01Z",
       "dimension": "technical",
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-frictionless-data-comparator",
+      "id": "urn:mif:2b95ce04-c036-5bdd-9a3b-3b8811b748fd",
       "valid": true,
       "verdict": "survived"
     },
     {
       "attempted_at": "2026-06-28T11:54:01Z",
       "dimension": "technical",
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-json-ld-yaml-ld-comparator",
+      "id": "urn:mif:97a6f1ee-f84d-5960-b66a-cd0910d3be03",
       "valid": true,
       "verdict": "survived"
     },
     {
       "attempted_at": "2026-06-28T11:54:01Z",
       "dimension": "technical",
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-mif-formal-ontology",
+      "id": "urn:mif:5b26c179-df0a-5515-9a01-2e1f7301e1ad",
       "valid": true,
       "verdict": "survived"
     },
     {
       "attempted_at": "2026-06-28T11:54:01Z",
       "dimension": "technical",
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-mif-provenance-block",
+      "id": "urn:mif:c186c220-fb58-566b-a5c8-de0306a4fa02",
       "valid": true,
       "verdict": "survived"
     },
     {
       "attempted_at": "2026-06-28T11:54:01Z",
       "dimension": "technical",
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-mif-temporal-decay",
+      "id": "urn:mif:47b8820e-af28-5e01-8ece-6fd249a52ca1",
       "valid": true,
       "verdict": "survived"
     },
     {
       "attempted_at": "2026-06-28T11:54:01Z",
       "dimension": "technical",
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-mif-typed-relationships",
+      "id": "urn:mif:d78e35bb-84fd-5c74-9b62-68cf4f7687f2",
       "valid": true,
       "verdict": "weakened"
     },
     {
       "attempted_at": "2026-06-28T11:54:01Z",
       "dimension": "technical",
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-okf-core-data-model",
+      "id": "urn:mif:90456a52-7f8b-5159-aeb7-9e0b9207e004",
       "valid": true,
       "verdict": "survived"
     },
     {
       "attempted_at": "2026-06-28T11:54:01Z",
       "dimension": "technical",
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-okf-informal-provenance",
+      "id": "urn:mif:f5180da5-1007-549f-9279-9387ad4fb46d",
       "valid": true,
       "verdict": "survived"
     },
     {
       "attempted_at": "2026-06-28T11:54:01Z",
       "dimension": "technical",
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-okf-mif-layering-mechanics",
+      "id": "urn:mif:6c23b125-e139-5d04-987c-24a8179a07c3",
       "valid": true,
       "verdict": "survived"
     },
     {
       "attempted_at": "2026-06-28T12:20:00Z",
       "dimension": "technical",
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-okf-untyped-links",
+      "id": "urn:mif:1d099f94-e828-5daf-97e0-04e6aea0e5a8",
       "valid": true,
       "verdict": "survived"
     },
     {
       "attempted_at": "2026-06-28T12:20:00Z",
       "dimension": "technical",
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-schema-org-comparator",
+      "id": "urn:mif:2c993d70-4544-583a-a26b-5cf76056e77f",
       "valid": true,
       "verdict": "survived"
     },
     {
       "attempted_at": "2026-06-28T12:20:00Z",
       "dimension": "technical",
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-skos-comparator",
+      "id": "urn:mif:d37a603a-2467-50d5-a82e-9ffad842efee",
       "valid": true,
       "verdict": "survived"
     },
     {
       "attempted_at": "2026-06-28T12:20:00Z",
       "dimension": "trajectory",
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-agent-memory-provenance-demand",
+      "id": "urn:mif:bceaba1a-15d1-537f-8c7c-2295cac0992d",
       "valid": true,
       "verdict": "survived"
     },
     {
       "attempted_at": "2026-06-28T12:20:00Z",
       "dimension": "trajectory",
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-enterprise-kg-market-growth",
+      "id": "urn:mif:9f111ce0-3cd6-5009-9bc1-438ba0159adf",
       "valid": true,
       "verdict": "survived"
     },
     {
       "attempted_at": "2026-06-28T12:20:00Z",
       "dimension": "trajectory",
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-git-native-markdown-km",
+      "id": "urn:mif:0a5a59d2-2773-5fd5-999b-7e2ed6271c6d",
       "valid": true,
       "verdict": "survived"
     },
     {
       "attempted_at": "2026-06-28T12:20:00Z",
       "dimension": "trajectory",
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-graphrag-hybrid-dominance",
+      "id": "urn:mif:a8571848-4260-54e0-be1f-c46290d6a84c",
       "valid": true,
       "verdict": "survived"
     },
     {
       "attempted_at": "2026-06-28T12:20:00Z",
       "dimension": "trajectory",
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-llm-wiki-karpathy-adoption",
+      "id": "urn:mif:7e9154a1-3c46-58e9-ba91-56277c823345",
       "valid": true,
       "verdict": "survived"
     },
     {
       "attempted_at": "2026-06-28T12:20:00Z",
       "dimension": "trajectory",
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-mif-nascent-ecosystem",
+      "id": "urn:mif:8077166d-b994-5b6f-aacf-674fda00eaf8",
       "valid": true,
       "verdict": "survived"
     },
     {
       "attempted_at": "2026-06-28T12:20:00Z",
       "dimension": "trajectory",
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-okf-v01-launch-momentum",
+      "id": "urn:mif:5239f02b-a66a-50df-a2c4-6da38ed02201",
       "valid": true,
       "verdict": "survived"
     },
     {
       "attempted_at": "2026-06-28T12:20:00Z",
       "dimension": "trajectory",
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-semantic-web-failure-lessons",
+      "id": "urn:mif:7e9d2281-226b-58f6-b8e4-b2beea3af478",
       "valid": true,
       "verdict": "survived"
     },
     {
       "attempted_at": "2026-06-28T12:20:00Z",
       "dimension": "trajectory",
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-w3c-rdf-star-provenance",
+      "id": "urn:mif:ffe2478e-d674-5ca0-bfdc-d8741c24d7c4",
       "valid": true,
       "verdict": "survived"
     }

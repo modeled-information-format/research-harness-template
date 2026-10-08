@@ -3,7 +3,7 @@
   "generator": "build-concordance.sh (MIF-native ontological spine; SPEC §8d)",
   "nodes": [
     {
-      "id": "urn:mif:concept:x/edu:f1",
+      "id": "urn:mif:195067f3-3f19-5fdf-a0ed-b88898b3bd36",
       "kind": "concept",
       "label": "Algebra textbook",
       "topics": [
@@ -15,7 +15,7 @@
       "flagged": false
     },
     {
-      "id": "urn:mif:concept:x/eng:f1",
+      "id": "urn:mif:c41cb16c-de00-557c-8af0-117044c0d809",
       "kind": "concept",
       "label": "Kafka adoption",
       "topics": [
@@ -42,14 +42,14 @@
   ],
   "edges": [
     {
-      "source": "urn:mif:concept:x/edu:f1",
+      "source": "urn:mif:195067f3-3f19-5fdf-a0ed-b88898b3bd36",
       "target": "urn:mif:entity:org:acme",
       "type": "mentions",
       "via": "entity",
       "strength": null
     },
     {
-      "source": "urn:mif:concept:x/eng:f1",
+      "source": "urn:mif:c41cb16c-de00-557c-8af0-117044c0d809",
       "target": "urn:mif:entity:org:acme",
       "type": "mentions",
       "via": "entity",

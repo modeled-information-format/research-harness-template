@@ -1,5 +1,5 @@
 ---
-id: reference-engine-workflows
+id: 9392c508-c9ec-51d2-bc91-dd87a6a02713
 type: semantic
 created: '2026-07-17T20:25:00-04:00'
 modified: '2026-08-05T00:05:42.610Z'
@@ -716,7 +716,7 @@ temp/catalog state races, per this repo's own `CLAUDE.md`).
 A `research-projection` run against a topic/slug that already has a report of
 record is a **supersession re-render**, not a fresh create: `render-artifact.sh`
 derives the report's `@id` deterministically from its namespace and slug
-(`urn:mif:report:<namespace>:<slug>`), so re-running the identical pipeline for
+(`urn:mif:<uuid>`, uuid5 of `report:<namespace>:<slug>`), so re-running the identical pipeline for
 the same topic/slug preserves the **same `@id`** automatically — the version
 field increments and `temporal.validFrom` carries forward from the prior
 render. No agent-side "remember the old `@id`" step exists or is needed; the

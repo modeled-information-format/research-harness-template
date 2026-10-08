@@ -1,7 +1,7 @@
 ---
 name: graph
 description: "Build, refresh, and query the MIF-native knowledge graph — the typed substrate of concepts and entities (all urn:mif: ids) linked by MIF relationships and mentions. Use this skill when the user asks about relationships between findings, what connects two concepts or entities, entity overlap, or wants a visual map. Triggers on 'what connects', 'how are these related', 'show graph', 'knowledge graph', 'visualize research', 'rebuild the graph', 'entity overlap', 'shared between'. With --concordance, the same verbs operate on the corpus-wide ontological spine spanning ALL topics (build/validate/query reports/concordance.json) — triggers on 'concordance', 'across topics', 'whole corpus', 'cross-topic', 'ontological spine', 'world view of knowledge'. The graph is derived from MIF entities and relations, never from tags."
-version: 0.5.0
+version: 0.5.1
 argument-hint: "[--concordance] [--build] [--validate] [--viz] [--stats] [--reuse [<N>]] [--contradictions] [--disproven] [--node <urn:mif:id>] [--between <id1> <id2>] [--kind concept|entity]"
 allowed-tools: Read, Bash, Grep, Glob
 ---
@@ -113,7 +113,7 @@ concept node back to its finding for context.
 /graph --stats
 /graph --build reports/_meta/sample-session/findings
 /graph --node urn:mif:entity:technology:copier
-/graph --between urn:mif:concept:harness:kg-copier-0001 urn:mif:concept:harness:kg-distribution-0003
+/graph --between urn:mif:0936199d-9082-58c7-a5d3-b2994500b179 urn:mif:45484208-8fbb-55ee-b3a3-0088d9bb2630
 /graph --kind entity
 /graph --viz
 ```

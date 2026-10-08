@@ -366,7 +366,7 @@ grep -qF 'flag any synthesis claim citing an @id outside the valid set' "$WF" \
 # quarantined finding's @id (outside it) -- this proves the SEEDED
 # ACCEPTANCE-CRITERION FIXTURE is correctly shaped, not that any gate
 # rejects it (no deterministic gate to run it through exists).
-survivor_ids='["urn:mif:concept:synthesis-eval:survived-0001","urn:mif:concept:synthesis-eval:weakened-0001","urn:mif:concept:synthesis-eval:inconclusive-0001"]'
+survivor_ids='["urn:mif:907b3267-c3a9-5429-858d-ca25cd729fc3","urn:mif:7ce7b561-085c-5094-9542-0e86a1a23178","urn:mif:6f9234dc-6c32-5564-b502-b41cfcf297bf"]'
 good_outside=$(jq --argjson ids "$survivor_ids" '[.claims[].citedId] - $ids | length' "$FX/synthesis-good.json")
 [ "$good_outside" = "0" ] \
   || { note "synthesis-good.json cites $good_outside id(s) outside the survivor set -- fixture is not a clean positive control"; fail=1; }
@@ -374,8 +374,8 @@ bad_outside=$(jq --argjson ids "$survivor_ids" '[.claims[].citedId] - $ids | len
 [ "$bad_outside" = "1" ] \
   || { note "synthesis-bad-outofset.json cites $bad_outside id(s) outside the survivor set, want exactly 1 (the seeded out-of-set citation)"; fail=1; }
 bad_target=$(jq --argjson ids "$survivor_ids" -r '[.claims[].citedId] - $ids | .[0]' "$FX/synthesis-bad-outofset.json")
-[ "$bad_target" = "urn:mif:concept:synthesis-eval:falsified-0001" ] \
-  || { note "synthesis-bad-outofset.json's out-of-set citation is '$bad_target', want the quarantined finding's @id (urn:mif:concept:synthesis-eval:falsified-0001) -- #566's own named acceptance criterion"; fail=1; }
+[ "$bad_target" = "urn:mif:4439edc7-798e-5644-862f-5028806fd611" ] \
+  || { note "synthesis-bad-outofset.json's out-of-set citation is '$bad_target', want the quarantined finding's @id (urn:mif:4439edc7-798e-5644-862f-5028806fd611) -- #566's own named acceptance criterion"; fail=1; }
 
 [ "$fail" -eq 0 ] && note "Select-phase exclusion is structural (by directory, proven against a verdict-clean archived positive control) and matches the module's own documented rule; the repair loop is bounded at exactly MAX_REPAIR=2 rounds (proven by driving the extracted loop, both bounded and early-convergence cases) and the module keeps that bound; the citation-integrity gate's wiring (closed survivorIds -> critique prompt -> explicit instruction) is intact and the seeded out-of-set-citation fixture is correctly shaped -- though whether the opus critic itself catches it is a genuine, documented, non-deterministic gap this eval cannot close in CI"
 exit "$fail"

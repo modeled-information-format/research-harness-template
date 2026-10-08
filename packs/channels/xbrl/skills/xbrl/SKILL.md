@@ -1,7 +1,7 @@
 ---
 name: xbrl
 description: "Render surviving findings (typically a regulatory-disclosure artifact) into an inline XBRL (iXBRL) document directly from the SOURCES. Tags facts with xbrli:context / xbrli:unit and taxonomy concepts inside a human-readable XHTML shell, anchored to the current SEC inline-XBRL taxonomy. Never built from a rendered report."
-version: 0.4.2
+version: 0.4.3
 argument-hint: "<findings-dir> [-o <disclosure.xhtml>] [<topic-name>]"
 allowed-tools: Read, Write, Bash, Grep, Glob
 ---
@@ -79,7 +79,9 @@ the tagged facts:
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Illustrative values below (edition, namespace, slug, CIK, dates, entity name,
      and citation) are placeholders to be substituted from the sources; the snippet
-     is shown as well-formed XML so it can be validated as-is. -->
+     is shown as well-formed XML so it can be validated as-is. The dc.identifier is
+     the document's MIF 1.4 id: `scripts/mif-id.sh xbrl:<namespace>:<slug>` (here
+     xbrl:acme-financials:fy2024-disclosure). -->
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:ix="http://www.xbrl.org/2013/inlineXBRL"
       xmlns:xbrli="http://www.xbrl.org/2003/instance"
@@ -87,7 +89,7 @@ the tagged facts:
       xmlns:dei="http://xbrl.sec.gov/dei/2024"
       xmlns:us-gaap="http://fasb.org/us-gaap/2024">
   <head>
-    <meta name="dc.identifier" content="urn:mif:xbrl:acme-financials:fy2024-disclosure"/>
+    <meta name="dc.identifier" content="urn:mif:a885608f-b3d9-54b4-b1c2-fa973b636d8f"/>
     <title>ACME Corp FY2024 Disclosure</title>
   </head>
   <body>
@@ -125,7 +127,8 @@ the tagged facts:
   `decimals` (or `scale` when the displayed value is scaled).
 - Textual facts use `ix:nonNumeric` with `name` and `contextRef`.
 - Every `contextRef`/`unitRef` must resolve to a declared `xbrli:context`/`xbrli:unit`.
-- The MIF L1 identity lives only in `<head>` metadata (`urn:mif:xbrl:…`), never in a
+- The MIF identity lives only in `<head>` metadata (`dc.identifier`, a
+  `urn:mif:<uuid>` minted by `scripts/mif-id.sh xbrl:<namespace>:<slug>`), never in a
   visible `ix:nonNumeric`/text node.
 
 Write the document to the resolved output path (default `<topic>-disclosure.xhtml`).
@@ -138,8 +141,8 @@ Write the document to the resolved output path (default `<topic>-disclosure.xhtm
 3. Confirm completeness — every quantified claim across the surviving findings is tagged,
    and the References list has an entry for every unique primary source.
 4. Confirm no internal identity leaked into the visible body
-   (`grep -E 'urn:mif:(concept|report):|\bf_[a-z]+_[0-9]+\b'` should match nothing in the
-   body; the `urn:mif:xbrl:` head identifier is the only permitted MIF id).
+   (`grep -E 'urn:mif:|\bf_[a-z]+_[0-9]+\b'` should match nothing in the `<body>`; the
+   `dc.identifier` in `<head>` is the only permitted MIF id).
 
 ## Non-negotiables
 
@@ -148,7 +151,7 @@ Write the document to the resolved output path (default `<topic>-disclosure.xhtm
   report/blog/book — that is a copy-of-a-copy and is forbidden.
 - **Well-formed iXBRL.** Namespaces on the root; contexts and units declared before they
   are referenced; every fact bound to a current-taxonomy concept.
-- **No internal identity in the body.** Finding/concept ids, `urn:mif:concept|report:`,
+- **No internal identity in the body.** Finding/concept ids, any `urn:mif:` id,
   corpus paths, and `f_<dim>_<n>` handles never render into the visible document; the
   source's MIF identity rides in the XHTML `<head>` metadata.
 

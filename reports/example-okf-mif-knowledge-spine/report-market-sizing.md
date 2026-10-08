@@ -3,7 +3,9 @@ slug: reports/example-okf-mif-knowledge-spine/report-market-sizing
 version: 1
 '@context': https://mif-spec.dev/schema/context.jsonld
 '@type': Concept
-'@id': urn:mif:report:harness/example-okf-mif-knowledge-spine:report-market-sizing
+'@id': urn:mif:59d599a6-e500-5558-8d1c-ddac41281ccf
+aliases:
+  - urn:mif:report:harness/example-okf-mif-knowledge-spine:report-market-sizing
 conceptType: semantic
 namespace: harness/example-okf-mif-knowledge-spine
 title: 'Market Sizing: The Structured Knowledge-Spine (OKF+MIF) Opportunity'

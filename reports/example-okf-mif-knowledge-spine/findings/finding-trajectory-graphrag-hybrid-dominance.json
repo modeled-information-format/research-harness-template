@@ -1,6 +1,9 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
-  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-graphrag-hybrid-dominance",
+  "@id": "urn:mif:a8571848-4260-54e0-be1f-c46290d6a84c",
+  "aliases": [
+    "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-graphrag-hybrid-dominance"
+  ],
   "@type": "Concept",
   "citations": [
     {
@@ -74,7 +77,7 @@
   "relationships": [
     {
       "strength": 0.88,
-      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-enterprise-kg-market-growth",
+      "target": "urn:mif:9f111ce0-3cd6-5009-9bc1-438ba0159adf",
       "type": "supports"
     }
   ],

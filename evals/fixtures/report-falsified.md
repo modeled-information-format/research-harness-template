@@ -1,7 +1,7 @@
 ---
 "@context": https://mif-spec.dev/schema/context.jsonld
 "@type": Concept
-"@id": urn:mif:report:harness/example-topic:report-falsified
+"@id": urn:mif:614d6b22-4f8c-5442-9ca4-ae946335bf5f
 conceptType: semantic
 namespace: harness/example-topic
 title: "Falsified report (must not ship)"

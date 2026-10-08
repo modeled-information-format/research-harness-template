@@ -122,7 +122,7 @@
           "file": "knowledge-graph.json",
           "path": ".nodes",
           "match": {
-            "id": "urn:mif:concept:harness:kg-copier-0001"
+            "id": "urn:mif:0936199d-9082-58c7-a5d3-b2994500b179"
           },
           "description": "Copier concept node is present with its MIF urn"
         },
@@ -181,7 +181,7 @@
           "file": "node.json",
           "path": ".in",
           "match": {
-            "source": "urn:mif:concept:harness:kg-cookiecutter-0002"
+            "source": "urn:mif:d763528d-75fe-5cd7-8a0a-c176ecb41e72"
           },
           "description": "Incoming edges include the cookiecutter concept's mention"
         },
@@ -190,7 +190,7 @@
           "file": "node.json",
           "path": ".in",
           "match": {
-            "source": "urn:mif:concept:harness:kg-copier-0001"
+            "source": "urn:mif:0936199d-9082-58c7-a5d3-b2994500b179"
           },
           "description": "Incoming edges include the copier concept's mention"
         },
@@ -199,7 +199,7 @@
           "file": "node.json",
           "path": ".in",
           "match": {
-            "source": "urn:mif:concept:harness:kg-distribution-0003"
+            "source": "urn:mif:45484208-8fbb-55ee-b3a3-0088d9bb2630"
           },
           "description": "Incoming edges include the distribution concept's mention"
         },
@@ -221,7 +221,7 @@
     },
     {
       "id": 4,
-      "prompt": "What connects `urn:mif:concept:harness:kg-copier-0001` and `urn:mif:concept:harness:kg-distribution-0003` in the knowledge graph at `$CLAUDE_PROJECT_DIR/reports/_meta/sample-session/knowledge-graph.json`? Use `/graph --between urn:mif:concept:harness:kg-copier-0001 urn:mif:concept:harness:kg-distribution-0003`. Write the result JSON (with direct and shared fields) to `between.json`.",
+      "prompt": "What connects `urn:mif:0936199d-9082-58c7-a5d3-b2994500b179` and `urn:mif:45484208-8fbb-55ee-b3a3-0088d9bb2630` in the knowledge graph at `$CLAUDE_PROJECT_DIR/reports/_meta/sample-session/knowledge-graph.json`? Use `/graph --between urn:mif:0936199d-9082-58c7-a5d3-b2994500b179 urn:mif:45484208-8fbb-55ee-b3a3-0088d9bb2630`. Write the result JSON (with direct and shared fields) to `between.json`.",
       "expected_output": "A between.json file showing 2 direct typed edges between the two concept nodes (one supports, one derived-from), and a shared array identifying the entity both concepts mention in common.",
       "files": [],
       "deterministic_checks": [
@@ -356,7 +356,7 @@
     },
     {
       "id": 7,
-      "prompt": "Look up the neighborhood of concept node `urn:mif:concept:harness:kg-copier-0001` in the knowledge graph at `$CLAUDE_PROJECT_DIR/reports/_meta/sample-session/knowledge-graph.json`. Use `/graph --node urn:mif:concept:harness:kg-copier-0001`. Write the neighborhood JSON (with node, out, and in fields) to `node.json`.",
+      "prompt": "Look up the neighborhood of concept node `urn:mif:0936199d-9082-58c7-a5d3-b2994500b179` in the knowledge graph at `$CLAUDE_PROJECT_DIR/reports/_meta/sample-session/knowledge-graph.json`. Use `/graph --node urn:mif:0936199d-9082-58c7-a5d3-b2994500b179`. Write the neighborhood JSON (with node, out, and in fields) to `node.json`.",
       "expected_output": "A node.json file for the copier concept node showing outgoing edges including a supports edge to distribution-0003, and incoming edges including a contradicts from cookiecutter-0002 and a derived-from from distribution-0003.",
       "files": [],
       "deterministic_checks": [
@@ -404,8 +404,8 @@
         }
       ],
       "expectations": [
-        "The supports edge in .out has target 'urn:mif:concept:harness:kg-distribution-0003', confirming the copier → distribution directional relationship.",
-        "The .in array has exactly 2 edges: a contradicts from urn:mif:concept:harness:kg-cookiecutter-0002 and a derived-from from urn:mif:concept:harness:kg-distribution-0003."
+        "The supports edge in .out has target 'urn:mif:45484208-8fbb-55ee-b3a3-0088d9bb2630', confirming the copier → distribution directional relationship.",
+        "The .in array has exactly 2 edges: a contradicts from urn:mif:d763528d-75fe-5cd7-8a0a-c176ecb41e72 and a derived-from from urn:mif:45484208-8fbb-55ee-b3a3-0088d9bb2630."
       ]
     },
     {

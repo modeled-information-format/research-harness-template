@@ -104,21 +104,27 @@ register_topic() {
 note "generating $N synthetic schema-valid findings (this takes a while)..."
 register_topic "$SRC_TOPIC"
 TEMPLATE="reports/example-okf-mif-knowledge-spine/findings/finding-landscape-frictionless-data-packages.json"
+# MIF 1.4 concept ids are urn:mif:<uuid>: mint every synthetic id up front with
+# the org-wide rule (scripts/lib/mif_id.py; uuid5 of concept:<ns>:<slug>), in
+# one python call rather than one per finding.
+IDS_JSON="$T/synthetic-ids.json"
+python3 -c 'import json, sys; sys.path.insert(0, sys.argv[1]); import mif_id; print(json.dumps([mif_id.concept_urn("concept:harness/%s:synthetic-finding-%d" % (sys.argv[2], i)) for i in range(int(sys.argv[3]))]))' \
+  scripts/lib "$SRC_TOPIC" "$N" > "$IDS_JSON" \
+  || { note "FAIL: could not mint synthetic finding ids"; exit 1; }
 i=0
 while [ "$i" -lt "$N" ]; do
   slug="synthetic-finding-$i"
-  jq --arg id "urn:mif:concept:harness/$SRC_TOPIC:$slug" \
+  jq --argjson i "$i" --slurpfile ids "$IDS_JSON" \
      --arg ns "harness/$SRC_TOPIC" \
      --arg title "Synthetic bench finding $i" \
-     '.["@id"] = $id | .namespace = $ns | .title = $title | .relationships = []' \
+     '.["@id"] = $ids[0][$i] | del(.aliases) | .namespace = $ns | .title = $title | .relationships = []' \
      "$TEMPLATE" > "reports/$SRC_TOPIC/findings/finding-$slug.json" \
     || { note "FAIL: could not generate synthetic finding $i"; exit 1; }
   i=$((i + 1))
   if [ "$((i % 500))" -eq 0 ]; then note "  ...$i/$N generated"; fi
 done
-jq -n --arg id_prefix "urn:mif:concept:harness/$SRC_TOPIC:synthetic-finding-" \
-  --argjson n "$N" \
-  '[range(0; $n) | {finding_id: ($id_prefix + (. | tostring)), entity_type: "technology", resolved_ontology: "mif-generic@1.0.0", basis: "declared", valid: true}]' \
+jq -n --slurpfile ids "$IDS_JSON" \
+  '[$ids[0][] | {finding_id: ., entity_type: "technology", resolved_ontology: "mif-generic@1.0.0", basis: "declared", valid: true}]' \
   > "reports/$SRC_TOPIC/ontology-map.json" \
   || { note "FAIL: could not build synthetic ontology-map.json"; exit 1; }
 note "generated $N findings + ontology-map.json for $SRC_TOPIC"

@@ -1,7 +1,7 @@
 ---
 "@context": https://mif-spec.dev/schema/context.jsonld
 "@type": Concept
-"@id": urn:mif:report:harness/example-topic:report-bad
+"@id": urn:mif:5c433064-3be8-5232-9f82-17d30df7d4dd
 conceptType: semantic
 namespace: harness/example-topic
 title: "Non-conformant report (no verification verdict)"

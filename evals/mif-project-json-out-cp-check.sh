@@ -77,7 +77,7 @@ if [ "${1:-}" = "harness" ] && [ "${2:-}" = "project-report" ]; then
     prev="$a"
   done
   [ -n "$out" ] || { echo "stub mif-rh-cli: no --json-out given" >&2; exit 9; }
-  echo '{"id":"urn:mif:test:json-out-cp-check","type":"Finding"}' > "$out"
+  echo '{"id":"urn:mif:11e1137e-e5bf-5391-a4b0-5a56afbfce4f","type":"Finding"}' > "$out"
   exit 0
 fi
 echo "stub mif-rh-cli: unexpected invocation: $*" >&2
@@ -89,7 +89,7 @@ chmod +x "$TMP/mif-rh-cli"
 REPORT="$TMP/report.md"
 cat > "$REPORT" <<'MD'
 ---
-id: urn:mif:test:json-out-cp-check
+id: urn:mif:11e1137e-e5bf-5391-a4b0-5a56afbfce4f
 type: Finding
 ---
 placeholder

@@ -265,14 +265,14 @@ function mkWorkingSet(n) {
     const ATTEMPTED_AT = '2026-07-19T00:00:00Z';
     let out, threw;
     try {
-      out = buildFixtureEntry('urn:mif:concept:t:f1', 'survived', 'basis text', [{ sources: ['https://example.com/a'] }], ATTEMPTED_AT);
+      out = buildFixtureEntry('urn:mif:9fdca22f-8864-5220-8845-fb44a4e0b39c', 'survived', 'basis text', [{ sources: ['https://example.com/a'] }], ATTEMPTED_AT);
     } catch (e) {
       threw = e;
     }
     check('buildFixtureEntry(...) runs to completion under a poisoned Date/Math.random (does not crash, #618)', !threw, threw ? threw.message : '');
     if (out) {
-      check('fixture attempted_at is the CALLER-supplied timestamp verbatim, never computed in-script', out['urn:mif:concept:t:f1'] && out['urn:mif:concept:t:f1'].attempted_at === ATTEMPTED_AT, JSON.stringify(out));
-      check('fixture verdict/basis/disconfirming still populate correctly alongside the fix', out['urn:mif:concept:t:f1'] && out['urn:mif:concept:t:f1'].verdict === 'survived' && out['urn:mif:concept:t:f1'].disconfirming.length === 1, JSON.stringify(out));
+      check('fixture attempted_at is the CALLER-supplied timestamp verbatim, never computed in-script', out['urn:mif:9fdca22f-8864-5220-8845-fb44a4e0b39c'] && out['urn:mif:9fdca22f-8864-5220-8845-fb44a4e0b39c'].attempted_at === ATTEMPTED_AT, JSON.stringify(out));
+      check('fixture verdict/basis/disconfirming still populate correctly alongside the fix', out['urn:mif:9fdca22f-8864-5220-8845-fb44a4e0b39c'] && out['urn:mif:9fdca22f-8864-5220-8845-fb44a4e0b39c'].verdict === 'survived' && out['urn:mif:9fdca22f-8864-5220-8845-fb44a4e0b39c'].disconfirming.length === 1, JSON.stringify(out));
     }
   }
 }
@@ -437,8 +437,8 @@ let write659Promise = Promise.resolve();
   check('#659 post-write attempted_at assertion extracted from the module source', !extractionError, extractionError ? extractionError.message : '');
 
   if (runAssertion) {
-    const G = { f: { path: 'reports/t/findings/f1.json', id: 'urn:mif:concept:t:f1' } };
-    const FIXTURE_JSON = '{"urn:mif:concept:t:f1":{"verdict":"weakened"}}';
+    const G = { f: { path: 'reports/t/findings/f1.json', id: 'urn:mif:9fdca22f-8864-5220-8845-fb44a4e0b39c' } };
+    const FIXTURE_JSON = '{"urn:mif:9fdca22f-8864-5220-8845-fb44a4e0b39c":{"verdict":"weakened"}}';
 
     write659Promise = (async () => {
       // Case 1: genuine write, attemptedAtPresent already true -- no retry

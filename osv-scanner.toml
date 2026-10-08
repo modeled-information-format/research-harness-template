@@ -1,0 +1,33 @@
+# OSV-Scanner configuration (auto-discovered next to package-lock.json, the
+# repo's only scanned lockfile).
+#
+# Accepted, justified vulnerability exceptions. Each entry is a deliberate risk
+# decision, not a silent suppression: no fix inside the range the dependent
+# package allows (or no fix at all), and no untrusted input reaches the code.
+# Every other advisory on the lockfile is fixed by an in-range update. Revisit
+# on each release.
+
+[[IgnoredVulns]]
+id = "GHSA-vfj7-8cjw-p6xm"
+# braces 3.0.3: stack-exhaustion DoS on deeply nested brace patterns. No fixed
+# release exists (3.0.3 is the latest). Dev/build-time only, via micromatch
+# (starlight-llms-txt; patch-package -> find-yarn-workspace-root), matching
+# patterns from this repo's own build config, never user input; not part of the
+# built site. Remove once braces ships a fix.
+reason = "No fixed braces release exists; dev/build-time-only transitive (micromatch via starlight-llms-txt and patch-package) matching repo-authored patterns, never untrusted input. Revisit when braces ships a fix."
+
+[[IgnoredVulns]]
+id = "GHSA-238p-pmpm-9mq7"
+# katex 0.16.47, CVSS 2.1 (low). Pulled in only by mermaid (via astro-mermaid),
+# which pins katex ^0.16; the fix is 0.18.2, outside that range. Exploiting it
+# requires prototype pollution that already exists in the page. Remove this
+# entry once mermaid accepts katex >= 0.18.2.
+reason = "Low-severity katex advisory requiring pre-existing prototype pollution; only reachable through mermaid, which pins katex ^0.16 (fix is 0.18.2). Revisit when mermaid bumps katex."
+
+[[IgnoredVulns]]
+id = "GHSA-rj75-hqrm-r3gf"
+# postcss-selector-parser 6.1.4: quadratic selector parsing (CPU exhaustion).
+# Build-time only, via @astrojs/starlight -> expressive-code -> postcss-nested,
+# which requires ^6; the fix is 7.1.6. It parses this site's own CSS at build
+# time, never user input, and nothing of it ships in the static output.
+reason = "Build-time-only CPU-exhaustion in postcss-selector-parser, reachable via starlight's expressive-code (postcss-nested requires ^6; fix is 7.1.6) on repo-authored CSS. Revisit when postcss-nested accepts v7."

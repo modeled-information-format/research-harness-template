@@ -1,7 +1,7 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
   "@type": "Concept",
-  "@id": "urn:mif:concept:harness:fanout-eval-seeded-invalid",
+  "@id": "urn:mif:42afe073-7701-533b-a4e6-f5be5f63e7b4",
   "conceptType": "semantic",
   "namespace": "harness/fanout-lane-eval",
   "title": "Seeded-invalid finding: no citations, no verification record",

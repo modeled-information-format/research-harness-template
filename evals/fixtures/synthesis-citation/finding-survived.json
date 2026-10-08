@@ -1,7 +1,7 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
   "@type": "Concept",
-  "@id": "urn:mif:concept:synthesis-eval:survived-0001",
+  "@id": "urn:mif:907b3267-c3a9-5429-858d-ca25cd729fc3",
   "conceptType": "semantic",
   "namespace": "harness/synthesis-eval-topic",
   "title": "A survived-verdict finding usable in the synthesis citation-integrity eval",

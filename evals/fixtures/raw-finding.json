@@ -1,7 +1,7 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
   "@type": "Concept",
-  "@id": "urn:mif:concept:harness:smoke-0001",
+  "@id": "urn:mif:727170cd-2586-5a5d-9d91-d9307dafe12f",
   "conceptType": "semantic",
   "namespace": "harness/example-topic",
   "title": "A living template engine re-applies upstream changes to instantiated projects",

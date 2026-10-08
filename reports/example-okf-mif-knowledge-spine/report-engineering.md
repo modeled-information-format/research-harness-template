@@ -3,7 +3,9 @@ slug: reports/example-okf-mif-knowledge-spine/report-engineering
 version: 1
 '@context': https://mif-spec.dev/schema/context.jsonld
 '@type': Concept
-'@id': urn:mif:report:harness/example-okf-mif-knowledge-spine:report-engineering
+'@id': urn:mif:04750ad4-7882-5c05-a2f6-4bfa87164bd9
+aliases:
+  - urn:mif:report:harness/example-okf-mif-knowledge-spine:report-engineering
 conceptType: semantic
 namespace: harness/example-okf-mif-knowledge-spine
 title: 'Engineering Report: Feasibility of Layering MIF over OKF (Extension Seam, Conflicts, Round-Trip)'

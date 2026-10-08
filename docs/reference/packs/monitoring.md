@@ -1,5 +1,5 @@
 ---
-id: reference-packs-monitoring
+id: 9948bc7e-2512-5697-8c57-d974c2cfec02
 type: semantic
 created: '2026-07-14T02:24:39.962Z'
 modified: '2026-07-21T01:19:17.725Z'
@@ -64,7 +64,7 @@ For control-plane mechanics see [Packs and Plugins](../packs-and-plugins.md).
 
 ## continuous-monitor
 
-**Version:** 0.16.25
+**Version:** 0.16.26
 
 **Source:** [`packs/monitoring/continuous-monitor/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/monitoring/continuous-monitor)
 

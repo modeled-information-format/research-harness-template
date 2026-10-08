@@ -391,7 +391,17 @@ while IFS=$'\t' read -r rpath rdigest rmiftype; do
       -r schemas/mif/mif.schema.json \
       -r schemas/mif/definitions/entity-reference.schema.json \
       -d "$rfile" > /dev/null 2>&1 \
-      || BAD_SCHEMAS="${BAD_SCHEMAS}${rpath}; "
+      || {
+        # A container exported before the template moved to MIF 1.4 carries
+        # structured urn:mif:concept:<ns>:<slug> ids, which the vendored
+        # schema now rejects: say so, rather than a bare schema failure.
+        legacy_id="$(jq -r '."@id" // empty | select(startswith("urn:mif:concept:"))' "$rfile" 2>/dev/null)"
+        if [ -n "$legacy_id" ]; then
+          BAD_SCHEMAS="${BAD_SCHEMAS}${rpath} (pre-MIF-1.4 structured @id $legacy_id -- migrate the source instance with scripts/migrate-mif-ids.py and re-export); "
+        else
+          BAD_SCHEMAS="${BAD_SCHEMAS}${rpath}; "
+        fi
+      }
 
     rid="$(jq -r '."@id" // empty' "$rfile" 2>/dev/null)"
     if [ -n "$rid" ]; then

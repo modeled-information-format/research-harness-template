@@ -3,7 +3,9 @@ slug: reports/example-okf-mif-knowledge-spine/example-okf-mif-knowledge-spine-ki
 version: 1
 "@context": https://mif-spec.dev/schema/context.jsonld
 "@type": Concept
-"@id": urn:mif:report:harness/example-okf-mif-knowledge-spine:kiro-requirements
+"@id": urn:mif:3a675bad-0c98-5345-966a-e40bd231015d
+aliases:
+  - urn:mif:report:harness/example-okf-mif-knowledge-spine:kiro-requirements
 conceptType: semantic
 namespace: harness/example-okf-mif-knowledge-spine
 title: "MIF Provenance Layer over OKF — Kiro Requirements"
@@ -26,7 +28,7 @@ provenance:
   confidence: 0.9
   trustLevel: user_stated
   wasDerivedFrom:
-    '@id': urn:mif:report:harness/example-okf-mif-knowledge-spine:kiro-build-spec
+    '@id': urn:mif:41f81dff-76fb-54cc-93eb-f5e67420be54
     '@type': prov:Entity
   agent: claude-code/claude-sonnet-5
   wasGeneratedBy:

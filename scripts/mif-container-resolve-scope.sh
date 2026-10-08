@@ -29,8 +29,18 @@
 #
 # Usage:
 #   mif-container-resolve-scope.sh <knowledge-graph.json> <in-scope-ids.json> [--closure]
-#     <in-scope-ids.json>: a JSON array of urn:mif:concept:... ids (the
-#     subset selector's initial match set).
+#                                  [--namespaces <id-namespaces.json>]
+#     <in-scope-ids.json>: a JSON array of finding @ids (the subset
+#     selector's initial match set).
+#     --namespaces: a JSON object mapping a finding @id (and any alias) to its
+#     MIF `namespace` field. MIF 1.4 concept ids are opaque urn:mif:<uuid>s, so
+#     a concept's topic can no longer be read off the id itself; this map is
+#     how a caller (mif-container-export.sh builds it from every topic's
+#     findings) tells the resolver which topic each id belongs to. An id absent
+#     from the map falls back to the legacy structured form
+#     urn:mif:concept:<ns>:<slug> (a pre-1.4 corpus), compared only against a
+#     topic namespace read the same way from a legacy in-scope id; otherwise
+#     its topic is unknown and it can never be classified "cross-topic".
 #
 # Prints a JSON object to stdout:
 #   {"resourceIds": [<sorted, deduped, closure-expanded concept ids -- bare
@@ -40,17 +50,31 @@
 #    "boundaryReferences": [{"target": "...", "reason": "..."}]}
 set -uo pipefail
 
-[ "$#" -ge 2 ] || {
-  echo "usage: mif-container-resolve-scope.sh <knowledge-graph.json> <in-scope-ids.json> [--closure]" >&2
-  exit 2
-}
+USAGE="usage: mif-container-resolve-scope.sh <knowledge-graph.json> <in-scope-ids.json> [--closure] [--namespaces <id-namespaces.json>]"
+[ "$#" -ge 2 ] || { echo "$USAGE" >&2; exit 2; }
 GRAPH="$1"
 IDS="$2"
+shift 2
 CLOSURE=0
-[ "${3:-}" = "--closure" ] && CLOSURE=1
+NAMESPACES=""
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --closure) CLOSURE=1; shift;;
+    --namespaces)
+      [ "$#" -ge 2 ] || { echo "$USAGE" >&2; exit 2; }
+      NAMESPACES="$2"; shift 2;;
+    *) echo "mif-container-resolve-scope: unknown argument: $1" >&2; echo "$USAGE" >&2; exit 2;;
+  esac
+done
 
 [ -f "$GRAPH" ] || { echo "mif-container-resolve-scope: not a file: $GRAPH" >&2; exit 2; }
 [ -f "$IDS" ] || { echo "mif-container-resolve-scope: not a file: $IDS" >&2; exit 2; }
+if [ -n "$NAMESPACES" ]; then
+  jq -e 'type == "object"' "$NAMESPACES" > /dev/null 2>&1 || {
+    echo "mif-container-resolve-scope: --namespaces $NAMESPACES is not a JSON object (id -> namespace)" >&2
+    exit 2
+  }
+fi
 
 T="$(mktemp -d)" || { echo "mif-container-resolve-scope: mktemp failed" >&2; exit 5; }
 [ -n "$T" ] && [ -d "$T" ] || { echo "mif-container-resolve-scope: mktemp did not produce a usable directory" >&2; exit 5; }
@@ -77,6 +101,11 @@ jq -e 'type == "array"' "$IDS" > /dev/null 2>&1 || {
   exit 2
 }
 jq -c 'unique' "$IDS" > "$T/scope.json" || { echo "mif-container-resolve-scope: failed to read/parse $IDS" >&2; exit 2; }
+if [ -n "$NAMESPACES" ]; then
+  jq -c '.' "$NAMESPACES" > "$T/namespaces.json" || { echo "mif-container-resolve-scope: failed to read/parse $NAMESPACES" >&2; exit 2; }
+else
+  echo '{}' > "$T/namespaces.json"
+fi
 
 if [ "$CLOSURE" -eq 1 ]; then
   # Fixpoint BFS: repeatedly add any concept-kind edge target reachable from a
@@ -105,16 +134,26 @@ if [ "$CLOSURE" -eq 1 ]; then
   done
 fi
 
-jq -c -n --slurpfile graph "$T/graph.json" --slurpfile scope "$T/scope.json" '
-  $graph[0] as $g | $scope[0] as $s
-  # Topic namespace: the first WELL-FORMED concept id anywhere in scope, not
-  # just the first array element -- a single malformed leading element
-  # previously poisoned every later same-topic classification to
-  # "cross-topic" instead of "out-of-scope" (an empty-string sentinel from an
-  # unmatched first element compared unequal to every real namespace). null
-  # (not "") when no in-scope id is a well-formed concept id, so the
-  # cross-topic branch below simply cannot fire on a false-positive mismatch.
-  | ([$s[] | [scan("^urn:mif:concept:([^:]+):")] | if length > 0 then .[0][0] else empty end] | first // null) as $topic_ns
+jq -c -n --slurpfile graph "$T/graph.json" --slurpfile scope "$T/scope.json" --slurpfile nsmap "$T/namespaces.json" '
+  # Two independent namespace sources, never compared with each other: the
+  # caller-supplied --namespaces map (the `namespace` field of each finding, the
+  # only source for MIF 1.4 urn:mif:<uuid> ids) and the namespace embedded in
+  # a legacy structured urn:mif:concept:<ns>:<slug> id. The two need not agree
+  # for the same topic (an id minted under one namespace spelling, a field
+  # written under another), so mixing them could mark a same-topic reference
+  # "cross-topic"; a target is compared only against the topic namespace
+  # derived from the SAME source.
+  def ns_map($m): . as $id | if ($m[$id] | type) == "string" then $m[$id] else null end;
+  def ns_legacy: [scan("^urn:mif:concept:([^:]+):")] | if length > 0 then .[0][0] else null end;
+  $graph[0] as $g | $scope[0] as $s | $nsmap[0] as $m
+  # Topic namespace, per source: the first in-scope id whose namespace that
+  # source KNOWS, not just the first array element -- a single malformed
+  # leading element previously poisoned every later same-topic
+  # classification to "cross-topic" instead of "out-of-scope". null when no
+  # in-scope id is known to that source, so its cross-topic branch below
+  # simply cannot fire on a false-positive mismatch.
+  | ([$s[] | ns_map($m) | select(. != null)] | first // null) as $topic_ns_map
+  | ([$s[] | ns_legacy | select(. != null)] | first // null) as $topic_ns_legacy
   | {
       resourceIds: ($s | unique | sort),
       boundaryReferences: (
@@ -132,8 +171,11 @@ jq -c -n --slurpfile graph "$T/graph.json" --slurpfile scope "$T/scope.json" '
               # id (e.g. "urn:mif:concept:noslug", no second colon) -- exactly
               # the silent-drop this script exists to prevent (Task #317).
               # scan() always yields a definite (possibly-empty) array.
-              | ([$t | scan("^urn:mif:concept:([^:]+):")] | if length > 0 then .[0][0] else null end) as $t_ns
-              | if ($t_ns != null) and ($topic_ns != null) and ($t_ns != $topic_ns) then "cross-topic"
+              | ($t | ns_map($m)) as $t_ns_map
+              | ($t | ns_legacy) as $t_ns_legacy
+              | if (($t_ns_map != null) and ($topic_ns_map != null) and ($t_ns_map != $topic_ns_map))
+                   or (($t_ns_map == null) and ($t_ns_legacy != null) and ($topic_ns_legacy != null) and ($t_ns_legacy != $topic_ns_legacy))
+                then "cross-topic"
                 elif ($g.nodes | any(.id == $t) | not) then "unresolvable"
                 else "out-of-scope"
                 end

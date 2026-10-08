@@ -3,10 +3,10 @@
   "title": "Model-authoring layer adoption",
   "genre": "general",
   "sections": [
-    { "heading": "Summary", "body": "The model layer eliminates the shell JSON-authoring footgun.", "supports": ["urn:mif:concept:example:model-layer"] }
+    { "heading": "Summary", "body": "The model layer eliminates the shell JSON-authoring footgun.", "supports": ["urn:mif:3ed7dd34-2422-5ac9-83a2-601384d7c79e"] }
   ],
   "sources": [
     { "title": "Findings schema", "url": "https://research-harness.dev/schema/findings.schema.json", "citationType": "documentation", "citationRole": "supports" }
   ],
-  "finding_refs": ["urn:mif:concept:example:model-layer"]
+  "finding_refs": ["urn:mif:3ed7dd34-2422-5ac9-83a2-601384d7c79e"]
 }

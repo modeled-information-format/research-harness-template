@@ -1,5 +1,5 @@
 ---
-id: how-to-author-json-with-models
+id: ad9835b5-83c3-510d-a0aa-95abf20ea9b2
 type: procedural
 created: '2026-06-22T07:15:33-04:00'
 modified: '2026-06-26T09:21:24-04:00'
@@ -55,7 +55,7 @@ from harness_models import emit
 finding = {
     "@context": "https://mif-spec.dev/schema/context.jsonld",
     "@type": "Concept",
-    "@id": "urn:mif:concept:<topic>:<slug>",
+    "@id": "urn:mif:<uuid>",   # scripts/mif-id.sh concept:<namespace>:<slug>
     "conceptType": "...",
     "content": "...",          # arbitrary prose — a Python string, never shell-quoted
     "created": "...",

@@ -1,5 +1,5 @@
 ---
-id: explanation-mif-io-conformance
+id: 5d30577b-429e-56b2-a00c-a93a313a9e1a
 type: semantic
 created: '2026-06-20T06:10:40-04:00'
 modified: '2026-08-04T23:46:10.674Z'
@@ -42,15 +42,48 @@ surface, not findings alone.
 MIF Level 3 (provenance + citations + entities + extensions) binds every artifact
 that crosses the project boundary:
 
-- **Findings** — already MIF L3 (`schemas/findings.schema.json`).
+- **Findings** — JSON-LD projections of MIF concepts that carry every Level-3
+  field (`schemas/findings.schema.json` over the vendored MIF 1.4.1 schema); see
+  [What "Level 3" means here](#what-level-3-means-here-mif-141) for why that is
+  not, by itself, a MIF Level-1 artifact.
 - **Generic reports** — basic markdown reports (`reports/<topic>/<slug>.md`) are
   MIF L3, held to the **same bar as a finding**.
 - **Ingested sources** — wrapped as validated MIF source-envelopes at the
   ingestion boundary.
 
+## What "Level 3" means here (MIF 1.4.1)
+
+The harness validates against the MIF **1.4.1** schemas, vendored verbatim under
+`schemas/mif/` and pinned by `schemas/mif/VENDOR.lock` (`gate_mif_vendor`; CI's
+`mif-vendor-check` job also compares them with `https://mif-spec.dev/schema/1.4.1/`).
+Two things in 1.4 shape what the claims above mean:
+
+- **Concept ids are UUIDs.** A concept `@id` must be `urn:mif:<uuid>`. The harness
+  mints it deterministically with the org-wide rule — uuid5, in the MIF namespace
+  `uuid5(NAMESPACE_URL, "https://mif-spec.dev")`, of what used to follow `urn:mif:`
+  in the structured id (`concept:<namespace>:<slug>` for a finding,
+  `report:`/`blog:`/`book:`/`doc:`/`source:<namespace>:<slug>` for the rest) — the
+  same rule mif-rs uses, so the engine and the template agree on every id
+  (`scripts/mif-id.sh`). The structured form is kept in `aliases`; a corpus written
+  before 1.4 migrates with `scripts/migrate-mif-ids.py`. Reserved non-concept URNs
+  (`urn:mif:entity:`, `agent:`, `activity:`, `conversation:`, `vector:`) are
+  unchanged.
+- **Conformance levels apply to an OKF bundle.** MIF Level 1 requires a bundle — a
+  directory of markdown concept files; per-file schema validation is necessary but
+  not sufficient. The markdown surfaces (the report channel's
+  `reports/<topic>/<slug>.md` and the deliverables beside it, the Diátaxis `docs/`
+  set) are that bundle-shaped layer, and each file in them is held to the per-file
+  floor by `mif-validate` (`gate_m32`). A finding file
+  (`reports/<topic>/findings/*.json`) is a **JSON-LD projection** of a concept: it
+  validates against the MIF schema and carries every Level-3 field (provenance,
+  citations, entities, extensions), but a JSON-LD-only artifact is not on its own a
+  MIF Level-1 artifact. Read "findings are MIF L3" in older notes as "finding
+  projections carry the full Level-3 field set", not as a bundle-level
+  conformance claim.
+
 ## Generic report vs channel projection
 
-MIF v1.0 is markdown-native: a concept is YAML frontmatter (authoritative) over a
+MIF is markdown-native: a concept is YAML frontmatter (authoritative) over a
 Markdown body (the `content`), with the JSON-LD a *projection* of it. So a report
 **is** a MIF document — its frontmatter carries the MIF identity, citations,
 provenance, and the falsification verdict; its body is the human-readable content.

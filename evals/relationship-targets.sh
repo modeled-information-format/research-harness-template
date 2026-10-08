@@ -23,19 +23,19 @@ RD="$ROOT/reports"
 mkdir -p "$RD/t1/findings" "$RD/t1/quarantine"
 
 cat > "$RD/t1/findings/a.json" <<'EOF'
-{"@id":"urn:mif:concept:t1:a","relationships":[]}
+{"@id":"urn:mif:5e928c44-c1f8-53df-b584-d7316bcdd1a5","relationships":[]}
 EOF
 cat > "$RD/t1/findings/b.json" <<'EOF'
 {
-  "@id": "urn:mif:concept:t1:b",
+  "@id": "urn:mif:31b370e0-0789-5ee5-a011-79566e785eb3",
   "relationships": [
-    { "type": "relates-to", "target": "urn:mif:concept:t1:does-not-exist", "strength": 0.5 },
-    { "type": "relates-to", "target": "urn:mif:concept:t1:quarantined-finding", "strength": 0.5 }
+    { "type": "relates-to", "target": "urn:mif:2a014ee6-cf94-5168-9484-14ba2af81f12", "strength": 0.5 },
+    { "type": "relates-to", "target": "urn:mif:f1e85472-3f94-5eb0-b358-e68a1948aaac", "strength": 0.5 }
   ]
 }
 EOF
 cat > "$RD/t1/quarantine/quarantined-finding.json" <<'EOF'
-{"@id":"urn:mif:concept:t1:quarantined-finding","relationships":[]}
+{"@id":"urn:mif:f1e85472-3f94-5eb0-b358-e68a1948aaac","relationships":[]}
 EOF
 
 # 1+2. Both a bare-nonexistent target and a quarantine-only target must fail
@@ -45,7 +45,11 @@ if "$CHECK" --reports-dir "$RD" >"$OUT" 2>&1; then
   no "gate must fail on a corpus with dangling + quarantined-only targets"
 else
   out=$(cat "$OUT")
-  if echo "$out" | grep -q "does-not-exist" && echo "$out" | grep -q "quarantined-finding"; then
+  # Matched by id: MIF 1.4 ids are opaque urn:mif:<uuid>s, so the slug words
+  # ("does-not-exist", "quarantined-finding") no longer appear in the output.
+  # (uuid5 of concept:t1:does-not-exist / concept:t1:quarantined-finding.)
+  if echo "$out" | grep -q "urn:mif:2a014ee6-cf94-5168-9484-14ba2af81f12" \
+     && echo "$out" | grep -q "urn:mif:f1e85472-3f94-5eb0-b358-e68a1948aaac"; then
     ok "gate fails and reports both orphaned targets by name"
   else
     no "gate failed but did not report both orphaned targets: $out"
@@ -57,9 +61,9 @@ fi
 # the two real remediation classes) -> the gate must pass clean.
 cat > "$RD/t1/findings/b.json" <<'EOF'
 {
-  "@id": "urn:mif:concept:t1:b",
+  "@id": "urn:mif:31b370e0-0789-5ee5-a011-79566e785eb3",
   "relationships": [
-    { "type": "relates-to", "target": "urn:mif:concept:t1:a", "strength": 0.5 }
+    { "type": "relates-to", "target": "urn:mif:5e928c44-c1f8-53df-b584-d7316bcdd1a5", "strength": 0.5 }
   ]
 }
 EOF
@@ -77,7 +81,7 @@ fi
 mkdir -p "$RD/t2/findings"
 printf '{invalid json' > "$RD/t2/findings/bad.json"
 cat > "$RD/t2/findings/z.json" <<'EOF'
-{"@id":"urn:mif:concept:t2:z","relationships":[{"type":"relates-to","target":"urn:mif:concept:t2:does-not-exist","strength":0.5}]}
+{"@id":"urn:mif:b9d8ad3c-1958-5741-a761-d3f8135d919e","relationships":[{"type":"relates-to","target":"urn:mif:53350221-70a9-5405-9286-45c92e48ccbc","strength":0.5}]}
 EOF
 "$CHECK" --reports-dir "$RD" >"$OUT" 2>&1
 rc=$?

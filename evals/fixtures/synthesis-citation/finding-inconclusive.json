@@ -1,7 +1,7 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
   "@type": "Concept",
-  "@id": "urn:mif:concept:synthesis-eval:inconclusive-0001",
+  "@id": "urn:mif:6f9234dc-6c32-5564-b502-b41cfcf297bf",
   "conceptType": "semantic",
   "namespace": "harness/synthesis-eval-topic",
   "title": "An inconclusive-verdict finding usable in the synthesis citation-integrity eval",

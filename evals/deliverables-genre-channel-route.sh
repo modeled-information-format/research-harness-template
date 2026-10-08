@@ -324,7 +324,7 @@ genre_pack_no_backing_mechanism 'diataxis-explanation' \
 # mechanism-1 Render prompt text below, per this repo's own established
 # precedent (deliverables-route-check.sh, projection-supersession-check.sh).
 # ============================================================================
-CANARY_ID='urn:mif:concept:harness:kg-canary-9f3a1c'
+CANARY_ID='urn:mif:1a9f538a-3f39-5733-92bf-cf0d26f6efb8'
 CANARY_TITLE='ZZZ-CANARY-CLAIM-NOT-IN-SYNTHESIS-9f3a1c'
 FDIR="$TMP/findings-with-canary"
 mkdir -p "$FDIR"
@@ -370,9 +370,9 @@ cat > "$SYN_FIXTURE" <<'JSON'
   "sections": ["distribution"],
   "findingsUsed": 3,
   "claims": [
-    { "checkId": "distribution", "citedId": "urn:mif:concept:harness:kg-cookiecutter-0002", "confidence": "high" },
-    { "checkId": "distribution", "citedId": "urn:mif:concept:harness:kg-copier-0001", "confidence": "high" },
-    { "checkId": "distribution", "citedId": "urn:mif:concept:harness:kg-distribution-0003", "confidence": "high" }
+    { "checkId": "distribution", "citedId": "urn:mif:d763528d-75fe-5cd7-8a0a-c176ecb41e72", "confidence": "high" },
+    { "checkId": "distribution", "citedId": "urn:mif:0936199d-9082-58c7-a5d3-b2994500b179", "confidence": "high" },
+    { "checkId": "distribution", "citedId": "urn:mif:45484208-8fbb-55ee-b3a3-0088d9bb2630", "confidence": "high" }
   ]
 }
 JSON

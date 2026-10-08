@@ -1,5 +1,5 @@
 ---
-id: explanation-architecture
+id: 9d2d826c-2382-54b9-90bb-40dc7b3d07ce
 type: semantic
 created: '2026-06-19T15:19:39-04:00'
 modified: '2026-08-04T23:46:01.663Z'
@@ -90,8 +90,11 @@ substrates never merge — a finding's `ontology.id`/`entity_type` typing and
 the ADR-0002 `ajv` schema-conformance gate that enforces it stay entirely
 outside `mif-docs`'s remit, since findings are not document-shaped.
 `verify.sh`'s `gate_m32` is the structural floor tying documents to this
-substrate: MIF Level 1 always, Level 3 wherever a document declares
-provenance.
+substrate: the per-document MIF Level 1 checks (schema shape + lossless
+round-trip) always, Level 3 wherever a document declares provenance. (MIF 1.4
+Level 1 also needs the documents to form an OKF bundle — a directory of markdown
+concept files, which `docs/` and `reports/<topic>/` are; per-file validation is
+the necessary half.)
 
 ## Packs are the only extension surface
 

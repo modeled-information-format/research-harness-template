@@ -152,7 +152,7 @@ module.exports = {
     'coverage-audit': async () => ({ backlog: [{ action: 'augment', target: 'finding_valid', why: 'still unmet', priority: 1 }], summary: 'keep going', rawItems: [], uncoveredAngles: [] }),
     augment: async () => ({ deepen: [{ dimension: 'technical', depth: 'standard', rationale: 'one more pass' }], rejected: [], reasoning: 'more evidence needed', matrix: [] }),
     'add-dimensions': async () => { throw new Error('add-dimensions must NOT be called in this fixture'); },
-    projection: async (a) => ({ ok: true, reportPath: 'reports/repair-disclosure-eval-topic/report.md', reportId: 'urn:mif:concept:repair-disclosure-eval-topic:report', mifLevel: 3, checksAddressed: ['finding_valid'], verificationVerdict: 'survived', readmePath: null, readmeCheckPassed: false, graphRefreshed: false, graphAssertPassed: false, problems: [], _receivedSynthesisPath: a.synthesisPath }),
+    projection: async (a) => ({ ok: true, reportPath: 'reports/repair-disclosure-eval-topic/report.md', reportId: 'urn:mif:2701fbb6-6220-55f5-b735-8a1ad163f9bd', mifLevel: 3, checksAddressed: ['finding_valid'], verificationVerdict: 'survived', readmePath: null, readmeCheckPassed: false, graphRefreshed: false, graphAssertPassed: false, problems: [], _receivedSynthesisPath: a.synthesisPath }),
   },
   completionCheck: (roundNo) => {
     if (roundNo === 1) return { met: [{ id: 'finding_valid', evidence: 'ajv passes now; 3 finding(s) were repaired this round before grading' }], unmet: [{ id: 'other_check', why: 'not yet satisfied' }], boundHit: false };

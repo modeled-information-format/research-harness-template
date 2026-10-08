@@ -3,7 +3,9 @@ slug: reports/example-okf-mif-knowledge-spine/report-trend-analysis
 version: 1
 '@context': https://mif-spec.dev/schema/context.jsonld
 '@type': Concept
-'@id': urn:mif:report:harness/example-okf-mif-knowledge-spine:report-trend-analysis
+'@id': urn:mif:f8e9d4e8-f9ba-5238-96ea-6f944b9c6f31
+aliases:
+  - urn:mif:report:harness/example-okf-mif-knowledge-spine:report-trend-analysis
 conceptType: semantic
 namespace: harness/example-okf-mif-knowledge-spine
 title: 'Trend Analysis: Adoption & Standards Momentum for an OKF+MIF Spine'

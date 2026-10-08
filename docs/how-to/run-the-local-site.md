@@ -1,5 +1,5 @@
 ---
-id: how-to-run-the-local-site
+id: 0fd0641a-fae3-5b08-825d-57bdf1c84c4b
 type: procedural
 created: '2026-06-28T03:52:14-04:00'
 modified: '2026-07-01T11:40:18-04:00'

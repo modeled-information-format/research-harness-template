@@ -1,7 +1,7 @@
 ---
 name: lab
 description: "Open an interactive exploration session over the research corpus — traverse MIF relationships from a seed concept or entity, develop and stress-test hypotheses against the finding set, and reason across topics. Use this skill whenever the user wants to discuss, explore, or riff on their research rather than just retrieve it: 'explore topic X', 'what does my research suggest about Y', 'develop a hypothesis about Z', 'interrogate the findings on W', 'think through this with my research', 'brainstorm from the corpus'."
-version: 0.4.2
+version: 0.4.3
 argument-hint: "[--seed <urn:mif:id>] [--hypothesis \"<claim>\"] [--interrogate] [--namespace <ns>]"
 allowed-tools: Read, Bash, Grep, Glob, Skill
 ---
@@ -101,7 +101,7 @@ disconfirming findings; weak/falsified ids go only in the disconfirming column.
 
 ```text
 /lab --namespace harness/example-topic
-/lab --seed urn:mif:concept:harness:kg-copier-0001
+/lab --seed urn:mif:0936199d-9082-58c7-a5d3-b2994500b179
 /lab --hypothesis "A living template beats a one-time snapshot"
 /lab --interrogate
 ```

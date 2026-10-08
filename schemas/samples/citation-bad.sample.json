@@ -1,7 +1,10 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
   "@type": "Concept",
-  "@id": "urn:mif:concept:harness:citation-bad-0001",
+  "@id": "urn:mif:e17dea9d-59f4-5b0c-8430-21147e201244",
+  "aliases": [
+    "urn:mif:concept:harness:citation-bad-0001"
+  ],
   "conceptType": "semantic",
   "title": "Claim with no live, well-formed citation",
   "content": "An assertion that lacks any traceable primary source and carries a citation with a malformed URL.",

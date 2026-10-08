@@ -1,5 +1,5 @@
 ---
-id: how-to-update-your-harness
+id: 3292b5bf-b383-5bd7-ba3a-b6acc4571f71
 type: procedural
 created: '2026-06-25T07:30:10-04:00'
 modified: '2026-07-21T11:12:43.391Z'
@@ -93,7 +93,7 @@ that are new in the target version. Two flag families are rejected by
 ## After updating
 
 A successful `scripts/update.sh` run applies the verified template content, but
-three things do not happen automatically.
+four things do not happen automatically.
 
 - **Confirm the update applied cleanly.** Run `bash scripts/verify.sh` and
   confirm it exits `0`. This re-checks every contract, including the merged
@@ -112,6 +112,25 @@ three things do not happen automatically.
   registry change, not a sign of tampering: clear the `index_sha256` field in
   `ontologies.lock.json`, then re-run the fetch to deliberately re-pin. See
   [Vendor ontologies on demand](vendor-ontologies-on-demand.md).
+- **Migrate your corpus once when the update moves you to MIF 1.4.1.** From
+  that release the vendored MIF schema accepts only `urn:mif:<uuid>` concept
+  ids, so findings written before it (`urn:mif:concept:<ns>:<slug>`) no longer
+  validate. `scripts/reconcile-session.sh` (and so `/resume`) refuses such a
+  corpus with exit 4 rather than treating every finding as unfinished, and
+  `/import` names a legacy container's ids. Migrate the whole `reports/` tree
+  in one pass, from the repo root:
+
+  ```bash
+  find reports -type f \( -name '*.json' -o -name '*.md' -o -name '*.html' \) \
+    -exec python3 scripts/migrate-mif-ids.py --write --aliases {} +
+  ```
+
+  The rewrite is a pure function of each old id (the same uuid5 rule mif-rs
+  uses), so references between topics stay intact; each migrated finding keeps
+  its old id in `aliases`. Run it without `--write` first to preview, and read
+  any `NOT migrated` lines it prints (templated or constructed ids, which need a
+  hand edit). Containers exported before the migration must be re-exported
+  after it.
 
 ## When verification fails
 

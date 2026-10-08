@@ -77,7 +77,10 @@ jq -c '.[] | select(.mode == "interest-match")' "$ACCEPTED" | while IFS= read -r
   fi
   rm -f "$CITATION_CHECK_OUT"
 
-  SLUG="$(printf '%s' "$FINDING" | jq -r '."@id" | split(":") | last').json"
+  # The file is named by the finding's readable slug: MIF 1.4 ids are opaque
+  # urn:mif:<uuid>s, so it comes from the structured alias the projection
+  # records (recommendation_to_finding.py), falling back to the id itself.
+  SLUG="$(printf '%s' "$FINDING" | jq -r '((.aliases // [])[0] // ."@id") | split(":") | last').json"
   if bash "$ROOT/scripts/write-finding.sh" "$TMP_FINDING" "$FINDINGS_DIR" "$SLUG"; then
     echo "output-router: published finding $SLUG ($TITLE)" >&2
   else

@@ -1,6 +1,9 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
-  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-agent-memory-provenance-demand",
+  "@id": "urn:mif:bceaba1a-15d1-537f-8c7c-2295cac0992d",
+  "aliases": [
+    "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-agent-memory-provenance-demand"
+  ],
   "@type": "Concept",
   "citations": [
     {
@@ -66,7 +69,7 @@
   "relationships": [
     {
       "strength": 0.8,
-      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-graphrag-hybrid-dominance",
+      "target": "urn:mif:a8571848-4260-54e0-be1f-c46290d6a84c",
       "type": "supports"
     }
   ],

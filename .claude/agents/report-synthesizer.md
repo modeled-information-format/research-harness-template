@@ -200,9 +200,10 @@ with `citations`, `provenance`, and `extensions.harness.verification`) over a
 Markdown body. The published channels (`blog`, `book`, and channel packs) are
 **projections** of the same artifact and declare exemption in their manifests; the
 report channel is where L3 conformance is enforced. Each published projection still
-carries MIF **Level-1** frontmatter (its own `urn:mif:<channel>:` concept identity),
-so every report output is at least L1 — only the L3 I/O gate is waived for their
-orthogonal published format.
+carries MIF frontmatter that validates as a base MIF concept (its own
+`urn:mif:<uuid>` identity, minted from `<channel>:<namespace>:<slug>` — see
+`scripts/mif-id.sh`), so every report output meets the per-document half of MIF
+Level 1 — only the L3 I/O gate is waived for their orthogonal published format.
 
 Because a report carries `extensions.harness.verification`, it must actually pass
 the adversarial falsification gate — **never synthesize a verdict.** Order:

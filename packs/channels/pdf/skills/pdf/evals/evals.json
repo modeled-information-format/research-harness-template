@@ -8,11 +8,11 @@
       "files": [
         {
           "path": "findings/finding-copier.json",
-          "content": "{\"@context\":\"https://mif-spec.dev/schema/context.jsonld\",\"@type\":\"Concept\",\"@id\":\"urn:mif:concept:harness:f_technical_1\",\"conceptType\":\"semantic\",\"title\":\"Copier provides update propagation to instantiated projects\",\"content\":\"Copier re-applies later template changes to an already-instantiated project via a three-way merge.\",\"created\":\"2026-06-22T00:00:00Z\",\"namespace\":\"harness/eval\",\"citations\":[{\"@type\":\"Citation\",\"citationType\":\"documentation\",\"citationRole\":\"supports\",\"title\":\"Copier — Updating a project\",\"url\":\"https://copier.readthedocs.io/en/stable/updating/\"}],\"extensions\":{\"harness\":{\"dimension\":\"technical\",\"verification\":{\"verdict\":\"survived\",\"verdict_basis\":\"Disconfirming search found no credible refutation.\"}}}}\n"
+          "content": "{\"@context\":\"https://mif-spec.dev/schema/context.jsonld\",\"@type\":\"Concept\",\"@id\":\"urn:mif:67f69778-79ca-594d-b85c-5527dec22de8\",\"conceptType\":\"semantic\",\"title\":\"Copier provides update propagation to instantiated projects\",\"content\":\"Copier re-applies later template changes to an already-instantiated project via a three-way merge.\",\"created\":\"2026-06-22T00:00:00Z\",\"namespace\":\"harness/eval\",\"citations\":[{\"@type\":\"Citation\",\"citationType\":\"documentation\",\"citationRole\":\"supports\",\"title\":\"Copier — Updating a project\",\"url\":\"https://copier.readthedocs.io/en/stable/updating/\"}],\"extensions\":{\"harness\":{\"dimension\":\"technical\",\"verification\":{\"verdict\":\"survived\",\"verdict_basis\":\"Disconfirming search found no credible refutation.\"}}}}\n"
         },
         {
           "path": "findings/finding-cookiecutter.json",
-          "content": "{\"@context\":\"https://mif-spec.dev/schema/context.jsonld\",\"@type\":\"Concept\",\"@id\":\"urn:mif:concept:harness:f_landscape_2\",\"conceptType\":\"semantic\",\"title\":\"Cookiecutter is a one-time snapshot with no upstream path\",\"content\":\"Cookiecutter generates a project once; there is no supported mechanism to re-apply later template changes.\",\"created\":\"2026-06-22T00:00:00Z\",\"namespace\":\"harness/eval\",\"citations\":[{\"@type\":\"Citation\",\"citationType\":\"documentation\",\"citationRole\":\"supports\",\"title\":\"Cookiecutter docs\",\"url\":\"https://cookiecutter.readthedocs.io/\"}],\"extensions\":{\"harness\":{\"dimension\":\"landscape\",\"verification\":{\"verdict\":\"survived\",\"verdict_basis\":\"Disconfirming search found no credible refutation.\"}}}}\n"
+          "content": "{\"@context\":\"https://mif-spec.dev/schema/context.jsonld\",\"@type\":\"Concept\",\"@id\":\"urn:mif:abdb71df-b704-5cd1-9cfb-8f1a7e37d08f\",\"conceptType\":\"semantic\",\"title\":\"Cookiecutter is a one-time snapshot with no upstream path\",\"content\":\"Cookiecutter generates a project once; there is no supported mechanism to re-apply later template changes.\",\"created\":\"2026-06-22T00:00:00Z\",\"namespace\":\"harness/eval\",\"citations\":[{\"@type\":\"Citation\",\"citationType\":\"documentation\",\"citationRole\":\"supports\",\"title\":\"Cookiecutter docs\",\"url\":\"https://cookiecutter.readthedocs.io/\"}],\"extensions\":{\"harness\":{\"dimension\":\"landscape\",\"verification\":{\"verdict\":\"survived\",\"verdict_basis\":\"Disconfirming search found no credible refutation.\"}}}}\n"
         }
       ],
       "deterministic_checks": [
@@ -47,8 +47,8 @@
         {
           "type": "regex_not_match",
           "file": "composed.md",
-          "pattern": "urn:mif:(concept|report):",
-          "description": "No internal finding/concept identity leaks into the composed document"
+          "pattern": "urn:mif:(67f69778-79ca-594d-b85c-5527dec22de8|abdb71df-b704-5cd1-9cfb-8f1a7e37d08f)",
+          "description": "No finding @id (this eval's fixture findings) leaks into the composed document"
         },
         {
           "type": "regex_not_match",
@@ -72,7 +72,7 @@
       "files": [
         {
           "path": "findings/finding-1.json",
-          "content": "{\"@context\":\"https://mif-spec.dev/schema/context.jsonld\",\"@type\":\"Concept\",\"@id\":\"urn:mif:concept:harness:f-1\",\"conceptType\":\"semantic\",\"title\":\"Finding one\",\"content\":\"A verified claim grounded in a primary source.\",\"created\":\"2026-06-22T00:00:00Z\",\"namespace\":\"harness/eval\",\"citations\":[{\"@type\":\"Citation\",\"citationType\":\"website\",\"citationRole\":\"supports\",\"title\":\"Source\",\"url\":\"https://example.com/source\"}],\"extensions\":{\"harness\":{\"dimension\":\"technical\",\"verification\":{\"verdict\":\"survived\",\"verdict_basis\":\"Disconfirming search found no credible refutation.\"}}}}\n"
+          "content": "{\"@context\":\"https://mif-spec.dev/schema/context.jsonld\",\"@type\":\"Concept\",\"@id\":\"urn:mif:178d67d8-ec4b-5fb5-9714-881f3fc1c9fd\",\"conceptType\":\"semantic\",\"title\":\"Finding one\",\"content\":\"A verified claim grounded in a primary source.\",\"created\":\"2026-06-22T00:00:00Z\",\"namespace\":\"harness/eval\",\"citations\":[{\"@type\":\"Citation\",\"citationType\":\"website\",\"citationRole\":\"supports\",\"title\":\"Source\",\"url\":\"https://example.com/source\"}],\"extensions\":{\"harness\":{\"dimension\":\"technical\",\"verification\":{\"verdict\":\"survived\",\"verdict_basis\":\"Disconfirming search found no credible refutation.\"}}}}\n"
         }
       ],
       "deterministic_checks": [

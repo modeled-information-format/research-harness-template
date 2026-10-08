@@ -38,8 +38,20 @@
         {
           "type": "file_not_contains",
           "file": "chapter.md",
-          "literal": "urn:mif:concept:",
-          "description": "No MIF internal URN identifiers leak into the manuscript"
+          "literal": "urn:mif:d763528d-75fe-5cd7-8a0a-c176ecb41e72",
+          "description": "No MIF internal URN identifiers leak into the manuscript (the sample cookiecutter finding's MIF 1.4 @id)"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "chapter.md",
+          "literal": "urn:mif:0936199d-9082-58c7-a5d3-b2994500b179",
+          "description": "No MIF internal URN identifiers leak into the manuscript (the sample copier finding's MIF 1.4 @id)"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "chapter.md",
+          "literal": "urn:mif:45484208-8fbb-55ee-b3a3-0088d9bb2630",
+          "description": "No MIF internal URN identifiers leak into the manuscript (the sample distribution finding's MIF 1.4 @id)"
         },
         {
           "type": "file_not_contains",
@@ -135,8 +147,20 @@
         {
           "type": "file_not_contains",
           "file": "chapter.md",
-          "literal": "urn:mif:concept:",
-          "description": "No MIF internal URNs in the chapter"
+          "literal": "urn:mif:d763528d-75fe-5cd7-8a0a-c176ecb41e72",
+          "description": "No MIF internal URNs in the chapter (the sample cookiecutter finding's MIF 1.4 @id)"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "chapter.md",
+          "literal": "urn:mif:0936199d-9082-58c7-a5d3-b2994500b179",
+          "description": "No MIF internal URNs in the chapter (the sample copier finding's MIF 1.4 @id)"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "chapter.md",
+          "literal": "urn:mif:45484208-8fbb-55ee-b3a3-0088d9bb2630",
+          "description": "No MIF internal URNs in the chapter (the sample distribution finding's MIF 1.4 @id)"
         },
         {
           "type": "file_not_contains",
@@ -178,7 +202,7 @@
     },
     {
       "id": 3,
-      "prompt": "Demonstrate that falsified findings are excluded from the book chapter.\n\nSet up a temporary findings directory containing:\n1. The 3 surviving sample findings (copy these):\n   $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings/finding-copier.json\n   $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings/finding-cookiecutter.json\n   $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings/finding-distribution.json\n2. A 4th finding with verdict 'falsified'. Write it to the temp dir as finding-falsified.json with this exact JSON content:\n{\"@context\":\"https://mif-spec.dev/schema/context.jsonld\",\"@type\":\"Concept\",\"@id\":\"urn:mif:concept:harness:falsified-sentinel-0099\",\"title\":\"FALSIFIED-SENTINEL-XYZ technology claim\",\"content\":\"FALSIFIED-SENTINEL-XYZ content that must not appear in published output.\",\"summary\":\"FALSIFIED-SENTINEL-XYZ summary.\",\"namespace\":\"harness/example-topic\",\"citations\":[{\"@type\":\"Citation\",\"title\":\"FALSIFIED-SENTINEL-XYZ source\",\"url\":\"https://FALSIFIED-SENTINEL-XYZ.example.com/\"}],\"extensions\":{\"harness\":{\"dimension\":\"technical\",\"verification\":{\"verdict\":\"falsified\",\"verdict_basis\":\"Disconfirmed by adversarial search.\"}}}}\n\nThen synthesize and render the chapter.\n\nIMPORTANT: synthesize-artifact.sh changes directory internally, so both scripts must write their outputs into the current working directory using absolute paths built from pwd:\n\n  OUTDIR=$(pwd)\n  TMPDIR=$(mktemp -d)\n  cp \"$CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings/finding-copier.json\" \"$TMPDIR/\"\n  cp \"$CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings/finding-cookiecutter.json\" \"$TMPDIR/\"\n  cp \"$CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings/finding-distribution.json\" \"$TMPDIR/\"\n  # write finding-falsified.json to $TMPDIR/finding-falsified.json\n  $CLAUDE_PROJECT_DIR/scripts/synthesize-artifact.sh \"$TMPDIR\" non-fiction \"$OUTDIR/artifact.json\"\n  $CLAUDE_PROJECT_DIR/scripts/render-artifact.sh \"$OUTDIR/artifact.json\" book \"$OUTDIR/chapter.md\"",
+      "prompt": "Demonstrate that falsified findings are excluded from the book chapter.\n\nSet up a temporary findings directory containing:\n1. The 3 surviving sample findings (copy these):\n   $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings/finding-copier.json\n   $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings/finding-cookiecutter.json\n   $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings/finding-distribution.json\n2. A 4th finding with verdict 'falsified'. Write it to the temp dir as finding-falsified.json with this exact JSON content:\n{\"@context\":\"https://mif-spec.dev/schema/context.jsonld\",\"@type\":\"Concept\",\"@id\":\"urn:mif:afbfb457-fefd-5166-b238-cb8d64cfd831\",\"title\":\"FALSIFIED-SENTINEL-XYZ technology claim\",\"content\":\"FALSIFIED-SENTINEL-XYZ content that must not appear in published output.\",\"summary\":\"FALSIFIED-SENTINEL-XYZ summary.\",\"namespace\":\"harness/example-topic\",\"citations\":[{\"@type\":\"Citation\",\"title\":\"FALSIFIED-SENTINEL-XYZ source\",\"url\":\"https://FALSIFIED-SENTINEL-XYZ.example.com/\"}],\"extensions\":{\"harness\":{\"dimension\":\"technical\",\"verification\":{\"verdict\":\"falsified\",\"verdict_basis\":\"Disconfirmed by adversarial search.\"}}}}\n\nThen synthesize and render the chapter.\n\nIMPORTANT: synthesize-artifact.sh changes directory internally, so both scripts must write their outputs into the current working directory using absolute paths built from pwd:\n\n  OUTDIR=$(pwd)\n  TMPDIR=$(mktemp -d)\n  cp \"$CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings/finding-copier.json\" \"$TMPDIR/\"\n  cp \"$CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings/finding-cookiecutter.json\" \"$TMPDIR/\"\n  cp \"$CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings/finding-distribution.json\" \"$TMPDIR/\"\n  # write finding-falsified.json to $TMPDIR/finding-falsified.json\n  $CLAUDE_PROJECT_DIR/scripts/synthesize-artifact.sh \"$TMPDIR\" non-fiction \"$OUTDIR/artifact.json\"\n  $CLAUDE_PROJECT_DIR/scripts/render-artifact.sh \"$OUTDIR/artifact.json\" book \"$OUTDIR/chapter.md\"",
       "expected_output": "A book chapter from exactly 3 surviving findings. The sentinel string FALSIFIED-SENTINEL-XYZ must not appear anywhere in chapter.md or artifact.json. The artifact must have exactly 3 sections and 3 finding_refs. The chapter must contain copier.readthedocs.io as confirmation of real content from surviving findings.",
       "files": [],
       "deterministic_checks": [
@@ -219,8 +243,20 @@
         {
           "type": "file_not_contains",
           "file": "chapter.md",
-          "literal": "urn:mif:concept:",
-          "description": "No MIF internal URNs in the chapter"
+          "literal": "urn:mif:d763528d-75fe-5cd7-8a0a-c176ecb41e72",
+          "description": "No MIF internal URNs in the chapter (the sample cookiecutter finding's MIF 1.4 @id)"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "chapter.md",
+          "literal": "urn:mif:0936199d-9082-58c7-a5d3-b2994500b179",
+          "description": "No MIF internal URNs in the chapter (the sample copier finding's MIF 1.4 @id)"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "chapter.md",
+          "literal": "urn:mif:45484208-8fbb-55ee-b3a3-0088d9bb2630",
+          "description": "No MIF internal URNs in the chapter (the sample distribution finding's MIF 1.4 @id)"
         },
         {
           "type": "json_valid",
@@ -300,8 +336,20 @@
         {
           "type": "file_not_contains",
           "file": "chapter.md",
-          "literal": "urn:mif:concept:",
-          "description": "No MIF internal URNs in the chapter"
+          "literal": "urn:mif:d763528d-75fe-5cd7-8a0a-c176ecb41e72",
+          "description": "No MIF internal URNs in the chapter (the sample cookiecutter finding's MIF 1.4 @id)"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "chapter.md",
+          "literal": "urn:mif:0936199d-9082-58c7-a5d3-b2994500b179",
+          "description": "No MIF internal URNs in the chapter (the sample copier finding's MIF 1.4 @id)"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "chapter.md",
+          "literal": "urn:mif:45484208-8fbb-55ee-b3a3-0088d9bb2630",
+          "description": "No MIF internal URNs in the chapter (the sample distribution finding's MIF 1.4 @id)"
         },
         {
           "type": "file_not_contains",

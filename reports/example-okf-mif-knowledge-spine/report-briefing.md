@@ -3,7 +3,9 @@ slug: reports/example-okf-mif-knowledge-spine/report-briefing
 version: 1
 '@context': https://mif-spec.dev/schema/context.jsonld
 '@type': Concept
-'@id': urn:mif:report:harness/example-okf-mif-knowledge-spine:report-briefing
+'@id': urn:mif:0dcec5ab-546b-53a2-8d81-b83850ef3675
+aliases:
+  - urn:mif:report:harness/example-okf-mif-knowledge-spine:report-briefing
 conceptType: semantic
 namespace: harness/example-okf-mif-knowledge-spine
 title: 'Decision Briefing: OKF+MIF as a Foundational Research Knowledge Spine'

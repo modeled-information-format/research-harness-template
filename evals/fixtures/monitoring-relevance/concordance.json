@@ -2,7 +2,7 @@
   "@type": "Concordance",
   "nodes": [
     {
-      "id": "urn:mif:concept:eval-golden-topic:git-notes-provenance-metadata",
+      "id": "urn:mif:361f221a-d6e0-5bc0-94ee-72479df50637",
       "kind": "concept",
       "label": "Git Notes Provenance Metadata",
       "topics": ["eval-golden-topic"],
@@ -12,7 +12,7 @@
       "flagged": false
     },
     {
-      "id": "urn:mif:concept:eval-golden-topic:commit-attestation-signing-workflow",
+      "id": "urn:mif:b1e8b5d9-523e-511b-b421-10c271c9d143",
       "kind": "concept",
       "label": "Commit Attestation Signing Workflow",
       "topics": ["eval-golden-topic"],
@@ -22,7 +22,7 @@
       "flagged": false
     },
     {
-      "id": "urn:mif:concept:ag-tech-small-diversified-farm:technology-adoption",
+      "id": "urn:mif:eabae7a5-aadf-5e3d-8e13-99c7c1e86518",
       "kind": "concept",
       "label": "Small Diversified Farm Technology Adoption",
       "topics": ["ag-tech-small-diversified-farm"],
@@ -32,7 +32,7 @@
       "flagged": false
     },
     {
-      "id": "urn:mif:concept:ai-code-error-compounding:service-dependencies",
+      "id": "urn:mif:b715492a-1ecb-59cc-8c67-056b6d7abedd",
       "kind": "concept",
       "label": "Error Compounding in Service Dependencies",
       "topics": ["ai-code-error-compounding"],
@@ -42,7 +42,7 @@
       "flagged": false
     },
     {
-      "id": "urn:mif:concept:pure-mathematics:harmonic-forms-hopf-conjecture",
+      "id": "urn:mif:2359ea36-5e8c-59e1-8831-d07bf97bddea",
       "kind": "concept",
       "label": "Harmonic Forms and the Hopf Conjecture",
       "topics": ["pure-mathematics"],

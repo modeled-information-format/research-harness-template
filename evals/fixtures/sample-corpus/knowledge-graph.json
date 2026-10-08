@@ -3,19 +3,19 @@
   "generator": "build-graph.sh (MIF-native; SPEC §6c)",
   "nodes": [
     {
-      "id": "urn:mif:concept:sample:bandwidth-0002",
+      "id": "urn:mif:57acc61b-a5a8-5932-ae35-745a60ee2a2f",
       "kind": "concept",
       "label": "Local preprocessing lowers upstream bandwidth demand",
       "dimension": "technical"
     },
     {
-      "id": "urn:mif:concept:sample:edge-compute-0001",
+      "id": "urn:mif:85700f43-7a90-58a5-99bb-42b60f569e99",
       "kind": "concept",
       "label": "Edge compute reduces round-trip latency for local inference",
       "dimension": "technical"
     },
     {
-      "id": "urn:mif:concept:sample:gateway-0003",
+      "id": "urn:mif:b354d7c3-1d8e-5ab0-a0dc-f7d5b0c543ca",
       "kind": "concept",
       "label": "An edge gateway is the consolidation point for local compute and uplink",
       "dimension": "technical"
@@ -47,70 +47,70 @@
   ],
   "edges": [
     {
-      "source": "urn:mif:concept:sample:bandwidth-0002",
-      "target": "urn:mif:concept:sample:gateway-0003",
+      "source": "urn:mif:57acc61b-a5a8-5932-ae35-745a60ee2a2f",
+      "target": "urn:mif:b354d7c3-1d8e-5ab0-a0dc-f7d5b0c543ca",
       "type": "supports",
       "strength": 0.7,
       "via": "relationship"
     },
     {
-      "source": "urn:mif:concept:sample:edge-compute-0001",
-      "target": "urn:mif:concept:sample:gateway-0003",
+      "source": "urn:mif:85700f43-7a90-58a5-99bb-42b60f569e99",
+      "target": "urn:mif:b354d7c3-1d8e-5ab0-a0dc-f7d5b0c543ca",
       "type": "supports",
       "strength": 0.8,
       "via": "relationship"
     },
     {
-      "source": "urn:mif:concept:sample:gateway-0003",
-      "target": "urn:mif:concept:sample:edge-compute-0001",
+      "source": "urn:mif:b354d7c3-1d8e-5ab0-a0dc-f7d5b0c543ca",
+      "target": "urn:mif:85700f43-7a90-58a5-99bb-42b60f569e99",
       "type": "derived-from",
       "strength": 0.8,
       "via": "relationship"
     },
     {
-      "source": "urn:mif:concept:sample:gateway-0003",
-      "target": "urn:mif:concept:sample:bandwidth-0002",
+      "source": "urn:mif:b354d7c3-1d8e-5ab0-a0dc-f7d5b0c543ca",
+      "target": "urn:mif:57acc61b-a5a8-5932-ae35-745a60ee2a2f",
       "type": "derived-from",
       "strength": 0.7,
       "via": "relationship"
     },
     {
-      "source": "urn:mif:concept:sample:bandwidth-0002",
+      "source": "urn:mif:57acc61b-a5a8-5932-ae35-745a60ee2a2f",
       "target": "urn:mif:entity:concept:edge-compute",
       "type": "mentions",
       "strength": null,
       "via": "entity"
     },
     {
-      "source": "urn:mif:concept:sample:bandwidth-0002",
+      "source": "urn:mif:57acc61b-a5a8-5932-ae35-745a60ee2a2f",
       "target": "urn:mif:entity:concept:bandwidth",
       "type": "mentions",
       "strength": null,
       "via": "entity"
     },
     {
-      "source": "urn:mif:concept:sample:edge-compute-0001",
+      "source": "urn:mif:85700f43-7a90-58a5-99bb-42b60f569e99",
       "target": "urn:mif:entity:concept:edge-compute",
       "type": "mentions",
       "strength": null,
       "via": "entity"
     },
     {
-      "source": "urn:mif:concept:sample:edge-compute-0001",
+      "source": "urn:mif:85700f43-7a90-58a5-99bb-42b60f569e99",
       "target": "urn:mif:entity:concept:latency",
       "type": "mentions",
       "strength": null,
       "via": "entity"
     },
     {
-      "source": "urn:mif:concept:sample:gateway-0003",
+      "source": "urn:mif:b354d7c3-1d8e-5ab0-a0dc-f7d5b0c543ca",
       "target": "urn:mif:entity:technology:edge-gateway",
       "type": "mentions",
       "strength": null,
       "via": "entity"
     },
     {
-      "source": "urn:mif:concept:sample:gateway-0003",
+      "source": "urn:mif:b354d7c3-1d8e-5ab0-a0dc-f7d5b0c543ca",
       "target": "urn:mif:entity:concept:edge-compute",
       "type": "mentions",
       "strength": null,

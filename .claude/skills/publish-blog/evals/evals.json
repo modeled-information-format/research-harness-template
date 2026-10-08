@@ -52,8 +52,20 @@
         {
           "type": "file_not_contains",
           "file": "blog.md",
-          "literal": "urn:mif:concept:",
-          "description": "MIF URNs do not leak into the published post"
+          "literal": "urn:mif:d763528d-75fe-5cd7-8a0a-c176ecb41e72",
+          "description": "MIF URNs do not leak into the published post (the sample cookiecutter finding's MIF 1.4 @id)"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "blog.md",
+          "literal": "urn:mif:0936199d-9082-58c7-a5d3-b2994500b179",
+          "description": "MIF URNs do not leak into the published post (the sample copier finding's MIF 1.4 @id)"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "blog.md",
+          "literal": "urn:mif:45484208-8fbb-55ee-b3a3-0088d9bb2630",
+          "description": "MIF URNs do not leak into the published post (the sample distribution finding's MIF 1.4 @id)"
         },
         {
           "type": "file_not_contains",
@@ -88,7 +100,7 @@
     },
     {
       "id": 2,
-      "prompt": "I need to verify that falsified findings are excluded from published blog posts. Please do the following: (1) Create a temporary findings directory at /tmp/eval-blog-e2-findings/ and copy the three sample findings from $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings/ into it. (2) Create a fourth file /tmp/eval-blog-e2-findings/finding-falsified.json with the exact JSON shape of finding-copier.json but with these changes: set extensions.harness.verification.verdict to 'falsified', set title to 'FALSIFIED-SENTINEL-XYZ title that must not publish', set content to 'FALSIFIED-SENTINEL-XYZ content that must be excluded from any published output.', set @id to 'urn:mif:concept:harness:kg-falsified-9999'. (3) Run `bash $CLAUDE_PROJECT_DIR/scripts/synthesize-artifact.sh /tmp/eval-blog-e2-findings blog $(pwd)/artifact.json`. (4) Run `bash $CLAUDE_PROJECT_DIR/scripts/render-artifact.sh $(pwd)/artifact.json blog $(pwd)/blog.md`. Confirm the falsified sentinel text does not appear in either artifact.json or blog.md.",
+      "prompt": "I need to verify that falsified findings are excluded from published blog posts. Please do the following: (1) Create a temporary findings directory at /tmp/eval-blog-e2-findings/ and copy the three sample findings from $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings/ into it. (2) Create a fourth file /tmp/eval-blog-e2-findings/finding-falsified.json with the exact JSON shape of finding-copier.json but with these changes: set extensions.harness.verification.verdict to 'falsified', set title to 'FALSIFIED-SENTINEL-XYZ title that must not publish', set content to 'FALSIFIED-SENTINEL-XYZ content that must be excluded from any published output.', set @id to 'urn:mif:4fa7beae-269c-58bb-b744-11306d59c73a'. (3) Run `bash $CLAUDE_PROJECT_DIR/scripts/synthesize-artifact.sh /tmp/eval-blog-e2-findings blog $(pwd)/artifact.json`. (4) Run `bash $CLAUDE_PROJECT_DIR/scripts/render-artifact.sh $(pwd)/artifact.json blog $(pwd)/blog.md`. Confirm the falsified sentinel text does not appear in either artifact.json or blog.md.",
       "expected_output": "artifact.json and blog.md both produced; the string 'FALSIFIED-SENTINEL-XYZ' is absent from both files; blog.md still contains ## Sources and the surviving public source URLs; artifact.json still has 3 sections (only the 3 surviving findings).",
       "files": [],
       "deterministic_checks": [
@@ -131,8 +143,20 @@
         {
           "type": "file_not_contains",
           "file": "blog.md",
-          "literal": "urn:mif:concept:",
-          "description": "no MIF URNs appear in the published blog"
+          "literal": "urn:mif:d763528d-75fe-5cd7-8a0a-c176ecb41e72",
+          "description": "no MIF URNs appear in the published blog (the sample cookiecutter finding's MIF 1.4 @id)"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "blog.md",
+          "literal": "urn:mif:0936199d-9082-58c7-a5d3-b2994500b179",
+          "description": "no MIF URNs appear in the published blog (the sample copier finding's MIF 1.4 @id)"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "blog.md",
+          "literal": "urn:mif:45484208-8fbb-55ee-b3a3-0088d9bb2630",
+          "description": "no MIF URNs appear in the published blog (the sample distribution finding's MIF 1.4 @id)"
         }
       ],
       "expectations": [
@@ -176,8 +200,20 @@
         {
           "type": "file_not_contains",
           "file": "blog.md",
-          "literal": "urn:mif:concept:",
-          "description": "MIF URNs do not appear in the blog regardless of synthesis genre"
+          "literal": "urn:mif:d763528d-75fe-5cd7-8a0a-c176ecb41e72",
+          "description": "MIF URNs do not appear in the blog regardless of synthesis genre (the sample cookiecutter finding's MIF 1.4 @id)"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "blog.md",
+          "literal": "urn:mif:0936199d-9082-58c7-a5d3-b2994500b179",
+          "description": "MIF URNs do not appear in the blog regardless of synthesis genre (the sample copier finding's MIF 1.4 @id)"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "blog.md",
+          "literal": "urn:mif:45484208-8fbb-55ee-b3a3-0088d9bb2630",
+          "description": "MIF URNs do not appear in the blog regardless of synthesis genre (the sample distribution finding's MIF 1.4 @id)"
         },
         {
           "type": "regex_not_match",

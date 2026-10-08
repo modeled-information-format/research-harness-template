@@ -1,5 +1,5 @@
 ---
-id: reference-coverage
+id: 755d6a7a-e189-5548-b551-c04d416b59f2
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
 modified: '2026-07-23T23:49:53.330Z'
@@ -39,8 +39,8 @@ the **discovered** set equals the **documented** set.
 | Core skills | 10 | 10 | `.claude/skills/*/SKILL.md` |
 | Commands | 12 | 12 | `.claude/commands/*.md` |
 | Agents | 7 | 7 | `.claude/agents/*.md` |
-| Scripts | 58 | 58 | `scripts/**` (excludes `__pycache__`); the 24 scripts Epic #416 added moved to `packs/monitoring/continuous-monitor/scripts/**` (research-harness-template#483) and are documented in [packs/monitoring.md](packs/monitoring.md), not counted here |
-| **Total** | **164** | **164** | — |
+| Scripts | 62 | 62 | `scripts/**` (excludes `__pycache__`); the 24 scripts Epic #416 added moved to `packs/monitoring/continuous-monitor/scripts/**` (research-harness-template#483) and are documented in [packs/monitoring.md](packs/monitoring.md), not counted here |
+| **Total** | **168** | **168** | — |
 
 Reproduce the discovered counts:
 
@@ -168,7 +168,7 @@ All documented in [agents.md](agents.md): `orchestrator`, `dimension-analyst`,
 `falsification-analyst`, `report-synthesizer`, `corpus-synthesizer`,
 `harness-configurator`, `source-chunker`.
 
-## Scripts (58)
+## Scripts (62)
 
 All documented in [scripts.md](scripts.md):
 `assert-graph-mif`,
@@ -181,10 +181,10 @@ All documented in [scripts.md](scripts.md):
 `codegen/gen-models`, `falsify`, `fetch-engine`, `fetch-mif-docs-plugin`,
 `fetch-ontology`, `goal-version`, `import-corpus`, `install-hooks`,
 `install-monitoring-workflows`,
-`lib/container-lock`, `lib/engine`, `lib/unreadable-probe`, `lint-goal`, `mif-container-detect-sameas`,
+`lib/container-lock`, `lib/engine`, `lib/mif-id`, `lib/mif_id.py`, `lib/unreadable-probe`, `lint-goal`, `mif-container-detect-sameas`,
 `mif-container-digest`, `mif-container-export`, `mif-container-import`,
 `mif-container-migration-eval-bench`, `mif-container-resolve-scope`,
-`mif-project`, `ontology-review`, `pack-toggle`, `reconcile-session`,
+`mif-id`, `mif-project`, `migrate-mif-ids.py`, `ontology-review`, `pack-toggle`, `reconcile-session`,
 `render-artifact`, `resolve-membership`, `resolve-ontology`, `run-lock`,
 `site-toggle`, `sync-packs`, `sync-registry-ontologies`,
 `synthesize-artifact`, `synthesize-corpus`, `update`, `validate-concordance`,
@@ -198,5 +198,5 @@ rather than counted in this core-scripts inventory, the same way
 
 ## Assertion
 
-Discovered (164) equals documented (164) across all five categories. No pack,
+Discovered (168) equals documented (168) across all five categories. No pack,
 skill, command, agent, or script is omitted.

@@ -1,5 +1,5 @@
 ---
-id: how-to-enable-continuous-monitoring
+id: 0f27fb8d-f73e-5b7e-9f6e-be6afa75caa5
 type: procedural
 created: '2026-07-12T21:00:00Z'
 modified: '2026-07-16T18:24:23.866Z'

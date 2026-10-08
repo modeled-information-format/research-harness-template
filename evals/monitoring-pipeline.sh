@@ -47,7 +47,7 @@ cat > "$TMP/concordance.json" <<'EOF'
 {
   "@type": "Concordance",
   "nodes": [
-    { "id": "urn:mif:concept:eval:knowledge-graph-provenance", "kind": "concept",
+    { "id": "urn:mif:013110c2-a760-54c6-8e07-74dd351d0deb", "kind": "concept",
       "label": "Knowledge Graph Provenance Tracking", "topics": ["eval-monitoring-topic"],
       "entityType": "concept", "ontology": "mif-generic@1.0.0", "verdict": "survived", "flagged": false }
   ],
