@@ -65,8 +65,8 @@ Part of the coordinated MIF specification 1.4.1 release.
 - `schemas/mif/VENDOR.lock` pins the vendored schemas to MIF 1.4.1 (per-file
   sha256). `scripts/mif-vendor-check.mjs` checks them: offline in `verify.sh`
   (`gate_mif_vendor`), and with `--remote` against
-  `https://mif-spec.dev/schema/1.4.1/` in the new `mif-vendor-check` CI job.
-  That job stays red until MIF publishes 1.4.1 (MIF#312).
+  `https://mif-spec.dev/schema/1.4.1/` in the new `mif-vendor-check` CI job,
+  which fails whenever the pin names a MIF release that is not published.
 
 ### Security
 
