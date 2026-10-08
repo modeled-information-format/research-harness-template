@@ -3,7 +3,9 @@ slug: reports/example-okf-mif-knowledge-spine/report-market-research-report
 version: 1
 '@context': https://mif-spec.dev/schema/context.jsonld
 '@type': Concept
-'@id': urn:mif:report:harness/example-okf-mif-knowledge-spine:report-market-research-report
+'@id': urn:mif:5f43c7a7-a299-5fc2-938b-f025e620203d
+aliases:
+  - urn:mif:report:harness/example-okf-mif-knowledge-spine:report-market-research-report
 conceptType: semantic
 namespace: harness/example-okf-mif-knowledge-spine
 title: 'Market Research Report: An OKF+MIF Knowledge-Spine Offering'

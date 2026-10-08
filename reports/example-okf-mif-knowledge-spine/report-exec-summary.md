@@ -3,7 +3,9 @@ slug: reports/example-okf-mif-knowledge-spine/report-exec-summary
 version: 1
 '@context': https://mif-spec.dev/schema/context.jsonld
 '@type': Concept
-'@id': urn:mif:report:harness/example-okf-mif-knowledge-spine:report-exec-summary
+'@id': urn:mif:48aec11d-f731-549e-a2d2-c46433a175b3
+aliases:
+  - urn:mif:report:harness/example-okf-mif-knowledge-spine:report-exec-summary
 conceptType: semantic
 namespace: harness/example-okf-mif-knowledge-spine
 title: 'Executive Summary: Should MIF Be the Spine Beneath OKF for a Research Knowledge Spine?'

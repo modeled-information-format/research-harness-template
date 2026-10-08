@@ -134,7 +134,7 @@ async function buildRunner() {
 
 async function main() {
   const run = await buildRunner();
-  const g = { f: { id: 'urn:mif:concept:t:f1', path: 'reports/t/findings/f1.json', dimension: 'technical' } };
+  const g = { f: { id: 'urn:mif:9fdca22f-8864-5220-8845-fb44a4e0b39c', path: 'reports/t/findings/f1.json', dimension: 'technical' } };
   const REMEDIATION_CONTRACT = 'STUB-REMEDIATION-CONTRACT';
   const WRITE_SCHEMA = {};
   const call = (agent) => run(g, 'survived', false, '{}', '.', REMEDIATION_CONTRACT, WRITE_SCHEMA, agent, 'stub-write-brief');

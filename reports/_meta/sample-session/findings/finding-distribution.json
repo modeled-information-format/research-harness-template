@@ -1,7 +1,10 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
   "@type": "Concept",
-  "@id": "urn:mif:concept:harness:kg-distribution-0003",
+  "@id": "urn:mif:45484208-8fbb-55ee-b3a3-0088d9bb2630",
+  "aliases": [
+    "urn:mif:concept:harness:kg-distribution-0003"
+  ],
   "conceptType": "semantic",
   "namespace": "harness/example-topic",
   "title": "A living template is mandatory for a harness that keeps gaining capability",
@@ -38,12 +41,12 @@
   "relationships": [
     {
       "type": "derived-from",
-      "target": "urn:mif:concept:harness:kg-copier-0001",
+      "target": "urn:mif:0936199d-9082-58c7-a5d3-b2994500b179",
       "strength": 0.8
     },
     {
       "type": "derived-from",
-      "target": "urn:mif:concept:harness:kg-cookiecutter-0002",
+      "target": "urn:mif:d763528d-75fe-5cd7-8a0a-c176ecb41e72",
       "strength": 0.6
     }
   ],

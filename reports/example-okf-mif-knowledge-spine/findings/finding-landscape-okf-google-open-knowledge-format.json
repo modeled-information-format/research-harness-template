@@ -1,6 +1,9 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
-  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-okf-google-open-knowledge-format",
+  "@id": "urn:mif:3150363d-ce93-5294-b97a-d105409dfbae",
+  "aliases": [
+    "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-okf-google-open-knowledge-format"
+  ],
   "@type": "Concept",
   "citations": [
     {
@@ -57,7 +60,7 @@
   "relationships": [
     {
       "strength": 0.6,
-      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-rdf-owl-semantic-alternative",
+      "target": "urn:mif:f62797e1-f125-5283-91c4-0d8aa9df7181",
       "type": "relates-to"
     }
   ],

@@ -138,8 +138,9 @@ scripts/wrap-source.sh --url "<url>" --content-type "<mime>" \
 ```
 
 `wrap-source.sh` refuses (non-zero) any source that does not validate at MIF
-Level 3 — do not consume a refused source. Reference the envelope's
-`urn:mif:source:<ns>:<slug>` id from the finding's citation so the claim is
+Level 3 — do not consume a refused source. Reference the envelope's `@id` (the
+script prints it: `urn:mif:<uuid>`, the same value `scripts/mif-id.sh
+source:<ns>:<slug>` mints) from the finding's citation so the claim is
 traceable to the captured source.
 
 ### WebSearch retry protocol
@@ -182,12 +183,19 @@ are the bug, not the discipline.
 
 Each finding is a single MIF concept. The fields **you** are responsible for:
 
-- A MIF identity: `@context`, `@type` (`"Concept"`), and a unique
-  `@id` of the form `urn:mif:concept:<namespace>:<slug>` (use the topic's
-  namespace; **never** an `f_<dimension>_<n>` id).
+- A MIF identity: `@context`, `@type` (`"Concept"`), and a unique `@id`.
+  MIF 1.4 requires the form `urn:mif:<uuid>`; mint it deterministically with
+  `scripts/mif-id.sh concept:<namespace>:<slug>` (uuid5 of that string in the
+  MIF namespace — the org-wide rule, so the same finding always gets the same
+  id), using the topic's namespace and the finding's slug (**never** an
+  `f_<dimension>_<n>` handle). A structured id such as
+  `urn:mif:concept:<namespace>:<slug>` fails schema validation. Optionally
+  record that readable form in `aliases` (`["urn:mif:concept:<namespace>:<slug>"]`)
+  so the finding stays findable by it.
 - A top-level **`namespace`** set to the topic's MIF namespace (the SAME
-  `<namespace>` you put in `@id`, e.g. `harness/<topic>`). This is a separate
-  REQUIRED field, not just the `@id` segment: the projected research-index,
+  `<namespace>` you minted the `@id` from, e.g. `harness/<topic>`). This is a
+  REQUIRED field, and with opaque `urn:mif:<uuid>` ids it is the ONLY place a
+  finding's topic is recorded: the projected research-index,
   `synthesize-artifact.sh`, and namespace-scoped `/search` read this top-level
   field — omit it and they record a `null` namespace (broken namespace queries).
   `verify.sh` fails closed if any finding lacks it.
@@ -255,7 +263,7 @@ from harness_models import emit
 finding = {
     "@context": "https://mif-spec.dev/schema/context.jsonld",
     "@type": "Concept",
-    "@id": "urn:mif:concept:<topic>:<slug>",
+    "@id": "urn:mif:<uuid>",   # scripts/mif-id.sh concept:<namespace>:<slug>
     "conceptType": "...",
     "content": "...",          # arbitrary prose — a Python string, never shell-quoted
     "created": "...",
@@ -269,7 +277,7 @@ finding = {
     # derivations/agreements you ALREADY state in prose — this is what makes the
     # knowledge graph relationally linked, not just entity-mentions.
     # "relationships": [{"type": "derived-from",
-    #                    "target": "urn:mif:concept:<topic>:<other-slug>",
+    #                    "target": "<the sibling finding's @id>",
     #                    "strength": 0.9}],
 }
 emit.write(finding, sys.argv[1])  # canonical: sorted keys, 2-space indent, valid JSON
@@ -466,7 +474,7 @@ such stated link** as a MIF `relationships[]` entry on the finding that asserts 
 
 ```jsonc
 "relationships": [
-  { "type": "derived-from", "target": "urn:mif:concept:<topic>:<sibling-slug>", "strength": 0.9 }
+  { "type": "derived-from", "target": "urn:mif:<sibling-uuid>", "strength": 0.9 }
 ]
 ```
 
@@ -477,8 +485,9 @@ such stated link** as a MIF `relationships[]` entry on the finding that asserts 
   `part-of`, `depends-on`, `updates`. A bound domain ontology may declare
   additional relationship types, and a custom namespaced type
   (`<ns>:<token>`) is also valid.
-- `target` is the sibling finding's full `@id` (or a `urn:mif:` id of an external
-  concept). Re-validate the finding after adding `relationships[]`.
+- `target` is the sibling finding's full `@id` — `scripts/mif-id.sh
+  concept:<namespace>:<sibling-slug>` reproduces it from the sibling's slug —
+  (or a `urn:mif:` id of an external concept). Re-validate the finding after adding `relationships[]`.
 
 This is the substrate the knowledge graph traverses: without it the graph is only
 finding→entity mentions, and `scripts/assert-graph-mif.sh` fails its "≥1 typed

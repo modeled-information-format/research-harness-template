@@ -1,6 +1,9 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
-  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-enterprise-kg-market-growth",
+  "@id": "urn:mif:9f111ce0-3cd6-5009-9bc1-438ba0159adf",
+  "aliases": [
+    "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-enterprise-kg-market-growth"
+  ],
   "@type": "Concept",
   "citations": [
     {

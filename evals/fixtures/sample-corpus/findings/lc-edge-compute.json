@@ -1,7 +1,7 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
   "@type": "Concept",
-  "@id": "urn:mif:concept:sample:edge-compute-0001",
+  "@id": "urn:mif:85700f43-7a90-58a5-99bb-42b60f569e99",
   "conceptType": "semantic",
   "namespace": "sample/edge-systems",
   "title": "Edge compute reduces round-trip latency for local inference",
@@ -39,7 +39,7 @@
   "relationships": [
     {
       "type": "supports",
-      "target": "urn:mif:concept:sample:gateway-0003",
+      "target": "urn:mif:b354d7c3-1d8e-5ab0-a0dc-f7d5b0c543ca",
       "strength": 0.8
     }
   ],

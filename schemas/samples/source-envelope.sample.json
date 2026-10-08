@@ -1,7 +1,10 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
   "@type": "Concept",
-  "@id": "urn:mif:source:harness:sample-source-0001",
+  "@id": "urn:mif:53a7b54e-adb8-5146-b20a-66de35a5a05c",
+  "aliases": [
+    "urn:mif:source:harness:sample-source-0001"
+  ],
   "conceptType": "episodic",
   "namespace": "harness/sources",
   "title": "Copier — Updating a project (fetched source)",

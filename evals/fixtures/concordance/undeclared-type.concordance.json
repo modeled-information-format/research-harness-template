@@ -3,7 +3,7 @@
   "generator": "build-concordance.sh (MIF-native ontological spine; SPEC §8d)",
   "nodes": [
     {
-      "id": "urn:mif:concept:x/edu:f",
+      "id": "urn:mif:5ee75922-af65-50c7-9c61-556ee04c3945",
       "kind": "concept",
       "label": "Algebra textbook",
       "topics": [
@@ -27,14 +27,14 @@
   ],
   "edges": [
     {
-      "source": "urn:mif:concept:x/edu:f",
+      "source": "urn:mif:5ee75922-af65-50c7-9c61-556ee04c3945",
       "target": "urn:mif:entity:prog:math",
       "type": "belongs_to",
       "strength": 1,
       "via": "relationship"
     },
     {
-      "source": "urn:mif:concept:x/edu:f",
+      "source": "urn:mif:5ee75922-af65-50c7-9c61-556ee04c3945",
       "target": "urn:mif:entity:prog:math",
       "type": "mentions",
       "strength": null,

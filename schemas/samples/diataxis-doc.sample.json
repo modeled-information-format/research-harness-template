@@ -1,7 +1,10 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
   "@type": "Concept",
-  "@id": "urn:mif:doc:harness/example-topic:overview-tutorials",
+  "@id": "urn:mif:ae5787ea-0926-501d-b5a0-e735b9dbb5c5",
+  "aliases": [
+    "urn:mif:doc:harness/example-topic:overview-tutorials"
+  ],
   "conceptType": "procedural",
   "content": "This tutorial walks you through the example topic one step at a time.",
   "created": "2026-06-22T00:00:00Z",

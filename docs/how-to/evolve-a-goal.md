@@ -1,5 +1,5 @@
 ---
-id: how-to-evolve-a-goal
+id: a6096da4-b87d-54d2-8239-e0d1dd4f228e
 type: procedural
 created: '2026-06-21T21:11:55-04:00'
 modified: '2026-06-26T09:21:24-04:00'

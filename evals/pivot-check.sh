@@ -457,10 +457,10 @@ FIX_CLASSIFY="$TMP/fixture-classify"
 RDIR_CLASSIFY="$FIX_CLASSIFY/reports/pivot-eval-classify"
 mkdir -p "$RDIR_CLASSIFY/findings" "$RDIR_CLASSIFY/quarantine"
 
-CARRY_ID="urn:mif:concept:pivot-eval:carry-0001"
-STALE_ID="urn:mif:concept:pivot-eval:stale-0001"
-OOS_ID="urn:mif:concept:pivot-eval:oos-0001"
-QUARANTINED_ID="urn:mif:concept:pivot-eval:quarantined-0001"
+CARRY_ID="urn:mif:1fe0f8e9-7c2e-5c95-b35e-c67c995c1e5d"
+STALE_ID="urn:mif:f84c3368-5678-5d6e-8ae9-a69527e78f8a"
+OOS_ID="urn:mif:66a992f9-8d0e-5458-ac82-720c422e3752"
+QUARANTINED_ID="urn:mif:d8a59b22-73ab-554a-ba0d-1f80741b2656"
 
 cat > "$RDIR_CLASSIFY/findings/carry.json" <<EOF
 {"@id": "$CARRY_ID", "@type": "Concept", "extensions": {"harness": {"dimension": "technical"}}}
@@ -788,10 +788,10 @@ FIX_RETRY="$TMP/fixture-retry"
 RDIR_RETRY="$FIX_RETRY/reports/pivot-eval-retry"
 mkdir -p "$RDIR_RETRY/findings"
 
-A_ID="urn:mif:concept:pivot-eval:retry-a"
-B_ID="urn:mif:concept:pivot-eval:retry-b"
-C_ID="urn:mif:concept:pivot-eval:retry-c"
-D_ID="urn:mif:concept:pivot-eval:retry-d"
+A_ID="urn:mif:aedaf168-6431-5103-90be-d260cbb8c268"
+B_ID="urn:mif:7b55de68-73d8-5f92-acc5-88d794273e85"
+C_ID="urn:mif:82b5ac8c-5106-56e4-8a32-785bf0b808d0"
+D_ID="urn:mif:955d3f12-8d38-51f3-84cc-17aa55f8e174"
 cat > "$RDIR_RETRY/findings/a.json" <<EOF
 {"@id": "$A_ID", "@type": "Concept", "extensions": {"harness": {"dimension": "technical"}}}
 EOF

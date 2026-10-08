@@ -1,7 +1,7 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
   "@type": "Concept",
-  "@id": "urn:mif:source:harness/example-topic:bad",
+  "@id": "urn:mif:75975433-4eea-5922-8aee-3c8d34dc68c2",
   "conceptType": "episodic",
   "content": "raw body",
   "created": "2026-06-19T12:00:00Z",

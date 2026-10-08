@@ -3,7 +3,9 @@ slug: reports/example-okf-mif-knowledge-spine/report-competitive-analysis
 version: 1
 '@context': https://mif-spec.dev/schema/context.jsonld
 '@type': Concept
-'@id': urn:mif:report:harness/example-okf-mif-knowledge-spine:report-competitive-analysis
+'@id': urn:mif:89dcf2e1-2050-5db5-895c-dbd16d988151
+aliases:
+  - urn:mif:report:harness/example-okf-mif-knowledge-spine:report-competitive-analysis
 conceptType: semantic
 namespace: harness/example-okf-mif-knowledge-spine
 title: 'Competitive Analysis: OKF+MIF vs Knowledge-Representation Prior Art'

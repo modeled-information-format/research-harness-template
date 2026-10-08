@@ -1,5 +1,5 @@
 ---
-id: reference-packs-genres
+id: da58d70a-616e-5ba8-b000-e6d75cf65124
 type: semantic
 created: '2026-06-30T03:12:58-04:00'
 modified: '2026-07-12T14:39:25.260Z'

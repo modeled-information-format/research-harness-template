@@ -17,7 +17,9 @@ engine (Claude Code agents/commands/skills), the MIF-backed contracts (`schemas/
 the shell tooling (`scripts/`), and the bundled packs — all shipped on clone.
 
 Everything in and out of the harness is [MIF](https://github.com/modeled-information-format/MIF)
-(Modeled Information Format). A finding is a MIF memory unit; the knowledge graph
+(Modeled Information Format, schemas vendored from MIF 1.4.1 and pinned by
+`schemas/mif/VENDOR.lock`). A finding is a MIF concept stored as its JSON-LD
+projection, with a `urn:mif:<uuid>` `@id` minted by `scripts/mif-id.sh`; the knowledge graph
 is MIF EntityReferences + typed relationships; citations and provenance are MIF
 objects. Patterns MIF core lacks (falsification lifecycle, quarantine, session
 lineage) are closed **locally** under `extensions.harness` — never by forking MIF.
@@ -27,7 +29,9 @@ lineage) are closed **locally** under `extensions.harness` — never by forking 
 CI (`.github/workflows/ci.yml`, on push/PR to `main`) runs these — plus
 setup fetches before them (`fetch-engine.sh`,
 `fetch-ontology.sh --all-enabled`, `fetch-mif-docs-plugin.sh`) and separate
-`version-bump`, `pin-check`, and `adr-smadr` jobs. Run the same locally.
+`version-bump`, `pin-check`, `adr-smadr`, and `mif-vendor-check` jobs (the last
+compares `schemas/mif/` with the pinned MIF release on mif-spec.dev — offline,
+`node scripts/mif-vendor-check.mjs`). Run the same locally.
 
 > **Vendor first (ADR-0012/#224).** Domain ontology packs are NOT bundled — they
 > are vendored on demand. A Copier-instantiated clone vendors them in `_tasks` and

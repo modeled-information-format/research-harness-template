@@ -1,5 +1,5 @@
 ---
-id: reference-core-skills
+id: cbf054cf-b274-56d0-b900-e4a66bcd6f14
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
 modified: '2026-07-05T10:16:37-04:00'

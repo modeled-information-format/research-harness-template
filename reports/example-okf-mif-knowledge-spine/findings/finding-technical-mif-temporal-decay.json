@@ -1,6 +1,9 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
-  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-mif-temporal-decay",
+  "@id": "urn:mif:47b8820e-af28-5e01-8ece-6fd249a52ca1",
+  "aliases": [
+    "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-mif-temporal-decay"
+  ],
   "@type": "Concept",
   "citations": [
     {
@@ -57,7 +60,7 @@
   "relationships": [
     {
       "strength": 0.8,
-      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-okf-core-data-model",
+      "target": "urn:mif:90456a52-7f8b-5159-aeb7-9e0b9207e004",
       "type": "derived-from"
     }
   ],

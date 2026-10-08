@@ -4,7 +4,7 @@
   "sections": ["citations-in-set"],
   "findingsUsed": 2,
   "claims": [
-    { "checkId": "citations-in-set", "citedId": "urn:mif:concept:synthesis-eval:survived-0001", "confidence": "high" },
-    { "checkId": "citations-in-set", "citedId": "urn:mif:concept:synthesis-eval:weakened-0001", "confidence": "weakened" }
+    { "checkId": "citations-in-set", "citedId": "urn:mif:907b3267-c3a9-5429-858d-ca25cd729fc3", "confidence": "high" },
+    { "checkId": "citations-in-set", "citedId": "urn:mif:7ce7b561-085c-5094-9542-0e86a1a23178", "confidence": "weakened" }
   ]
 }

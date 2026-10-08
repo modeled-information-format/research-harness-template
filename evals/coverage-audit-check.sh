@@ -161,9 +161,9 @@ TOPIC="coverage-eval-topic"
 RDIR="$FIXTURE/reports/$TOPIC"
 mkdir -p "$RDIR/findings" "$RDIR/quarantine"
 
-UNGATED_ID="urn:mif:concept:$TOPIC:ungated-0001"
-SURVIVED_ID="urn:mif:concept:$TOPIC:survived-0001"
-LANDSCAPE_ID="urn:mif:concept:$TOPIC:landscape-0001"
+UNGATED_ID="$(scripts/mif-id.sh "concept:$TOPIC:ungated-0001")"
+SURVIVED_ID="$(scripts/mif-id.sh "concept:$TOPIC:survived-0001")"
+LANDSCAPE_ID="$(scripts/mif-id.sh "concept:$TOPIC:landscape-0001")"
 
 cat > "$FIXTURE/harness.config.json" <<EOF
 {"version":"0.1.0","topics":[{"id":"$TOPIC","namespace":"harness/$TOPIC","title":"Coverage Eval Topic","status":"active"}]}

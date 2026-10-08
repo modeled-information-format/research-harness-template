@@ -24,8 +24,8 @@ backticks and angle brackets.
   `topics[]` (see `/topics` to list them).
 - `<output-dir>` — required. Must not already exist, or must be empty — the
   script refuses to write into a non-empty directory.
-- `--subset <in-scope-ids.json>` — a path to a JSON array of `urn:mif:concept:...`
-  ids to export (a **subset** export). Without this, every finding in the
+- `--subset <in-scope-ids.json>` — a path to a JSON array of the finding `@id`s
+  (`urn:mif:<uuid>`) to export (a **subset** export). Without this, every finding in the
   topic is exported (a **full** export).
 - `--closure` — only meaningful with `--subset`: transitively expand the
   subset to every concept reachable via relationship edges, instead of

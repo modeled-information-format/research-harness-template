@@ -269,7 +269,7 @@ module.exports = {
     fanout: async (a) => ({ dimensions: a.dimensions, findings: [], perDimension: (a.dimensions || []).map((d) => ({ dimension: d, written: 1, valid: 1, searches: 2, saturation: 'not saturated' })), crossDimensionLeads: [], related: 0 }),
     falsify: async () => ({ gated: 1, rollup: { survived: 1 }, verdicts: [], deferredIds: [], alreadyVerified: 0 }),
     synthesis: async () => ({ ok: true, synthesisPath: 'reports/pipeline-eval-topic/synthesis-augment.json', sections: [], findingsUsed: [], checkCoverage: [], openIssues: [], ungatedFindings: [] }),
-    projection: async (a) => ({ ok: true, reportPath: 'reports/pipeline-eval-topic/report.md', reportId: 'urn:mif:concept:pipeline-eval-topic:report', mifLevel: 3, checksAddressed: [], verificationVerdict: 'survived', readmePath: null, readmeCheckPassed: false, graphRefreshed: false, graphAssertPassed: false, problems: [], _receivedSynthesisPath: a.synthesisPath }),
+    projection: async (a) => ({ ok: true, reportPath: 'reports/pipeline-eval-topic/report.md', reportId: 'urn:mif:c7f61d1b-7a92-5e7c-b15d-7546105829b5', mifLevel: 3, checksAddressed: [], verificationVerdict: 'survived', readmePath: null, readmeCheckPassed: false, graphRefreshed: false, graphAssertPassed: false, problems: [], _receivedSynthesisPath: a.synthesisPath }),
   },
   // A real, healthy budget (well above the 60k floor) — proves the #685
   // budgetLow() guard does NOT misfire when tokens remain (the default stub
@@ -340,7 +340,7 @@ module.exports = {
     fanout: async (a) => ({ dimensions: a.dimensions, findings: [], perDimension: [], crossDimensionLeads: [], related: 0 }),
     falsify: async () => ({ gated: 0, rollup: {}, verdicts: [], deferredIds: [], alreadyVerified: 0 }),
     synthesis: async () => ({ ok: true, synthesisPath: 'reports/pipeline-eval-topic/synthesis-augment-deep.json', sections: [], findingsUsed: [], checkCoverage: [], openIssues: [], ungatedFindings: [] }),
-    projection: async (a) => ({ ok: true, reportPath: 'reports/pipeline-eval-topic/report.md', reportId: 'urn:mif:concept:pipeline-eval-topic:report', mifLevel: 3, checksAddressed: [], verificationVerdict: 'survived', readmePath: null, readmeCheckPassed: false, graphRefreshed: false, graphAssertPassed: false, problems: [], _receivedSynthesisPath: a.synthesisPath }),
+    projection: async (a) => ({ ok: true, reportPath: 'reports/pipeline-eval-topic/report.md', reportId: 'urn:mif:c7f61d1b-7a92-5e7c-b15d-7546105829b5', mifLevel: 3, checksAddressed: [], verificationVerdict: 'survived', readmePath: null, readmeCheckPassed: false, graphRefreshed: false, graphAssertPassed: false, problems: [], _receivedSynthesisPath: a.synthesisPath }),
   },
 };
 NODE

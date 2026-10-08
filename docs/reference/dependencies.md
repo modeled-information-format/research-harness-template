@@ -1,5 +1,5 @@
 ---
-id: reference-dependencies
+id: 5d5d9686-b223-510a-a2ee-ba9d0d988f68
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
 modified: '2026-07-14T02:29:28.000Z'

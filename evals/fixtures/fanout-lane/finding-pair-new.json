@@ -1,7 +1,7 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
   "@type": "Concept",
-  "@id": "urn:mif:concept:harness:fanout-eval-pair-new",
+  "@id": "urn:mif:7a29a956-de92-5cf8-9485-9ac37782f763",
   "conceptType": "semantic",
   "namespace": "harness/fanout-lane-eval",
   "title": "Copier supports re-applying template updates to generated projects",

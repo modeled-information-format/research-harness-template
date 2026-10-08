@@ -1,6 +1,9 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
-  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-semantic-web-failure-lessons",
+  "@id": "urn:mif:7e9d2281-226b-58f6-b8e4-b2beea3af478",
+  "aliases": [
+    "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-semantic-web-failure-lessons"
+  ],
   "@type": "Concept",
   "citations": [
     {
@@ -74,7 +77,7 @@
   "relationships": [
     {
       "strength": 0.85,
-      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-rdf-owl-semantic-alternative",
+      "target": "urn:mif:f62797e1-f125-5283-91c4-0d8aa9df7181",
       "type": "relates-to"
     }
   ],

@@ -3,7 +3,9 @@ slug: reports/example-okf-mif-knowledge-spine/example-okf-mif-knowledge-spine-ki
 version: 1
 "@context": https://mif-spec.dev/schema/context.jsonld
 "@type": Concept
-"@id": urn:mif:report:harness/example-okf-mif-knowledge-spine:kiro-tasks
+"@id": urn:mif:1fbddf0a-2b35-5712-a2c0-06d1178968e6
+aliases:
+  - urn:mif:report:harness/example-okf-mif-knowledge-spine:kiro-tasks
 conceptType: semantic
 namespace: harness/example-okf-mif-knowledge-spine
 title: "MIF Provenance Layer over OKF — Kiro Tasks"
@@ -26,7 +28,7 @@ provenance:
   confidence: 0.9
   trustLevel: user_stated
   wasDerivedFrom:
-    '@id': urn:mif:report:harness/example-okf-mif-knowledge-spine:kiro-build-spec
+    '@id': urn:mif:41f81dff-76fb-54cc-93eb-f5e67420be54
     '@type': prov:Entity
   agent: claude-code/claude-sonnet-5
   wasGeneratedBy:

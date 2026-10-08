@@ -1,7 +1,7 @@
 ---
 name: ectd
 description: "Package a clinical-submission artifact into the FDA eCTD (electronic Common Technical Document) module structure directly FROM THE SOURCES — a research topic's surviving findings corpus and the primary materials its citations point to. Lays out the eCTD module tree (M1 regional administrative, M2 summaries, M3 quality, M4 nonclinical study reports, M5 clinical study reports) and writes the eCTD XML backbone that indexes the leaf files. NEVER built from a rendered report (that would be a copy-of-a-copy). Optional channel; pure mkdir + XML, no external toolchain. Verify-live eCTD v4.0. Use when the user says 'package as eCTD', 'build the eCTD submission', or 'render to eCTD'."
-version: 0.4.2
+version: 0.4.3
 argument-hint: "<findings-dir> [-o <output-dir>] [<topic-name>]"
 allowed-tools: Read, Write, Bash, Grep, Glob
 ---
@@ -103,7 +103,7 @@ leaf with its relative path and a module/section label:
 cat > "$SEQ/ectd-backbone.xml" <<XML
 <?xml version="1.0" encoding="UTF-8"?>
 <ectd:backbone xmlns:ectd="urn:hl7-org:v3" ectd-version="${ECTD_VERSION}"
-               mif-identity="urn:mif:ectd:<namespace>:<slug>">
+               mif-identity="$(scripts/mif-id.sh ectd:<namespace>:<slug>)">
   <module id="m1" title="Regional Administrative Information">
     <leaf href="m1/m1-admin.md"/>
   </module>

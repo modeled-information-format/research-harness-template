@@ -1,5 +1,5 @@
 ---
-id: explanation-reading-the-research
+id: 7ab545ae-7ad7-5022-8095-c644ddc16e71
 type: semantic
 created: '2026-06-28T23:46:18-04:00'
 modified: '2026-08-04T23:48:41.771Z'
@@ -318,7 +318,9 @@ survivors — dressed for a different reader.
 This is the harness's quietest but largest payoff. **A finding is not trapped in
 the topic that produced it.** Because every finding is a MIF object with a
 stable, global identifier — for example
-`urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-okf-core-data-model` —
+`urn:mif:90456a52-7f8b-5159-aeb7-9e0b9207e004` (the example corpus's
+`technical-okf-core-data-model` finding; MIF 1.4 ids are UUIDs, deterministically
+minted from the finding's namespace and slug) —
 it is *addressable from anywhere*: another topic you are researching now, or one
 you open a year from now, can point at it, cite it, or build on it directly. The
 evidence does not have to be gathered twice.

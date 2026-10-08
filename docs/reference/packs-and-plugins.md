@@ -1,5 +1,5 @@
 ---
-id: reference-packs-and-plugins
+id: fdbf242e-2e71-5547-becb-44e6e2d7c784
 type: semantic
 created: '2026-06-23T09:41:01-04:00'
 modified: '2026-08-04T23:47:21.147Z'

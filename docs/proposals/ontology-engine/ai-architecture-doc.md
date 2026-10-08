@@ -1,5 +1,5 @@
 ---
-id: ai-arch-ontology-engine
+id: c352e5c0-c70d-5416-a14f-86c23e565b2d
 type: semantic
 created: '2026-07-01T00:00:00Z'
 modified: '2026-07-01T00:00:00Z'

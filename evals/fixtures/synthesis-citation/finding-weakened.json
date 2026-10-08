@@ -1,7 +1,7 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
   "@type": "Concept",
-  "@id": "urn:mif:concept:synthesis-eval:weakened-0001",
+  "@id": "urn:mif:7ce7b561-085c-5094-9542-0e86a1a23178",
   "conceptType": "semantic",
   "namespace": "harness/synthesis-eval-topic",
   "title": "A weakened-verdict finding usable in the synthesis citation-integrity eval",

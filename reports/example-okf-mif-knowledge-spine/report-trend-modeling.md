@@ -3,7 +3,9 @@ slug: reports/example-okf-mif-knowledge-spine/report-trend-modeling
 version: 1
 '@context': https://mif-spec.dev/schema/context.jsonld
 '@type': Concept
-'@id': urn:mif:report:harness/example-okf-mif-knowledge-spine:report-trend-modeling
+'@id': urn:mif:afad85dc-92b0-59b9-a8cf-09ec34bad6a5
+aliases:
+  - urn:mif:report:harness/example-okf-mif-knowledge-spine:report-trend-modeling
 conceptType: semantic
 namespace: harness/example-okf-mif-knowledge-spine
 title: 'Trend Modeling: Trajectories & Scenarios for OKF+MIF Knowledge Persistence'

@@ -1,7 +1,7 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
   "@type": "Concept",
-  "@id": "urn:mif:concept:falsify-eval:one-round-0001",
+  "@id": "urn:mif:ea4f00ef-0428-5871-98c3-07c6aeb64cc9",
   "conceptType": "semantic",
   "namespace": "harness/falsify-eval-topic-oneround",
   "title": "A finding used to exercise the one-round rule and its regate reset",

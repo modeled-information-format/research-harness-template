@@ -1,0 +1,43 @@
+{
+  "source": "https://mif-spec.dev/schema/1.4.1/",
+  "mifSpecVersion": "1.4.1",
+  "note": "Vendored verbatim from the immutable MIF 1.4.1 release mirror; consumer-only, never hand-edit. scripts/mif-vendor-check.mjs (verify.sh gate_mif_vendor) fails if any file drifts from its sha256; CI's mif-vendor-check job adds --remote, which also compares each file with the mirror. schemas/mif/source-envelope.schema.json is harness-local, not vendored.",
+  "files": [
+    {
+      "path": "schemas/mif/mif.schema.json",
+      "upstream": "mif.schema.json",
+      "sha256": "71063262aa5fb3b46ff1cb09c5371b87edcfa97c278aa5ff41f862478b130547",
+      "verbatim": true
+    },
+    {
+      "path": "schemas/mif/definitions/entity-reference.schema.json",
+      "upstream": "definitions/entity-reference.schema.json",
+      "sha256": "59906a7fde4268153d4ad45a2f0bf311e66a246f3eb19053b03fdd07b854400f",
+      "verbatim": true
+    },
+    {
+      "path": "schemas/mif/citation.schema.json",
+      "upstream": "citation.schema.json",
+      "sha256": "eb4cf77f64b249d0ef9a4c8c5c5286119c0204a9815598ac95ff715cc7d21968",
+      "verbatim": true
+    },
+    {
+      "path": "schemas/mif/context.jsonld",
+      "upstream": "context.jsonld",
+      "sha256": "53f7a6b78a9f34f4dea0a7a865dabffedb032c4109eba5c195410b005b25da4b",
+      "verbatim": true
+    },
+    {
+      "path": "schemas/mif/ontology.schema.json",
+      "upstream": "ontology/ontology.schema.json",
+      "sha256": "75bda329b2e673806b8ccbfb48349b06b64b69521954b4f5de175c1525dad59c",
+      "verbatim": true
+    },
+    {
+      "path": "schemas/mif/ontology.context.jsonld",
+      "upstream": "ontology/ontology.context.jsonld",
+      "sha256": "33ef4b2b7001924f29d69030aff2bc704e87abe32e1d3b1dac48f90e829aa212",
+      "verbatim": true
+    }
+  ]
+}

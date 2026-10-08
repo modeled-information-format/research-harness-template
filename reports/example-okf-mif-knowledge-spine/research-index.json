@@ -3,7 +3,7 @@
   "count": 36,
   "findings": [
     {
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-frictionless-data-packages",
+      "id": "urn:mif:d474612e-e44b-5760-94e3-c90c16190917",
       "title": "Frictionless Data Packages (OKFN): Accessible Dataset Packaging Without Knowledge Spine Semantics",
       "namespace": "harness/example-okf-mif-knowledge-spine",
       "dimension": "landscape",
@@ -27,7 +27,7 @@
       "stale_in": []
     },
     {
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-json-ld-schema-org-linked-data",
+      "id": "urn:mif:78aede18-2c95-52ba-9f08-f256a3abbbf0",
       "title": "JSON-LD and schema.org: Linked-Data Serialization Without Knowledge Management Depth",
       "namespace": "harness/example-okf-mif-knowledge-spine",
       "dimension": "landscape",
@@ -51,7 +51,7 @@
       "stale_in": []
     },
     {
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-okf-google-open-knowledge-format",
+      "id": "urn:mif:3150363d-ce93-5294-b97a-d105409dfbae",
       "title": "OKF (Google Cloud Open Knowledge Format): The Minimalist AI-Agent Knowledge Packaging Spec",
       "namespace": "harness/example-okf-mif-knowledge-spine",
       "dimension": "landscape",
@@ -75,7 +75,7 @@
       "stale_in": []
     },
     {
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-pkm-tools-obsidian-logseq-roam",
+      "id": "urn:mif:312ac457-bda5-59df-8952-22854ba37e56",
       "title": "PKM Tools (Obsidian, Logseq, Roam): Untyped-Link Markdown Graphs Without Provenance or Formal Ontology",
       "namespace": "harness/example-okf-mif-knowledge-spine",
       "dimension": "landscape",
@@ -100,7 +100,7 @@
       "stale_in": []
     },
     {
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-prov-o-provenance-alternative",
+      "id": "urn:mif:76adb74a-a33f-5a0c-a14e-c0a11605ce03",
       "title": "PROV-O: W3C Provenance Standard Without the Accessibility Layer",
       "namespace": "harness/example-okf-mif-knowledge-spine",
       "dimension": "landscape",
@@ -121,7 +121,7 @@
       "stale_in": []
     },
     {
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-rdf-owl-semantic-alternative",
+      "id": "urn:mif:f62797e1-f125-5283-91c4-0d8aa9df7181",
       "title": "RDF/OWL: Full Semantic Rigor, Prohibitive Authoring Cost",
       "namespace": "harness/example-okf-mif-knowledge-spine",
       "dimension": "landscape",
@@ -142,7 +142,7 @@
       "stale_in": []
     },
     {
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-skos-taxonomy-thesaurus-standard",
+      "id": "urn:mif:b2a19416-8d9d-5499-aad9-35acee4eef4e",
       "title": "SKOS: W3C Taxonomy and Thesaurus Standard Without Provenance or Typed Relationships",
       "namespace": "harness/example-okf-mif-knowledge-spine",
       "dimension": "landscape",
@@ -166,7 +166,7 @@
       "stale_in": []
     },
     {
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-ai-demand-structured-provenance",
+      "id": "urn:mif:7290e549-44e6-55f5-b79e-b3d706436add",
       "title": "AI and LLM Workflows Are Driving Demand for Structured, Citable, Provenance-Backed Knowledge",
       "namespace": "harness/example-okf-mif-knowledge-spine",
       "dimension": "market",
@@ -187,7 +187,7 @@
       "stale_in": []
     },
     {
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-buyer-segments-pain-points",
+      "id": "urn:mif:ed129ca6-e182-5666-8bcb-aa5d844c7ff8",
       "title": "Buyer Segments and Pain Points for a Structured Knowledge Spine",
       "namespace": "harness/example-okf-mif-knowledge-spine",
       "dimension": "market",
@@ -208,7 +208,7 @@
       "stale_in": []
     },
     {
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-competitive-positioning",
+      "id": "urn:mif:baa46af6-e5aa-54e6-9a67-879a3343739d",
       "title": "Competitive Positioning: OKF+MIF vs Personal KM Tools and Enterprise Knowledge Graph Platforms",
       "namespace": "harness/example-okf-mif-knowledge-spine",
       "dimension": "market",
@@ -230,7 +230,7 @@
       "stale_in": []
     },
     {
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-institutional-memory-loss-pain",
+      "id": "urn:mif:e71b5f21-a101-5bd1-8e5d-49a37ac5b835",
       "title": "Quantified Institutional Memory Loss as a Primary Driver for Enterprise Knowledge Investment",
       "namespace": "harness/example-okf-mif-knowledge-spine",
       "dimension": "market",
@@ -250,7 +250,7 @@
       "stale_in": []
     },
     {
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-km-software-market-sizing",
+      "id": "urn:mif:5fd31483-e5fd-5795-9cfb-cb658020da9c",
       "title": "Knowledge Management Software and Enterprise Knowledge Graph Market Sizing (2025-2034)",
       "namespace": "harness/example-okf-mif-knowledge-spine",
       "dimension": "market",
@@ -270,7 +270,7 @@
       "stale_in": []
     },
     {
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-okf-nascency-and-risk",
+      "id": "urn:mif:5162bbee-34d5-5762-a689-fc56579adb86",
       "title": "OKF Nascency and Unproven Adoption as Market Risk for an OKF+MIF Knowledge Spine",
       "namespace": "harness/example-okf-mif-knowledge-spine",
       "dimension": "market",
@@ -290,7 +290,7 @@
       "stale_in": []
     },
     {
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-open-source-vs-commercial",
+      "id": "urn:mif:2b98b393-e09d-5d57-adcc-4cc3384aa7bc",
       "title": "Open-Source vs. Commercial Segment: Who Wants Open Formats vs. SaaS for Knowledge Management",
       "namespace": "harness/example-okf-mif-knowledge-spine",
       "dimension": "market",
@@ -311,7 +311,7 @@
       "stale_in": []
     },
     {
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-pricing-business-model-signals",
+      "id": "urn:mif:6100bcab-9fd4-595d-81c4-6a3b2d2bdb8c",
       "title": "Pricing and Business Model Signals from Adjacent Knowledge Infrastructure Markets",
       "namespace": "harness/example-okf-mif-knowledge-spine",
       "dimension": "market",
@@ -332,7 +332,7 @@
       "stale_in": []
     },
     {
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-frictionless-data-comparator",
+      "id": "urn:mif:2b95ce04-c036-5bdd-9a3b-3b8811b748fd",
       "title": "Frictionless Data Package as Technical Comparator: Tabular Data Packaging, Not Knowledge Representation",
       "namespace": "harness/example-okf-mif-knowledge-spine",
       "dimension": "technical",
@@ -352,7 +352,7 @@
       "stale_in": []
     },
     {
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-json-ld-yaml-ld-comparator",
+      "id": "urn:mif:97a6f1ee-f84d-5960-b66a-cd0910d3be03",
       "title": "JSON-LD and YAML-LD as Technical Alternatives: Full Linked Data Without Markdown Packaging",
       "namespace": "harness/example-okf-mif-knowledge-spine",
       "dimension": "technical",
@@ -374,7 +374,7 @@
       "stale_in": []
     },
     {
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-mif-formal-ontology",
+      "id": "urn:mif:5b26c179-df0a-5515-9a01-2e1f7301e1ad",
       "title": "MIF's Formal Ontology and EntityReference System: Structured Domain Typing",
       "namespace": "harness/example-okf-mif-knowledge-spine",
       "dimension": "technical",
@@ -395,7 +395,7 @@
       "stale_in": []
     },
     {
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-mif-provenance-block",
+      "id": "urn:mif:c186c220-fb58-566b-a5c8-de0306a4fa02",
       "title": "MIF's First-Class Provenance Block: W3C PROV-O Compatible JSON Attribution",
       "namespace": "harness/example-okf-mif-knowledge-spine",
       "dimension": "technical",
@@ -416,7 +416,7 @@
       "stale_in": []
     },
     {
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-mif-temporal-decay",
+      "id": "urn:mif:47b8820e-af28-5e01-8ece-6fd249a52ca1",
       "title": "MIF's Bi-Temporal Tracking and Decay Modeling: What OKF's Single Timestamp Cannot Express",
       "namespace": "harness/example-okf-mif-knowledge-spine",
       "dimension": "technical",
@@ -438,7 +438,7 @@
       "stale_in": []
     },
     {
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-mif-typed-relationships",
+      "id": "urn:mif:d78e35bb-84fd-5c74-9b62-68cf4f7687f2",
       "title": "MIF's Typed Relationship System: Nine Structural-Core Predicates with Strength",
       "namespace": "harness/example-okf-mif-knowledge-spine",
       "dimension": "technical",
@@ -458,7 +458,7 @@
       "stale_in": []
     },
     {
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-okf-core-data-model",
+      "id": "urn:mif:90456a52-7f8b-5159-aeb7-9e0b9207e004",
       "title": "OKF v0.1 Core Data Model: Minimalist Markdown-YAML Specification",
       "namespace": "harness/example-okf-mif-knowledge-spine",
       "dimension": "technical",
@@ -479,7 +479,7 @@
       "stale_in": []
     },
     {
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-okf-informal-provenance",
+      "id": "urn:mif:f5180da5-1007-549f-9279-9387ad4fb46d",
       "title": "OKF's Informal Provenance Model: log.md and Citations as Prose Conventions",
       "namespace": "harness/example-okf-mif-knowledge-spine",
       "dimension": "technical",
@@ -500,7 +500,7 @@
       "stale_in": []
     },
     {
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-okf-mif-layering-mechanics",
+      "id": "urn:mif:6c23b125-e139-5d04-987c-24a8179a07c3",
       "title": "OKF+MIF Layering Mechanics: Complementary Fields, Conflicts, and the Extension Seam",
       "namespace": "harness/example-okf-mif-knowledge-spine",
       "dimension": "technical",
@@ -522,7 +522,7 @@
       "stale_in": []
     },
     {
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-okf-untyped-links",
+      "id": "urn:mif:1d099f94-e828-5daf-97e0-04e6aea0e5a8",
       "title": "OKF's Untyped Link Mechanism: Relationship Semantics Carried Only by Prose",
       "namespace": "harness/example-okf-mif-knowledge-spine",
       "dimension": "technical",
@@ -543,7 +543,7 @@
       "stale_in": []
     },
     {
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-schema-org-comparator",
+      "id": "urn:mif:2c993d70-4544-583a-a26b-5cf76056e77f",
       "title": "schema.org as Technical Comparator: Web-Optimized Vocabulary Without Git Distribution or Provenance",
       "namespace": "harness/example-okf-mif-knowledge-spine",
       "dimension": "technical",
@@ -563,7 +563,7 @@
       "stale_in": []
     },
     {
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-skos-comparator",
+      "id": "urn:mif:d37a603a-2467-50d5-a82e-9ffad842efee",
       "title": "SKOS as Technical Comparator: Thesaurus Hierarchy Without Typed Relationships or Prose",
       "namespace": "harness/example-okf-mif-knowledge-spine",
       "dimension": "technical",
@@ -584,7 +584,7 @@
       "stale_in": []
     },
     {
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-agent-memory-provenance-demand",
+      "id": "urn:mif:bceaba1a-15d1-537f-8c7c-2295cac0992d",
       "title": "AI Agent Memory: Provenance and Temporal Validity are the Hard Open Problems in 2026",
       "namespace": "harness/example-okf-mif-knowledge-spine",
       "dimension": "trajectory",
@@ -607,7 +607,7 @@
       "stale_in": []
     },
     {
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-enterprise-kg-market-growth",
+      "id": "urn:mif:9f111ce0-3cd6-5009-9bc1-438ba0159adf",
       "title": "Enterprise Knowledge Graph Market: 21-36% CAGR, Gartner Predicts 50%+ Agent Adoption by 2028",
       "namespace": "harness/example-okf-mif-knowledge-spine",
       "dimension": "trajectory",
@@ -630,7 +630,7 @@
       "stale_in": []
     },
     {
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-git-native-markdown-km",
+      "id": "urn:mif:0a5a59d2-2773-5fd5-999b-7e2ed6271c6d",
       "title": "Git-Native Markdown Knowledge Management: 1.5M+ Obsidian Users and 22% YoY Growth",
       "namespace": "harness/example-okf-mif-knowledge-spine",
       "dimension": "trajectory",
@@ -652,7 +652,7 @@
       "stale_in": []
     },
     {
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-graphrag-hybrid-dominance",
+      "id": "urn:mif:a8571848-4260-54e0-be1f-c46290d6a84c",
       "title": "Hybrid Graph+Vector Architectures Displacing Pure RAG: 3.4x Accuracy Gains Signal Structural Shift",
       "namespace": "harness/example-okf-mif-knowledge-spine",
       "dimension": "trajectory",
@@ -675,7 +675,7 @@
       "stale_in": []
     },
     {
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-llm-wiki-karpathy-adoption",
+      "id": "urn:mif:7e9154a1-3c46-58e9-ba91-56277c823345",
       "title": "Karpathy's LLM Wiki Pattern: 5,000+ Stars and a Wave of Implementations",
       "namespace": "harness/example-okf-mif-knowledge-spine",
       "dimension": "trajectory",
@@ -698,7 +698,7 @@
       "stale_in": []
     },
     {
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-mif-nascent-ecosystem",
+      "id": "urn:mif:8077166d-b994-5b6f-aacf-674fda00eaf8",
       "title": "MIF Momentum: a Stabilized v1.0.0 Spec, Public Since Early 2026, Differentiated but Still Building Adoption",
       "namespace": "harness/example-okf-mif-knowledge-spine",
       "dimension": "trajectory",
@@ -721,7 +721,7 @@
       "stale_in": []
     },
     {
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-okf-v01-launch-momentum",
+      "id": "urn:mif:5239f02b-a66a-50df-a2c4-6da38ed02201",
       "title": "OKF v0.1 Launch: Early Momentum from Google-Backed Formalization",
       "namespace": "harness/example-okf-mif-knowledge-spine",
       "dimension": "trajectory",
@@ -745,7 +745,7 @@
       "stale_in": []
     },
     {
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-semantic-web-failure-lessons",
+      "id": "urn:mif:7e9d2281-226b-58f6-b8e4-b2beea3af478",
       "title": "The Semantic Web's Adoption Failure: Headwind and Cautionary Map for OKF+MIF",
       "namespace": "harness/example-okf-mif-knowledge-spine",
       "dimension": "trajectory",
@@ -768,7 +768,7 @@
       "stale_in": []
     },
     {
-      "id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-w3c-rdf-star-provenance",
+      "id": "urn:mif:ffe2478e-d674-5ca0-bfdc-d8741c24d7c4",
       "title": "W3C RDF 1.2 and RDF-Star: Standards Momentum for Provenance Standardization",
       "namespace": "harness/example-okf-mif-knowledge-spine",
       "dimension": "trajectory",

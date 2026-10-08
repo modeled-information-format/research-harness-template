@@ -1,5 +1,5 @@
 ---
-id: how-to-run-a-research-session
+id: 97613a5f-6f6a-5fde-a7fc-d22aa18785fa
 type: procedural
 created: '2026-06-19T15:19:39-04:00'
 modified: '2026-07-05T10:10:09-04:00'

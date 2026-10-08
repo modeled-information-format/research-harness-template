@@ -1,7 +1,7 @@
 ---
 name: diataxis-docs
 description: "Render a research topic's entire surviving findings corpus into a COMPLETE Diátaxis documentation set — a reference page per finding, a per-dimension explanation, how-to, and guided tutorial, plus landing/index pages — every page carrying MIF Level-1 frontmatter and a diataxis_type marker. An OPTIONAL channel pack (enable the `diataxis` pack). Use this skill when the user wants documentation for a research topic, a full docs set from the findings, or to publish the corpus as Diátaxis docs. Triggers on 'diataxis docs', 'documentation channel', 'render docs from research', 'document the findings', 'reference and explanation docs', 'generate the docs site'."
-version: 0.14.1
+version: 0.14.2
 argument-hint: "<findings-dir> <out-dir> [<topic-name>]"
 allowed-tools: Read, Bash, Glob, Grep
 ---
@@ -68,21 +68,22 @@ of the corpus, so change the findings, not the rendered Markdown in place.
 
 ## MIF Level-1 identity
 
-Every emitted page carries **MIF Level-1** YAML frontmatter — a base MIF v1.0
-concept (`schemas/mif/mif.schema.json`: `@context`, `@type`, `@id`, `conceptType`,
-`created`; `content` is the body) plus the `diataxis_type` marker — validated by
-`schemas/diataxis-doc.schema.json` and enforced by `verify.sh` gate_m16. The
-frontmatter holds the page's **own** `urn:mif:doc:` identity; the body resolves
+Every emitted page carries **MIF Level-1** YAML frontmatter — a base MIF
+concept (`schemas/mif/mif.schema.json`, MIF 1.4.1: `@context`, `@type`, `@id`,
+`conceptType`, `created`; `content` is the body) plus the `diataxis_type` marker —
+validated by `schemas/diataxis-doc.schema.json` and enforced by `verify.sh`
+gate_m16. The rendered `docs/` tree of such pages is the OKF-style bundle MIF
+Level 1 asks for. The frontmatter holds the page's **own** identity, a
+`urn:mif:<uuid>` minted from `doc:<namespace>:<page-slug>`; the body resolves
 finding/entity ids to human titles and names, so prose carries no
 internal-research identity.
 
 ## Non-negotiables
 
 - **Never document a falsified finding** — the renderer filters them.
-- **Body prose carries no internal-research identity.** No `urn:mif:concept:` /
-  `urn:mif:report:` ids, no `extensions.harness` or `reports/<slug>/` paths, no
-  `f_<dim>_<n>` handles. The page's own `urn:mif:doc:` frontmatter `@id` is its
-  legitimate L1 identity.
+- **Body prose carries no internal-research identity.** No `urn:mif:` ids, no
+  `extensions.harness` or `reports/<slug>/` paths, no `f_<dim>_<n>` handles. The
+  page's own frontmatter `@id` is its legitimate L1 identity.
 - **Keep every quadrant in its mode.** A tutorial that only states facts, or a
   reference that instructs, breaks Diátaxis compliance.
 - **Title in the body H1, never in frontmatter** — a frontmatter `title:` plus a

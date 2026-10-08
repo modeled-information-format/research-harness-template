@@ -1,5 +1,5 @@
 ---
-id: how-to-maintain-topic-readmes
+id: 6baf60d0-91b7-5f52-b743-de0b37bf67a1
 type: procedural
 created: '2026-06-21T15:06:42-04:00'
 modified: '2026-06-26T09:21:24-04:00'

@@ -1,6 +1,9 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
-  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-mif-nascent-ecosystem",
+  "@id": "urn:mif:8077166d-b994-5b6f-aacf-674fda00eaf8",
+  "aliases": [
+    "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-mif-nascent-ecosystem"
+  ],
   "@type": "Concept",
   "citations": [
     {
@@ -49,12 +52,12 @@
   "relationships": [
     {
       "strength": 0.85,
-      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-okf-v01-launch-momentum",
+      "target": "urn:mif:5239f02b-a66a-50df-a2c4-6da38ed02201",
       "type": "relates-to"
     },
     {
       "strength": 0.8,
-      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-agent-memory-provenance-demand",
+      "target": "urn:mif:bceaba1a-15d1-537f-8c7c-2295cac0992d",
       "type": "relates-to"
     }
   ],

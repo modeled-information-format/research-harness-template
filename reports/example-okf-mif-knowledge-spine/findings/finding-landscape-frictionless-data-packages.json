@@ -1,6 +1,9 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
-  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-frictionless-data-packages",
+  "@id": "urn:mif:d474612e-e44b-5760-94e3-c90c16190917",
+  "aliases": [
+    "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-frictionless-data-packages"
+  ],
   "@type": "Concept",
   "citations": [
     {
@@ -57,7 +60,7 @@
   "relationships": [
     {
       "strength": 0.75,
-      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-okf-google-open-knowledge-format",
+      "target": "urn:mif:3150363d-ce93-5294-b97a-d105409dfbae",
       "type": "relates-to"
     }
   ],

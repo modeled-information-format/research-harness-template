@@ -1,5 +1,5 @@
 ---
-id: reference-commands
+id: 8230aa7a-e713-53bb-a182-fdfc61ced9a7
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
 modified: '2026-07-19T16:11:45.303Z'
@@ -68,8 +68,8 @@ Builds a MIF Container manifest plus resource files from a registered topic.
 
 **Purpose:** Thin delegator to `scripts/mif-container-export.sh` (ADR-0017,
 Story #328) — never implements export logic itself. Read-only against
-`reports/<topic>/`. Supports a full-topic export or a `--subset` of
-`urn:mif:concept:...` ids (optionally expanded via `--closure`, ADR-0017 AD-4).
+`reports/<topic>/`. Supports a full-topic export or a `--subset` of finding
+`@id`s (optionally expanded via `--closure`, ADR-0017 AD-4).
 The finished `<output-dir>/mif-package.json` is self-validated against
 `schemas/mif-container.schema.json` before the command reports success.
 

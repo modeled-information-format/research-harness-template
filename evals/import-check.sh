@@ -261,8 +261,8 @@ register_topic "$APPLY_TOPIC"
 #     gated, exactly what research-falsify.js's own Enumerate phase keys
 #     on).
 # ============================================================================
-FOREIGN_ID="urn:mif:concept:harness/$SRC_TOPIC:foreign-0001"
-UNVERIFIED_ID="urn:mif:concept:harness/$SRC_TOPIC:unverified-0001"
+FOREIGN_ID="$(scripts/mif-id.sh "concept:harness/$SRC_TOPIC:foreign-0001")"
+UNVERIFIED_ID="$(scripts/mif-id.sh "concept:harness/$SRC_TOPIC:unverified-0001")"
 python3 - "$ROOT/reports/$SRC_TOPIC/findings/foreign.json" "$FOREIGN_ID" "$SRC_TOPIC" <<'PY'
 import json, sys
 out_path, fid, topic = sys.argv[1], sys.argv[2], sys.argv[3]

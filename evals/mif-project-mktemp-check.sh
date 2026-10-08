@@ -65,7 +65,7 @@ chmod +x "$TMP/fakebin/mktemp"
 REPORT="$TMP/report.md"
 cat > "$REPORT" <<'MD'
 ---
-id: urn:mif:test:mktemp-check
+id: urn:mif:a5eea785-2e52-557c-bea8-ac8e9ab73360
 type: Finding
 ---
 placeholder

@@ -4,7 +4,7 @@
     {
       "id": 1,
       "prompt": "Generate the canonical MIF Level-3 report from the sample findings. The report must carry a REAL falsification verdict (do not author one by hand) — derive it from the falsification gate. Run exactly:\n\n  OUTDIR=$(pwd)\n  bash $CLAUDE_PROJECT_DIR/scripts/synthesize-artifact.sh $CLAUDE_PROJECT_DIR/reports/_meta/sample-session/findings general $OUTDIR/artifact.json\n  bash $CLAUDE_PROJECT_DIR/scripts/falsify.sh $CLAUDE_PROJECT_DIR/evals/fixtures/raw-finding.json $CLAUDE_PROJECT_DIR/evals/fixtures/evidence.json > $OUTDIR/ff.json\n  jq '.extensions.harness.verification' $OUTDIR/ff.json > $OUTDIR/verification.json\n  bash $CLAUDE_PROJECT_DIR/scripts/render-artifact.sh $OUTDIR/artifact.json report $OUTDIR/report.md $OUTDIR/verification.json\n\nConfirm the report projects to a valid MIF L3 finding before reporting done.",
-      "expected_output": "report.md with MIF YAML frontmatter (a urn:mif:report: @id, citations, provenance, extensions.harness.verification with a non-falsified verdict, dimension: synthesis) over a Markdown body with a ## Sources section and no top-level (#) heading; artifact.json valid JSON; the report projects to a valid MIF L3 finding via mif-project.sh.",
+      "expected_output": "report.md with MIF YAML frontmatter (a urn:mif:<uuid> @id, citations, provenance, extensions.harness.verification with a non-falsified verdict, dimension: synthesis) over a Markdown body with a ## Sources section and no top-level (#) heading; artifact.json valid JSON; the report projects to a valid MIF L3 finding via mif-project.sh.",
       "files": [],
       "deterministic_checks": [
         {
@@ -18,10 +18,10 @@
           "description": "artifact.json is valid JSON"
         },
         {
-          "type": "file_contains",
+          "type": "regex_match",
           "file": "report.md",
-          "literal": "urn:mif:report:",
-          "description": "frontmatter carries a urn:mif:report: id (the report IS a MIF concept)"
+          "pattern": "(?m)^['\"]?@id['\"]?:\\s*['\"]?urn:mif:[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
+          "description": "frontmatter carries a MIF 1.4 urn:mif:<uuid> @id (the report IS a MIF concept)"
         },
         {
           "type": "file_contains",

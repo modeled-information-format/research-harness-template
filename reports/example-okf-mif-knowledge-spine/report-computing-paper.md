@@ -3,7 +3,9 @@ slug: reports/example-okf-mif-knowledge-spine/report-computing-paper
 version: 1
 '@context': https://mif-spec.dev/schema/context.jsonld
 '@type': Concept
-'@id': urn:mif:report:harness/example-okf-mif-knowledge-spine:report-computing-paper
+'@id': urn:mif:fb31b40c-c3e0-59a2-9c3a-4d7c6cb7cabb
+aliases:
+  - urn:mif:report:harness/example-okf-mif-knowledge-spine:report-computing-paper
 conceptType: semantic
 namespace: harness/example-okf-mif-knowledge-spine
 title: 'Toward a Layered Knowledge Spine: MIF Provenance/Temporal Semantics over OKF Markdown Packaging'

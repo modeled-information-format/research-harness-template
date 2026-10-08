@@ -1,6 +1,9 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
-  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-skos-comparator",
+  "@id": "urn:mif:d37a603a-2467-50d5-a82e-9ffad842efee",
+  "aliases": [
+    "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-skos-comparator"
+  ],
   "@type": "Concept",
   "citations": [
     {
@@ -57,7 +60,7 @@
   "relationships": [
     {
       "strength": 0.7,
-      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-mif-typed-relationships",
+      "target": "urn:mif:d78e35bb-84fd-5c74-9b62-68cf4f7687f2",
       "type": "relates-to"
     }
   ],

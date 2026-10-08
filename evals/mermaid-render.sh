@@ -13,9 +13,9 @@ TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 # pass would mangle: a space-flanked "*", a space-flanked "_", and a bare URL.
 jq -n '{
   "@type":"Artifact", title:"Mermaid render eval", genre:"engineering",
-  finding_refs:["urn:mif:concept:eval:m"],
+  finding_refs:["urn:mif:665b35b0-6e9a-5874-b32f-6f40745cb55a"],
   sources:[{title:"S", url:"https://example.com/s", citationType:"website", citationRole:"supports"}],
-  sections:[{heading:"Architecture", supports:["urn:mif:concept:eval:m"],
+  sections:[{heading:"Architecture", supports:["urn:mif:665b35b0-6e9a-5874-b32f-6f40745cb55a"],
     body:"Prose with weight * 2 and a _ b.\n\n```mermaid\nflowchart TD\n  A[Start] --> B{weight * 2}\n  B --> C[node_done]\n  C --> D[docs https://example.com/x]\n```\n\nEnd."}]
 }' > "$TMP/art.json"
 

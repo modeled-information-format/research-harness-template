@@ -1,5 +1,5 @@
 ---
-id: mif-rh-cli-migration-eval
+id: 1358dcdd-2ad5-582c-b3b8-7f380c18d386
 title: "mif-rh-cli migration evaluation (Story #334, AD-7)"
 description: "Real measured benchmark data on whether scripts/mif-container-export.sh / -import.sh's shell/jq implementation has a performance bottleneck at ADR-0014-comparable corpus scale, per AD-7's trigger condition for migrating this logic into mif-rh-cli."
 type: semantic

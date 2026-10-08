@@ -42,7 +42,7 @@
 #     <topic>: MUST already be a registered topic in harness.config.json.
 #     <output-dir>: must not already exist (or must be empty) -- this script
 #       never overwrites an existing directory's contents.
-#     --subset <in-scope-ids.json>: a JSON array of urn:mif:concept:... ids
+#     --subset <in-scope-ids.json>: a JSON array of finding @ids (urn:mif:<uuid>)
 #       (see scripts/mif-container-resolve-scope.sh). Without this, every
 #       finding in the topic is exported (full).
 #     --closure: only meaningful with --subset; passed through to
@@ -207,12 +207,26 @@ if [ -n "$SUBSET_IDS" ]; then
   GRAPH="$T/knowledge-graph.json"
   bash scripts/build-graph.sh "$FINDINGS_DIR" "$GRAPH" > /dev/null \
     || fail "failed to build the knowledge graph needed to resolve --subset scope"
+  # MIF 1.4 concept ids are opaque urn:mif:<uuid>s, so the resolver can no
+  # longer read a boundary target's topic off the id: hand it every topic's
+  # @id (and alias) -> namespace map, so a reference into another topic still
+  # classifies as "cross-topic". A finding file that does not parse is skipped
+  # here (it belongs to some other topic; this topic's own files were already
+  # parsed fail-closed by the index loop above).
+  NS_MAP="$T/id-namespaces.json"
+  while IFS= read -r f; do
+    jq -c 'select(type == "object" and (.namespace | type) == "string")
+           | .namespace as $ns | (."@id", (.aliases // [])[])
+           | select(type == "string") | {key: ., value: $ns}' "$f" 2>/dev/null || true
+  done < <(find reports -mindepth 3 -maxdepth 3 -path '*/findings/*.json' | LC_ALL=C sort) \
+    | jq -s 'from_entries' > "$NS_MAP" \
+    || fail "failed to build the id -> namespace map needed to resolve --subset scope"
   SCOPE_RESULT="$T/scope-result.json"
   if [ "$CLOSURE" -eq 1 ]; then
-    scripts/mif-container-resolve-scope.sh "$GRAPH" "$SUBSET_IDS" --closure > "$SCOPE_RESULT" \
+    scripts/mif-container-resolve-scope.sh "$GRAPH" "$SUBSET_IDS" --closure --namespaces "$NS_MAP" > "$SCOPE_RESULT" \
       || fail "scripts/mif-container-resolve-scope.sh failed"
   else
-    scripts/mif-container-resolve-scope.sh "$GRAPH" "$SUBSET_IDS" > "$SCOPE_RESULT" \
+    scripts/mif-container-resolve-scope.sh "$GRAPH" "$SUBSET_IDS" --namespaces "$NS_MAP" > "$SCOPE_RESULT" \
       || fail "scripts/mif-container-resolve-scope.sh failed"
   fi
   RESOURCE_IDS_FILE="$T/resource-ids.json"

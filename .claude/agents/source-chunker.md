@@ -54,7 +54,8 @@ shared task list. Your **final message is your return value** to the orchestrato
   ```
 
   `wrap-source.sh` refuses a source that does not validate at L3 — do not chunk a
-  refused source. Chunk findings reference the envelope's `urn:mif:source:` id.
+  refused source. Chunk findings reference the envelope's `@id` (`urn:mif:<uuid>`,
+  minted from `source:<namespace>:<slug>`; see `scripts/mif-id.sh`).
 
 ### Step 2: Detect content type
 

@@ -3,7 +3,9 @@ slug: reports/example-okf-mif-knowledge-spine/report-academic
 version: 1
 '@context': https://mif-spec.dev/schema/context.jsonld
 '@type': Concept
-'@id': urn:mif:report:harness/example-okf-mif-knowledge-spine:report-academic
+'@id': urn:mif:40d58806-759a-5493-9ade-928cf2f2f3f7
+aliases:
+  - urn:mif:report:harness/example-okf-mif-knowledge-spine:report-academic
 conceptType: semantic
 namespace: harness/example-okf-mif-knowledge-spine
 title: 'Layering MIF Provenance and Temporal Semantics over the Open Knowledge Format: A Feasibility and Differentiation Study'

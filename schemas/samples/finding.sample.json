@@ -1,7 +1,8 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
   "@type": "Concept",
-  "@id": "urn:mif:concept:harness:sample-finding-0001",
+  "@id": "urn:mif:eee2d45e-43ef-589e-915d-d3235bf39b95",
+  "aliases": ["urn:mif:concept:harness:sample-finding-0001"],
   "conceptType": "semantic",
   "namespace": "harness/findings",
   "title": "Copier supports update propagation to instantiated projects",

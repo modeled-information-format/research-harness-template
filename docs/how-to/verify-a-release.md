@@ -1,5 +1,5 @@
 ---
-id: how-to-verify-a-release
+id: 998ec761-6c3d-5c18-bb25-39a7167c5cb9
 type: procedural
 created: '2026-06-24T10:25:46-04:00'
 modified: '2026-06-26T09:21:24-04:00'

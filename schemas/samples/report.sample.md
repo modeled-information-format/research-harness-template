@@ -1,7 +1,9 @@
 ---
 "@context": https://mif-spec.dev/schema/context.jsonld
 "@type": Concept
-"@id": urn:mif:report:harness/example-topic:sample-report
+"@id": urn:mif:248e31dd-6b73-574d-9d1d-70e2d0ae7c47
+aliases:
+  - urn:mif:report:harness/example-topic:sample-report
 conceptType: semantic
 namespace: harness/example-topic
 title: "Sample synthesis report"

@@ -3,7 +3,9 @@ slug: reports/example-okf-mif-knowledge-spine/example-okf-mif-knowledge-spine-fe
 version: 1
 "@context": https://mif-spec.dev/schema/context.jsonld
 "@type": Concept
-"@id": urn:mif:report:harness/example-okf-mif-knowledge-spine:feature-build-spec
+"@id": urn:mif:dbc12452-06f1-5b00-9c0b-dc5cc37ad6aa
+aliases:
+  - urn:mif:report:harness/example-okf-mif-knowledge-spine:feature-build-spec
 conceptType: semantic
 namespace: harness/example-okf-mif-knowledge-spine
 title: "OKF+MIF Extension Seam — feature spec"

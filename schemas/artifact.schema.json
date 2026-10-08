@@ -19,7 +19,7 @@
     "namespace": {
       "type": "string",
       "pattern": "^[a-zA-Z0-9_-]+(/[a-zA-Z0-9_-]+)*$",
-      "description": "The MIF namespace of the surviving finding set, carried through so the generic `report` projection can mint its urn:mif:report:<namespace>:<slug> id."
+      "description": "The MIF namespace of the surviving finding set, carried through so the generic `report` projection can mint its id (MIF 1.4: urn:mif:<uuid>, uuid5 of report:<namespace>:<slug>) id."
     },
     "newsworthiness": {
       "type": "string",

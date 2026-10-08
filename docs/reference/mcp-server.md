@@ -1,5 +1,5 @@
 ---
-id: reference-mcp-server
+id: d003315c-7636-53b4-8f5a-707ac040a60a
 type: semantic
 created: '2026-07-05T10:16:37-04:00'
 modified: '2026-07-12T14:26:33.819Z'

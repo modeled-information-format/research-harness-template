@@ -1,5 +1,5 @@
 ---
-id: reference-packs-market-research
+id: 35a4601b-c659-5288-8c9b-4ad9249cfe30
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
 modified: '2026-07-12T15:04:45.999Z'

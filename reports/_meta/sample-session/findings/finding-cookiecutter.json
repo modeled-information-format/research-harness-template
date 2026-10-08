@@ -1,7 +1,10 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
   "@type": "Concept",
-  "@id": "urn:mif:concept:harness:kg-cookiecutter-0002",
+  "@id": "urn:mif:d763528d-75fe-5cd7-8a0a-c176ecb41e72",
+  "aliases": [
+    "urn:mif:concept:harness:kg-cookiecutter-0002"
+  ],
   "conceptType": "semantic",
   "namespace": "harness/example-topic",
   "title": "Cookiecutter instantiation is a one-time snapshot with no upstream path",
@@ -38,7 +41,7 @@
   "relationships": [
     {
       "type": "contradicts",
-      "target": "urn:mif:concept:harness:kg-copier-0001",
+      "target": "urn:mif:0936199d-9082-58c7-a5d3-b2994500b179",
       "strength": 0.7
     }
   ],

@@ -23,6 +23,18 @@ LLM-driven falsification step publish-report's own pipeline performs.
 import json
 import re
 import sys
+import uuid
+
+# MIF 1.4 concept ids are urn:mif:<uuid>. The org-wide rule (the same one
+# scripts/lib/mif_id.py and mif-rs's mif_core::concept_urn use): uuid5 in the
+# MIF namespace of the remainder of the legacy id, here
+# "concept:<namespace>:<slug>" -- deterministic, so re-projecting the same
+# recommendation keeps the same id.
+MIF_NAMESPACE = uuid.uuid5(uuid.NAMESPACE_URL, "https://mif-spec.dev")
+
+
+def concept_urn(namespace, slug):
+    return f"urn:mif:{uuid.uuid5(MIF_NAMESPACE, f'concept:{namespace}:{slug}')}"
 
 
 def slugify(text):
@@ -65,7 +77,10 @@ def to_finding(rec, topic, namespace, now_iso):
 
     finding = {
         "@context": "https://mif-spec.dev/schema/context.jsonld",
-        "@id": f"urn:mif:concept:{namespace}:{slug}",
+        "@id": concept_urn(namespace, slug),
+        # The readable structured form the id is minted from, kept findable
+        # (and used by output-router.sh to name the finding file).
+        "aliases": [f"urn:mif:concept:{namespace}:{slug}"],
         "@type": "Concept",
         "conceptType": "semantic",
         "title": rec.get("title", ""),

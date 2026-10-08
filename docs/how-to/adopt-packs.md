@@ -1,5 +1,5 @@
 ---
-id: how-to-adopt-packs
+id: 802473e3-3cde-5e9d-affe-c496a61d40e9
 type: procedural
 created: '2026-06-24T10:25:46-04:00'
 modified: '2026-08-04T23:46:56.290Z'

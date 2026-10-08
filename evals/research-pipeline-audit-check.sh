@@ -195,7 +195,7 @@ module.exports = {
       backlog: [
         { action: 'augment', target: 'landscape', why: 'thin coverage on the landscape dimension', priority: 1 },
         { action: 'add-dimensions', target: 'homeless lead: quantum-safe migration timelines', why: 'no declared dimension covers this lead', priority: 2 },
-        { action: 'falsify', target: 'urn:mif:concept:pipeline-eval-topic:finding-7', why: 'ungated finding on disk', priority: 2 },
+        { action: 'falsify', target: 'urn:mif:77edf699-11e2-565b-a5c6-31c99fb558f7', why: 'ungated finding on disk', priority: 2 },
         { action: 'import', target: 'evidence known to exist in an external export, not yet in this corpus', why: 'known external evidence', priority: 3 },
         { action: 'projection', target: 'reports/pipeline-eval-topic/README.md', why: 'README finding count is stale', priority: 3 },
         { action: 'manual', target: 'ontology pin ambiguity', why: 'needs a human decision', priority: 4 },

@@ -1,5 +1,5 @@
 ---
-id: reference-packs-channels
+id: cb6ef2d7-1498-5477-908d-af4155b2c8bd
 type: semantic
 created: '2026-06-24T10:25:46-04:00'
 modified: '2026-07-20T02:32:57.362Z'
@@ -62,7 +62,7 @@ not silently skipped.
 
 ## book
 
-**Version:** 0.4.3 | **Kind:** channel | **MIF level:** exempt (output only) | **Skill:** `book:book-author`
+**Version:** 0.4.4 | **Kind:** channel | **MIF level:** exempt (output only) | **Skill:** `book:book-author`
 
 **Source:** [`packs/channels/book/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/channels/book)
 
@@ -120,7 +120,7 @@ scripts/pack-toggle.sh book on
 
 ## diataxis
 
-**Version:** 0.14.1 | **Kind:** channel | **MIF level:** L1 only (output) | **Skill:** `diataxis:diataxis-docs`
+**Version:** 0.14.2 | **Kind:** channel | **MIF level:** L1 only (output) | **Skill:** `diataxis:diataxis-docs`
 
 **Source:** [`packs/channels/diataxis/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/channels/diataxis)
 
@@ -173,7 +173,7 @@ methodology research into a how-to guide set.
 - Opt-in: disabled by default; enable with `scripts/pack-toggle.sh diataxis on`
 - Requires `jq`; no additional runtime dependencies beyond the core engine
 - MIF-exempt from L3 conformance gate: pages carry MIF L1 identity only; canonical L3 source of truth stays in the `report` channel
-- Body prose must carry no internal-research identity (no `urn:mif:concept:`, corpus paths, or finding handles); each page's own `urn:mif:doc:` frontmatter is its sole L1 identity
+- Body prose must carry no internal-research identity (no `urn:mif:` ids, corpus paths, or finding handles); each page's own frontmatter `@id` (a `urn:mif:<uuid>` minted from `doc:<namespace>:<page-slug>`) is its sole L1 identity
 - Every quadrant page must stay mode-pure; tutorial, reference, how-to, and explanation content must not be mixed
 
 ### Goals
@@ -318,7 +318,7 @@ scripts/pack-toggle.sh github-issues on
 
 ## notebooklm
 
-**Version:** 0.4.2 | **Kind:** channel
+**Version:** 0.4.3 | **Kind:** channel
 
 **Source:** [`packs/channels/notebooklm/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/channels/notebooklm)
 
@@ -386,7 +386,7 @@ scripts/pack-toggle.sh notebooklm on
 
 ## pdf
 
-**Version:** 0.4.2 | **Kind:** channel | **MIF level:** L1 in PDF metadata
+**Version:** 0.4.3 | **Kind:** channel | **MIF level:** L1 in PDF metadata
 
 **Source:** [`packs/channels/pdf/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/channels/pdf)
 
@@ -450,7 +450,7 @@ scripts/pack-toggle.sh pdf on
 
 ## jats
 
-**Version:** 0.4.2 | **Kind:** channel | **MIF level:** L1 in JATS article metadata
+**Version:** 0.4.3 | **Kind:** channel | **MIF level:** L1 in JATS article metadata
 
 **Source:** [`packs/channels/jats/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/channels/jats)
 
@@ -515,7 +515,7 @@ scripts/pack-toggle.sh jats on
 
 ## xbrl
 
-**Version:** 0.4.2 | **Kind:** channel | **MIF level:** L1 in XHTML head metadata (exempt)
+**Version:** 0.4.3 | **Kind:** channel | **MIF level:** L1 in XHTML head metadata (exempt)
 
 **Source:** [`packs/channels/xbrl/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/channels/xbrl)
 
@@ -576,7 +576,7 @@ scripts/pack-toggle.sh xbrl on
 
 ## ectd
 
-**Version:** 0.4.2 | **Kind:** channel | **MIF level:** L1 in backbone metadata (exempt)
+**Version:** 0.4.3 | **Kind:** channel | **MIF level:** L1 in backbone metadata (exempt)
 
 **Source:** [`packs/channels/ectd/`](https://github.com/modeled-information-format/research-harness-template/tree/main/packs/channels/ectd)
 

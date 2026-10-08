@@ -1,5 +1,5 @@
 {
-  "urn:mif:concept:falsify-eval:seeded-false-0001": {
+  "urn:mif:a439fecc-5ed5-5fc6-9acd-cf342b4e7780": {
     "verdict": "falsified",
     "basis": "Eval-fixture disconfirming evidence (research-harness-template#562): the seeded claim is directly contradicted.",
     "attempted_at": "2026-07-17T09:00:00Z",

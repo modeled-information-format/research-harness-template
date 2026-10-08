@@ -2,14 +2,14 @@
   "topic": "example-topic",
   "findings": [
     {
-      "id": "urn:mif:concept:harness/example-topic:f-done",
+      "id": "urn:mif:8ab40ab9-965d-5f78-9ebc-31ab2431ba78",
       "dimension": "technical",
       "valid": true,
       "attempted_at": "2026-06-19T12:30:00Z",
       "verdict": "survived"
     },
     {
-      "id": "urn:mif:concept:harness/example-topic:f-raw",
+      "id": "urn:mif:373da4a0-acac-5e44-a533-b549c9be919e",
       "dimension": "landscape",
       "valid": false,
       "attempted_at": null,

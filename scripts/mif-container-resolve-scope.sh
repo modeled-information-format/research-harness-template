@@ -29,8 +29,17 @@
 #
 # Usage:
 #   mif-container-resolve-scope.sh <knowledge-graph.json> <in-scope-ids.json> [--closure]
-#     <in-scope-ids.json>: a JSON array of urn:mif:concept:... ids (the
-#     subset selector's initial match set).
+#                                  [--namespaces <id-namespaces.json>]
+#     <in-scope-ids.json>: a JSON array of finding @ids (the subset
+#     selector's initial match set).
+#     --namespaces: a JSON object mapping a finding @id (and any alias) to its
+#     MIF `namespace` field. MIF 1.4 concept ids are opaque urn:mif:<uuid>s, so
+#     a concept's topic can no longer be read off the id itself; this map is
+#     how a caller (mif-container-export.sh builds it from every topic's
+#     findings) tells the resolver which topic each id belongs to. An id absent
+#     from the map falls back to the legacy structured form
+#     urn:mif:concept:<ns>:<slug> (a pre-1.4 corpus), else its topic is unknown
+#     and it can never be classified "cross-topic".
 #
 # Prints a JSON object to stdout:
 #   {"resourceIds": [<sorted, deduped, closure-expanded concept ids -- bare
@@ -40,17 +49,31 @@
 #    "boundaryReferences": [{"target": "...", "reason": "..."}]}
 set -uo pipefail
 
-[ "$#" -ge 2 ] || {
-  echo "usage: mif-container-resolve-scope.sh <knowledge-graph.json> <in-scope-ids.json> [--closure]" >&2
-  exit 2
-}
+USAGE="usage: mif-container-resolve-scope.sh <knowledge-graph.json> <in-scope-ids.json> [--closure] [--namespaces <id-namespaces.json>]"
+[ "$#" -ge 2 ] || { echo "$USAGE" >&2; exit 2; }
 GRAPH="$1"
 IDS="$2"
+shift 2
 CLOSURE=0
-[ "${3:-}" = "--closure" ] && CLOSURE=1
+NAMESPACES=""
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --closure) CLOSURE=1; shift;;
+    --namespaces)
+      [ "$#" -ge 2 ] || { echo "$USAGE" >&2; exit 2; }
+      NAMESPACES="$2"; shift 2;;
+    *) echo "mif-container-resolve-scope: unknown argument: $1" >&2; echo "$USAGE" >&2; exit 2;;
+  esac
+done
 
 [ -f "$GRAPH" ] || { echo "mif-container-resolve-scope: not a file: $GRAPH" >&2; exit 2; }
 [ -f "$IDS" ] || { echo "mif-container-resolve-scope: not a file: $IDS" >&2; exit 2; }
+if [ -n "$NAMESPACES" ]; then
+  jq -e 'type == "object"' "$NAMESPACES" > /dev/null 2>&1 || {
+    echo "mif-container-resolve-scope: --namespaces $NAMESPACES is not a JSON object (id -> namespace)" >&2
+    exit 2
+  }
+fi
 
 T="$(mktemp -d)" || { echo "mif-container-resolve-scope: mktemp failed" >&2; exit 5; }
 [ -n "$T" ] && [ -d "$T" ] || { echo "mif-container-resolve-scope: mktemp did not produce a usable directory" >&2; exit 5; }
@@ -77,6 +100,11 @@ jq -e 'type == "array"' "$IDS" > /dev/null 2>&1 || {
   exit 2
 }
 jq -c 'unique' "$IDS" > "$T/scope.json" || { echo "mif-container-resolve-scope: failed to read/parse $IDS" >&2; exit 2; }
+if [ -n "$NAMESPACES" ]; then
+  jq -c '.' "$NAMESPACES" > "$T/namespaces.json" || { echo "mif-container-resolve-scope: failed to read/parse $NAMESPACES" >&2; exit 2; }
+else
+  echo '{}' > "$T/namespaces.json"
+fi
 
 if [ "$CLOSURE" -eq 1 ]; then
   # Fixpoint BFS: repeatedly add any concept-kind edge target reachable from a
@@ -105,16 +133,23 @@ if [ "$CLOSURE" -eq 1 ]; then
   done
 fi
 
-jq -c -n --slurpfile graph "$T/graph.json" --slurpfile scope "$T/scope.json" '
-  $graph[0] as $g | $scope[0] as $s
-  # Topic namespace: the first WELL-FORMED concept id anywhere in scope, not
+jq -c -n --slurpfile graph "$T/graph.json" --slurpfile scope "$T/scope.json" --slurpfile nsmap "$T/namespaces.json" '
+  # The topic namespace of an id: the caller-supplied --namespaces map first (MIF
+  # 1.4 urn:mif:<uuid> ids carry no namespace), else the legacy structured
+  # urn:mif:concept:<ns>:<slug> form, else null (unknown).
+  def ns_of($m): . as $id
+    | if ($m[$id] | type) == "string" then $m[$id]
+      else ([$id | scan("^urn:mif:concept:([^:]+):")] | if length > 0 then .[0][0] else null end)
+      end;
+  $graph[0] as $g | $scope[0] as $s | $nsmap[0] as $m
+  # Topic namespace: the first in-scope id whose namespace is KNOWN, not
   # just the first array element -- a single malformed leading element
   # previously poisoned every later same-topic classification to
   # "cross-topic" instead of "out-of-scope" (an empty-string sentinel from an
   # unmatched first element compared unequal to every real namespace). null
   # (not "") when no in-scope id is a well-formed concept id, so the
   # cross-topic branch below simply cannot fire on a false-positive mismatch.
-  | ([$s[] | [scan("^urn:mif:concept:([^:]+):")] | if length > 0 then .[0][0] else empty end] | first // null) as $topic_ns
+  | ([$s[] | ns_of($m) | select(. != null)] | first // null) as $topic_ns
   | {
       resourceIds: ($s | unique | sort),
       boundaryReferences: (
@@ -132,7 +167,7 @@ jq -c -n --slurpfile graph "$T/graph.json" --slurpfile scope "$T/scope.json" '
               # id (e.g. "urn:mif:concept:noslug", no second colon) -- exactly
               # the silent-drop this script exists to prevent (Task #317).
               # scan() always yields a definite (possibly-empty) array.
-              | ([$t | scan("^urn:mif:concept:([^:]+):")] | if length > 0 then .[0][0] else null end) as $t_ns
+              | ($t | ns_of($m)) as $t_ns
               | if ($t_ns != null) and ($topic_ns != null) and ($t_ns != $topic_ns) then "cross-topic"
                 elif ($g.nodes | any(.id == $t) | not) then "unresolvable"
                 else "out-of-scope"

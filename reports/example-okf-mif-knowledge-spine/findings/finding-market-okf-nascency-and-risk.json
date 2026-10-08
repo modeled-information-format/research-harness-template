@@ -1,6 +1,9 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
-  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-okf-nascency-and-risk",
+  "@id": "urn:mif:5162bbee-34d5-5762-a689-fc56579adb86",
+  "aliases": [
+    "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-okf-nascency-and-risk"
+  ],
   "@type": "Concept",
   "citations": [
     {
@@ -73,17 +76,17 @@
   "relationships": [
     {
       "strength": 0.6,
-      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-ai-demand-structured-provenance",
+      "target": "urn:mif:7290e549-44e6-55f5-b79e-b3d706436add",
       "type": "contradicts"
     },
     {
       "strength": 0.8,
-      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-open-source-vs-commercial",
+      "target": "urn:mif:2b98b393-e09d-5d57-adcc-4cc3384aa7bc",
       "type": "relates-to"
     },
     {
       "strength": 0.7,
-      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-competitive-positioning",
+      "target": "urn:mif:baa46af6-e5aa-54e6-9a67-879a3343739d",
       "type": "relates-to"
     }
   ],

@@ -1,5 +1,5 @@
 ---
-id: explanation-pack-structure
+id: a936343a-14c6-5fe6-a522-90941aed835b
 type: semantic
 created: '2026-06-19T20:44:52-04:00'
 modified: '2026-08-04T23:46:46.147Z'

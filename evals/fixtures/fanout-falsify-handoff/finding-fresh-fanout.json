@@ -1,7 +1,7 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
   "@type": "Concept",
-  "@id": "urn:mif:concept:handoff-eval:fresh-fanout-0001",
+  "@id": "urn:mif:ce977ff8-3b56-58d8-9c7a-cd5b3ab8a820",
   "conceptType": "semantic",
   "namespace": "harness/handoff-eval-topic",
   "title": "A finding shaped exactly as research-fanout.js's Research phase wrote it before #653's fix",

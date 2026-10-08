@@ -26,7 +26,7 @@
   ],
   "boundaryReferences": [
     {
-      "target": "urn:mif:concept:sample:gateway-0003",
+      "target": "urn:mif:b354d7c3-1d8e-5ab0-a0dc-f7d5b0c543ca",
       "reason": "out-of-scope"
     }
   ],

@@ -1,5 +1,5 @@
 ---
-id: how-to-configure-the-site
+id: cb120e92-f6c2-5081-9f6e-2abe04ade70c
 type: procedural
 created: '2026-06-28T03:52:14-04:00'
 modified: '2026-06-28T03:52:14-04:00'

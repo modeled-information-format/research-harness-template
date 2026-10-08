@@ -21,7 +21,8 @@ milestones of `IMPLEMENTATION-PLAN.md` / GitHub milestones #1–#8.
 **Started** 2026-06-19. Branch `milestone-1-contracts`.
 
 Delivers the typed substrate every later phase exchanges: the MIF-backed findings
-schema (built on the real vendored MIF v1.0 schema under `schemas/mif/`),
+schema (built on the real vendored MIF v1.0 schema under `schemas/mif/`; since
+re-vendored to MIF 1.4.1 and pinned by `schemas/mif/VENDOR.lock`),
 `harness.config.schema.json` + sample manifest, `pack.schema.json` + sample pack
 manifest + `marketplace.json`, the `STRUCTURED-DATA.md` jq write-then-validate
 protocol, and the citation-integrity gate. CI (`ci.yml`) and the accretive build

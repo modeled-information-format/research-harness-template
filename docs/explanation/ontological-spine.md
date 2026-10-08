@@ -1,5 +1,5 @@
 ---
-id: explanation-ontological-spine
+id: 12b10b15-2cfe-5ffd-97e8-695626ae8119
 type: semantic
 created: '2026-06-20T18:58:00-04:00'
 modified: '2026-06-29T13:14:53-04:00'

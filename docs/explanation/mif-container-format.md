@@ -1,5 +1,5 @@
 ---
-id: explanation-mif-container-format
+id: d4644936-541c-5dba-99d6-63d36eb0cfc9
 type: semantic
 created: '2026-07-12T15:54:17Z'
 modified: '2026-08-04T23:46:21.046Z'
@@ -71,8 +71,12 @@ Every export produces one `mif-package.json`, validated against
 | `createdAt` | When the export ran. |
 
 The container mints no new identifiers of its own: every packaged finding
-keeps the exact `urn:mif:concept:<namespace>:<slug>` id it already had. Only
-the export act itself — the manifest — gets an identifier.
+keeps the exact `@id` it already had (a MIF 1.4 `urn:mif:<uuid>`, or a legacy
+structured id in a corpus not yet migrated). Only the export act itself — the
+manifest — gets an identifier. Because a `urn:mif:<uuid>` carries no topic,
+the exporter hands the scope resolver an `@id` → `namespace` map built from
+every topic's findings, so a reference into another topic is still marked
+`cross-topic`.
 
 ## Integrity: two digests, checked by default
 

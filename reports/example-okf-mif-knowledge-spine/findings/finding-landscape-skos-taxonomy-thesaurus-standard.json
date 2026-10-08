@@ -1,6 +1,9 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
-  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-skos-taxonomy-thesaurus-standard",
+  "@id": "urn:mif:b2a19416-8d9d-5499-aad9-35acee4eef4e",
+  "aliases": [
+    "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-skos-taxonomy-thesaurus-standard"
+  ],
   "@type": "Concept",
   "citations": [
     {
@@ -62,12 +65,12 @@
   "relationships": [
     {
       "strength": 0.85,
-      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-rdf-owl-semantic-alternative",
+      "target": "urn:mif:f62797e1-f125-5283-91c4-0d8aa9df7181",
       "type": "relates-to"
     },
     {
       "strength": 0.7,
-      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-prov-o-provenance-alternative",
+      "target": "urn:mif:76adb74a-a33f-5a0c-a14e-c0a11605ce03",
       "type": "relates-to"
     }
   ],

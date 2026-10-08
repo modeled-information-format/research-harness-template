@@ -1,6 +1,9 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
-  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-git-native-markdown-km",
+  "@id": "urn:mif:0a5a59d2-2773-5fd5-999b-7e2ed6271c6d",
+  "aliases": [
+    "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-git-native-markdown-km"
+  ],
   "@type": "Concept",
   "citations": [
     {
@@ -66,7 +69,7 @@
   "relationships": [
     {
       "strength": 0.85,
-      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-llm-wiki-karpathy-adoption",
+      "target": "urn:mif:7e9154a1-3c46-58e9-ba91-56277c823345",
       "type": "supports"
     }
   ],

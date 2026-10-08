@@ -1,7 +1,10 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
   "@type": "Concept",
-  "@id": "urn:mif:concept:harness:kg-copier-0001",
+  "@id": "urn:mif:0936199d-9082-58c7-a5d3-b2994500b179",
+  "aliases": [
+    "urn:mif:concept:harness:kg-copier-0001"
+  ],
   "conceptType": "semantic",
   "namespace": "harness/example-topic",
   "title": "Copier provides update propagation to instantiated projects",
@@ -38,7 +41,7 @@
   "relationships": [
     {
       "type": "supports",
-      "target": "urn:mif:concept:harness:kg-distribution-0003",
+      "target": "urn:mif:45484208-8fbb-55ee-b3a3-0088d9bb2630",
       "strength": 0.9
     }
   ],

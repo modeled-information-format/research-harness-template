@@ -1,7 +1,7 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
   "@type": "Concept",
-  "@id": "urn:mif:concept:synthesis-eval:archived-0001",
+  "@id": "urn:mif:e475e72b-810f-5a12-9de3-5a06635a7ebe",
   "conceptType": "semantic",
   "namespace": "harness/synthesis-eval-topic",
   "title": "A survived-verdict finding, placed under archive/ at fixture-setup time",

@@ -1,5 +1,5 @@
 ---
-id: explanation-update-channel-provenance
+id: 4dfbf30a-8f50-53d1-8a16-1be1040a8bfe
 type: semantic
 created: '2026-06-25T07:30:10-04:00'
 modified: '2026-06-26T14:18:40-04:00'

@@ -1,7 +1,7 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
   "@type": "Concept",
-  "@id": "urn:mif:concept:falsify-remediation-eval:weakened-good-0001",
+  "@id": "urn:mif:3b7ad1d5-416d-57c9-9fde-7200ad1bdd34",
   "conceptType": "semantic",
   "namespace": "harness/falsify-remediation-eval-topic",
   "title": "A weakened finding remediated per the fixed REMEDIATION_CONTRACT",

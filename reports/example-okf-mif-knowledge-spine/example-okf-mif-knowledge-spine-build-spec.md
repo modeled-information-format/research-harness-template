@@ -3,7 +3,9 @@ slug: reports/example-okf-mif-knowledge-spine/example-okf-mif-knowledge-spine-bu
 version: 1
 "@context": https://mif-spec.dev/schema/context.jsonld
 "@type": Concept
-"@id": urn:mif:report:harness/example-okf-mif-knowledge-spine:build-spec
+"@id": urn:mif:90444a94-f989-5ce1-b190-b382533304f9
+aliases:
+  - urn:mif:report:harness/example-okf-mif-knowledge-spine:build-spec
 conceptType: semantic
 namespace: harness/example-okf-mif-knowledge-spine
 title: "OKF+MIF Knowledge-Spine Build Spec — an AI-ready architecture spec for layering MIF's modeling/provenance/temporal spine on OKF packaging"

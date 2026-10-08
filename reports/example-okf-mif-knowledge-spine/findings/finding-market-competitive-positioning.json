@@ -1,6 +1,9 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
-  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-competitive-positioning",
+  "@id": "urn:mif:baa46af6-e5aa-54e6-9a67-879a3343739d",
+  "aliases": [
+    "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-competitive-positioning"
+  ],
   "@type": "Concept",
   "citations": [
     {
@@ -73,12 +76,12 @@
   "relationships": [
     {
       "strength": 0.85,
-      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-buyer-segments-pain-points",
+      "target": "urn:mif:ed129ca6-e182-5666-8bcb-aa5d844c7ff8",
       "type": "relates-to"
     },
     {
       "strength": 0.75,
-      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:market-km-software-market-sizing",
+      "target": "urn:mif:5fd31483-e5fd-5795-9cfb-cb658020da9c",
       "type": "relates-to"
     }
   ],

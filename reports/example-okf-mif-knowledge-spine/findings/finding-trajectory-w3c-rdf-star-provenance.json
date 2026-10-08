@@ -1,6 +1,9 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
-  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-w3c-rdf-star-provenance",
+  "@id": "urn:mif:ffe2478e-d674-5ca0-bfdc-d8741c24d7c4",
+  "aliases": [
+    "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-w3c-rdf-star-provenance"
+  ],
   "@type": "Concept",
   "citations": [
     {
@@ -66,12 +69,12 @@
   "relationships": [
     {
       "strength": 0.75,
-      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:trajectory-agent-memory-provenance-demand",
+      "target": "urn:mif:bceaba1a-15d1-537f-8c7c-2295cac0992d",
       "type": "supports"
     },
     {
       "strength": 0.8,
-      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-prov-o-provenance-alternative",
+      "target": "urn:mif:76adb74a-a33f-5a0c-a14e-c0a11605ce03",
       "type": "relates-to"
     }
   ],

@@ -1,6 +1,9 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
-  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-mif-typed-relationships",
+  "@id": "urn:mif:d78e35bb-84fd-5c74-9b62-68cf4f7687f2",
+  "aliases": [
+    "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-mif-typed-relationships"
+  ],
   "@type": "Concept",
   "citations": [
     {
@@ -64,7 +67,7 @@
   "relationships": [
     {
       "strength": 0.9,
-      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:technical-okf-untyped-links",
+      "target": "urn:mif:1d099f94-e828-5daf-97e0-04e6aea0e5a8",
       "type": "derived-from"
     }
   ],

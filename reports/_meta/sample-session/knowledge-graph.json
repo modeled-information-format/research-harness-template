@@ -3,22 +3,22 @@
   "generator": "build-graph.sh (MIF-native; SPEC §6c)",
   "nodes": [
     {
-      "id": "urn:mif:concept:harness:kg-cookiecutter-0002",
-      "kind": "concept",
-      "label": "Cookiecutter instantiation is a one-time snapshot with no upstream path",
-      "dimension": "landscape"
-    },
-    {
-      "id": "urn:mif:concept:harness:kg-copier-0001",
+      "id": "urn:mif:0936199d-9082-58c7-a5d3-b2994500b179",
       "kind": "concept",
       "label": "Copier provides update propagation to instantiated projects",
       "dimension": "technical"
     },
     {
-      "id": "urn:mif:concept:harness:kg-distribution-0003",
+      "id": "urn:mif:45484208-8fbb-55ee-b3a3-0088d9bb2630",
       "kind": "concept",
       "label": "A living template is mandatory for a harness that keeps gaining capability",
       "dimension": "trajectory"
+    },
+    {
+      "id": "urn:mif:d763528d-75fe-5cd7-8a0a-c176ecb41e72",
+      "kind": "concept",
+      "label": "Cookiecutter instantiation is a one-time snapshot with no upstream path",
+      "dimension": "landscape"
     },
     {
       "id": "urn:mif:entity:concept:living-template",
@@ -47,70 +47,70 @@
   ],
   "edges": [
     {
-      "source": "urn:mif:concept:harness:kg-cookiecutter-0002",
-      "target": "urn:mif:concept:harness:kg-copier-0001",
+      "source": "urn:mif:d763528d-75fe-5cd7-8a0a-c176ecb41e72",
+      "target": "urn:mif:0936199d-9082-58c7-a5d3-b2994500b179",
       "type": "contradicts",
       "strength": 0.7,
       "via": "relationship"
     },
     {
-      "source": "urn:mif:concept:harness:kg-copier-0001",
-      "target": "urn:mif:concept:harness:kg-distribution-0003",
+      "source": "urn:mif:0936199d-9082-58c7-a5d3-b2994500b179",
+      "target": "urn:mif:45484208-8fbb-55ee-b3a3-0088d9bb2630",
       "type": "supports",
       "strength": 0.9,
       "via": "relationship"
     },
     {
-      "source": "urn:mif:concept:harness:kg-distribution-0003",
-      "target": "urn:mif:concept:harness:kg-copier-0001",
+      "source": "urn:mif:45484208-8fbb-55ee-b3a3-0088d9bb2630",
+      "target": "urn:mif:0936199d-9082-58c7-a5d3-b2994500b179",
       "type": "derived-from",
       "strength": 0.8,
       "via": "relationship"
     },
     {
-      "source": "urn:mif:concept:harness:kg-distribution-0003",
-      "target": "urn:mif:concept:harness:kg-cookiecutter-0002",
+      "source": "urn:mif:45484208-8fbb-55ee-b3a3-0088d9bb2630",
+      "target": "urn:mif:d763528d-75fe-5cd7-8a0a-c176ecb41e72",
       "type": "derived-from",
       "strength": 0.6,
       "via": "relationship"
     },
     {
-      "source": "urn:mif:concept:harness:kg-cookiecutter-0002",
+      "source": "urn:mif:d763528d-75fe-5cd7-8a0a-c176ecb41e72",
       "target": "urn:mif:entity:technology:cookiecutter",
       "type": "mentions",
       "strength": null,
       "via": "entity"
     },
     {
-      "source": "urn:mif:concept:harness:kg-cookiecutter-0002",
+      "source": "urn:mif:d763528d-75fe-5cd7-8a0a-c176ecb41e72",
       "target": "urn:mif:entity:concept:update-propagation",
       "type": "mentions",
       "strength": null,
       "via": "entity"
     },
     {
-      "source": "urn:mif:concept:harness:kg-copier-0001",
+      "source": "urn:mif:0936199d-9082-58c7-a5d3-b2994500b179",
       "target": "urn:mif:entity:technology:copier",
       "type": "mentions",
       "strength": null,
       "via": "entity"
     },
     {
-      "source": "urn:mif:concept:harness:kg-copier-0001",
+      "source": "urn:mif:0936199d-9082-58c7-a5d3-b2994500b179",
       "target": "urn:mif:entity:concept:update-propagation",
       "type": "mentions",
       "strength": null,
       "via": "entity"
     },
     {
-      "source": "urn:mif:concept:harness:kg-distribution-0003",
+      "source": "urn:mif:45484208-8fbb-55ee-b3a3-0088d9bb2630",
       "target": "urn:mif:entity:concept:update-propagation",
       "type": "mentions",
       "strength": null,
       "via": "entity"
     },
     {
-      "source": "urn:mif:concept:harness:kg-distribution-0003",
+      "source": "urn:mif:45484208-8fbb-55ee-b3a3-0088d9bb2630",
       "target": "urn:mif:entity:concept:living-template",
       "type": "mentions",
       "strength": null,

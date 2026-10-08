@@ -1,5 +1,5 @@
 ---
-id: prd-ontology-engine
+id: 7614bd9f-a688-586e-9a11-a4acbd543100
 type: semantic
 created: '2026-07-01T00:00:00Z'
 modified: '2026-07-01T00:00:00Z'
@@ -20,7 +20,7 @@ provenance:
   sourceType: agent_inferred
   trustLevel: high_confidence
   wasDerivedFrom:
-    '@id': urn:mif:concept:research-harness-template:pr-251-ontology-discovery-followup
+    '@id': urn:mif:2a986079-9936-5519-9919-0315e026b9b9
     '@type': prov:Entity
 citations:
   - '@type': Citation

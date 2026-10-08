@@ -205,7 +205,7 @@ async function driveNullCase() {
 async function driveHappyCase() {
   const goodReport = {
     reportPath: 'reports/evaltopic/evaltopic.md',
-    reportId: 'urn:mif:evaltopic:report',
+    reportId: 'urn:mif:659f9873-77af-517b-9ec3-ba4ebce4f19b',
     frontmatterLevel: 3,
     checksAddressed: ['check-1'],
     verificationVerdict: 'survived',

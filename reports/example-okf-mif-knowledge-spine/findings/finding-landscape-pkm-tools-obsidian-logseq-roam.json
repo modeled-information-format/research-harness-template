@@ -1,6 +1,9 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
-  "@id": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-pkm-tools-obsidian-logseq-roam",
+  "@id": "urn:mif:312ac457-bda5-59df-8952-22854ba37e56",
+  "aliases": [
+    "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-pkm-tools-obsidian-logseq-roam"
+  ],
   "@type": "Concept",
   "citations": [
     {
@@ -62,7 +65,7 @@
   "relationships": [
     {
       "strength": 0.85,
-      "target": "urn:mif:concept:harness/example-okf-mif-knowledge-spine:landscape-okf-google-open-knowledge-format",
+      "target": "urn:mif:3150363d-ce93-5294-b97a-d105409dfbae",
       "type": "relates-to"
     }
   ],
