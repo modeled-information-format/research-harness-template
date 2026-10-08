@@ -214,12 +214,25 @@ if [ -n "$SUBSET_IDS" ]; then
   # here (it belongs to some other topic; this topic's own files were already
   # parsed fail-closed by the index loop above).
   NS_MAP="$T/id-namespaces.json"
-  while IFS= read -r f; do
-    jq -c 'select(type == "object" and (.namespace | type) == "string")
-           | .namespace as $ns | (."@id", (.aliases // [])[])
-           | select(type == "string") | {key: ., value: $ns}' "$f" 2>/dev/null || true
-  done < <(find reports -mindepth 3 -maxdepth 3 -path '*/findings/*.json' | LC_ALL=C sort) \
-    | jq -s 'from_entries' > "$NS_MAP" \
+  NS_FILES="$T/ns-files.txt"
+  find reports -mindepth 3 -maxdepth 3 -path '*/findings/*.json' | LC_ALL=C sort > "$NS_FILES"
+  # shellcheck disable=SC2016 # $ns is a jq variable, not a shell one
+  NS_ENTRY='select(type == "object" and (.namespace | type) == "string")
+            | .namespace as $ns | (."@id", (.aliases // [])[])
+            | select(type == "string") | {key: ., value: $ns}'
+  # One jq process (per xargs batch) over every topic's findings. jq reads its
+  # file arguments as one stream and aborts at the first unparsable file, so
+  # only then fall back to one call per file, skipping the unparsable ones.
+  NS_ENTRIES="$T/ns-entries.jsonl"
+  : > "$NS_ENTRIES"
+  if [ -s "$NS_FILES" ] \
+     && ! tr '\n' '\0' < "$NS_FILES" | xargs -0 jq -c "$NS_ENTRY" > "$NS_ENTRIES" 2>/dev/null; then
+    : > "$NS_ENTRIES"
+    while IFS= read -r f; do
+      jq -c "$NS_ENTRY" "$f" >> "$NS_ENTRIES" 2>/dev/null || true
+    done < "$NS_FILES"
+  fi
+  jq -s 'from_entries' "$NS_ENTRIES" > "$NS_MAP" \
     || fail "failed to build the id -> namespace map needed to resolve --subset scope"
   SCOPE_RESULT="$T/scope-result.json"
   if [ "$CLOSURE" -eq 1 ]; then

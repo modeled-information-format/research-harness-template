@@ -3322,12 +3322,26 @@ gate_m28() {
   else
     bad "boundary reason classification wrong: $got"
   fi
-  jq '.edges += [{"source":"urn:mif:d763528d-75fe-5cd7-8a0a-c176ecb41e72","target":"urn:mif:concept:other-topic:legacy-finding","type":"supports","strength":0.5,"via":"relationship"}]' "$GRAPH" > "$T/graph-legacy-target.json"
-  got="$("$RESOLVE" "$T/graph-legacy-target.json" "$T/partial-scope.json" --namespaces "$T/namespaces.json" | jq -c '.boundaryReferences[] | select(.target=="urn:mif:concept:other-topic:legacy-finding") | .reason')"
+  # A pre-1.4 (un-migrated) corpus: legacy structured ids on both ends, no
+  # map entry for either -- the namespace embedded in each id still decides.
+  printf '%s\n' '["urn:mif:concept:harness:legacy-a"]' > "$T/legacy-scope.json"
+  jq '.edges += [{"source":"urn:mif:concept:harness:legacy-a","target":"urn:mif:concept:other-topic:legacy-finding","type":"supports","strength":0.5,"via":"relationship"}]' "$GRAPH" > "$T/graph-legacy-target.json"
+  got="$("$RESOLVE" "$T/graph-legacy-target.json" "$T/legacy-scope.json" --namespaces "$T/namespaces.json" | jq -c '.boundaryReferences[] | select(.target=="urn:mif:concept:other-topic:legacy-finding") | .reason')"
   if [ "$got" = '"cross-topic"' ]; then
-    ok "a legacy urn:mif:concept:<ns>:<slug> target absent from the namespace map still classifies by its embedded namespace"
+    ok "in a legacy-id corpus, a different-namespace urn:mif:concept:<ns>:<slug> target still classifies cross-topic"
   else
     bad "legacy-id namespace fallback wrong: got '$got'"
+  fi
+  # Mixed sources never compare: the topic namespace here comes from the map
+  # (harness/example-topic) while a dangling legacy target only carries an
+  # embedded one (harness) -- same topic, different spelling. It must be
+  # "unresolvable", not a false "cross-topic".
+  jq '.edges += [{"source":"urn:mif:d763528d-75fe-5cd7-8a0a-c176ecb41e72","target":"urn:mif:concept:harness:deleted-finding","type":"supports","strength":0.5,"via":"relationship"}]' "$GRAPH" > "$T/graph-mixed-target.json"
+  got="$("$RESOLVE" "$T/graph-mixed-target.json" "$T/partial-scope.json" --namespaces "$T/namespaces.json" | jq -c '.boundaryReferences[] | select(.target=="urn:mif:concept:harness:deleted-finding") | .reason')"
+  if [ "$got" = '"unresolvable"' ]; then
+    ok "a map-derived topic namespace is never compared with a legacy id's embedded namespace (dangling same-topic legacy target stays unresolvable)"
+  else
+    bad "mixed-source namespace comparison wrong: got '$got'"
   fi
   printf '%s\n' '{"urn:mif:d763528d-75fe-5cd7-8a0a-c176ecb41e72":"harness/example-topic"' > "$T/bad-namespaces.json"
   "$RESOLVE" "$GRAPH" "$T/partial-scope.json" --namespaces "$T/bad-namespaces.json" >/dev/null 2>&1

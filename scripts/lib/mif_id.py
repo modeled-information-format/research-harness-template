@@ -25,7 +25,8 @@ CLI (stdlib only)::
     mif_id.py concept:harness/my-topic:my-slug     -> urn:mif:<uuid>
     mif_id.py urn:mif:concept:harness/t:s          -> urn:mif:<uuid>  (same id)
     mif_id.py --slug my-doc-id                     -> <uuid>          (bare, no urn: prefix)
-    mif_id.py urn:mif:<uuid>                       -> unchanged (idempotent)
+    mif_id.py urn:mif:<uuid> | <uuid>              -> urn:mif:<uuid> (idempotent)
+    mif_id.py entity:org:acme                      -> urn:mif:entity:org:acme (reserved, not hashed)
 """
 from __future__ import annotations
 
@@ -67,6 +68,11 @@ def concept_urn(remainder: str) -> str:
         remainder = remainder[len("urn:mif:"):]
     if not remainder:
         raise ValueError("empty id remainder")
+    # A bare UUID is already a concept id's identifier, and a remainder in a
+    # reserved namespace (entity:org:acme) is not a concept at all: give both
+    # back in URN form instead of hashing them into a new, unrelated id.
+    if UUID_RE.match(remainder) or is_reserved("urn:mif:" + remainder):
+        return "urn:mif:" + remainder
     return "urn:mif:" + slug_uuid(remainder)
 
 

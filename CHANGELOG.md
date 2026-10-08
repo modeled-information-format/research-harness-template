@@ -30,6 +30,13 @@ Part of the coordinated MIF specification 1.4.1 release.
   id in `aliases`. The MIF documents under `docs/` (bare-slug `id`s) and the
   example corpus's deliverables now carry UUID ids, so all 74 documents
   `verify.sh`'s `gate_m32` checks pass again (it was red on `main`).
+- **Instances with a pre-1.4 corpus.** After the update, findings with
+  structured ids no longer validate. To keep `/resume` from treating every
+  completed finding as unfinished and re-researching it,
+  `scripts/reconcile-session.sh` now refuses such a corpus (exit 4) and names
+  the one-time migration, which is documented in
+  `docs/how-to/update-your-harness.md`. `/import` names a legacy container's
+  ids in its refusal.
 - **Engine compatibility shim.** The pinned mif-rh-cli still composes legacy ids
   for source envelopes and rendered reports/blogs/books. `wrap-source.sh` and
   `render-artifact.sh` now rewrite them to the id mif-rs#164 mints (legacy id in

@@ -1231,6 +1231,11 @@ run "site-toggle" bash evals/site-toggle.sh
 # to inbound references) that let orphaned targets land in the corpus unnoticed.
 run "relationship-targets" bash evals/relationship-targets.sh
 
+# MIF 1.4 ids: the org-wide uuid5 rule (scripts/mif-id.sh), the corpus
+# migration tool (aliases kept, nothing skipped silently, idempotent), and
+# reconcile-session's refusal of a not-yet-migrated corpus.
+run "mif-ids" bash evals/mif-ids-check.sh
+
 # MIF Container NFR verification (Story #331, Epic #275, ADR-0017): proves all
 # 8 EARS-notation non-functional requirements from the architecture doc's
 # "Non-Functional Requirements" section against the REAL bundled sample topic

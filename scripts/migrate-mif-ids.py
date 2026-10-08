@@ -13,13 +13,17 @@ The rewrite is a pure function of the old id, applied to every occurrence in a
 file (an ``@id``, a ``relationships[].target``, a graph node/edge, an index
 row), so referential integrity is preserved across files without any lookup
 table. Reserved non-concept URNs (``urn:mif:entity:``, ``agent:``,
-``activity:``, ``conversation:``, ``vector:``), ids that are already UUID URNs,
-and placeholder/templated ids (``urn:mif:concept:<ns>:<slug>``,
-``urn:mif:concept:$NS:...``) are left alone, so the tool is idempotent.
+``activity:``, ``conversation:``, ``vector:``) and ids that are already UUID
+URNs are left alone. A placeholder or runtime-constructed id
+(``urn:mif:concept:<ns>:<slug>``, ``'urn:mif:concept:' + ns``,
+``urn:mif:concept:harness/$TOPIC:x``) cannot be rewritten by a text pass: each
+one is named on stderr as NOT migrated, so nothing is skipped silently.
 
 With ``--aliases``, a migrated top-level concept (a JSON object or a markdown
-frontmatter block carrying an ``@id``) also records its old id in ``aliases``,
-so it stays findable by the id older references and notes used.
+frontmatter block carrying an ``@id``) also records its old id in ``aliases``
+(appended, in order, to any existing aliases), so it stays findable by the id
+older references and notes used. Ids inside an ``aliases`` list are never
+rewritten, which also makes a second run a no-op.
 
 Usage::
 
@@ -40,76 +44,120 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))
 from mif_id import RESERVED_KINDS, UUID_RE, concept_urn, slug_uuid  # noqa: E402
 
-# A urn:mif: run, wide enough to also swallow template punctuation so a
-# placeholder (urn:mif:concept:<ns>:<slug>, urn:mif:concept:$NS:x) is seen whole
-# and skipped rather than half-rewritten.
-TOKEN = re.compile(r"urn:mif:([A-Za-z0-9_./:<>${}*-]+)")
-TEMPLATED = set("<>${}*")
+# A urn:mif: run: the id characters only. What follows the run decides
+# whether it is a whole id (see NON_TERMINATORS); a run that ends in an id
+# separator is a prefix or a placeholder (`urn:mif:concept:<ns>:<slug>`,
+# `'urn:mif:concept:' + ns`, `urn:mif:concept:harness/$TOPIC:x`) and is left
+# alone.
+TOKEN = re.compile(r"urn:mif:([A-Za-z0-9_./:-]+)")
 KIND = re.compile(r"^[a-z][a-z0-9-]*$")
+# A character right after an id that means the match is only the head of a
+# longer, constructed string (`f%d`, `chars[test]`, `x + y`, `${...}`). Any
+# other character -- a quote, whitespace, punctuation, `<` of a closing HTML
+# tag, `>` of an autolink, `#`/`?`, an em dash -- ends a complete id.
+NON_TERMINATORS = set("%[+$({*@=~^")
 
 
-# What may legitimately follow a complete id: a quote, whitespace, JSON/YAML/
-# prose punctuation, or end of text. Anything else (`%d`, `[x]`, `+`) means the
-# match is the head of a longer, constructed string -- left alone.
-TERMINATORS = set("\"'`,;)]}>|\\ \t\r\n")
+def classify(rest: str, following: str = "") -> tuple[str, str] | str | None:
+    """Classify the run after `urn:mif:`.
 
-
-def migrate_token(rest: str, following: str = "") -> tuple[str, str] | None:
-    """Return (old_id, new_id) for a legacy structured id, else None.
-
-    ``following`` is the character right after the matched run. A run that
-    ends in an id separator (``:``, ``/``, ``-``) is a prefix being
-    concatenated with something else (``'urn:mif:concept:' + ns``), not an
-    id, and is left alone; only a sentence-ending ``.`` may trail an id.
+    Returns (old_id, new_id) for a legacy structured id to migrate, the string
+    "skipped" for something that looks like a legacy id but is templated or
+    constructed (reported, never rewritten), or None for anything else
+    (reserved URNs, UUID URNs, non-ids).
     """
     stripped = rest.rstrip(".")
-    if not stripped or stripped[-1] in ":/-" or TEMPLATED & set(stripped):
-        return None
-    if following and following not in TERMINATORS:
-        return None
     kind, sep, tail = stripped.partition(":")
-    if not sep or not tail or tail[0] == "/" or not KIND.match(kind) or kind in RESERVED_KINDS:
+    if not sep or not KIND.match(kind) or kind in RESERVED_KINDS or UUID_RE.match(stripped):
         return None
-    if UUID_RE.match(stripped):
-        return None
+    if not tail or tail[0] == "/" or stripped[-1] in ":/-" or following in NON_TERMINATORS:
+        return "skipped"
     old = "urn:mif:" + stripped
     return old, concept_urn(stripped)
 
 
-def rewrite_ids(text: str) -> tuple[str, dict[str, str]]:
+def alias_spans(text: str) -> list[tuple[int, int]]:
+    """Character spans of every `aliases` list in the text (JSON arrays, YAML
+    flow lists, YAML block lists). The legacy ids recorded there ARE the old
+    form on purpose, so the rewrite must never touch them -- that is also what
+    keeps a second run a no-op."""
+    spans = []
+    for m in re.finditer(r'"aliases"\s*:\s*\[|^aliases:[ \t]*\[', text, re.M):
+        i, depth, quote = m.end() - 1, 0, None
+        while i < len(text):
+            c = text[i]
+            if quote:
+                if c == "\\":
+                    i += 1
+                elif c == quote:
+                    quote = None
+            elif c in "\"'" and text[m.start()] == '"':
+                quote = c if c == '"' else None
+            elif c == "[":
+                depth += 1
+            elif c == "]":
+                depth -= 1
+                if depth == 0:
+                    break
+            i += 1
+        spans.append((m.start(), i + 1))
+    for m in re.finditer(r"^aliases:[ \t]*\n((?:[ \t]+- .*(?:\n|$))+)", text, re.M):
+        spans.append((m.start(), m.end()))
+    return spans
+
+
+def rewrite_ids(text: str) -> tuple[str, dict[str, str], list[str]]:
     changes: dict[str, str] = {}
+    skipped: list[str] = []
+    protected = alias_spans(text)
 
     def sub(m: re.Match) -> str:
+        if any(a <= m.start() < b for a, b in protected):
+            return m.group(0)
         rest = m.group(1)
-        hit = migrate_token(rest, text[m.end(): m.end() + 1])
+        hit = classify(rest, text[m.end(): m.end() + 1])
+        if hit == "skipped":
+            skipped.append(m.group(0) + text[m.end(): m.end() + 1])
+            return m.group(0)
         if not hit:
             return m.group(0)
         old, new = hit
         changes[old] = new
         return new + rest[len(old) - len("urn:mif:"):]
 
-    return TOKEN.sub(sub, text), changes
+    return TOKEN.sub(sub, text), changes, skipped
+
+
+def _with_alias(aliases, old: str) -> list:
+    aliases = list(aliases) if isinstance(aliases, list) else []
+    return aliases if old in aliases else aliases + [old]
 
 
 def json_alias(text: str, old: str, new: str) -> str:
-    """Add "aliases": [old] to the top-level object, keeping the file's style.
+    """Record `old` in the top-level object's "aliases", keeping the file's style.
 
-    A file in canonical 2-space JSON is edited structurally (sorted keys stay
-    sorted, as `jq -S` writes findings); anything else gets a textual insert
-    right after the top-level "@id".
+    A file in canonical JSON (2-space or compact) is edited structurally:
+    sorted keys stay sorted (as `jq -S` writes findings), an existing aliases
+    array is appended to in order. Otherwise a new "aliases" goes in textually
+    right after the top-level "@id"; a non-canonical file that already has an
+    "aliases" array is re-serialized with a 2-space indent.
     """
     doc = json.loads(text)
     for indent in (2, None):
         if json.dumps(doc, indent=indent, ensure_ascii=False) + "\n" == text:
             keys = list(doc)
-            doc["aliases"] = [old]
-            if keys == sorted(keys):
-                doc = dict(sorted(doc.items()))
-            else:
-                at = keys.index("@id") + 1
-                order = keys[:at] + ["aliases"] + keys[at:]
-                doc = {k: doc[k] for k in order}
+            doc["aliases"] = _with_alias(doc.get("aliases"), old)
+            if "aliases" not in keys:
+                if keys == sorted(keys):
+                    doc = dict(sorted(doc.items()))
+                else:
+                    at = keys.index("@id") + 1
+                    order = keys[:at] + ["aliases"] + keys[at:]
+                    doc = {k: doc[k] for k in order}
             return json.dumps(doc, indent=indent, ensure_ascii=False) + "\n"
+    if "aliases" in doc:
+        doc["aliases"] = _with_alias(doc.get("aliases"), old)
+        return json.dumps(doc, indent=2, ensure_ascii=False) + "\n"
     m = re.search(r'("@id"\s*:\s*)"' + re.escape(new) + r'"(\s*,)?([ \t]*\n([ \t]*))?', text)
     if not m:
         return text
@@ -130,7 +178,7 @@ def json_top_concept_id(text: str) -> str | None:
         doc = json.loads(text)
     except ValueError:
         return None
-    if isinstance(doc, dict) and isinstance(doc.get("@id"), str) and "aliases" not in doc:
+    if isinstance(doc, dict) and isinstance(doc.get("@id"), str):
         return doc["@id"]
     return None
 
@@ -139,15 +187,44 @@ FM_ID = re.compile(r"^(['\"]?@id['\"]?:[ \t]*)(['\"]?)(urn:mif:[^'\"\s]+)\2[ \t]
 
 
 def md_alias(text: str, old: str) -> str:
-    """Add `aliases: [old]` to a markdown file's frontmatter, after its @id."""
+    """Record `old` in a markdown file's frontmatter `aliases`.
+
+    A missing `aliases` is added right after the `@id` line; an existing block
+    list (`aliases:` + `  - x` items) or flow list (`aliases: [x, y]`) is
+    appended to, in order.
+    """
     if not text.startswith("---\n"):
         return text
     end = text.find("\n---", 4)
     if end < 0:
         return text
     fm = text[4:end]
-    if re.search(r"^aliases:", fm, re.M):
-        return text
+    am = re.search(r"^aliases:[ \t]*(.*)$", fm, re.M)
+    if am:
+        rest = am.group(1).strip()
+        if rest.startswith("["):  # flow list
+            close = fm.rfind("]", am.start(), am.end())
+            if close < 0:
+                return text
+            body = fm[fm.index("[", am.start()) + 1: close]
+            if old in [x.strip().strip("'\"") for x in body.split(",")]:
+                return text
+            ins = (", " if body.strip() else "") + old
+            fm = fm[:close] + ins + fm[close:]
+        elif rest == "":  # block list: append after its last item
+            items = re.compile(r"\n([ \t]+)- (.*)")
+            pos, indent, seen = am.end(), "  ", []
+            for im in items.finditer(fm, am.end()):
+                if im.start() != pos:
+                    break
+                indent, pos = im.group(1), im.end()
+                seen.append(im.group(2).strip().strip("'\""))
+            if old in seen:
+                return text
+            fm = fm[:pos] + f"\n{indent}- {old}" + fm[pos:]
+        else:
+            return text
+        return "---\n" + fm + text[end:]
     m = FM_ID.search(fm)
     if not m:
         return text
@@ -188,17 +265,24 @@ def main(argv: list[str]) -> int:
     for path in args.files:
         with open(path, encoding="utf-8") as fh:
             text = fh.read()
+        skipped: list[str] = []
         if args.doc_ids:
             new_text, changes = migrate_doc_id(text)
         else:
             top_old = json_top_concept_id(text) if path.endswith(".json") else None
             fm = FM_ID.search(text[: text.find("\n---", 4)]) if path.endswith(".md") and text.startswith("---\n") else None
-            new_text, changes = rewrite_ids(text)
+            new_text, changes, skipped = rewrite_ids(text)
             if args.aliases:
                 if top_old in changes:
                     new_text = json_alias(new_text, top_old, changes[top_old])
                 elif fm and fm.group(3) in changes:
                     new_text = md_alias(new_text, fm.group(3))
+        if skipped:
+            # Never silent: a templated or constructed id (a placeholder in
+            # prose, a prefix concatenated at runtime) cannot be rewritten by
+            # a text pass -- name every one so it can be fixed by hand.
+            for tok in sorted(set(skipped)):
+                print(f"{path}: NOT migrated (templated or constructed): {tok!r}", file=sys.stderr)
         if new_text != text:
             pending += 1
             print(f"{path}: {len(changes)} id(s)")

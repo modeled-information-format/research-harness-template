@@ -86,15 +86,20 @@ fi
 # stdin (mif-rh harness_wrap), which blocks forever on a never-EOF pipe
 # (#531). Detach stdin on every explicit-content path; only the documented
 # stdin path (no --content-file, no --content) keeps it attached.
-# (The engine's own "wrote <scratch path>" line is dropped: it names the
-# scratch file and the pre-migration id; this wrapper reports the real ones.)
+# The engine's stdout is captured, not passed through: on success it is only
+# a "wrote <scratch path> (<pre-migration id>)" line, superseded by this
+# wrapper's own report below; on failure it is replayed to stderr so no
+# engine diagnostic is lost.
 if [ -n "$CFILE" ] || [ -n "${CONTENT_SET:-}" ]; then
-  "$ENGINE" "${ARGS[@]+"${ARGS[@]}"}" </dev/null >/dev/null
+  "$ENGINE" "${ARGS[@]+"${ARGS[@]}"}" </dev/null >"$WS_TMP/engine.out"
 else
-  "$ENGINE" "${ARGS[@]+"${ARGS[@]}"}" >/dev/null
+  "$ENGINE" "${ARGS[@]+"${ARGS[@]}"}" >"$WS_TMP/engine.out"
 fi
 rc=$?
-[ "$rc" -eq 0 ] || exit "$rc"
+if [ "$rc" -ne 0 ]; then
+  cat "$WS_TMP/engine.out" >&2
+  exit "$rc"
+fi
 
 # Same namespace/slug record mif-rs#164 adds under extensions.harness.source,
 # so the envelope stays findable by topic now that its id is opaque.
@@ -104,16 +109,31 @@ if ! mif_json_migrate_id "$WS_TMP/engine.json" "$WS_TMP/envelope.json" \
   echo "wrap-source: could not assign the MIF 1.4 source id" >&2
   exit 1
 fi
+# Re-validate the migrated envelope against the REAL vendored schemas (the
+# engine only saw the relaxed @id pattern). ajv-cli + ajv-formats are part of
+# the harness toolchain; a missing validator is named as such, never reported
+# as an invalid source, and a real validation failure shows ajv's errors.
+if ! command -v ajv >/dev/null 2>&1; then
+  echo "wrap-source: ajv (ajv-cli + ajv-formats, see CLAUDE.md toolchain) is not on PATH — cannot validate the envelope; nothing written to $OUT" >&2
+  exit 5
+fi
 TMO=""
 if command -v timeout >/dev/null 2>&1; then TMO="timeout 30"
 elif command -v gtimeout >/dev/null 2>&1; then TMO="gtimeout 30"
 fi
-if ! $TMO ajv validate --spec=draft2020 --strict=false -c ajv-formats \
-     -s "$ROOT/schemas/mif/source-envelope.schema.json" \
-     -r "$ROOT/schemas/mif/mif.schema.json" \
-     -r "$ROOT/schemas/mif/definitions/entity-reference.schema.json" \
-     -d "$WS_TMP/envelope.json" >/dev/null 2>&1; then
-  echo "wrap-source: the envelope does NOT validate against the vendored MIF schemas — refused; nothing written to $OUT" >&2
+$TMO ajv validate --spec=draft2020 --strict=false -c ajv-formats \
+  -s "$ROOT/schemas/mif/source-envelope.schema.json" \
+  -r "$ROOT/schemas/mif/mif.schema.json" \
+  -r "$ROOT/schemas/mif/definitions/entity-reference.schema.json" \
+  -d "$WS_TMP/envelope.json" >"$WS_TMP/ajv.out" 2>&1
+rc=$?
+if [ "$rc" -ne 0 ]; then
+  if [ "$rc" -eq 124 ]; then
+    echo "wrap-source: validating the envelope TIMED OUT after 30s — refused; nothing written to $OUT" >&2
+  else
+    echo "wrap-source: the envelope does NOT validate against the vendored MIF schemas — refused; nothing written to $OUT" >&2
+    sed 's/^/  /' "$WS_TMP/ajv.out" >&2
+  fi
   exit 1
 fi
 mkdir -p "$(dirname "$OUT")" && cp "$WS_TMP/envelope.json" "$OUT" \

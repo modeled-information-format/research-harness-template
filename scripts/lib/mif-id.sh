@@ -25,7 +25,8 @@ mif_concept_urn() {
 
 # mif_fm_migrate_id <file.md> — if the markdown file's frontmatter @id is a
 # legacy structured id, replace it with its urn:mif:<uuid> form and append the
-# legacy id to `aliases`. No-op on an already-migrated or absent @id.
+# legacy id to `aliases` (order-preserving: existing aliases keep their order,
+# since a consumer may treat aliases[0] as the primary readable form). No-op on an already-migrated or absent @id.
 mif_fm_migrate_id() {
   local f="$1" old new
   old="$(yq --front-matter=extract '.["@id"] // ""' "$f")" || return 1
@@ -33,7 +34,7 @@ mif_fm_migrate_id() {
   new="$(mif_concept_urn "$old")" || return 1
   [ "$new" = "$old" ] && return 0
   OLD_ID="$old" NEW_ID="$new" yq --front-matter=process -i \
-    '.["@id"] = strenv(NEW_ID) | .aliases = (((.aliases // []) + [strenv(OLD_ID)]) | unique)' "$f"
+    '.["@id"] = strenv(NEW_ID) | .aliases = (.aliases // []) | with(select(.aliases | any_c(. == strenv(OLD_ID)) | not); .aliases += [strenv(OLD_ID)])' "$f"
 }
 
 # mif_json_migrate_id <in.json> <out.json> [jq-filter [jq-args...]] — write
@@ -53,7 +54,7 @@ mif_json_migrate_id() {
     jq "$@" "$extra" "$in" > "$out"
   else
     jq --arg old_id "$old" --arg new_id "$new" "$@" \
-      '."@id" = $new_id | .aliases = (((.aliases // []) + [$old_id]) | unique) | '"$extra" "$in" > "$out"
+      '."@id" = $new_id | .aliases = ((.aliases // []) as $a | if ($a | index([$old_id])) then $a else $a + [$old_id] end) | '"$extra" "$in" > "$out"
   fi
 }
 
